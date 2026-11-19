@@ -1,4 +1,6 @@
+// Edited: 2026-11-18T18:14:04-06:00 | Computer: Vinnabok
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace FortuneForge.Games.Slots;
 
@@ -18,7 +20,12 @@ public sealed record PaidSlotOutcomeRequest(
     public int FreeSpinsRemaining { get; init; }
     public bool IsNeonDiscoPlay { get; init; }
     public int? NeonDiscoMultiplier { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public PaidArcaneSpinOptions? Arcane { get; init; }
 }
+
+public sealed record PaidArcaneSpinOptions(string EngineVersion, bool TomeActive, PaidArcanePotion? Potion);
+public sealed record PaidArcanePotion(long Id, string IngredientId, int Potency);
 
 /// <summary>A package's outcome and replay evidence, bound to the original admission.</summary>
 public sealed record PaidSlotOutcomeResponse(Guid AdmissionId, string GameId, string OutcomeKind, JsonElement Outcome)
@@ -35,6 +42,7 @@ public static class PaidSlotOutcomeProtocol
     public const string Route = "/internal/v1/paid/spins";
     public const string ClassicSlotKind = "classic-slot";
     public const string OlympusTumbleKind = "olympus-tumble";
+    public const string ArcaneSlotKind = "arcane-archives";
 
     public static void ValidateRequest(PaidSlotOutcomeRequest request, string expectedGameId)
     {

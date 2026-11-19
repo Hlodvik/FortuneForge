@@ -1,4 +1,11 @@
+// Edited: 2026-11-18T18:01:37-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:45:56-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:26:20-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T14:45:02-06:00 | Computer: Vinnabok
 using System.Text.Json;
+using ArcaneArchivesEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
+using ArcanePotions = FortuneForge.Games.ArcaneArchives.ArcanePotions;
+using ArcaneWandCollector = FortuneForge.Games.ArcaneArchives.ArcaneWandCollector;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
@@ -22,6 +29,36 @@ internal static class SlotRoundAudit
         if (result.EngineAudit is not { } audit)
             return [new("slot-engine-evidence-missing", "error",
                 "The engine's rules and generated reel evidence were not captured.")];
+        var usesArcaneWand = ArcaneArchivesEngine.IsWandEngineVersion(audit.EngineVersion);
+        var arcaneWandVersion = usesArcaneWand ? audit.EngineVersion : null;
+        if (arcaneWandVersion != ArcaneArchivesEngine.WandEngineVersion(audit.BaseGame) ||
+            arcaneWandVersion != ArcaneArchivesEngine.WandEngineVersion(audit.EffectiveGame) ||
+            (usesArcaneWand
+                ? result.ReelSetId != audit.BaseGame.Math.ReelSetId ||
+                  result.ReelSetId != audit.EffectiveGame.Math.ReelSetId
+                : result.ArcaneWandCollection is not null))
+            return [new("slot-arcane-wand-version-mismatch", "error",
+                "The Arcane wand evidence does not match its frozen engine and reel model.")];
+        var usesArcanePotions = ArcaneArchivesEngine.SupportsPotionEngineVersion(audit.EngineVersion);
+        if (audit.ArcanePotionApplied is not null &&
+            (!usesArcanePotions || !isPaid || result.IsFreeSpin || audit.ArcanePotionApplied.Id <= 0))
+            return [new("slot-arcane-potion-mismatch", "error",
+                "The captured Arcane potion requires a paid spin under the versioned potion rules.")];
+        if (usesArcanePotions)
+        {
+            try
+            {
+                if (!ArcaneArchivesEngine.PotionReelsMatch(audit.ReelSet, audit.ArcanePotionApplied) ||
+                    !SameReels(result.Reels, audit.RawGeneratedReels) ||
+                    !SameReels(result.Reels, audit.ReelsAfterFreeGameFrequency))
+                    return [new("slot-arcane-potion-mismatch", "error",
+                        "The Arcane reel strips or visible symbols differ from the captured potion and reel stops.")];
+            }
+            catch (ArgumentException)
+            {
+                return [new("slot-arcane-potion-mismatch", "error", "The captured Arcane potion is invalid.")];
+            }
+        }
         if (result.NeonNitroWild is not null && !NeonArcadeSlotDefinitions.SupportsNitroWild(audit.EngineVersion))
             return [new("slot-neon-nitro-version-mismatch", "error", "Nitro evidence requires its versioned Neon engine.")];
         if (audit.EngineVersion == FortuneForge.Games.JadeDragon.JadeDragonCascadeRules.Version)
@@ -139,9 +176,9 @@ internal static class SlotRoundAudit
         {
             var expected = OlympusTumbleDemo.Resolve(audit.EngineVersion, result.WagerPoints, evidence.Showcase, ReplayDraw);
             if (draws is null || nextDraw != draws.Count ||
-                !SameOlympusReels(expected.InitialReels, result.Reels) ||
-                !SameOlympusReels(expected.InitialReels, audit.RawGeneratedReels) ||
-                !SameOlympusReels(expected.InitialReels, audit.ReelsAfterFreeGameFrequency) ||
+                !SameReels(expected.InitialReels, result.Reels) ||
+                !SameReels(expected.InitialReels, audit.RawGeneratedReels) ||
+                !SameReels(expected.InitialReels, audit.ReelsAfterFreeGameFrequency) ||
                 result.ReelStops.Count != expected.InitialReels.Count || result.ReelStops.Any(stop => stop != 0) ||
                 JsonSerializer.Serialize(expected, RoundAuditCapture.Json) !=
                     JsonSerializer.Serialize(result.OlympusTumble, RoundAuditCapture.Json))
@@ -177,7 +214,7 @@ internal static class SlotRoundAudit
         result.CrucibleWageredCents is null && result.CruciblePourValueCents is null &&
         result.CruciblePoured is null && result.CruciblePayoutCents is null;
 
-    private static bool SameOlympusReels(
+    private static bool SameReels(
         IReadOnlyList<IReadOnlyList<string>> expected, IReadOnlyList<IReadOnlyList<string>> recorded) =>
         expected.Count == recorded.Count && expected.Zip(recorded).All(pair => pair.First.SequenceEqual(pair.Second));
 
@@ -205,6 +242,7 @@ internal static class SlotRoundAudit
         var foundryCollector = GoldFoundrySlotDefinitions.IsModel(baseGame);
         var rainbowHarvest = RainbowRealmSlotDefinitions.IsModel(baseGame);
         var arcaneCollector = ArcaneLightningCollector.IsModel(baseGame);
+        var arcanePaylines = ArcaneArchivesEngine.IsPaylineModel(baseGame);
 
         if (pawPrototype is not null &&
             (result.GameId != SlotSpecialRoundProfiles.WukongGameId || !pawPrototype.SyntheticOnly ||
@@ -224,7 +262,8 @@ internal static class SlotRoundAudit
         var trustedBonusWager = isDerivedFreeSpin && result.IsFreeSpin &&
             (result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId &&
                  MidnightVaultBonusPolicy.IsValidDerivedWager(result.WagerPoints) ||
-             arcaneCollector && ArcaneLightningCollector.IsValidCarryWager(baseGame, result.WagerPoints));
+             (arcaneCollector || arcanePaylines) &&
+                 ArcaneLightningCollector.IsValidCarryWager(baseGame, result.WagerPoints));
         var legacyOlympusCarryWager = isPaid && result.IsFreeSpin &&
             result.GameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId &&
             OlympusTumbleDemo.IsLegacyCarryWager(baseGame.Wagering, result.WagerPoints);
@@ -294,6 +333,9 @@ internal static class SlotRoundAudit
             var evaluations = new CombinationEvaluator().Evaluate(result.Reels, effectiveGame, symbolSet);
             var payoutGame = NeonArcadeSlotDefinitions.UsesExpandedArcadeGrid(neonEngineVersion) ? effectiveGame : baseGame;
             var basePayout = new PayoutCalculator().Calculate(evaluations, payoutGame, paytable, result.WagerPoints);
+            var arcanePotion = result.EngineAudit?.ArcanePotionApplied;
+            if (arcanePotion is not null)
+                basePayout = ArcanePotions.BoostPaylines(basePayout, arcanePotion);
             var neonFreeSpinsAwarded = 0;
             if (NeonArcadeSlotDefinitions.IsModel(baseGame))
             {
@@ -380,6 +422,16 @@ internal static class SlotRoundAudit
                 !LinesEqual(lightningLines, expectedLightningLines))
                 Flag("slot-arcane-collector-mismatch",
                     "The lightning collector positions, values, or payout do not match the visible reels.");
+            var expectedWand = ArcaneArchivesEngine.IsWandModel(baseGame)
+                ? ArcaneWandCollector.Calculate(result.Reels, result.WagerPoints, arcanePotion) : null;
+            IReadOnlyList<PaylinePayout> expectedWandLines = expectedWand is null
+                ? [] : [ArcaneWandCollector.CreatePayout(expectedWand)];
+            if (!ArcaneWandCollector.SameCollection(expectedWand, result.ArcaneWandCollection) ||
+                !LinesEqual(result.Payout.Paylines.Where(line => line.PaylineId == ArcaneWandCollector.PaylineId).ToArray(),
+                    expectedWandLines))
+                Flag("slot-arcane-wand-mismatch",
+                    "The wand position, constellation values, or payout do not match the visible reels.");
+
             var offPaylinePoints = foundryCollector || rainbowHarvest ? moneyPoints : 0;
             var listedMoneyPoints = moneyPoints - offPaylinePoints;
             if (moneyLines.Length != (listedMoneyPoints > 0 ? 1 : 0) ||
@@ -393,9 +445,11 @@ internal static class SlotRoundAudit
                 !bananaLines.Select(line => line.PaylineId)
                     .SequenceEqual(Enumerable.Range(801, bananaLines.Length)) ||
                 result.Payout.Paylines.Any(line => line.PaylineId >= 901 &&
-                    line.PaylineId != 901 && line.PaylineId != ArcaneLightningCollector.PaylineId))
+                    line.PaylineId != 901 && line.PaylineId != ArcaneLightningCollector.PaylineId &&
+                    line.PaylineId != ArcaneWandCollector.PaylineId))
                 Flag("slot-feature-payout-mismatch", "The feature payline breakdown does not match its award.");
-            var expectedTotal = checked(basePayout.TotalPoints + moneyPoints + bananaPoints + lightningPoints);
+            var expectedTotal = checked(basePayout.TotalPoints + moneyPoints + bananaPoints + lightningPoints +
+                (expectedWand?.TotalPoints ?? 0));
             if (result.Payout.TotalPoints != expectedTotal ||
                 result.Payout.TotalPoints != checked(result.Payout.Paylines.Sum(line => line.AmountPoints) + offPaylinePoints) ||
                 result.Payout.Paylines.Any(line => line.AmountPoints != line.Matches.Sum(match => match.AmountPoints)))
@@ -403,6 +457,7 @@ internal static class SlotRoundAudit
 
             var fullEnergy = Math.Min(100, checked(Math.Clamp(preSpinEnergy, 0, 100) + energyAward));
             var usesEnergy = !arcaneCollector && !NeonArcadeSlotDefinitions.IsModel(baseGame) &&
+                !arcanePaylines &&
                 (result.GameId != SlotSpecialRoundProfiles.RainbowRealmGameId || effectiveGame.Energy is not null);
             var multiply = usesEnergy && !foundryCollector &&
                 fullEnergy >= 100 && result.Payout.TotalPoints > 0;

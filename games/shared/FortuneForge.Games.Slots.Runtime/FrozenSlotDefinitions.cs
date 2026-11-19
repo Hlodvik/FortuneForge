@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T16:54:32-06:00 | Computer: Vinnabok
 using FortuneForge.Games.Slots;
 
 namespace FortuneForge.Games.Slots.Runtime;
@@ -20,7 +21,9 @@ public sealed record FrozenSlotDefinitions(
 
 public static class SlotDefinitionCloner
 {
-    public static GameDefinition Clone(GameDefinition source) => new()
+    public static GameDefinition Clone(GameDefinition source) => Clone(source, source.Math.ReelSetId);
+
+    internal static GameDefinition Clone(GameDefinition source, string reelSetId) => new()
     {
         Id = source.Id,
         Layout = new GameLayoutDefinition
@@ -45,7 +48,7 @@ public static class SlotDefinitionCloner
         },
         Math = new GameMathDefinition
         {
-            ReelSetId = source.Math.ReelSetId,
+            ReelSetId = reelSetId,
             PaytableId = source.Math.PaytableId,
             PayoutMultiplier = source.Math.PayoutMultiplier,
             PaylinePayoutSteps = [.. source.Math.PaylinePayoutSteps],

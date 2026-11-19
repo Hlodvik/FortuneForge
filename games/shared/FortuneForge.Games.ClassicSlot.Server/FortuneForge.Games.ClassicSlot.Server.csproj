@@ -1,3 +1,4 @@
+<!-- Edited: 2026-11-18T18:14:04-06:00 | Computer: Vinnabok -->
 <Project>
   <PropertyGroup>
     <BaseIntermediateOutputPath>obj/$(GamePackage)/</BaseIntermediateOutputPath>
@@ -10,6 +11,7 @@
     <EnableDefaultItems>false</EnableDefaultItems>
     <SelectedEngineProject>../../$(GamePackage)/src/FortuneForge.Games.$(GamePackage)/FortuneForge.Games.$(GamePackage).csproj</SelectedEngineProject>
     <DefineConstants Condition="'$(GamePackage)' == 'GodsOfOlympus'">$(DefineConstants);OLYMPUS_TUMBLE</DefineConstants>
+    <DefineConstants Condition="'$(GamePackage)' == 'ArcaneArchives'">$(DefineConstants);ARCANE_ARCHIVES</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />

@@ -1,5 +1,7 @@
+// Edited: 2026-11-18T18:41:52-06:00 | Computer: Vinnabok
 export type AudioCategory = 'effect' | 'result'
 export type SlotSoundCueId = string
+export type SlotPotionSoundEvent = 'bottling' | 'activation'
 export type SlotResultSoundEvent = 'bonus' | 'five' | 'no-win' | 'premium' | 'single-three'
 export type SlotSoundCue = {
   source: string
@@ -17,6 +19,7 @@ export type SlotSoundSet = {
   events: {
     ambience: SlotSoundCueId
     buttonClick?: SlotSoundCueId
+    utilityButtonClick?: SlotSoundCueId
     spinButtonClick?: SlotSoundCueId
     stopButtonClick?: SlotSoundCueId
     autoSpinAmbience?: SlotSoundCueId
@@ -32,6 +35,8 @@ export type SlotSoundSet = {
     betStep?: SlotSoundCueId
     arcadeExpansion?: SlotSoundCueId
     collectionArrival?: Readonly<Partial<Record<'sync' | 'rows' | 'paw' | 'rand', SlotSoundCueId>>>
+    collectorWin?: SlotSoundCueId
+    potion?: Readonly<Record<SlotPotionSoundEvent, readonly SlotSoundCueId[]>>
     tripleSevens?: SlotSoundCueId
     bonusComplete?: SlotSoundCueId
     results: Readonly<Record<SlotResultSoundEvent, readonly SlotSoundCueId[]>>

@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T18:42:45-06:00 | Computer: Vinnabok
 import type { SlotSoundCue, SlotSoundSet } from '@fortuneforge/slot-client-core'
 
 const source = (file: string) => new URL(`./assets/audio/${file}`, import.meta.url).href
@@ -8,8 +9,8 @@ const result = (file: string, baseVolume: number): SlotSoundCue => ({
   source: source(file), baseVolume, category: 'result', enabled: true,
 })
 const results: SlotSoundSet['events']['results'] = {
-  bonus: ['bonus-entry'], five: ['five-casino-win'], premium: ['premium-win'],
-  'single-three': ['low-win'], 'no-win': ['soft-miss'],
+  bonus: ['bonus-entry'], five: ['arcane-payline-win'], premium: ['arcane-payline-win'],
+  'single-three': ['arcane-payline-win'], 'no-win': ['soft-miss'],
 }
 
 export const ARCANE_ARCHIVES_SOUNDS: SlotSoundSet = {
@@ -19,7 +20,14 @@ export const ARCANE_ARCHIVES_SOUNDS: SlotSoundSet = {
     'special-ambience': effect('midnight-mix.ogg', 0.24, true),
     'button-click': effect('button-click.ogg', 0.58),
     'bet-step': effect('bet-step.ogg', 0.54),
-    'lever-pull': effect('spin-launch.ogg', 0.65),
+    'arcane-utility-click': effect('arcane-utility-click.ogg', 0.50),
+    'arcane-spin-press': effect('arcane-spin-press.ogg', 0.65),
+    'arcane-payline-win': result('arcane-payline-win.ogg', 0.65),
+    'arcane-wand-win': result('arcane-wand-win.ogg', 0.68),
+    'arcane-potion-bottle-cast': result('arcane-potion-bottle-cast.ogg', 0.46),
+    'arcane-potion-bottle-whoosh': result('arcane-potion-bottle-whoosh.ogg', 0.42),
+    'arcane-potion-use-cast': effect('arcane-potion-use-cast.ogg', 0.50),
+    'arcane-potion-use-award': effect('arcane-potion-use-award.ogg', 0.46),
     'reel-spin': effect('reel-roll.ogg', 0.4, true),
     'reel-stop': effect('reel-land.ogg', 0.62),
     'special-reel-spin': effect('bonus-reel-roll.ogg', 0.4, true),
@@ -28,9 +36,6 @@ export const ARCANE_ARCHIVES_SOUNDS: SlotSoundSet = {
     'collect-rows': effect('collect-dice.ogg', 0.58),
     'collect-paw': effect('collect-sunset.ogg', 0.58),
     'collect-rand': effect('collect-arcade.ogg', 0.58),
-    'low-win': result('win-small.ogg', 0.65),
-    'premium-win': result('win-medium.ogg', 0.65),
-    'five-casino-win': result('win-big.ogg', 0.7),
     'triple-sevens': result('triple-sevens.ogg', 0.67),
     'soft-miss': result('no-win.ogg', 0.3),
     'bonus-entry': result('bonus-entry.ogg', 0.68),
@@ -38,7 +43,13 @@ export const ARCANE_ARCHIVES_SOUNDS: SlotSoundSet = {
   },
   events: {
     themeSuite: true, ambience: 'ambience', specialAmbience: 'special-ambience',
-    buttonClick: 'button-click', betStep: 'bet-step', leverPull: 'lever-pull',
+    buttonClick: 'button-click', utilityButtonClick: 'arcane-utility-click', betStep: 'bet-step',
+    spinButtonClick: 'arcane-spin-press', leverPull: 'arcane-spin-press',
+    collectorWin: 'arcane-wand-win',
+    potion: {
+      bottling: ['arcane-potion-bottle-cast', 'arcane-potion-bottle-whoosh'],
+      activation: ['arcane-potion-use-cast', 'arcane-potion-use-award'],
+    },
     reelSpin: 'reel-spin', reelStop: 'reel-stop',
     specialReelSpin: 'special-reel-spin', specialReelStop: 'special-reel-stop',
     collectionArrival: { sync: 'collect-sync', rows: 'collect-rows', paw: 'collect-paw', rand: 'collect-rand' },

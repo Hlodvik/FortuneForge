@@ -1,74 +1,34 @@
+// Edited: 2026-11-18T18:24:49-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T18:00:18-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:44:43-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T14:43:56-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:27:28-06:00 | Computer: Vinnabok
 import './styles.css'
-import { withEngineGuide } from '@fortuneforge/slot-game-runtime/engine-guide'
+import { getSlotEngineGuideContract } from '@fortuneforge/slot-game-runtime/engine-guide'
 import { ARCANE_ARCHIVES_SOUNDS } from './sounds'
 import { createSlotRulesSet, type SlotExperienceSet } from '@fortuneforge/slot-game-runtime/experience'
 import type { SlotFeatureSet, SlotHelpDefinition } from '@fortuneforge/slot-game-runtime'
 import { defineSlotGame } from '@fortuneforge/slot-game-runtime/manifest'
 import { ARCANE_ARCHIVES_CABINET_THEME } from './cabinetTheme'
 import { ARCANE_ARCHIVES_CATALOG } from './catalog'
-import { ARCANE_ARCHIVES_SYMBOLS } from './symbols'
+import { ARCANE_ARCHIVES_GAME_ID, ARCANE_ARCHIVES_SYMBOLS } from './symbols'
 import { ARCANE_ARCHIVES_WORDMARK } from './presentation'
+import { ArcaneIntroduction } from './ArcaneIntroduction'
 import { ArcaneLightningCollection } from './ArcaneLightningCollection'
+import { ArcaneTomePanel } from './ArcaneTomePanel'
 
-const FEATURES: SlotFeatureSet = {
-  lightningCollection: { collectorSymbol: 'BOLT' },
-  collections: {
-    ariaLabel: 'Forbidden seal shelves',
-    itemLabel: 'seals',
-    presentation: 'spellbook-shelf',
-    entries: [
-      { id: 'sync', label: 'Echo chamber', shortLabel: 'Echo', symbol: 'SEAL_SYNC', requiredCount: 40 },
-      { id: 'rows', label: 'Moonlit stacks', shortLabel: 'Moon', symbol: 'SEAL_ROWS', requiredCount: 40 },
-      { id: 'paw', label: 'Oracle sight', shortLabel: 'Oracle', symbol: 'SEAL_PAW', requiredCount: 40 },
-      { id: 'rand', label: 'Fortune script', shortLabel: 'Script', symbol: 'SEAL_RAND', requiredCount: 40 },
-    ],
-  },
-  moneyGrab: {
-    actorName: 'The enchanted book satchel',
-    awardLabel: 'Mana harvest',
-    collectorSymbol: 'PAW',
-    valueSymbolPrefix: 'RAND_',
-  },
-  specialRound: {
-    id: 'arcane-forbidden-chapter',
-    title: 'Forbidden Chapter',
-    earnLabel: 'Land 3 archive doors for 5 chapters, or shelve 40 matching seals for 10 enhanced chapters.',
-    earnStyle: 'shelf',
-    earnHint: 'Seals remain visible on four archive shelves. Complete one 40-seal shelf to open ten Forbidden Chapters.',
-    activeModes: {
-      sync: 'Echo Chamber · one reel mirrors another',
-      rows: 'Moonlit Stacks · two extra rows open',
-      paw: 'Oracle Sight · stronger harvests appear',
-      rand: 'Fortune Script · a prize column appears',
-      'sync-paw-rand': 'Grand Grimoire · linked reels, stronger harvests, and a prize column',
-    },
-  },
-}
+const FEATURES: SlotFeatureSet = {}
 
+const { paylinePatternIds } = getSlotEngineGuideContract(ARCANE_ARCHIVES_GAME_ID)
 const HELP: SlotHelpDefinition = {
-  paylineCount: 16,
-  paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 19, 20, 21, 22, 23],
-  freeGames: { requiredSymbols: 3, awardedSpins: 5 },
-  extraSections: [
-    {
-      badge: 'LIGHTNING',
-      title: 'Living Lightning collection',
-      body: 'Land a Living Lightning Rune to collect every visible constellation on that spin. Open Book pays 0.5×, Aether pays 1×, and Fortune pays 2× the wager. Each constellation pays once, even when more than one Lightning Rune lands.',
-    },
-    {
-      badge: 'SPELL',
-      title: 'Mana harvest',
-      body: 'The enchanted book satchel gathers every mana shard in the window. Two satchels double the harvest. Three magic wands in a row, column, or diagonal pay 3× the wager.',
-    },
-    {
-      badge: 'SEALS',
-      title: 'Forbidden seal shelves',
-      body: 'Collect 40 seals on any shelf to unlock ten themed free spins.',
-    },
-  ],
+  paylineCount: paylinePatternIds.length,
+  paylinePatternIds,
+  fiveMatchPayoutNote: 'Every full payline uses the same symbol values.',
+  wildSubstitution: false,
+  fourMatchPayoutNote: 'Four matching symbols at either edge pay the three-symbol rate.',
 }
 
-export const ARCANE_ARCHIVES_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide({
+export const ARCANE_ARCHIVES_EXPERIENCE_SET: SlotExperienceSet = {
   id: 'arcane-archives-experience-v1',
   cabinet: ARCANE_ARCHIVES_CABINET_THEME,
   features: FEATURES,
@@ -88,17 +48,36 @@ export const ARCANE_ARCHIVES_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide
   symbols: ARCANE_ARCHIVES_SYMBOLS,
   mascot: null,
   sounds: ARCANE_ARCHIVES_SOUNDS,
-  rules: createSlotRulesSet('arcane-archives-v1'),
+  rules: createSlotRulesSet(ARCANE_ARCHIVES_GAME_ID, {
+    defaultWagerRand: 3,
+    initialReels: [
+      ['2', '3', 'MANDRAKE_ROOT', '6'],
+      ['3', '4', '5', 'POWER'],
+      ['5', '2', '4', '6'],
+      ['4', '6', '5', '3'],
+      ['BOLT', '3', '6', '2'],
+    ],
+  }),
   presentation: {
-    mainWordmark: {
+    winHelp: {
+      Content: ArcaneIntroduction,
+      title: 'Welcome to Arcane Archives',
+      eyebrow: 'How to win',
+      theme: 'arcane-archives',
+      firstOpenStorageKey: 'fortuneforge:arcane-archives:introduction:v1',
+    },
+    winPresentation: 'payline-popups',
+    LightningCollectionOverlay: ArcaneLightningCollection,
+    TomePanel: ArcaneTomePanel,
+    tomeTriggerSymbol: 'ACE',
+    stageWordmark: {
       src: ARCANE_ARCHIVES_WORDMARK,
       width: 768,
       height: 512,
       className: 'arcane-archives__wordmark',
     },
-    LightningCollectionOverlay: ArcaneLightningCollection,
   },
-})
+}
 
 export const ARCANE_ARCHIVES_SLOT_GAME = defineSlotGame({
   id: 'arcane-archives',

@@ -1,0 +1,76 @@
+/* Edited: 2026-11-18T18:19:50-06:00 | Computer: VINNABOK */
+.arcane-potion-aura {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  box-shadow: inset 0 0 1rem color-mix(in srgb, var(--potion-glow), transparent 52%);
+}
+
+.arcane-potion-aura img {
+  position: absolute;
+  top: -20%;
+  left: -12.5%;
+  width: 125%;
+  height: 140%;
+  max-width: none;
+  object-fit: fill;
+}
+
+.arcane-potion-motion {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  overflow: clip;
+  pointer-events: none;
+}
+
+.arcane-potion-motion__clip,
+.arcane-potion-motion__transfer {
+  position: absolute;
+  max-width: none;
+}
+
+.arcane-potion-motion__clip {
+  width: clamp(25rem, 47vw, 38rem);
+  aspect-ratio: 16 / 9;
+  translate: -81.5% -58%;
+}
+
+.arcane-potion-motion__clip[data-action='activation'] {
+  translate: -81.5% -49%;
+}
+
+.arcane-potion-motion__clip[data-face-right] {
+  translate: -18.5% -49%;
+  scale: -1 1;
+}
+
+.arcane-potion-motion__clip img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.arcane-potion-motion__transfer {
+  width: 3.1rem;
+  height: 4rem;
+  object-fit: contain;
+  translate: -50% -75%;
+  filter: drop-shadow(0 0 0.5rem var(--potion-glow));
+  animation: arcane-potion-shelve 530ms ease-in-out both;
+}
+
+@keyframes arcane-potion-shelve {
+  0% { opacity: 0; transform: translateY(-2rem); }
+  20% { opacity: 1; }
+  58% {
+    opacity: 1;
+    transform: translate(
+      calc(var(--potion-transfer-x) * 0.58),
+      calc(var(--potion-transfer-y) * 0.58 - 2.6rem)
+    ) scale(0.88);
+  }
+  100% { opacity: 0; transform: translate(var(--potion-transfer-x), var(--potion-transfer-y)) scale(0.4); }
+}

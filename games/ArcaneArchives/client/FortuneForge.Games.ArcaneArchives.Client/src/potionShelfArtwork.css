@@ -1,0 +1,68 @@
+/* Edited: 2026-11-18T19:04:55-06:00 | Computer: VINNABOK */
+.arcane-potion-rack {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.arcane-potion-rack .arcane-potion-rack__art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.arcane-potion-rack__contents {
+  position: absolute;
+  inset: auto 13% 35%;
+  display: flex;
+  justify-content: center;
+  gap: 2%;
+  height: 72%;
+}
+
+.arcane-potion-rack .arcane-potion-rack__bottle {
+  display: block;
+  width: 23.5%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 0.1rem 0.23rem #130c1c);
+}
+
+.arcane-potion-rack [data-arcane-shelf-ledge] {
+  position: absolute;
+  inset: 60% 14% auto;
+  height: 10%;
+  pointer-events: none;
+}
+
+.arcane-potion-shelf > .arcane-potion-rack {
+  width: min(80%, 14rem);
+  margin-inline: auto;
+}
+
+.arcane-workbench__shelf > .arcane-potion-rack {
+  display: none;
+}
+
+@media (min-width: 1250px) {
+  .arcane-tome-summary[data-workbench] .arcane-workbench .arcane-workbench__shelf {
+    display: grid;
+    justify-items: center;
+    gap: 0.1rem;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .arcane-workbench__shelf > .arcane-potion-rack {
+    display: block;
+  }
+
+  .arcane-workbench__shelf-label {
+    padding: 0.2rem 0.35rem;
+    border-radius: 0.3rem;
+    background: #24152ddd;
+  }
+}

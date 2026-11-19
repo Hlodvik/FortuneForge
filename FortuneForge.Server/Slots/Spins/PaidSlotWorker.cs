@@ -1,4 +1,7 @@
+// Edited: 2026-11-18T18:14:04-06:00 | Computer: Vinnabok
 using System.Text.Json;
+using ArcaneEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
+using ArcanePotions = FortuneForge.Games.ArcaneArchives.ArcanePotions;
 using FortuneForge.Games.GodsOfOlympus;
 using FortuneForge.Games.JadeDragon;
 using FortuneForge.Games.NeonNights;
@@ -22,13 +25,20 @@ internal static class PaidSlotWorker
     internal static async Task<SpinResult> ResolveAsync(GameWorkerClient worker, string gameId, string playerId,
         SlotSpinAdmission admission, CancellationToken cancellationToken)
     {
+        var isArcane = gameId == ArcaneEngine.GameId;
+        var potion = ArcanePotions.ForSpin(admission.ArcanePotionsBefore, admission.IsFreeSpin);
+        if (isArcane && (admission.ArcaneTomeBefore is null || admission.ArcanePotionsBefore is null))
+            throw new GameWorkerUnavailableException(gameId);
+
         var request = new PaidSlotOutcomeRequest(admission.AdmissionId, gameId, playerId, admission.WagerPoints,
             admission.IsFreeSpin, admission.SpecialBoostApplied, admission.EnergyBalance,
             admission.FreeSpinFeatureMode, admission.PityMissesBefore, admission.MathModelId)
         {
             FreeSpinsRemaining = admission.FreeSpinsRemaining,
             IsNeonDiscoPlay = admission.IsNeonDiscoPlay,
-            NeonDiscoMultiplier = admission.IsNeonDiscoPlay ? admission.NeonDiscoMultiplier : null
+            NeonDiscoMultiplier = admission.IsNeonDiscoPlay ? admission.NeonDiscoMultiplier : null,
+            Arcane = isArcane ? new(ArcaneEngine.EngineVersion, admission.ArcaneTomeBefore!.ActivePage is not null,
+                potion is null ? null : new(potion.Id, potion.IngredientId, potion.Potency)) : null
         };
         var response = await worker.InvokeAsync<PaidSlotOutcomeRequest, PaidSlotOutcomeResponse>(gameId, playerId,
             PaidSlotOutcomeProtocol.Route, request, cancellationToken);
@@ -56,7 +66,10 @@ internal static class PaidSlotWorker
                     OlympusTumbleDemo.SupportsPaidEngineVersion(admission.MathModelId) =>
                     StandaloneSlotPackageRegistry.MapTumble(Read<GodsOfOlympusTumbleSpinOutcome>(), showcase: false,
                         admission.PityMissesBefore, admission.EnergyBalance),
-                PaidSlotOutcomeProtocol.ClassicSlotKind when StandaloneSlotPackageRegistry.Owns(gameId) && admission.MathModelId is null =>
+                PaidSlotOutcomeProtocol.ArcaneSlotKind when isArcane =>
+                    StandaloneSlotPackageRegistry.MapOutcome(Read<ClassicSlotSpinOutcome>(), potion),
+                PaidSlotOutcomeProtocol.ClassicSlotKind when !isArcane &&
+                    StandaloneSlotPackageRegistry.Owns(gameId) && admission.MathModelId is null =>
                     StandaloneSlotPackageRegistry.MapOutcome(Read<ClassicSlotSpinOutcome>()),
                 _ => throw new JsonException("The game worker returned an unexpected outcome kind.")
             };
@@ -69,6 +82,11 @@ internal static class PaidSlotWorker
                 admission.MathModelId is { } model && model != audit.EngineVersion && model != result.PaytableId)
                 throw new JsonException("The worker outcome differs from the admitted play.");
 
+            if (isArcane &&
+                (!ArcaneEngine.SupportsPotionEngineVersion(audit.EngineVersion) ||
+                 !ArcaneEngine.MatchesTomeState(result.ReelSetId, admission.ArcaneTomeBefore!)))
+                throw new JsonException("The Arcane worker outcome differs from the admitted engine or Tome state.");
+
             var isNeon = gameId == SlotSpecialRoundProfiles.NeonNightsGameId;
             var isCarPlay = isNeon && admission.IsFreeSpin && admission.FreeSpinFeatureMode == NeonArcadeBonus.PaidCarFeatureMode;
             if (isNeon && audit.FreeSpinFeatureMode != admission.FreeSpinFeatureMode)
@@ -80,7 +98,7 @@ internal static class PaidSlotWorker
                 throw new JsonException("The pending Nitro outcome could not be replayed.");
 
             if (result.NeonNitroWild?.RequiresChoice != true &&
-                (result.JadeDragonCascade is not null || result.OlympusTumble is not null || admission.IsNeonDiscoPlay ||
+                (isArcane || result.JadeDragonCascade is not null || result.OlympusTumble is not null || admission.IsNeonDiscoPlay ||
                  isCarPlay || result.NeonNitroWild is not null) &&
                 SlotRoundAudit.Check(result, result.Payout, isPaid: true).Any(finding => finding.Severity == "error"))
                 throw new JsonException("The paid feature outcome could not be replayed.");

@@ -1,4 +1,9 @@
+// Edited: 2026-11-18T17:59:35-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:30:05-06:00 | Computer: Vinnabok
 using System.Text.Json.Serialization;
+using ArcanePotionBottle = FortuneForge.Games.ArcaneArchives.ArcanePotionBottle;
+using ArcaneTomeView = FortuneForge.Games.ArcaneArchives.ArcaneTomeView;
+using ArcaneWandCollection = FortuneForge.Games.ArcaneArchives.ArcaneWandCollection;
 using FortuneForge.Games.JadeDragon;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Accounts.Models;
@@ -44,6 +49,9 @@ public sealed record SlotSpinEngineAudit(
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? CrucibleRuleVersion { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ArcanePotionBottle? ArcanePotionApplied { get; init; }
 }
 
 public sealed record OlympusTumbleEvidence(bool Showcase, IReadOnlyList<int> DrawIndexes);
@@ -111,6 +119,14 @@ public sealed record SpinResult(
     public long BananaBonusPoints { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ArcaneLightningCollection? LightningCollection { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ArcaneWandCollection? ArcaneWandCollection { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ArcaneTomeView? ArcaneTome { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ArcanePotionView? ArcanePotions { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, long>? ArcaneIngredientsAwarded { get; init; }
     public IReadOnlyDictionary<string, int> SealsAwarded { get; init; } =
         new Dictionary<string, int>(StringComparer.Ordinal);
     public IReadOnlyList<SlotSealCollection> SealCollections { get; init; } = [];

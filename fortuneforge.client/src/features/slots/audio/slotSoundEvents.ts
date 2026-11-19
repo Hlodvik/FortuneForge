@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T18:42:45-06:00 | Computer: Vinnabok
 import type { SlotResultSoundEvent, SlotSoundCueId, SlotSoundSet } from '../config/soundSets'
 import type { SpinResult } from '../types/slots'
 
@@ -5,6 +6,9 @@ import type { SpinResult } from '../types/slots'
 export function getSuiteResultCue(soundSet: SlotSoundSet, result: SpinResult,
   event: SlotResultSoundEvent | null, expectedFreeSpin: boolean, newlyAwardedSpins: number): SlotSoundCueId | undefined {
   if (!soundSet.events.themeSuite) return undefined
+  if (soundSet.events.collectorWin &&
+      ((result.arcaneWandCollection?.totalPoints ?? 0) > 0 || (result.lightningCollection?.totalPoints ?? 0) > 0))
+    return soundSet.events.collectorWin
   if (expectedFreeSpin && result.isFreeSpin && result.freeSpinsRemaining === 0 && newlyAwardedSpins === 0 && soundSet.events.bonusComplete)
     return soundSet.events.bonusComplete
   if (event === 'bonus') return soundSet.events.results.bonus[0]

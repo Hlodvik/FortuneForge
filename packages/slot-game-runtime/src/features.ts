@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T14:43:56-06:00 | Computer: Vinnabok
 import type { ComponentType, Ref } from 'react'
 import type { SlotSymbolId } from '@fortuneforge/slot-client-core'
 
@@ -112,6 +113,7 @@ export type SlotHelpSection = {
 export type SlotHelpDefinition = {
   paylineCount: number
   paylinePatternIds?: readonly number[]
+  wildSubstitution?: boolean
   fiveMatchPayoutNote?: string
   fourMatchPayoutNote?: string
   freeGames?: {

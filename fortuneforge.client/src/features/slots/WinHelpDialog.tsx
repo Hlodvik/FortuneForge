@@ -1,18 +1,15 @@
-import type { ReactNode, RefObject } from 'react'
-import { WinHelpDialog as WinHelpDialogFrame } from '@fortuneforge/slot-client-core/WinHelpDialog'
-import type { SlotDialogTheme } from './hooks/useSlotDialog'
+// Edited: 2026-11-18T18:24:49-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T14:43:56-06:00 | Computer: Vinnabok
+import type { ReactNode } from 'react'
+import { WinHelpDialog as WinHelpDialogFrame, type WinHelpDialogProps as WinHelpDialogFrameProps } from '@fortuneforge/slot-client-core/WinHelpDialog'
 import { FIVE_MATCH_PATTERNS, THREE_MATCH_PATTERNS } from './config/paylinePatterns'
 import type { SlotHelpDefinition } from './config/slotFeatures'
 import { getSlotSymbolDefinition, type SlotSymbolSet } from './config/symbolSets'
 
-type WinHelpDialogProps = {
+type WinHelpDialogProps = Omit<WinHelpDialogFrameProps, 'children'> & {
   children?: ReactNode
-  isOpen: boolean
-  closeButtonRef: RefObject<HTMLButtonElement | null>
   help: SlotHelpDefinition
   symbolSet: SlotSymbolSet
-  onClose: () => void
-  theme?: SlotDialogTheme
 }
 
 
@@ -21,6 +18,7 @@ export function WinHelpDialog({ children, help, symbolSet, ...props }: WinHelpDi
 }
 
 function PaylineRules({ help, symbolSet }: Pick<WinHelpDialogProps, 'help' | 'symbolSet'>) {
+  const usesWildSubstitution = help.wildSubstitution !== false
   const wildDefinition = getSlotSymbolDefinition(symbolSet, 'ACE')
   const paylinePatternIds = help.paylinePatternIds ??
     Array.from({ length: help.paylineCount }, (_, index) => index + 1)
@@ -35,8 +33,8 @@ function PaylineRules({ help, symbolSet }: Pick<WinHelpDialogProps, 'help' | 'sy
   return (
     <>
         <p className="win-help__intro">
-          Matching symbols must connect across neighboring reels. {wildDefinition.label}{' '}
-          is the highest-value symbol and can substitute on a full five-symbol payline.
+          Matching symbols must connect across neighboring reels.
+          {usesWildSubstitution && <> {wildDefinition.label} is the highest-value symbol and can substitute on a full five-symbol payline.</>}
         </p>
 
         <div className="win-help__rules">
@@ -99,7 +97,7 @@ function PaylineRules({ help, symbolSet }: Pick<WinHelpDialogProps, 'help' | 'sy
               <h3>Five symbols</h3>
               <p>
                 A matching symbol across all five reels wins on any of the game’s {help.paylineCount} full
-                payline patterns. {wildDefinition.label} symbols may substitute here.
+                payline patterns.{usesWildSubstitution && <> {wildDefinition.label} symbols may substitute here.</>}
                 {' '}{help.fiveMatchPayoutNote ?? 'The more central patterns pay more.'}
                 {' '}{help.fourMatchPayoutNote ?? 'Four-symbol runs do not pay.'}
               </p>
@@ -179,8 +177,8 @@ function PaylineRules({ help, symbolSet }: Pick<WinHelpDialogProps, 'help' | 'sy
         </div>
 
         <p className="win-help__fine-print">
-          Repeated copies of the same short path pay once. When wilds create several possible
-          symbol matches, the highest-paying valid match is used.
+          Repeated copies of the same short path pay once.
+          {usesWildSubstitution && ' When wilds create several possible symbol matches, the highest-paying valid match is used.'}
         </p>
     </>
   )

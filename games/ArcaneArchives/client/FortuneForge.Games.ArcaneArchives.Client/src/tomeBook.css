@@ -1,0 +1,131 @@
+/* Edited: 2026-11-18T19:05:53-06:00 | Computer: Vinnabok */
+.arcane-tome-dialog[data-section='tome'] {
+  width: min(100%, 37rem);
+}
+
+.arcane-tome-book {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.arcane-tome-book__stage {
+  position: relative;
+  container-type: inline-size;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1254 / 712;
+  overflow: hidden;
+}
+
+.arcane-tome-book__canvas {
+  position: absolute;
+  inset: 0 0 auto;
+  aspect-ratio: 1;
+}
+
+.arcane-tome-book__lectern {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  mask-image: linear-gradient(#000 48%, transparent 56%);
+}
+
+.arcane-tome-book__turn {
+  position: absolute;
+  top: 0;
+  left: 9.569%;
+  width: 82.935%;
+  aspect-ratio: 1040 / 576;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.arcane-tome-book__spread {
+  position: absolute;
+  inset: 8% 16.5% auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.10fr);
+  align-items: center;
+  gap: 7%;
+  min-height: 32%;
+  color: #39251d;
+}
+
+.arcane-tome-book__spread[data-turning='true'] {
+  visibility: hidden;
+}
+
+.arcane-tome-book__page-title {
+  text-align: center;
+  font-family: Palatino, Georgia, serif;
+}
+
+.arcane-tome-book__page-title h3 {
+  margin: 0 0 0.3rem;
+  color: #3e211b;
+  font-size: clamp(1rem, 5cqi, 1.85rem);
+  line-height: 1.06;
+  overflow-wrap: anywhere;
+}
+
+.arcane-tome-book__spread small {
+  font-size: 0.8em;
+}
+
+.arcane-tome-book__spread ul {
+  display: grid;
+  gap: clamp(0.22rem, 1.1cqi, 0.55rem);
+  min-width: 0;
+  padding: 0;
+  list-style: none;
+  font-size: clamp(0.875rem, 3.25cqi, 1.12rem);
+  line-height: 1.18;
+}
+
+.arcane-tome-book__spread ul li {
+  display: grid;
+  grid-template-columns: clamp(1.12rem, 7cqi, 2.7rem) minmax(0, 1fr);
+  gap: clamp(0.18rem, 0.7cqi, 0.5rem);
+  overflow-wrap: anywhere;
+}
+
+.arcane-tome-book__spread ul img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.arcane-tome-book__controls {
+  display: grid;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.arcane-tome-book__controls nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.arcane-tome-book__controls button {
+  min-height: 2.75rem;
+}
+
+.arcane-tome-book__controls button[aria-disabled='true'] {
+  color: #c3a5c5;
+  border-color: #745473;
+  background: #211629;
+  cursor: default;
+}
+
+@media (orientation: landscape) and (max-height: 510px) {
+  .arcane-tome-dialog[data-section='tome'] {
+    width: min(100%, 42rem);
+  }
+
+  .arcane-tome-book {
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    align-items: center;
+  }
+}

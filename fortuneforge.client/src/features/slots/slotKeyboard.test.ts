@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T14:45:30-06:00 | Computer: Vinnabok
 import { describe, expect, it } from 'vitest'
 import { getSlotKeyboardAction } from './slotKeyboard'
 
@@ -14,6 +15,8 @@ describe('slot keyboard controls', () => {
     expect(getSlotKeyboardAction('ArrowLeft', ready)).toBe('decrease-wager')
     expect(getSlotKeyboardAction('ArrowRight', ready)).toBe('increase-wager')
     expect(getSlotKeyboardAction('M', ready)).toBe('toggle-mute')
+    expect(getSlotKeyboardAction('m', { ...ready, isEditableTarget: true, hasOpenDialog: true })).toBe('toggle-mute')
+    expect(getSlotKeyboardAction('m', { ...ready, repeated: true })).toBeNull()
     expect(getSlotKeyboardAction('?', ready)).toBe('open-help')
   })
 

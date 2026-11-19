@@ -1,3 +1,6 @@
+// Edited: 2026-11-18T17:59:35-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:30:13-06:00 | Computer: Vinnabok
+using FortuneForge.Games.ArcaneArchives;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Models;
 
@@ -73,6 +76,12 @@ public interface IAccountStore
         SlotSpinAdmission admission,
         DateTime settledAtUtc,
         CancellationToken cancellationToken);
+
+    Task<ArcaneTomeState> SelectArcaneTomePageAsync(
+        string userId, string page, bool activate, DateTime nowUtc, CancellationToken cancellationToken);
+
+    Task<ArcanePotionState> ActivateArcanePotionAsync(
+        string userId, long potionId, DateTime nowUtc, CancellationToken cancellationToken);
 
     Task<SlotStateResponse> GetSlotStateAsync(
         string userId,

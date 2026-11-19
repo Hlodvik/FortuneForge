@@ -1,4 +1,7 @@
+// Edited: 2026-11-18T18:01:37-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:30:57-06:00 | Computer: Vinnabok
 using System.Collections.Concurrent;
+using ArcanePotions = FortuneForge.Games.ArcaneArchives.ArcanePotions;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
@@ -104,6 +107,14 @@ public sealed partial class SpinService
                 admission.SpecialBoostApplied, admission.EnergyBalance, admission.FreeSpinFeatureMode,
                 admission.PityMissesBefore, admission.IsFreeSpin);
             return foundry with { ChargedWagerCents = admission.ChargedWagerCents };
+        }
+        if (useStandaloneSlotPackages && gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId &&
+            admission.ArcaneTomeBefore is { } tome)
+        {
+            var arcane = standaloneSlotPackages.SpinArcaneTome(admission.WagerPoints, playerId,
+                admission.EnergyBalance, admission.PityMissesBefore, admission.IsFreeSpin, tome.ActivePage is not null,
+                ArcanePotions.ForSpin(admission.ArcanePotionsBefore, admission.IsFreeSpin));
+            return arcane with { ChargedWagerCents = admission.ChargedWagerCents };
         }
         if (useStandaloneSlotPackages && standaloneSlotPackages.TrySpin(gameId,
                 admission.WagerPoints, playerId, admission.SpecialBoostApplied,

@@ -1,0 +1,382 @@
+/* Edited: 2026-11-18T19:05:53-06:00 | Computer: Vinnabok */
+/* Edited: 2026-11-18T18:56:23-06:00 | Computer: VINNABOK */
+/* Edited: 2026-11-18T18:51:17-06:00 | Computer: VINNABOK */
+/* Edited: 2026-11-18T18:34:08-06:00 | Computer: VINNABOK */
+/* Edited: 2026-11-18T18:00:18-06:00 | Computer: Vinnabok */
+/* Edited: 2026-11-18T16:29:57-06:00 | Computer: Vinnabok */
+.arcane-tome-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
+  color: #ffe9b7;
+  font: 700 0.75rem/1.25 system-ui, sans-serif;
+}
+
+.arcane-tome-summary button,
+.arcane-tome-dialog button {
+  min-height: 2rem;
+  padding: 0.3rem 0.75rem;
+  color: #fff2d6;
+  background: #26162e;
+  border: 1px solid #bb945c;
+  border-radius: 0.45rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.arcane-tome-summary button:hover,
+.arcane-tome-dialog button:hover,
+.arcane-tome-dialog button[aria-pressed='true'] {
+  background: #4b3255;
+}
+
+.arcane-tome-dialog button:disabled {
+  cursor: default;
+}
+
+.arcane-tome-backdrop {
+  position: fixed;
+  z-index: 210;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0.75rem;
+  background: #10091ac9;
+}
+
+.arcane-tome-dialog {
+  --arcane-tome-dialog-padding: clamp(0.8rem, 3vw, 1.35rem);
+  display: grid;
+  gap: 0.65rem;
+  width: min(100%, 32rem);
+  max-height: 90dvh;
+  overflow: auto;
+  padding: var(--arcane-tome-dialog-padding);
+  box-sizing: border-box;
+  border: 1px solid #bb945c;
+  border-radius: 0.7rem;
+  background: #22152b;
+  color: #fff2d6;
+  font: 600 0.9rem/1.4 system-ui, sans-serif;
+}
+
+.arcane-tome-dialog header,
+.arcane-tome-dialog li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.arcane-tome-dialog header {
+  justify-content: space-between;
+}
+
+.arcane-tome-dialog :is(h2, p, ul) {
+  margin: 0;
+}
+
+.arcane-tome-dialog h2 {
+  font-family: Palatino, Georgia, serif;
+}
+
+.arcane-tome-close svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.arcane-tome-dialog .arcane-tome-activate {
+  background: #593866;
+}
+
+@media (max-width: 480px), (pointer: coarse) {
+  .arcane-tome-summary button,
+  .arcane-tome-dialog button {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  .arcane-tome-dialog header {
+    position: sticky;
+    z-index: 1;
+    top: calc(-1 * var(--arcane-tome-dialog-padding));
+    margin-top: calc(-1 * var(--arcane-tome-dialog-padding));
+    padding-top: var(--arcane-tome-dialog-padding);
+    background: inherit;
+  }
+}
+
+.arcane-tome-summary[data-workbench] {
+  min-height: 2.1rem;
+}
+
+.arcane-tome-summary output {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+}
+
+.arcane-tome-summary .arcane-workbench__active-potion {
+  color: #efceff;
+}
+
+.arcane-workbench__mobile-status,
+.arcane-workbench__mobile-units,
+.arcane-workbench__fill {
+  display: none;
+}
+
+.arcane-workbench {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+@media (pointer: coarse) and (orientation: landscape) and (max-width: 1000px) and (max-height: 500px) {
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .arcane-archives__wordmark {
+    width: 6.5rem;
+  }
+
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] > .slots-page__keyboard-help {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    margin: 0;
+    pointer-events: none;
+  }
+
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__mute-shortcut {
+    pointer-events: auto;
+  }
+
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__playbar {
+    position: absolute;
+    top: 5.5rem;
+    inset-inline-end: calc(100% + 1.25rem);
+    width: max-content;
+    margin: 0;
+  }
+
+  .arcane-tome-summary {
+    /* The touch controls can be wider than the short-screen cabinet. */
+    contain: inline-size;
+    position: relative;
+  }
+
+  .arcane-workbench {
+    flex: none;
+    inline-size: max-content;
+    max-inline-size: calc(100vw - 2rem);
+  }
+
+  .arcane-tome-summary output {
+    position: absolute;
+    inset-inline-start: calc(100% + 1.25rem);
+    bottom: calc(100% + 0.65rem);
+    inline-size: min(15rem, calc((100vw - 100%) / 2 - 2rem));
+  }
+}
+
+.arcane-workbench img {
+  display: none;
+}
+
+.arcane-workbench b {
+  color: #eccc8c;
+}
+
+.arcane-cauldron {
+  display: grid;
+  gap: 0.65rem;
+  justify-items: center;
+  text-align: center;
+}
+
+.arcane-cauldron__art {
+  width: min(65%, 11rem);
+}
+
+.arcane-cauldron ol {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+}
+
+.arcane-cauldron ol li {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.35rem;
+  background: #332242;
+}
+
+.arcane-cauldron ol img,
+.arcane-potion-shelf img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.arcane-potion-preview,
+.arcane-potion-shelf li > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.arcane-potion-preview {
+  padding: 0.65rem;
+  border: 1px solid #77608c;
+  border-radius: 0.5rem;
+  background: #342345;
+}
+
+.arcane-potion-preview span,
+.arcane-potion-shelf li span {
+  color: #d4bedf;
+  font-size: 0.85em;
+}
+
+.arcane-potion-shelf {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.arcane-potion-shelf ul {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0;
+}
+
+.arcane-potion-shelf ul li {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  min-height: 3.2rem;
+  padding: 0.4rem;
+  border-bottom: 1px solid #6c506d;
+}
+
+@media (min-width: 1250px) {
+  .arcane-tome-summary[data-workbench] .arcane-workbench {
+    position: absolute;
+    z-index: 3;
+    top: clamp(7rem, 18vh, 12rem);
+    right: calc(100% + 1.25rem);
+    width: clamp(8rem, 13vw, 12rem);
+    height: clamp(14rem, 28vw, 19rem);
+    isolation: isolate;
+  }
+
+  .arcane-tome-summary .arcane-workbench :is(.arcane-workbench__tome, .arcane-workbench__pot) {
+    position: absolute;
+    display: grid;
+    justify-items: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .arcane-tome-summary .arcane-workbench__tome {
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  .arcane-tome-summary .arcane-workbench__pot {
+    top: 46%;
+    left: 14%;
+    width: 72%;
+  }
+
+  .arcane-workbench img {
+    display: block;
+    width: 100%;
+    transition: filter 0.2s ease;
+  }
+
+  .arcane-workbench button:hover img,
+  .arcane-workbench button:focus-visible img {
+    filter: brightness(1.18);
+  }
+
+  .arcane-workbench__tome span {
+    position: absolute;
+    top: 22%;
+    color: #361e20;
+    font-family: Palatino, Georgia, serif;
+    font-size: 1rem;
+  }
+
+  .arcane-workbench__pot span {
+    margin-top: -1rem;
+    padding: 0.2rem 0.35rem;
+    color: #fff2d6;
+    border-radius: 0.3rem;
+    background: #24152ddd;
+  }
+
+  .arcane-workbench .arcane-workbench__stir {
+    width: 100%;
+    translate: -50% 0;
+  }
+
+  .arcane-workbench .arcane-workbench__stir > img {
+    display: none;
+  }
+
+  .arcane-workbench__shelf {
+    position: absolute;
+    top: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcane-workbench img {
+    transition: none;
+  }
+}
+
+@media (max-width: 600px), (pointer: coarse) and (orientation: landscape) and (max-width: 1000px) and (max-height: 500px) {
+  .arcane-workbench__wide-status,
+  .arcane-workbench__wide-units {
+    display: none;
+  }
+
+  .arcane-workbench__mobile-units {
+    display: inline;
+  }
+
+  .arcane-workbench__fill {
+    display: block;
+    inline-size: 100%;
+    block-size: 0.22rem;
+    margin-top: 0.22rem;
+    accent-color: #eccc8c;
+  }
+
+  .arcane-tome-summary output {
+    flex-basis: 100%;
+    min-inline-size: 0;
+  }
+
+  .arcane-workbench__mobile-status {
+    display: grid;
+    gap: 0.18rem;
+    max-inline-size: 22rem;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid #745973;
+    border-radius: 0.45rem;
+    background: #1b1125e8;
+    color: #fff2d6;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  .arcane-workbench__mobile-status b {
+    color: #eccc8c;
+  }
+}

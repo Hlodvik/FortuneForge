@@ -1,9 +1,15 @@
+// Edited: 2026-11-18T18:01:37-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:54:32-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:30:05-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T14:45:02-06:00 | Computer: Vinnabok
 using FortuneForge.Games.Slots.Runtime;
 using GodsOfOlympusTumbleSpinOutcome = FortuneForge.Games.GodsOfOlympus.GodsOfOlympusTumbleSpinOutcome;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Reels;
 using ArcaneEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
+using ArcanePotionBottle = FortuneForge.Games.ArcaneArchives.ArcanePotionBottle;
+using ArcaneWandCollector = FortuneForge.Games.ArcaneArchives.ArcaneWandCollector;
 using CandyEngine = FortuneForge.Games.CandyCarnival.CandyCarnivalEngine;
 using CosmicEngine = FortuneForge.Games.CosmicFortune.CosmicFortuneEngine;
 using DesertEngine = FortuneForge.Games.DesertTreasures.DesertTreasuresEngine;
@@ -82,10 +88,12 @@ public sealed class StandaloneSlotPackageRegistry
 
     private readonly IReadOnlyDictionary<string, SpinDelegate> spinners;
     private readonly OlympusEngine olympusEngine;
+    private readonly ArcaneEngine arcaneEngine;
 
     public StandaloneSlotPackageRegistry(IRandomIndexSource random)
     {
         olympusEngine = new OlympusEngine(random);
+        arcaneEngine = new ArcaneEngine(random);
         spinners = new Dictionary<string, SpinDelegate>(StringComparer.Ordinal)
         {
             [WukongEngine.GameId] = new WukongEngine(random).Spin,
@@ -95,7 +103,7 @@ public sealed class StandaloneSlotPackageRegistry
             [ReelRichesEngine.GameId] = new ReelRichesEngine(random).Spin,
             [HighNoonEngine.GameId] = new HighNoonEngine(random).Spin,
             [RoyalEngine.GameId] = new RoyalEngine(random).Spin,
-            [ArcaneEngine.GameId] = new ArcaneEngine(random).Spin,
+            [ArcaneEngine.GameId] = arcaneEngine.Spin,
             [CosmicEngine.GameId] = new CosmicEngine(random).Spin,
             [OceanEngine.GameId] = new OceanEngine(random).Spin,
             [SamuraiEngine.GameId] = new SamuraiEngine(random).Spin,
@@ -115,8 +123,8 @@ public sealed class StandaloneSlotPackageRegistry
     public static SymbolSetDefinition? GetSymbolSet(string id) => Definitions.Values
         .Select(package => package.Symbols()).FirstOrDefault(value => value.Id == id);
 
-    public static ReelSetDefinition? GetReelSet(string id) => Definitions.Values
-        .Select(package => package.Reels()).FirstOrDefault(value => value.Id == id);
+    public static ReelSetDefinition? GetReelSet(string id) => ArcaneEngine.FindReelSet(id) ??
+        Definitions.Values.Select(package => package.Reels()).FirstOrDefault(value => value.Id == id);
 
     public static PaytableDefinition? GetPaytable(string id) => Definitions.Values
         .Select(package => package.Paytable()).FirstOrDefault(value => value.Id == id);
@@ -136,7 +144,12 @@ public sealed class StandaloneSlotPackageRegistry
         return true;
     }
 
-    internal static SpinResult MapOutcome(ClassicSlotSpinOutcome outcome)
+    public SpinResult SpinArcaneTome(long wagerPoints, string playerId, long currentEnergyBalance,
+        int? persistedPityMisses, bool isFreeSpin, bool tomeActive, ArcanePotionBottle? potion) =>
+        MapOutcome(arcaneEngine.SpinTome(wagerPoints, playerId,
+            currentEnergyBalance, persistedPityMisses, isFreeSpin, tomeActive, potion), potion);
+
+    internal static SpinResult MapOutcome(ClassicSlotSpinOutcome outcome, ArcanePotionBottle? potion = null)
     {
         SlotSpecialRoundProfiles.TryGet(outcome.GameId, out var profile);
         var audit = outcome.Audit;
@@ -156,12 +169,16 @@ public sealed class StandaloneSlotPackageRegistry
                 audit.FeatureMode, audit.GenerationAttempts,
                 audit.ReelsBeforeFrequency, audit.ReelsAfterFrequency)
             {
-                IsDerivedFreeSpin = outcome.IsFreeSpin && outcome.GameId == ArcaneEngine.GameId
+                IsDerivedFreeSpin = outcome.IsFreeSpin && outcome.GameId == ArcaneEngine.GameId,
+                ArcanePotionApplied = potion
             },
             MonkeyPawCount = outcome.PawCount,
             MoneyGrabPoints = outcome.CollectorPoints,
             BananaBonusPoints = outcome.PatternBonusPoints,
-            LightningCollection = outcome.GameId == ArcaneEngine.GameId
+            ArcaneWandCollection = ArcaneEngine.IsWandModel(audit.BaseGame)
+                ? ArcaneWandCollector.Calculate(outcome.Reels, outcome.WagerPoints, potion)
+                : null,
+            LightningCollection = ArcaneLightningCollector.IsModel(audit.BaseGame)
                 ? ArcaneLightningCollector.Calculate(outcome.Reels, outcome.WagerPoints)
                 : null,
             SealsAwarded = outcome.CollectionsAwarded

@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T16:27:28-06:00 | Computer: Vinnabok
 import arcaneArchivesTitle from '../../assets/catalogue/slots/arcane-archives-title-v1.webp'
 import candyCarnivalTitle from '../../assets/catalogue/slots/candy-carnival-title-v2.webp'
 import cosmicFortuneTitle from '../../assets/catalogue/slots/cosmic-fortune-title-v1.webp'
@@ -50,7 +51,7 @@ const catalogDefinitions: readonly SlotGameCatalogDefinition[] = [
   hostCatalog('royal-draw', 'Royal Draw', 'Royal Draw',
     'Take a seat at the high-stakes table, complete all four suits, and let the dealer tray sweep the jackpot chips.', royalDrawTitle),
   hostCatalog('arcane-archives', 'Arcane Archives', 'Arcane Archives',
-    'Open the forbidden stacks, build four seal shelves, and let an enchanted satchel gather raw mana.', arcaneArchivesTitle),
+    'Match golden glyphs on five reels in an enchanted library.', arcaneArchivesTitle),
   hostCatalog('cosmic-fortune', 'Cosmic Fortune', 'Cosmic Fortune',
     'Launch through the lucky stars, assemble four planetary orbits, and sweep up dark-matter prizes.', cosmicFortuneTitle),
   GOLD_FOUNDRY_CATALOG,

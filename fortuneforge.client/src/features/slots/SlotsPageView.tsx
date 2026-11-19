@@ -1,6 +1,12 @@
+// Edited: 2026-11-18T18:41:52-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T18:24:49-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T18:11:03-06:00 | Computer: VINNABOK
+// Edited: 2026-11-18T18:00:18-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T14:43:56-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:30:40-06:00 | Computer: Vinnabok
 import { ResponsiveSlotImage } from './components/ResponsiveSlotImage'
 import { GODS_TUMBLE_MULTIPLIERS } from '@fortuneforge/games-gods-of-olympus/tumble'
-import { useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 
 
@@ -84,6 +90,15 @@ export function SlotsPageView(controller: SlotsPageController) {
     lastWin,
     lastSpinOutcome,
     lightningCollection,
+    tomeState,
+    potions,
+    activatePotion,
+    confirmedPotionUse,
+    playPotionCue,
+    tomeIngredientsAwarded,
+    isArcaneUpdating,
+    arcaneError,
+    changeTomePage,
     mascotActionKey,
     mascotPhase,
     mascotSet,
@@ -122,11 +137,26 @@ export function SlotsPageView(controller: SlotsPageController) {
     wagerIndex,
     wagerOptions,
     winAwardFlyover,
+    spinTotalRef,
+    winAmountRef,
     winningPaylineCount,
     winningPaylines,
     winningPositions,
   } = controller
   const LightningCollectionOverlay = presentation?.LightningCollectionOverlay
+  const TomePanel = presentation?.TomePanel
+  const winHelp = presentation?.winHelp
+  const WinHelpContent = winHelp?.Content
+  const firstOpenStorageKey = winHelp?.firstOpenStorageKey
+  const closeHelp = () => setIsHelpOpen(false)
+  useEffect(() => {
+    if (!firstOpenStorageKey) return
+    try {
+      if (window.localStorage.getItem(firstOpenStorageKey) === '1') return
+      window.localStorage.setItem(firstOpenStorageKey, '1')
+    } catch { /* The guide can still open if browser storage is unavailable. */ }
+    setIsHelpOpen(true)
+  }, [firstOpenStorageKey, setIsHelpOpen])
   const TumbleAwardBadge = presentation?.TumbleAwardBadge
   const CollectionFlyover = presentation?.CollectionFlyover
   const specialBackdropImage = presentation?.specialBackdropImage
@@ -170,6 +200,7 @@ export function SlotsPageView(controller: SlotsPageController) {
   const usesPiratesControls = isPiratesFortune || usesSidecarControls
   const activeWagerLabel = formatRand(activeWagerDisplay)
   const isRainbowRealm = cabinetTheme.id === 'rainbow-realm-fruit-arcade-v1'
+  const usesPaylinePopups = presentation?.winPresentation === 'payline-popups'
   const paylineTrace = cabinetTheme.paylineTrace
   const usesPaylineTrace = isRainbowRealm || Boolean(paylineTrace)
   const tracedPaylines = useMemo(() => isRainbowRealm
@@ -252,14 +283,14 @@ export function SlotsPageView(controller: SlotsPageController) {
     freeSpinsRemaining,
     useFreeGameForNextSpin,
     featureAward: lightningCollection
-      ? { label: 'Lightning collection', amount: slotPointsToRand(lightningCollection.totalPoints, controller.pointValueInCents) }
+      ? { label: 'Constellation collection', amount: slotPointsToRand(lightningCollection.totalPoints, controller.pointValueInCents) }
       : moneyGrabFeature?.presentation === 'separate-award' && lastCollectorAward > 0
         ? { label: moneyGrabFeature.awardLabel, amount: lastCollectorAward }
         : undefined,
   })
   // Moving reels and the Spin/Stop control already communicate an ordinary
   // spin. Reserve this extra panel for wins, features, and actionable errors.
-  const showOutcomeBanner = slotOutcome.tone !== 'neutral' && !reelRichesIntroVisible &&
+  const showOutcomeBanner = !(usesPaylinePopups && slotOutcome.tone === 'win') && slotOutcome.tone !== 'neutral' && !reelRichesIntroVisible &&
     !rainbowIntroVisible && rainbowBonusSummary === null &&
     !((isReelRiches || isRainbowRealm) && isSpecialGameActive && slotOutcome.label === 'Free game ready') &&
     !(isGodsTumbleBoard && slotOutcome.tone === 'win')
@@ -268,6 +299,7 @@ export function SlotsPageView(controller: SlotsPageController) {
       className="slots-page__help-button"
       type="button"
       aria-label="How to win"
+      data-slot-utility-cue
       aria-haspopup="dialog"
       aria-expanded={isHelpOpen}
       onClick={() => {
@@ -282,6 +314,7 @@ export function SlotsPageView(controller: SlotsPageController) {
       className="slots-page__settings-button"
       type="button"
       aria-label="Open settings"
+      data-slot-utility-cue
       aria-haspopup="dialog"
       aria-expanded={isSettingsOpen}
       onClick={() => {
@@ -299,7 +332,9 @@ export function SlotsPageView(controller: SlotsPageController) {
   const guideSymbols = symbolSet
   const symbolValueGuide = !isGodsTumbleBoard && <SymbolValueGuide
     symbolSet={guideSymbols}
-    showSidePanel={usesPiratesControls}
+    showSidePanel={usesPiratesControls && !isArcaneArchives}
+    wager={isArcaneArchives ? activeWagerDisplay : undefined}
+    pointValueInCents={isArcaneArchives ? controller.pointValueInCents : undefined}
     sidePanelClassName={isPiratesFortune ? 'symbol-value-guide--pirates' : undefined}
     showValueTokens={Boolean(moneyGrabFeature?.valueSymbolPrefix)}
     isOpen={controller.isSymbolGuideOpen}
@@ -452,7 +487,7 @@ export function SlotsPageView(controller: SlotsPageController) {
           </div>
           )}
 
-          <div ref={cabinetRef} className={`slots-page__cabinet-spotlight${collectionAwardPresentation || isSpecialGameActive ? ' slots-page__cabinet-spotlight--lit' : ''}`}>
+          <div ref={cabinetRef} data-result-ready={hasCompletedSpin || undefined} className={`slots-page__cabinet-spotlight${collectionAwardPresentation || isSpecialGameActive ? ' slots-page__cabinet-spotlight--lit' : ''}`}>
             <SlotMachine
               cabinetTheme={activeCabinetTheme}
               reelCount={displayedReels.length}
@@ -483,6 +518,9 @@ export function SlotsPageView(controller: SlotsPageController) {
                 style={reelStripStyle(reelIndex)}
               >
                 {displayedReels[reelIndex].map((symbol, rowIndex) => {
+                  if (tomeState?.activePage && symbol === presentation?.tomeTriggerSymbol) {
+                    return <div key={rowIndex} className="slot-symbol" aria-hidden="true" />
+                  }
                   const isTumbleHighlight = godsTumbleHighlights?.some(
                     (position) => position.reel === reelIndex && position.row === rowIndex,
                   )
@@ -548,8 +586,8 @@ export function SlotsPageView(controller: SlotsPageController) {
                 steadyTrailClassName: isRainbowRealm ? 'rainbow-realm__steady-payline' : undefined,
                 reducedMotionTrail: !isRainbowRealm,
                 labelInset: isRainbowRealm ? 0 : 64,
-                labelOffset: isRainbowRealm ? 0 : 16,
-                labelMinimumY: isRainbowRealm ? 0 : 26,
+                labelOffset: isRainbowRealm ? 0 : usesPaylinePopups ? 22 : 16,
+                labelMinimumY: isRainbowRealm ? 0 : usesPaylinePopups ? 34 : 26,
                 labelBaseline: isRainbowRealm ? 'central' : undefined,
               }}
               formatWinAmount={points => `+${formatVaultMoney(slotPointsToRand(points, controller.pointValueInCents))}`}
@@ -561,6 +599,28 @@ export function SlotsPageView(controller: SlotsPageController) {
             />}
 
           </div>
+
+          {usesPaylinePopups && <div className="slots-page__spin-total" ref={spinTotalRef}>
+            {hasCompletedSpin && !isSpinning && (winningPaylines.length + Number(lightningCollection !== null)) > 1 && lastWin > 0 && (
+              <output className="slots-page__win-amount" aria-label="Total win">+{formatVaultMoney(lastWin)}</output>
+            )}
+          </div>}
+
+          {TomePanel && tomeState && <TomePanel
+            state={tomeState}
+            potions={potions}
+            awarded={tomeIngredientsAwarded}
+            cabinetRef={cabinetRef}
+            settledSpin={hasCompletedSpin ? { key: lastSpinOutcomeKey, reels: displayedReels } : null}
+            reducedMotion={prefersReducedMotion}
+            disabled={isSpinning || isArcaneUpdating}
+            error={arcaneError}
+            onOpen={() => setIsAutoSpinning(false)}
+            onChangePage={(page, activate) => { void changeTomePage(page, activate) }}
+            onUsePotion={(id) => { void activatePotion(id) }}
+            confirmedPotionUse={confirmedPotionUse}
+            onPotionCue={playPotionCue}
+          />}
 
           {isGodsTumbleBoard && (
             <div className="gods-tumble__score" role="status" aria-atomic="true">
@@ -609,7 +669,7 @@ export function SlotsPageView(controller: SlotsPageController) {
             {usesPiratesControls ? (
               <SidecarSpinControls
                 activeWager={activeWagerDisplay}
-                disabled={isSpinServiceDisabled || (usesSidecarControls && rainbowBonusSummary !== null)}
+                disabled={isSpinServiceDisabled || isArcaneUpdating || (usesSidecarControls && rainbowBonusSummary !== null)}
                 freeSpinsRemaining={freeSpinsRemaining}
                 isAutoSpinning={isAutoSpinning}
                 isFreeSpinBadgePopping={isFreeSpinBadgePopping}
@@ -714,7 +774,7 @@ export function SlotsPageView(controller: SlotsPageController) {
               document.body,
             )}
           </div>
-          {(balanceActionHref !== null || !usesPiratesControls) && <div className="slots-page__local-controls">
+          {(!isArcaneArchives && (balanceActionHref !== null || !usesPiratesControls)) && <div className="slots-page__local-controls">
             <div className="slots-page__utility-controls" aria-label="Game options">
               {balanceActionHref !== null && <PaymentAlertsMenu />}
               {!usesPiratesControls && utilityButtons}
@@ -961,11 +1021,13 @@ export function SlotsPageView(controller: SlotsPageController) {
         </div>
       )}
 
-      {winAwardFlyover && !hasPaylineTrace && (
+      {winAwardFlyover && (!hasPaylineTrace || usesPaylinePopups) && (
         <div
           key={winAwardFlyover.id}
           className={[
             'slots-page__win-award',
+            usesPaylinePopups ? 'slots-page__win-award--payline-popup' : '',
+            winAwardFlyover.toSpinTotal ? 'slots-page__win-award--to-total' : '',
             `slots-page__win-award--${winAwardFlyover.winTier}`,
             `slots-page__win-award--${winAwardFlyover.tier}`,
             winAwardFlyover.isFlying ? 'slots-page__win-award--flying' : '',
@@ -975,16 +1037,19 @@ export function SlotsPageView(controller: SlotsPageController) {
             left: winAwardFlyover.left,
             top: winAwardFlyover.top,
             animationDuration: `${winAwardFlyover.durationMs}ms`,
+            '--win-end-scale': winAwardFlyover.endScale,
             '--win-travel-x': `${winAwardFlyover.travelX}px`,
             '--win-travel-y': `${winAwardFlyover.travelY}px`,
           } as CSSProperties}
         >
-          <span>{lastSpinOutcome?.title ?? (winAwardFlyover.winTier === 'big'
+          {!winAwardFlyover.toSpinTotal && <span>{lastSpinOutcome?.title ?? (winAwardFlyover.winTier === 'big'
             ? 'Big win'
             : winAwardFlyover.winTier === 'great'
               ? 'Great win'
-              : 'Win')}</span>
-          <strong>+{formatRand(winAwardFlyover.displayAmount)}</strong>
+              : 'Win')}</span>}
+          <strong ref={winAmountRef} className={usesPaylinePopups ? 'slots-page__win-amount' : undefined}>
+            +{usesPaylinePopups ? formatVaultMoney(winAwardFlyover.displayAmount) : formatRand(winAwardFlyover.displayAmount)}
+          </strong>
         </div>
       )}
 
@@ -1027,9 +1092,13 @@ export function SlotsPageView(controller: SlotsPageController) {
         closeButtonRef={helpCloseButtonRef}
         symbolSet={guideSymbols}
         help={help}
-        onClose={() => setIsHelpOpen(false)}
+        onClose={closeHelp}
+        title={winHelp?.title}
+        eyebrow={winHelp?.eyebrow}
+        theme={winHelp?.theme}
       >
-        {usesGodsTumble && !useFreeGameForNextSpin && !isSpecialGameActive ? (
+        {WinHelpContent ? <WinHelpContent onClose={closeHelp} />
+          : usesGodsTumble && !useFreeGameForNextSpin && !isSpecialGameActive ? (
           <>
             <p className="win-help__intro">Match eight or more of the same symbol anywhere on the reels.</p>
             <p className="win-help__intro">Matching symbols clear, the symbols above fall into place, and new ones drop in. Each new match adds to the same spin’s win.</p>

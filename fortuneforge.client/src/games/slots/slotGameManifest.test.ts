@@ -1,3 +1,5 @@
+// Edited: 2026-11-18T14:45:30-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:27:57-06:00 | Computer: Vinnabok
 import { existsSync } from 'node:fs'
 import { createElement, createRef } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -117,6 +119,7 @@ describe('slot game manifests', () => {
     expect(new Set(serverGameIds).size).toBe(serverGameIds.length)
     expect(serverSymbolSetIds).toEqual(SLOT_GAME_MANIFESTS.map(game =>
       game.id === 'dragon-hoard' ? 'midnight-vault-symbols-v1'
+        : game.id === 'arcane-archives' ? 'arcane-archives-payline-symbols-v2'
         : game.id === 'gold-foundry' ? 'gold-foundry-symbols-v1'
         : game.id === 'neon-nights' ? 'neon-arcade-symbols-v3'
         : game.id === 'rainbow-realm' ? 'rainbow-realm-symbols-v1' : 'classic-symbols-v3'))
@@ -178,9 +181,33 @@ describe('slot game manifests', () => {
     }
   })
 
-  it('registers Arcane Archives and Cosmic Fortune with distinct collection presentations', () => {
+  it('defines the sixteen Arcane Archives reel symbols and five payline symbols', () => {
+    const arcane = ARCANE_ARCHIVES_SLOT_GAME.experience
+    expect(arcane.features).toEqual({})
+    expect(arcane.rules.defaultWagerRand).toBe(3)
+    expect(arcane.help.wildSubstitution).toBe(false)
+    expect(arcane.help.freeGames).toBeUndefined()
+    expect(arcane.symbols.guideNote).toBeUndefined()
+    expect(arcane.symbols.guideEntries.map(entry => entry.symbol)).toEqual(['2', '3', '4', '5', '6'])
+    expect(Object.keys(arcane.symbols.definitions)).toHaveLength(16)
+    expect(Object.values(arcane.symbols.definitions).map(symbol => symbol?.label)).toEqual([
+      'Ogham Right', 'Ogham Left', 'Ogham Three Slashes', 'VII', 'Pentagram',
+      'Enchanted Wand', 'Aether Constellation', 'Fortune Constellation', 'Lightning Constellation', 'Grand Grimoire',
+      'Mandrake Root', 'Nightshade Berries', 'Mooncap Mushroom', 'Phoenix Feather', 'Wolfsbane Wine', 'Quicksilver',
+    ])
+    expect(arcane.rules.initialReels).toHaveLength(5)
+    for (const reel of arcane.rules.initialReels) {
+      expect(reel).toHaveLength(4)
+      expect(reel.every(symbol => arcane.symbols.definitions[symbol] !== undefined)).toBe(true)
+    }
+    expect(arcane.symbols.definitions['7']).toBeUndefined()
+    expect(ARCANE_ARCHIVES_SLOT_GAME.catalog.image).toMatch(/arcane-archives-owl-v2\.webp$/)
+    expect(SLOT_GAME_CATALOG.find(game => game.id === 'arcane-archives')?.image)
+      .toMatch(/arcane-archives-title-v1\.webp$/)
+  })
+
+  it('registers Cosmic Fortune with its collection shelf', () => {
     const newGames = [
-      [ARCANE_ARCHIVES_SLOT_GAME, 'enchanted book satchel', 'spellbook-shelf'],
       [COSMIC_FORTUNE_SLOT_GAME, null, 'star-orbit'],
     ] as const
 
@@ -192,7 +219,7 @@ describe('slot game manifests', () => {
       else expect(game.experience.features.moneyGrab).toBeUndefined()
       expect(game.experience.features.collections?.presentation).toBe(presentation)
       expect(game.experience.features.collections?.entries).toHaveLength(4)
-      expect(game.experience.help.extraSections).toHaveLength(game.id === 'arcane-archives' ? 3 : 2)
+      expect(game.experience.help.extraSections).toHaveLength(2)
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'BOLT')).toBe(
         Boolean(game.experience.features.energy || game.experience.features.lightningCollection),
       )
@@ -206,16 +233,6 @@ describe('slot game manifests', () => {
       }
     }
 
-    const { features, symbols } = ARCANE_ARCHIVES_SLOT_GAME.experience
-    expect(features.energy).toBeUndefined()
-    expect(features.lightningCollection?.collectorSymbol).toBe('BOLT')
-    expect(symbols.definitions['7']?.wagerMultiplier).toBe(0.5)
-    expect(symbols.definitions.POWER?.wagerMultiplier).toBe(1)
-    expect(symbols.definitions.SEAL_RAND?.wagerMultiplier).toBe(2)
-    const arcaneCatalogImage = ARCANE_ARCHIVES_SLOT_GAME.catalog.image
-    expect(arcaneCatalogImage).toMatch(/arcane-archives-owl-v2\.webp$/)
-    expect(SLOT_GAME_CATALOG.find(game => game.id === 'arcane-archives')?.image)
-      .toMatch(/arcane-archives-title-v1\.webp$/)
   })
 
   it('registers Gold Foundry with cash ingots and no new free-spin features', () => {
@@ -332,11 +349,11 @@ describe('slot game manifests', () => {
 
   it('gives free-spin rounds distinct, named feature contracts', () => {
     const features = SLOT_GAME_MANIFESTS
-      .filter((game) => game.id !== 'gold-foundry' && game.id !== 'neon-nights')
+      .filter((game) => !['gold-foundry', 'neon-nights', 'arcane-archives'].includes(game.id))
       .map((game) => game.experience.features.specialRound)
 
     expect(features.every(Boolean)).toBe(true)
-    expect(new Set(features.map((feature) => feature?.id)).size).toBe(17)
+    expect(new Set(features.map((feature) => feature?.id)).size).toBe(16)
     for (const feature of features) {
       expect(feature?.title).toBeTruthy()
       expect(feature?.earnLabel).toBeTruthy()

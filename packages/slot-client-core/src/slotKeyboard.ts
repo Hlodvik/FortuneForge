@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T14:43:56-06:00 | Computer: Vinnabok
 export type SlotKeyboardAction =
   | 'decrease-wager'
   | 'increase-wager'
@@ -16,14 +17,9 @@ export function getSlotKeyboardAction(
   key: string,
   context: SlotKeyboardContext,
 ): SlotKeyboardAction | null {
-  if (
-    context.hasOpenDialog ||
-    context.isEditableTarget ||
-    context.modified ||
-    context.repeated
-  ) {
-    return null
-  }
+  if (context.modified || context.repeated) return null
+  if (key === 'm' || key === 'M') return 'toggle-mute'
+  if (context.hasOpenDialog || context.isEditableTarget) return null
 
   switch (key) {
     case ' ':
@@ -33,9 +29,6 @@ export function getSlotKeyboardAction(
       return 'decrease-wager'
     case 'ArrowRight':
       return 'increase-wager'
-    case 'm':
-    case 'M':
-      return 'toggle-mute'
     case '?':
       return 'open-help'
     default:

@@ -1,3 +1,6 @@
+// Edited: 2026-11-18T17:59:35-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:30:13-06:00 | Computer: Vinnabok
+using FortuneForge.Games.ArcaneArchives;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
@@ -19,6 +22,10 @@ public sealed record SpinRequest(
     bool UseSpecialBoost,
     string? JadeDragonEngineVersion = null);
 
+public sealed record ArcanePotionActivationRequest(long PotionId);
+
+public sealed record ArcaneTomeRequest(string Page, bool Activate);
+
 public sealed record NeonAdminTriggerRequest(string Symbol, long WagerPoints);
 public sealed record NeonCarRespinRequest(Guid SpinId, int? ReelIndex);
 public sealed record NeonCarRespinDismissRequest(Guid SpinId);
@@ -33,6 +40,54 @@ public sealed class SlotsController(
     GameWorkerClient? workers = null) : ControllerBase
 {
     private static readonly TimeSpan SpinCooldown = TimeSpan.FromMilliseconds(500);
+
+    [HttpPost("arcane/potions/activate")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<ActionResult> ActivateArcanePotion(
+        ArcanePotionActivationRequest request, CancellationToken cancellationToken)
+    {
+        var account = await accountService.GetProfileAsync(SessionToken(), cancellationToken);
+        if (account.Value is null)
+            return Unauthorized(new { error = "Sign in to use an Arcane potion." });
+        if (request.PotionId <= 0)
+            return BadRequest(new { error = "Choose a bottled Arcane potion." });
+
+        try
+        {
+            var state = await accountService.ActivateArcanePotionAsync(
+                account.Value.UserId, request.PotionId, cancellationToken);
+            return Ok(ArcanePotionView.FromState(state));
+        }
+        catch (ArcanePotionConflictException exception)
+        {
+            return Conflict(new { code = "arcane-potion-conflict", error = exception.Message });
+        }
+    }
+
+    [HttpPost("arcane/tome")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<ActionResult> SelectArcaneTomePage(
+        ArcaneTomeRequest request, CancellationToken cancellationToken)
+    {
+        var account = await accountService.GetProfileAsync(SessionToken(), cancellationToken);
+        if (account.Value is null)
+            return Unauthorized(new { error = "Sign in to use the Arcane Tome." });
+
+        try
+        {
+            var state = await accountService.SelectArcaneTomePageAsync(
+                account.Value.UserId, request.Page, request.Activate, cancellationToken);
+            return Ok(ArcaneTome.ToView(state));
+        }
+        catch (ArcaneTomeConflictException exception)
+        {
+            return Conflict(new { code = "arcane-tome-conflict", error = exception.Message });
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { error = exception.Message });
+        }
+    }
 
     [HttpPost("admin/neon-trigger")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
@@ -359,6 +414,9 @@ public sealed class SlotsController(
             PayoutMultiplier = settlement.PayoutMultiplier,
             SealCollections = settlement.SealCollections,
             FreeSpinFeatureMode = settlement.FreeSpinFeatureMode,
+            ArcaneTome = ArcaneTome.ToView(settlement.ArcaneTome),
+            ArcanePotions = settlement.ArcanePotions is { } potions ? ArcanePotionView.FromState(potions) : null,
+            ArcaneIngredientsAwarded = settlement.ArcaneIngredientsAwarded,
             BonusRound = settlement.BonusRound,
             QueuedBonusRounds = settlement.QueuedBonusRounds,
             AwardedBonusRounds = settlement.AwardedBonusRounds

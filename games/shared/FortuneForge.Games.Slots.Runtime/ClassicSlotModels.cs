@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T14:45:02-06:00 | Computer: Vinnabok
 using FortuneForge.Games.Slots;
 
 namespace FortuneForge.Games.Slots.Runtime;
@@ -52,6 +53,7 @@ public sealed record ClassicFeaturePayout(
 /// <summary>Optional pure policy hooks. No hook is selected by a game identifier.</summary>
 public sealed record ClassicSlotEngineOptions
 {
+    public bool UsesPatternBonus { get; init; } = true;
     public bool AllowFreeSpinCarryWager { get; init; }
     public bool AlwaysUsesPawCollectors { get; init; }
     public bool HeavyPawFeature { get; init; }

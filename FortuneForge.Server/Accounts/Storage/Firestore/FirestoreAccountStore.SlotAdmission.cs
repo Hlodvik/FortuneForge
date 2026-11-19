@@ -1,3 +1,5 @@
+// Edited: 2026-11-18T17:59:35-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:30:13-06:00 | Computer: Vinnabok
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -14,6 +16,13 @@ namespace FortuneForge.Server.Accounts.Storage;
 
 public sealed partial class FirestoreAccountStore
 {
+    private static readonly TimeSpan ActiveSpinAdmissionTimeout = TimeSpan.FromSeconds(30);
+
+    private static bool HasActiveSlotSpinAdmission(DocumentSnapshot guard, DateTime nowUtc) =>
+        ReadString(guard, "activeAdmissionId") is not null &&
+        guard.TryGetValue<Timestamp>("lastSpinStartedAt", out var startedAt) &&
+        startedAt.ToDateTime().Add(ActiveSpinAdmissionTimeout) > nowUtc;
+
     public Task<SlotSpinAdmission> BeginSlotSpinAsync(
         string userId,
         string gameId,
@@ -86,7 +95,7 @@ public sealed partial class FirestoreAccountStore
                     var nextAllowedAtUtc = lastStartedAt.ToDateTime().Add(cooldown);
                     var pendingAdmission = ReadString(guardSnapshot, "activeAdmissionId");
                     if (!string.IsNullOrEmpty(pendingAdmission))
-                        nextAllowedAtUtc = lastStartedAt.ToDateTime().AddSeconds(30);
+                        nextAllowedAtUtc = lastStartedAt.ToDateTime().Add(ActiveSpinAdmissionTimeout);
                     if (nextAllowedAtUtc > startedAtUtc)
                     {
                         return new SlotSpinAdmission(
@@ -262,7 +271,11 @@ public sealed partial class FirestoreAccountStore
                     NeonDiscoMultiplier = neonDiscoMultiplierBefore,
                     MathModelId = mathModelId,
                     BonusRound = admittedRound,
-                    BonusRoundsBeforeAdmission = roundsBefore
+                    BonusRoundsBeforeAdmission = roundsBefore,
+                    ArcaneTomeBefore = gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId
+                        ? ReadArcaneTome(guardSnapshot) : null,
+                    ArcanePotionsBefore = gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId
+                        ? ReadArcanePotions(guardSnapshot) : null
                 };
                 // The worker only computes outcomes. Failure aborts this transaction before
                 // any admission, wallet, or entitlement change can become durable.
@@ -414,6 +427,10 @@ public sealed partial class FirestoreAccountStore
                     admissionData["midnightBonusRoundsAfter"] = MidnightRoundsData(roundsAfter);
                     admissionData["midnightAdmittedRound"] = admittedRound is null ? null! : MidnightRoundData(admittedRound);
                 }
+                if (admission.ArcaneTomeBefore is not null)
+                    admissionData[ArcaneTomeBeforeField] = JsonSerializer.Serialize(admission.ArcaneTomeBefore);
+                if (admission.ArcanePotionsBefore is not null)
+                    admissionData[ArcanePotionsBeforeField] = JsonSerializer.Serialize(admission.ArcanePotionsBefore);
                 transaction.Create(admissionReference, admissionData);
                 return admission;
             },

@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T18:41:52-06:00 | Computer: Vinnabok
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { formatRand, slotPointsToRand } from '../slotPagePresentation'
@@ -169,6 +170,7 @@ export function SidecarSpinControls({
               className={`sidecar-spin-controls__small${isBetOpen ? ' sidecar-spin-controls__small--active' : ''}`}
               type="button"
               aria-label={`Change bet, currently ${formatRand(activeWager)}`}
+              data-slot-utility-cue
               aria-haspopup="dialog"
               aria-expanded={isBetOpen}
               aria-controls={isBetOpen ? betMenuId : undefined}

@@ -1,5 +1,8 @@
+// Edited: 2026-11-18T17:59:35-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:30:13-06:00 | Computer: Vinnabok
 using System.Security.Cryptography;
 using System.Text;
+using ArcaneTome = FortuneForge.Games.ArcaneArchives.ArcaneTome;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
@@ -87,7 +90,12 @@ public sealed partial class FirestoreAccountStore
             checked((int)ReadLong(snapshots[1], "available")),
             gameId == SlotSpecialRoundProfiles.RainbowRealmGameId ? 0 : ReadLong(snapshots[2], "available"),
             CreateSealCollections(guardSnapshot, pointValueInCents, gameId),
-            null);
+            null)
+        {
+            ArcaneTome = gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId ? ArcaneTome.ToView(ReadArcaneTome(guardSnapshot)) : null,
+            ArcanePotions = gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId
+                ? ArcanePotionView.FromState(ReadArcanePotions(guardSnapshot)) : null
+        };
     }
 
     public async Task<IReadOnlyList<SlotSpinHistoryItem>> GetSlotSpinHistoryAsync(

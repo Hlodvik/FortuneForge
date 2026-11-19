@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T14:49:30-06:00 | Computer: Vinnabok
 using System.Text.Json;
 using FortuneForge.Games.Wukong;
 using FortuneForge.Server.Slots.Bonuses;
@@ -29,7 +30,7 @@ public sealed class SlotSpecialRoundProfilesTests
     [InlineData(SlotSpecialRoundProfiles.NeonNightsGameId, 3, 0, 26, 0)]
     [InlineData(SlotSpecialRoundProfiles.NordicLegendsGameId, 4, 6, 28, 6)]
     [InlineData(SlotSpecialRoundProfiles.ReelRichesGameId, 3, 5, 40, 10)]
-    [InlineData(SlotSpecialRoundProfiles.ArcaneArchivesGameId, 3, 5, 40, 10)]
+    [InlineData(SlotSpecialRoundProfiles.ArcaneArchivesGameId, 0, 0, 0, 0)]
     [InlineData(GoldFoundrySlotDefinitions.GameId, 0, 0, 0, 0)]
     [InlineData(SlotSpecialRoundProfiles.RainbowRealmGameId, 3, 10, 60, 10)]
     public void FeaturedProfiles_ExposeTheirOwnScatterAndCollectionRules(
@@ -81,8 +82,8 @@ public sealed class SlotSpecialRoundProfilesTests
 
         Assert.Equal(6, profiles.Count(profile => profile.UsesEnergy));
         Assert.False(profiles.Single(profile => profile.GameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId).UsesEnergy);
-        Assert.Equal(12, profiles.Count(profile => !profile.UsesDirectValueTokens));
-        Assert.Equal(7, profiles.Count(profile => !profile.UsesCollections));
+        Assert.Equal(13, profiles.Count(profile => !profile.UsesDirectValueTokens));
+        Assert.Equal(8, profiles.Count(profile => !profile.UsesCollections));
         Assert.All(profiles.Where(profile => !profile.UsesCollections && profile.ScatterAwardedSpins > 0), profile =>
             Assert.True(SlotSpecialRoundProfiles.IsFeatureMode(profile.ScatterFeatureMode)));
         Assert.All(profiles, profile =>

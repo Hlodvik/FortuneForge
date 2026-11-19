@@ -1,5 +1,11 @@
+// Edited: 2026-11-18T18:14:43-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T18:01:37-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:51:48-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:44:43-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:36:58-06:00 | Computer: Vinnabok
 using System.Text.Json;
 using System.Net;
+using FortuneForge.Games.ArcaneArchives;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Controllers;
@@ -35,6 +41,13 @@ if (seedOption is not null && !int.TryParse(seedOption.AsSpan("--seed=".Length),
 if (args.Contains("--olympus-demo", StringComparer.OrdinalIgnoreCase))
 {
     OlympusTumbleSimulation.Run(paidSpinCount, seed, releaseRtpCeiling);
+    return;
+}
+
+if (args.Contains("--arcane-potions", StringComparer.OrdinalIgnoreCase))
+{
+    ArcanePotionSimulation.Run(paidSpinCount, seed, releaseRtpCeiling,
+        switchWagers: args.Contains("--wager-switch", StringComparer.OrdinalIgnoreCase));
     return;
 }
 
@@ -105,6 +118,10 @@ var specialPoints = 0;
 var energyBalance = 0L;
 IReadOnlyList<SlotSealCollection> sealCollections = [];
 var lastFreeSpinsAwarded = 0;
+var arcaneIngredientSpins = new int[4];
+int[] arcaneIngredientLandingsByReel = [];
+var arcanePreviousSpinDry = false;
+var arcaneConsecutiveDryPairs = 0;
 string? lastFreeSpinFeatureMode = null;
 foreach (var configuredGame in gamesToAnalyze)
 {
@@ -141,6 +158,10 @@ foreach (var configuredGame in gamesToAnalyze)
     energyBalance = 0;
     sealCollections = [];
     lastFreeSpinsAwarded = 0;
+    Array.Clear(arcaneIngredientSpins);
+    arcaneIngredientLandingsByReel = new int[game.Layout.ReelCount];
+    arcanePreviousSpinDry = false;
+    arcaneConsecutiveDryPairs = 0;
     lastFreeSpinFeatureMode = null;
 
     Console.WriteLine();
@@ -177,6 +198,15 @@ foreach (var configuredGame in gamesToAnalyze)
         }
 
         statistics.RecordCycle(cyclePayout, wager);
+    }
+
+    if (game.Id == ArcaneArchivesEngine.GameId)
+    {
+        for (var count = 0; count < arcaneIngredientSpins.Length; count++)
+            Console.WriteLine($"Arcane spins with {count} ingredients: {arcaneIngredientSpins[count]:N0}");
+        Console.WriteLine($"Arcane consecutive spin pairs with no ingredients: {arcaneConsecutiveDryPairs:N0}");
+        for (var reel = 0; reel < arcaneIngredientLandingsByReel.Length; reel++)
+            Console.WriteLine($"Arcane ingredient landings on reel {reel + 1}: {arcaneIngredientLandingsByReel[reel]:N0}");
     }
 
     PrintReport();
@@ -370,7 +400,21 @@ long RunSpin(bool isFreeSpin, string? freeSpinFeatureMode)
         specialBoostApplied,
         currentEnergy,
         isFreeSpin && SlotSpecialRoundProfiles.IsFeatureMode(freeSpinFeatureMode) ? freeSpinFeatureMode : null);
+    if (game.Id == ArcaneArchivesEngine.GameId)
+    {
+        var landed = 0;
+        for (var reel = 0; reel < result.Reels.Count; reel++)
+        {
+            var count = result.Reels[reel].Count(ArcaneTome.IngredientIds.Contains);
+            arcaneIngredientLandingsByReel[reel] += count;
+            landed += count;
+        }
+        arcaneIngredientSpins[landed]++;
+        if (landed == 0 && arcanePreviousSpinDry) arcaneConsecutiveDryPairs++;
+        arcanePreviousSpinDry = landed == 0;
+    }
     var hasFullMatch = result.Payout.Paylines
+        .Where(payline => payline.PaylineId >= 1 && payline.PaylineId <= game.Layout.PaylineCount)
         .SelectMany(payline => payline.Matches)
         .Any(match => match.Match.MatchLength == game.Layout.ReelCount);
     var energy = SettleEnergy(currentEnergy, result.EnergyAwarded, result.Payout);
@@ -454,7 +498,9 @@ void PrintReport(long reportingWager = wager)
     Console.WriteLine($"Configuration: {Path.GetFullPath(configurationPath)}");
     Console.WriteLine($"Seed: {seed:N0}; paid spins: {statistics.PaidSpins:N0}; total resolved spins: {statistics.TotalSpins:N0}");
     Console.WriteLine();
-    Console.WriteLine("Configured reel frequency (before the visible FREE divisor):");
+    Console.WriteLine(game.Id == ArcaneArchivesEngine.GameId
+        ? "Configured reference reel frequency (Arcane rotates ingredient placements):"
+        : "Configured reel frequency (before the visible FREE divisor):");
     foreach (var symbol in symbolSet.Symbols.Select(symbol => symbol.Id))
     {
         var counts = reelSet.Reels.Select(reel => reel.Count(value => value == symbol)).ToArray();

@@ -1,0 +1,152 @@
+/* Edited: 2026-11-18T18:34:08-06:00 | Computer: VINNABOK */
+/* Edited: 2026-11-18T18:11:03-06:00 | Computer: VINNABOK */
+.arcane-ingredient-flights {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  overflow: clip;
+  pointer-events: none;
+}
+
+.arcane-ingredient-flight {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  translate: -50% -50%;
+  animation: arcane-ingredient-flight 580ms cubic-bezier(0.26, 0.13, 0.35, 1) both;
+}
+
+.arcane-ingredient-flight img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 0.45rem #efbb70a8);
+}
+
+.arcane-ingredient-flight span {
+  position: absolute;
+  top: 0.08rem;
+  inset-inline-end: 0.08rem;
+  padding: 0.08em 0.25em;
+  border: 1px solid #d4aa69;
+  border-radius: 0.3rem;
+  color: #fff2d6;
+  background: #26162e;
+  font: 700 clamp(0.63rem, 1.2vw, 0.9rem)/1.1 system-ui, sans-serif;
+}
+
+@keyframes arcane-ingredient-flight {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+  }
+
+  12% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+
+  55% {
+    opacity: 1;
+    transform: translate3d(
+      calc(var(--ingredient-flight-x) * 0.55),
+      calc(var(--ingredient-flight-y) * 0.55 - var(--ingredient-flight-lift)),
+      0
+    ) scale(0.77);
+  }
+
+  88% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--ingredient-flight-x), var(--ingredient-flight-y), 0) scale(0.14);
+  }
+}
+
+.arcane-workbench__pot {
+  position: relative;
+  --arcane-cauldron-opening: 28%;
+}
+
+.arcane-workbench__stir {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 50%;
+  width: 2.75rem;
+  aspect-ratio: 1;
+  translate: -50% -96%;
+  pointer-events: none;
+  --arcane-stir-duration: 460ms;
+  animation: arcane-cauldron-stir var(--arcane-stir-duration) ease-out both;
+}
+
+.arcane-workbench__stir > img {
+  display: block;
+  width: 100%;
+}
+
+.arcane-workbench__stir::before,
+.arcane-workbench__stir::after {
+  position: absolute;
+  left: 50%;
+  content: '';
+}
+
+.arcane-workbench__stir::before {
+  top: var(--arcane-cauldron-opening);
+  width: 66%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: conic-gradient(from 34deg, #a357b9 0%, #fce5aa 25%, #c264e7 41%, #692b9a 67%, #f7c67b 88%, #a357b9);
+  mask-image: radial-gradient(circle, #000 12%, #0007 27%, #000 38%, #000 53%, transparent 69%);
+  filter: drop-shadow(0 0 0.22rem #d674de);
+  transform: scaleY(0.26) rotate(34deg);
+  animation: arcane-cauldron-swirl var(--arcane-stir-duration) ease-in-out both;
+}
+
+.arcane-workbench__stir::after {
+  bottom: calc(100% - var(--arcane-cauldron-opening));
+  width: max(3px, 4%);
+  height: 39%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #3a2318, #eab777 32%, #966135 65%, #2b1b15);
+  box-shadow: 0 0 0.15rem #231222;
+  transform: translateX(-24%) rotate(-21deg);
+  transform-origin: center bottom;
+  animation: arcane-cauldron-spoon var(--arcane-stir-duration) ease-in-out both;
+}
+
+@keyframes arcane-cauldron-stir {
+  0% { opacity: 0; }
+  15%, 84% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes arcane-cauldron-swirl {
+  from { transform: scaleY(0.26) rotate(34deg); }
+  to { transform: scaleY(0.26) rotate(394deg); }
+}
+
+@keyframes arcane-cauldron-spoon {
+  0% { transform: translate(-255%, -26%) rotate(-32deg); }
+  26% { transform: translate(165%, 6%) rotate(24deg); }
+  49% { transform: translate(-240%, -8%) rotate(-24deg); }
+  72% { transform: translate(165%, 6%) rotate(25deg); }
+  100% { transform: translate(248%, -27%) rotate(33deg); }
+}
+
+.arcane-workbench__stir[data-static],
+.arcane-workbench__stir[data-static]::before,
+.arcane-workbench__stir[data-static]::after {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcane-ingredient-flights {
+    display: none;
+  }
+}

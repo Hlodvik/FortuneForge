@@ -1,20 +1,68 @@
-.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__main {
-  position: relative;
+/* Edited: 2026-11-18T14:45:02-06:00 | Computer: Vinnabok */
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'],
+.in-game-shell__body--slots:has(> [data-slot-theme='arcane-archives-cabinet-v1']) > .game-support-controls {
+  --arcane-corner-inset: 0.9rem;
+  --arcane-corner-size: 2.75rem;
+  --arcane-corner-gap: 0.45rem;
+}
+
+.in-game-shell__body--slots:has(> [data-slot-theme='arcane-archives-cabinet-v1']) > .game-support-controls {
+  right: calc(max(var(--arcane-corner-inset), env(safe-area-inset-right)) + 2 * (var(--arcane-corner-size) + var(--arcane-corner-gap)));
+  bottom: max(var(--arcane-corner-inset), env(safe-area-inset-bottom));
 }
 
 .arcane-archives__wordmark {
-  position: absolute;
-  z-index: 1;
-  top: clamp(0.75rem, 2vw, 1.25rem);
-  left: clamp(0.75rem, 2vw, 1.5rem);
   display: block;
-  width: clamp(9rem, 15vw, 13.5rem);
+  align-self: center;
+  justify-self: center;
+  width: clamp(8.5rem, 18vmin, 13rem);
   height: auto;
+  margin: 0 auto clamp(0.2rem, 1vh, 0.75rem);
   pointer-events: none;
 }
 
-@media (max-width: 900px), (max-aspect-ratio: 6/5) {
-  .arcane-archives__wordmark {
-    display: none;
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__main {
+  padding-bottom: 4.5rem;
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] > .slots-page__utility-buttons {
+  position: fixed;
+  z-index: 19;
+  right: max(var(--arcane-corner-inset), env(safe-area-inset-right));
+  bottom: max(var(--arcane-corner-inset), env(safe-area-inset-bottom));
+  gap: var(--arcane-corner-gap);
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'][data-slot-controls='sidecar'] > .symbol-value-guide__trigger,
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__utility-buttons
+  :is(.slots-page__help-button, .slots-page__settings-button) {
+  display: inline-flex;
+  min-height: var(--arcane-corner-size);
+  border: 1px solid #bf9b62;
+  background: linear-gradient(155deg, #332347, #160e26 78%);
+  color: #fff2d6;
+  box-shadow: 0 0.2rem 0.7rem #0b0619a6;
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__utility-buttons
+  :is(.slots-page__help-button, .slots-page__settings-button) {
+  width: var(--arcane-corner-size);
+  border-radius: 50%;
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__help-button-label {
+  display: none;
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] > .symbol-value-guide__trigger:is(:hover, :focus-visible),
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__utility-buttons
+  :is(.slots-page__help-button, .slots-page__settings-button):is(:hover, :focus-visible) {
+  background: linear-gradient(155deg, #513766, #211433 78%);
+}
+
+@media (max-width: 360px) {
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'][data-slot-controls='sidecar'] > .symbol-value-guide__trigger {
+    padding-inline: 0.6rem;
+    font-size: 0.7rem;
   }
 }

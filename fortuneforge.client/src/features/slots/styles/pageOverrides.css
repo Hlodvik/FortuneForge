@@ -1,4 +1,6 @@
+/* Edited: 2026-11-18T14:43:56-06:00 | Computer: Vinnabok */
 @import '@fortuneforge/slot-client-core/styles/pageOverrides.css';
+@import '@fortuneforge/slot-client-core/styles/sidecarSpinControls.css';
 
 /* Midnight Vault remains host-composed while its standalone package preserves
    the existing presentation behavior. */

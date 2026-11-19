@@ -1,3 +1,5 @@
+// Edited: 2026-11-18T18:00:51-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:54:32-06:00 | Computer: Vinnabok
 using System.Collections.Concurrent;
 using FortuneForge.Games.Slots;
 
@@ -9,6 +11,7 @@ public sealed partial class ClassicSlotEngine
     public const string RuntimeVersion = "classic-slots-runtime-v1";
     private const int MaximumPityGenerationAttempts = 10_000;
     private readonly FrozenSlotDefinitions definitions;
+    private readonly ReelSetDefinition[] selectableReelSets;
     private readonly SlotProfile profile;
     private readonly IGameRandomSource random;
     private readonly string engineVersion;
@@ -20,7 +23,8 @@ public sealed partial class ClassicSlotEngine
 
     public ClassicSlotEngine(FrozenSlotDefinitions definitions, SlotProfile profile,
         IGameRandomSource random, string engineVersion,
-        ClassicSlotEngineOptions? options = null)
+        ClassicSlotEngineOptions? options = null,
+        IReadOnlyList<ReelSetDefinition>? alternateReelSets = null)
     {
         ArgumentNullException.ThrowIfNull(definitions);
         ArgumentNullException.ThrowIfNull(profile);
@@ -32,6 +36,12 @@ public sealed partial class ClassicSlotEngine
         this.engineVersion = engineVersion;
         this.options = options ?? new ClassicSlotEngineOptions();
         ValidateDefinitions(this.definitions, profile);
+        selectableReelSets = [this.definitions.ReelSet, .. (alternateReelSets ?? []).Select(SlotDefinitionCloner.Clone)];
+        if (selectableReelSets.Any(set => set.SymbolSetId != this.definitions.SymbolSet.Id ||
+                set.Reels.Count != this.definitions.Game.Layout.ReelCount) ||
+            selectableReelSets.Select(set => set.Id).Distinct(StringComparer.Ordinal).Count() != selectableReelSets.Length)
+            throw new ArgumentException("Alternate reel sets must have unique IDs and use the same layout and symbols.",
+                nameof(alternateReelSets));
     }
 
     public void ValidateWager(long wagerPoints) => ValidateWager(definitions.Game, wagerPoints);
@@ -39,7 +49,8 @@ public sealed partial class ClassicSlotEngine
     public ClassicSlotSpinOutcome Spin(long wagerPoints, string playerId,
         bool specialBoostApplied = false, long currentEnergyBalance = 0,
         string? featureMode = null, int? persistedPityMisses = null,
-        bool isFreeSpin = false)
+        bool isFreeSpin = false,
+        Func<ReelSetDefinition, ReelSetDefinition>? prepareReels = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(playerId);
         if (isFreeSpin && options.AllowFreeSpinCarryWager)
@@ -60,21 +71,27 @@ public sealed partial class ClassicSlotEngine
                 pity.ConsecutiveFiveMisses = persisted;
             }
             return SpinLocked(wagerPoints, pity, specialBoostApplied, currentEnergyBalance,
-                featureMode, isFreeSpin);
+                featureMode, isFreeSpin, prepareReels);
         }
     }
 
     private ClassicSlotSpinOutcome SpinLocked(long wagerPoints, PityState pity,
         bool specialBoostApplied, long currentEnergyBalance, string? featureMode,
-        bool isFreeSpin)
+        bool isFreeSpin, Func<ReelSetDefinition, ReelSetDefinition>? prepareReels)
     {
-        var game = definitions.CreateGame();
+        // Choose the layout once per spin, including any full-match pity redraws.
+        var reelSet = SlotDefinitionCloner.Clone(selectableReelSets[
+            selectableReelSets.Length == 1 ? 0 : Next(selectableReelSets.Length)]);
+        var game = SlotDefinitionCloner.Clone(definitions.Game, reelSet.Id);
         var symbolSet = definitions.CreateSymbolSet();
-        var reelSet = definitions.CreateReelSet();
         var paytable = definitions.CreatePaytable();
+        var auditProfile = reelSet.Id == definitions.ReelSet.Id ? profile : profile with { BaseReelSetId = reelSet.Id };
         var effectiveGame = CreateEffectiveGame(game, featureMode);
         var effectiveReels = specialBoostApplied
             ? CreateBoostedReels(game, reelSet) : reelSet;
+        effectiveReels = prepareReels?.Invoke(effectiveReels) ?? effectiveReels;
+        if (effectiveReels.Id != reelSet.Id)
+            throw new InvalidOperationException("Preparing reel strips cannot change their model ID.");
         var pityBefore = pity.ConsecutiveFiveMisses;
         var pityTriggered = string.IsNullOrWhiteSpace(featureMode) &&
             game.Math.FiveMatchPityMissLimit is { } limit && pityBefore >= limit;
@@ -117,7 +134,7 @@ public sealed partial class ClassicSlotEngine
         var audit = new ClassicSlotEngineAudit(engineVersion, DateTime.UtcNow,
             SlotDefinitionCloner.Clone(game), SlotDefinitionCloner.Clone(effectiveGame),
             SlotDefinitionCloner.Clone(effectiveReels), SlotDefinitionCloner.Clone(symbolSet),
-            SlotDefinitionCloner.Clone(paytable), profile, pityBefore, currentEnergyBalance,
+            SlotDefinitionCloner.Clone(paytable), auditProfile, pityBefore, currentEnergyBalance,
             featureMode, attempts, Freeze(raw.VisibleReels), Freeze(frequency.VisibleReels));
 
         return new ClassicSlotSpinOutcome(Guid.NewGuid(), game.Id, reelSet.Id, symbolSet.Id,

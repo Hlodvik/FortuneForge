@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T14:45:02-06:00 | Computer: Vinnabok
 using FortuneForge.Server.Slots.Models;
 
 namespace FortuneForge.Server.Slots.Bonuses;
@@ -9,8 +10,8 @@ public sealed record ArcaneLightningCollection(
 
 internal static class ArcaneLightningCollector
 {
-    internal const string EngineVersion = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine.EngineVersion;
-    internal const string ReelSetId = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine.ReelSetId;
+    internal const string EngineVersion = "arcane-lightning-collector-v1";
+    internal const string ReelSetId = "arcane-archives-lightning-reels-v1";
     internal const string CollectorSymbolId = FortuneForge.Games.ArcaneArchives.ArcaneLightningCollector.CollectorSymbolId;
     internal const int PaylineId = FortuneForge.Games.ArcaneArchives.ArcaneLightningCollector.PaylineId;
 

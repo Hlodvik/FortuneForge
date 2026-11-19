@@ -1,0 +1,58 @@
+/* Edited: 2026-11-18T14:51:01-06:00 | Computer: Vinnabok */
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] {
+  --arcane-award-font: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slot-winning-paylines__amount {
+  font-family: var(--arcane-award-font);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__spin-total {
+  display: grid;
+  min-height: 1.85rem;
+  place-items: center;
+  font-size: clamp(1.1rem, 2.5vmin, 1.6rem);
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__win-amount {
+  color: #ffe6a1;
+  font-family: var(--arcane-award-font);
+  font-variant-numeric: lining-nums tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  text-shadow: 0 0.04em 0 #8a4819, 0 0 0.22em #9668cb, 0 0.08em 0.13em #160e26;
+  white-space: nowrap;
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__win-award--payline-popup strong {
+  font-size: clamp(2.35rem, 9vw, 6.8rem);
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__win-award--payline-popup:is(
+  .slots-page__win-award--big, .slots-page__win-award--jackpot
+) strong {
+  font-size: clamp(2.65rem, 10vw, 8rem);
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__win-award--payline-popup span {
+  font-family: var(--arcane-award-font);
+  background: #281437;
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__win-award--to-total {
+  animation-name: arcane-award-to-total;
+  animation-timing-function: cubic-bezier(0.3, 0.05, 0.23, 1);
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__win-award--to-total::before {
+  content: none;
+}
+
+@keyframes arcane-award-to-total {
+  from { transform: translate(-50%, -50%); }
+  to {
+    transform: translate(calc(-50% + var(--win-travel-x)), calc(-50% + var(--win-travel-y)))
+      scale(var(--win-end-scale, 0.28));
+  }
+}

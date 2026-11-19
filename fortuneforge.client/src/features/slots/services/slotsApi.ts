@@ -1,9 +1,14 @@
+// Edited: 2026-11-18T18:00:18-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:27:57-06:00 | Computer: Vinnabok
 import {
+  arcaneWandPaylineId,
   isSlotSymbolId,
   type SlotSealCollection,
   type SlotTumbleRules,
   type SpinResult,
 } from '../types/slots'
+import type { SlotPotionBottle, SlotPotionPreview, SlotPotionState, SlotTomeState } from '@fortuneforge/slot-game-runtime/experience'
+import type { SlotSymbolSet } from '../config/symbolSets'
 import { fetchWithAccountSession } from '../../account/services/accountsApi'
 import { GODS_TUMBLE_MULTIPLIERS } from '@fortuneforge/games-gods-of-olympus/tumble'
 
@@ -30,6 +35,8 @@ export type SlotState = {
   energyBalance: number
   sealCollections: SlotSealCollection[]
   freeSpinFeatureMode: string | null
+  arcaneTome?: SlotTomeState | null
+  arcanePotions?: SlotPotionState | null
 }
 
 type SpinProblem = {
@@ -81,6 +88,7 @@ export async function requestDemoAvailability(gameId: string, signal?: AbortSign
 export async function requestSpin(
   request: SpinRequest,
   tumbleRules?: SlotTumbleRules,
+  symbolDefinitions?: SlotSymbolSet['definitions'],
 ): Promise<SpinResult> {
   const response = await fetchWithAccountSession('/api/slots/spins', {
     method: 'POST',
@@ -97,7 +105,7 @@ export async function requestSpin(
   }
 
   const result = (await response.json()) as unknown
-  if (!isSpinResult(result)) {
+  if (!isSpinResult(result, symbolDefinitions)) {
     throw new Error('The spin server returned an invalid reel result.')
   }
 
@@ -111,6 +119,7 @@ export async function requestSpin(
 export async function requestDemoSpin(
   request: DemoSpinRequest,
   tumbleRules?: SlotTumbleRules,
+  symbolDefinitions?: SlotSymbolSet['definitions'],
 ): Promise<SpinResult> {
   const response = await fetch('/api/slots/demo/spins', {
     method: 'POST',
@@ -129,7 +138,7 @@ export async function requestDemoSpin(
   }
 
   const result = (await response.json()) as unknown
-  if (!isSpinResult(result)) {
+  if (!isSpinResult(result, symbolDefinitions)) {
     throw new Error('The spin server returned an invalid reel result.')
   }
 
@@ -165,6 +174,8 @@ export async function requestSlotState(gameId: string): Promise<SlotState> {
     || state.energyBalance < 0
     || !Array.isArray(state.sealCollections)
     || !state.sealCollections.every(isSlotSealCollection)
+    || (state.arcaneTome != null && !isTomeState(state.arcaneTome))
+    || (state.arcanePotions != null && !isPotionState(state.arcanePotions))
     || (state.freeSpinFeatureMode !== null && typeof state.freeSpinFeatureMode !== 'string')
   ) {
     throw new Error('The slot server returned an invalid bonus state.')
@@ -173,7 +184,75 @@ export async function requestSlotState(gameId: string): Promise<SlotState> {
   return state as SlotState
 }
 
-function isSpinResult(result: unknown): result is SpinResult {
+export async function requestArcaneTomePage(page: string, activate: boolean): Promise<SlotTomeState> {
+  const response = await fetchWithAccountSession('/api/slots/arcane/tome', {
+    method: 'POST',
+    body: JSON.stringify({ page, activate }),
+  })
+  if (!response.ok) {
+    const problem = (await response.json().catch(() => null)) as SpinProblem | null
+    throw new Error(problem?.detail ?? problem?.error ?? 'The Tome Page could not be updated.')
+  }
+  const state: unknown = await response.json()
+  if (!isTomeState(state)) throw new Error('The spin server returned invalid Tome state.')
+  return state
+}
+
+export async function requestArcanePotion(potionId: number): Promise<SlotPotionState> {
+  const response = await fetchWithAccountSession('/api/slots/arcane/potions/activate', {
+    method: 'POST',
+    body: JSON.stringify({ potionId }),
+  })
+  if (!response.ok) {
+    const problem = (await response.json().catch(() => null)) as SpinProblem | null
+    throw new Error(problem?.detail ?? problem?.error ?? 'The potion could not be used.')
+  }
+  const state: unknown = await response.json()
+  if (!isPotionState(state)) throw new Error('The spin server returned invalid potion state.')
+  return state
+}
+
+function isPotionPreview(value: unknown): value is SlotPotionPreview {
+  return isRecord(value) &&
+    typeof value.ingredientId === 'string' && typeof value.name === 'string' &&
+    typeof value.effect === 'string' && isNonNegativeInteger(value.potency)
+}
+
+function isPotionBottle(value: unknown): value is SlotPotionBottle {
+  return isRecord(value) && isPositiveInteger(value.id) && isPotionPreview(value)
+}
+
+function isPotionState(value: unknown): value is SlotPotionState {
+  return isRecord(value) && isPositiveInteger(value.capacity) && isPositiveInteger(value.majority) &&
+    value.majority <= value.capacity && Array.isArray(value.pot) && value.pot.length < value.capacity &&
+    value.pot.every(ingredient => typeof ingredient === 'string') &&
+    Array.isArray(value.bottles) && value.bottles.every(isPotionBottle) &&
+    (value.preview === null || isPotionPreview(value.preview)) &&
+    (value.active === null || (isRecord(value.active) && isPotionBottle(value.active.bottle) &&
+      isPositiveInteger(value.active.spinsRemaining)))
+}
+
+function isIngredientCounts(value: unknown): value is Readonly<Record<string, number>> {
+  return isRecord(value) && Object.values(value).every(isNonNegativeInteger)
+}
+
+function isTomeState(value: unknown): value is SlotTomeState {
+  return isRecord(value) &&
+    typeof value.selectedPage === 'string' &&
+    (value.activePage === null || typeof value.activePage === 'string') &&
+    isNonNegativeInteger(value.boostedSpinsRemaining) && value.boostedSpinsRemaining <= 5 &&
+    typeof value.grimoireReady === 'boolean' &&
+    isIngredientCounts(value.ingredients) &&
+    Array.isArray(value.pages) && value.pages.length > 0 &&
+    value.pages.every(page => isRecord(page) && typeof page.id === 'string' &&
+      typeof page.label === 'string' && Array.isArray(page.ingredients) &&
+      page.ingredients.length === 2 && page.ingredients.every(id => typeof id === 'string')) &&
+    value.pages.some(page => page.id === value.selectedPage) &&
+    (value.activePage === null ? value.boostedSpinsRemaining === 0
+      : value.boostedSpinsRemaining > 0 && value.pages.some(page => page.id === value.activePage))
+}
+
+function isSpinResult(result: unknown, symbolDefinitions?: SlotSymbolSet['definitions']): result is SpinResult {
   if (!isRecord(result) || !isRecord(result.payout)) {
     return false
   }
@@ -238,17 +317,56 @@ function isSpinResult(result: unknown): result is SpinResult {
     Array.isArray(result.reels) &&
     result.reels.length > 0 &&
     result.reels.every(
-      (reel) => Array.isArray(reel) && reel.length > 0 && reel.every(isSlotSymbolId),
+      (reel) => Array.isArray(reel) && reel.length > 0 && reel.every(symbol => typeof symbol === 'string' && (symbolDefinitions
+        ? Object.hasOwn(symbolDefinitions, symbol)
+        : isSlotSymbolId(symbol))),
     ) &&
     Array.isArray(result.reelStops) &&
     result.reelStops.length === result.reels.length &&
     result.reelStops.every((stop) => Number.isInteger(stop)) &&
+    (result.arcaneTome == null || isTomeState(result.arcaneTome)) &&
+    (result.arcanePotions == null || isPotionState(result.arcanePotions)) &&
+    (result.arcaneIngredientsAwarded == null || isIngredientCounts(result.arcaneIngredientsAwarded)) &&
     typeof result.payout.totalPoints === 'number' &&
     (result.lightningCollection == null || (result.gameId === 'arcane-archives-v1' &&
       validLightningCollection(result.lightningCollection, result.reels, result.payout.totalPoints))) &&
     Array.isArray(result.payout.paylines) &&
-    result.payout.paylines.every(isPaylinePayout)
+    result.payout.paylines.every(isPaylinePayout) &&
+    (result.arcaneWandCollection == null || (result.gameId === 'arcane-archives-v1' &&
+      validArcaneWandCollection(result.arcaneWandCollection, result.reels, result.wagerPoints,
+        result.payout.totalPoints, result.payout.paylines)))
   )
+}
+
+function validArcaneWandCollection(
+  value: unknown,
+  reels: unknown[][],
+  wagerPoints: number,
+  totalPayout: number,
+  paylines: unknown[],
+): boolean {
+  if (!isRecord(value) || !isRecord(value.wand) || !isPositiveInteger(value.totalPoints) ||
+      !Array.isArray(value.cells) || value.cells.length === 0) return false
+  const { reel, row } = value.wand
+  if (!isNonNegativeInteger(reel) || !isNonNegativeInteger(row) || reels[reel]?.[row] !== 'WAND') return false
+
+  const positions = new Set<string>()
+  let collected = 0
+  for (const cell of value.cells) {
+    if (!isRecord(cell) || !isNonNegativeInteger(cell.reel) || !isNonNegativeInteger(cell.row) ||
+        !isPositiveInteger(cell.multiplier) || !isPositiveInteger(cell.amountPoints) ||
+        (cell.potionBonusPoints != null && !isNonNegativeInteger(cell.potionBonusPoints)) ||
+        cell.amountPoints !== wagerPoints * cell.multiplier + (cell.potionBonusPoints ?? 0)) return false
+    const symbol = reels[cell.reel]?.[cell.row]
+    const key = [cell.reel, cell.row].join(':')
+    if ((symbol !== 'POWER' && symbol !== 'FORTUNE_RUNE' && symbol !== 'BOLT') ||
+        symbol !== cell.symbolId || positions.has(key)) return false
+    positions.add(key)
+    collected += cell.amountPoints
+  }
+  const wandLine = paylines.find(line => isRecord(line) && line.paylineId === arcaneWandPaylineId)
+  return collected === value.totalPoints && collected <= totalPayout &&
+    isRecord(wandLine) && wandLine.amountPoints === collected
 }
 
 function validLightningCollection(value: unknown, reels: unknown[][], totalPayout: number): boolean {
@@ -367,6 +485,10 @@ function godsTumbleCellKey(
   rules: SlotTumbleRules,
 ): number {
   return reel * rules.rows + row
+}
+
+function isPositiveInteger(value: unknown): value is number {
+  return isNonNegativeInteger(value) && value > 0
 }
 
 function isNonNegativeInteger(value: unknown): value is number {

@@ -1,3 +1,5 @@
+// Edited: 2026-11-18T18:41:52-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T14:45:02-06:00 | Computer: Vinnabok
 import { ResponsiveSlotImage } from './ResponsiveSlotImage'
 import { useCallback, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
@@ -6,20 +8,24 @@ import { useSlotDialog, type SlotDialogTheme } from '../hooks/useSlotDialog'
 import { formatRand } from '../slotPagePresentation'
 import { SlotDialogCloseIcon } from './SlotDialogCloseIcon'
 
-function guideValueAtWager(value: string | undefined, wager: number | undefined, scale: number) {
+function guideValueAtWager(value: string | undefined, wager: number | undefined, scale: number, pointValueInCents: number) {
   if (!value || wager === undefined) return value
   const multiplier = /^(\d+(?:\.\d+)?)[×x]$/i.exec(value)?.[1]
-  return multiplier === undefined ? value : formatRand(Math.round(wager * Number(multiplier) * scale * 100) / 100)
+  return multiplier === undefined ? value : formatRand(guideAwardCents(wager, Number(multiplier), scale, pointValueInCents) / 100)
 }
 
-function guideTopAwardCents(entry: SlotSymbolGuideEntry, wager: number, defaultScale: number) {
+function guideAwardCents(wager: number, multiplier: number, scale: number, pointValueInCents: number) {
+  return Math.round(wager * multiplier * scale * 100 / pointValueInCents) * pointValueInCents
+}
+
+function guideTopAwardCents(entry: SlotSymbolGuideEntry, wager: number, defaultScale: number, pointValueInCents: number) {
   const scale = entry.payoutScale ?? defaultScale
   const multipliers = [entry.firstValue, entry.secondValue].flatMap(value => {
     const multiplier = /^(\d+(?:\.\d+)?)[×x]$/i.exec(value ?? '')?.[1]
     return multiplier === undefined ? [] : [Number(multiplier)]
   })
   return multipliers.length === 0 ? -1 : Math.max(...multipliers.map(multiplier =>
-    Math.round(wager * multiplier * scale * 100)))
+    guideAwardCents(wager, multiplier, scale, pointValueInCents)))
 }
 
 function SymbolValuePanel({
@@ -34,6 +40,7 @@ function SymbolValuePanel({
   panelRef,
   theme,
   wager,
+  pointValueInCents = 1,
 }: {
   className: string
   headingId?: string
@@ -46,14 +53,15 @@ function SymbolValuePanel({
   panelRef?: RefObject<HTMLElement | null>
   theme?: SlotDialogTheme
   wager?: number
+  pointValueInCents?: number
 }) {
   const guideEntries = (showValueTokens
     ? symbolSet.guideEntries
     : symbolSet.guideEntries.filter(({ symbol }) => !getSlotSymbolDefinition(symbolSet, symbol).wagerMultiplier)).slice()
   if (wager !== undefined) {
     guideEntries.sort((first, second) =>
-      guideTopAwardCents(second, wager, symbolSet.guidePayoutScale ?? 1) -
-      guideTopAwardCents(first, wager, symbolSet.guidePayoutScale ?? 1))
+      guideTopAwardCents(second, wager, symbolSet.guidePayoutScale ?? 1, pointValueInCents) -
+      guideTopAwardCents(first, wager, symbolSet.guidePayoutScale ?? 1, pointValueInCents))
   }
   const guideRows: SlotSymbolGuideEntry[][] = []
   const displayedSymbols = new Set<SlotSymbolGuideEntry['symbol']>()
@@ -94,8 +102,8 @@ function SymbolValuePanel({
           <ResponsiveSlotImage imageSrcSet={getSlotSymbolImageSrcSet(definition.responsiveImages)} src={definition.image} alt="" aria-hidden="true" />
         </div>
         <span className="symbol-value-guide__name">{definition.label}</span>
-        <span className={firstIsAmount ? 'symbol-value-guide__award symbol-value-guide__award--three' : undefined}><b>{firstLabel}</b> {guideValueAtWager(firstValue, wager, awardScale)}</span>
-        {hasSecondValue && <span className={secondIsAmount ? 'symbol-value-guide__award symbol-value-guide__award--five' : undefined}><b>{secondLabel}</b> {guideValueAtWager(secondValue, wager, awardScale)}</span>}
+        <span className={firstIsAmount ? 'symbol-value-guide__award symbol-value-guide__award--three' : undefined}><b>{firstLabel}</b> {guideValueAtWager(firstValue, wager, awardScale, pointValueInCents)}</span>
+        {hasSecondValue && <span className={secondIsAmount ? 'symbol-value-guide__award symbol-value-guide__award--five' : undefined}><b>{secondLabel}</b> {guideValueAtWager(secondValue, wager, awardScale, pointValueInCents)}</span>}
       </div>
     )
   }
@@ -165,6 +173,7 @@ function SymbolValueSidePanel({
   showValueTokens,
   symbolSet,
   wager,
+  pointValueInCents = 1,
 }: {
   className: string
   mode: SidePanelMode
@@ -172,6 +181,7 @@ function SymbolValueSidePanel({
   showValueTokens: boolean
   symbolSet: SlotSymbolSet
   wager?: number
+  pointValueInCents?: number
 }) {
   const [minimized, setMinimized] = useState(mode === 'on-demand')
   const focusRestoreButton = useRef(false)
@@ -202,6 +212,7 @@ function SymbolValueSidePanel({
       }}
       showValueTokens={showValueTokens}
       symbolSet={symbolSet}
+      pointValueInCents={pointValueInCents}
       wager={wager}
     />
   ), document.body)
@@ -217,6 +228,7 @@ export function SymbolValueGuide({
   onOpenChange,
   theme,
   wager,
+  pointValueInCents = 1,
   triggerContent,
 }: {
   symbolSet: SlotSymbolSet
@@ -228,6 +240,7 @@ export function SymbolValueGuide({
   onOpenChange?: (open: boolean) => void
   theme?: SlotDialogTheme
   wager?: number
+  pointValueInCents?: number
   triggerContent?: ReactNode
 }) {
   const [internalIsOpen, setInternalIsOpen] = useState(false)
@@ -248,6 +261,7 @@ export function SymbolValueGuide({
         show={showSidePanel && sidePanelMode === 'auto'}
         showValueTokens={showValueTokens}
         symbolSet={symbolSet}
+        pointValueInCents={pointValueInCents}
         wager={wager}
       />
       {sidePanelMode === 'on-demand' && <SymbolValueSidePanel
@@ -256,12 +270,14 @@ export function SymbolValueGuide({
         show={showSidePanel}
         showValueTokens={showValueTokens}
         symbolSet={symbolSet}
+        pointValueInCents={pointValueInCents}
         wager={wager}
       />}
 
       <button
         ref={triggerRef}
         className="symbol-value-guide__trigger"
+        data-slot-utility-cue
         data-side-panel-mode={showSidePanel && sidePanelMode === 'on-demand' ? sidePanelMode : undefined}
         type="button"
         aria-label="Symbol values"
@@ -292,6 +308,7 @@ export function SymbolValueGuide({
             symbolSet={symbolSet}
             panelRef={dialogRef}
             theme={theme}
+            pointValueInCents={pointValueInCents}
             wager={wager}
           />
         </div>,

@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T14:45:02-06:00 | Computer: Vinnabok
 using FortuneForge.Games.Slots;
 
 namespace FortuneForge.Games.Slots.Runtime;
@@ -44,8 +45,9 @@ public sealed partial class ClassicSlotEngine
         else if (profile.HasFeatureMode(featureMode, "paw"))
             Inject(reels, 2, () => "ACE");
 
-        Inject(reels, Next(100) switch { < 48 => 0, < 88 => 1, < 98 => 2, _ => 3 },
-            () => "BANANA");
+        if (options.UsesPatternBonus)
+            Inject(reels, Next(100) switch { < 48 => 0, < 88 => 1, < 98 => 2, _ => 3 },
+                () => "BANANA");
         if (profile.UsesCollections)
         {
             var chance = options.CollectionAppearanceChance?.Invoke(energyBalance) ?? energyBalance switch

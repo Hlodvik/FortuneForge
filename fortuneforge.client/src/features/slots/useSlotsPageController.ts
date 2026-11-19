@@ -1,4 +1,10 @@
+// Edited: 2026-11-18T18:42:45-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T18:30:20-06:00 | Computer: VINNABOK
+// Edited: 2026-11-18T18:00:18-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T14:43:56-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:27:57-06:00 | Computer: Vinnabok
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { getPaylineWinTimings } from '@fortuneforge/slot-client-core/slotWinPresentation'
 import { getSlotAnimationSymbolIds } from './config/symbolSets'
 import {
   cancelSpinAnimation,
@@ -10,9 +16,11 @@ import {
   type SpinAnimation,
   type ReelMotionState,
 } from './animation/slotAnimation'
+import type { SlotPotionState, SlotTomeState } from '@fortuneforge/slot-game-runtime/experience'
 import type { SlotExperienceSet } from './config/slotExperienceSets'
 import type { SlotEnergyAward } from './config/slotFeatures'
-import type { SlotResultSoundEvent } from './config/soundSets'
+import type { SlotPotionSoundEvent } from '@fortuneforge/slot-client-core'
+import type { SlotResultSoundEvent, SlotSoundCueId } from './config/soundSets'
 import { useMascotPerformance, type MascotOutcome } from './hooks/useMascotPerformance'
 import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion'
 import { useSlotAudio } from './hooks/useSlotAudio'
@@ -36,6 +44,8 @@ import { getPresentedFreeSpinsAwarded } from './presentation/freeSpinAwards'
 import { slotPointsToRand } from './slotPagePresentation'
 import { getSlotKeyboardAction } from './slotKeyboard'
 import {
+  requestArcanePotion,
+  requestArcaneTomePage,
   requestDemoAvailability,
   requestDemoSpin,
   requestSlotState,
@@ -43,6 +53,7 @@ import {
   SpinRequestError,
   type SlotState,
 } from './services/slotsApi'
+import { arcaneWandPaylineId } from './types/slots'
 import type {
   GodsTumbleAward,
   GodsTumbleStep,
@@ -89,6 +100,8 @@ type WinAwardFlyover = {
   displayAmount: number
   winTier: SlotWinTier
   isFlying: boolean
+  endScale?: number
+  toSpinTotal?: boolean
   tier: WinPresentationTier
   left: number
   top: number
@@ -183,11 +196,15 @@ export function useSlotsPageController({
     autoSpinSpeedMultiplier,
     baseSpinSpeedMultiplier,
     energyMeterCapacity,
+    defaultWagerRand,
     gameId,
     pointValueInCents,
     reelTravelRowCount,
     wagerOptions,
   } = rules
+  const usesPaylinePopups = presentation?.winPresentation === 'payline-popups'
+  const spinTotalRef = useRef<HTMLDivElement>(null)
+  const winAmountRef = useRef<HTMLElement>(null)
   const tumbleRules = rules.tumble
   const usesGodsTumble = tumbleRules !== undefined
   const isPaidGodsTumble = usesGodsTumble && !demoMode
@@ -245,6 +262,17 @@ export function useSlotsPageController({
   const [bestWin, setBestWin] = useState<PaylinePayout | null>(null)
   const [lastWin, setLastWin] = useState(0)
   const [lastCollectorAward, setLastCollectorAward] = useState(0)
+  const [tomeState, setTomeState] = useState<SlotTomeState | null>(null)
+  const [potions, setPotions] = useState<SlotPotionState | null>(null)
+  const [confirmedPotionUse, setConfirmedPotionUse] = useState<number | null>(null)
+  const playPotionCue = useCallback((event: SlotPotionSoundEvent) => {
+    const cues = soundSet.events.potion?.[event]
+    if (cues) playSequence(cues)
+  }, [playSequence, soundSet.events.potion])
+  const [tomeIngredientsAwarded, setTomeIngredientsAwarded] = useState<Readonly<Record<string, number>>>({})
+  const [isArcaneUpdating, setIsArcaneUpdating] = useState(false)
+  const [arcaneError, setArcaneError] = useState<string | null>(null)
+  const arcaneCommandPending = useRef(false)
   const [lightningCollection, setLightningCollection] = useState<LightningCollection | null>(null)
   const [lastFreeSpinsAwarded, setLastFreeSpinsAwarded] = useState(0)
   const [winningPaylineCount, setWinningPaylineCount] = useState(0)
@@ -284,7 +312,9 @@ export function useSlotsPageController({
     useState<MoneyGrabPresentation | null>(null)
   const [collectionAwardPresentation, setCollectionAwardPresentation] =
     useState<CollectionAwardPresentation | null>(null)
-  const [wagerIndex, setWagerIndex] = useState(0)
+  const [wagerIndex, setWagerIndex] = useState(() =>
+    Math.max(0, wagerOptions.findIndex(points => points * pointValueInCents / 100 === defaultWagerRand)),
+  )
   const [isSymbolGuideOpen, setIsSymbolGuideOpen] = useState(false)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -513,23 +543,22 @@ export function useSlotsPageController({
   ])
 
   useEffect(() => {
-    const buttonClickCue = soundSet.events.buttonClick
-    if (!soundSet.events.themeSuite || buttonClickCue === undefined) return
+    const { buttonClick, utilityButtonClick } = soundSet.events
+    if (!soundSet.events.themeSuite || (buttonClick === undefined && utilityButtonClick === undefined)) return
 
     const onButtonClick = (event: MouseEvent) => {
       if (!event.isTrusted || !(event.target instanceof Element)) return
       const control = event.target.closest('button, summary, [role="button"]')
       if (control === null || control.matches('.spin-button, :disabled, [aria-disabled="true"]') ||
         control.closest('[inert]') !== null) return
-      if (soundSet.events.themeSuite && control.closest('.slots-page__wager-control, .sidecar-spin-controls__bet-stepper') !== null) return
-      // The main spin control handles its own cues. Capture also reaches
-      // dialog portals and the payment bell while this cabinet is mounted.
-      playCue(buttonClickCue)
+      if (control.closest('.slots-page__wager-control, .sidecar-spin-controls__bet-stepper') !== null) return
+      const cue = control.hasAttribute('data-slot-utility-cue') ? utilityButtonClick ?? buttonClick : buttonClick
+      if (cue !== undefined) playCue(cue)
     }
 
     document.addEventListener('click', onButtonClick, true)
     return () => document.removeEventListener('click', onButtonClick, true)
-  }, [gameId, playCue, soundSet.events.buttonClick, soundSet.events.themeSuite])
+  }, [gameId, playCue, soundSet.events.buttonClick, soundSet.events.themeSuite, soundSet.events.utilityButtonClick])
 
   useEffect(() => {
     // Ask for ambience as soon as the cabinet opens. Browsers that permit
@@ -635,6 +664,8 @@ export function useSlotsPageController({
   }, [])
 
   const applySlotState = useCallback((state: SlotState) => {
+    setTomeState(state.arcaneTome ?? null)
+    setPotions(state.arcanePotions ?? null)
     const award = energyCompletionAward?.decode(state)
     if (award === null) return
 
@@ -670,6 +701,10 @@ export function useSlotsPageController({
     setLastEnergyAwarded(0)
     setLastEnergyMultiplierApplied(false)
     setLastWin(0)
+    setTomeState(null)
+    setPotions(null)
+    setConfirmedPotionUse(null)
+    setTomeIngredientsAwarded({})
     setLastCollectorAward(0)
     setLightningCollection(null)
     setLastFreeSpinsAwarded(0)
@@ -1154,15 +1189,16 @@ export function useSlotsPageController({
     const wager = slotPointsToRand(result.wagerPoints, result.pointValueInCents)
     const tier = getWinPresentationTier(awardedCredits, wager)
     const isBigWin = tier !== 'win'
-    const initialHoldDuration = tier === 'jackpot'
+    const popupTiming = usesPaylinePopups ? getPaylineWinTimings(tier, isFastAutoSpin) : null
+    const legacyHoldDuration = tier === 'jackpot'
       ? bigWinCountDurationMs / speedMultiplier
       : tier === 'big'
         ? bigWinCountDurationMs * 0.68 / speedMultiplier
         : regularWinHoldDurationMs / speedMultiplier
-    const flyoverDuration = winFlyoverDurationMs / speedMultiplier
-    const balanceCountDuration = isBigWin
-      ? bigWinBalanceCountDurationMs / speedMultiplier
-      : regularWinBalanceCountDurationMs / speedMultiplier
+    const initialHoldDuration = popupTiming?.hold ?? legacyHoldDuration
+    const flyoverDuration = popupTiming?.flight ?? winFlyoverDurationMs / speedMultiplier
+    const balanceCountDuration = popupTiming?.balanceCount ??
+      (isBigWin ? bigWinBalanceCountDurationMs : regularWinBalanceCountDurationMs) / speedMultiplier
 
     const delayCompleted = await waitForPresentation(
       isFastAutoSpin ? 40 : 110,
@@ -1180,21 +1216,14 @@ export function useSlotsPageController({
     const stageRect = document.querySelector<HTMLElement>('.slots-page__stage')?.getBoundingClientRect()
     const sourceRect = frameRect ?? stageRect
     const balanceTarget = creditTileRef.current ?? document.querySelector<HTMLElement>('.in-game-shell > [data-game-navbar] .site-header-balance')
-    const destinationRect = balanceTarget?.getBoundingClientRect()
     const startLeft = sourceRect ? sourceRect.left + sourceRect.width / 2 : window.innerWidth / 2
     const startTop = sourceRect ? sourceRect.top + sourceRect.height * 0.38 : window.innerHeight * 0.38
-    const destinationLeft = destinationRect
-      ? destinationRect.left + destinationRect.width / 2
-      : startLeft
-    const destinationTop = destinationRect
-      ? destinationRect.top + destinationRect.height / 2
-      : startTop
     const flyoverId = Date.now()
 
     setWinAwardFlyover({
       id: flyoverId,
       amount: awardedCredits,
-      displayAmount: isBigWin ? 0 : awardedCredits,
+      displayAmount: isBigWin || usesPaylinePopups ? 0 : awardedCredits,
       winTier,
       isFlying: false,
       tier,
@@ -1205,8 +1234,8 @@ export function useSlotsPageController({
       durationMs: initialHoldDuration,
     })
 
-    if (isBigWin) {
-      const countDuration = initialHoldDuration
+    if (isBigWin || usesPaylinePopups) {
+      const countDuration = popupTiming?.count ?? initialHoldDuration
       const completed = await animateNumberValue(
         0,
         awardedCredits,
@@ -1222,7 +1251,7 @@ export function useSlotsPageController({
               : currentAward,
           )
         },
-        1,
+        usesPaylinePopups ? 100 : 1,
       )
       if (!completed) {
         settleAward()
@@ -1244,6 +1273,15 @@ export function useSlotsPageController({
     if (!isCurrentPresentation(signal)) {
       return
     }
+    const totalTarget = usesPaylinePopups && result.payout.paylines.length > 1 ? spinTotalRef.current : null
+    const destinationRect = (totalTarget ?? balanceTarget)?.getBoundingClientRect()
+    const amount = totalTarget ? winAmountRef.current : null
+    const amountRect = amount?.getBoundingClientRect()
+    const flightLeft = amountRect ? amountRect.left + amountRect.width / 2 : startLeft
+    const flightTop = amountRect ? amountRect.top + amountRect.height / 2 : startTop
+    const endScale = totalTarget && amount
+      ? parseFloat(getComputedStyle(totalTarget).fontSize) / parseFloat(getComputedStyle(amount).fontSize)
+      : undefined
     const flyingAwardId = Date.now() + 1
     setWinAwardFlyover((currentAward) =>
       currentAward
@@ -1252,8 +1290,12 @@ export function useSlotsPageController({
             id: flyingAwardId,
             displayAmount: awardedCredits,
             isFlying: true,
-            travelX: destinationLeft - startLeft,
-            travelY: destinationTop - startTop,
+            toSpinTotal: totalTarget !== null,
+            endScale,
+            left: flightLeft,
+            top: flightTop,
+            travelX: destinationRect ? destinationRect.left + destinationRect.width / 2 - flightLeft : 0,
+            travelY: destinationRect ? destinationRect.top + destinationRect.height / 2 - flightTop : 0,
             durationMs: flyoverDuration,
           }
         : currentAward,
@@ -1415,9 +1457,9 @@ export function useSlotsPageController({
   useEffect(() => {
     const handleKeyboardControl = (event: KeyboardEvent) => {
       const target = event.target instanceof Element ? event.target : null
-      const isEditableTarget = target?.closest(
+      const isEditableTarget = Boolean(target?.closest(
         'a, button, input, select, textarea, summary, [contenteditable="true"], [role="button"], [role="slider"]',
-      ) !== null
+      ))
       const action = getSlotKeyboardAction(event.key, {
         hasOpenDialog: isHelpOpen || isSymbolGuideOpen || isSettingsOpen || isReloadPromptOpen ||
           rainbowBonusSummary !== null,
@@ -1442,11 +1484,45 @@ export function useSlotsPageController({
       }
     }
 
-    window.addEventListener('keydown', handleKeyboardControl)
-    return () => window.removeEventListener('keydown', handleKeyboardControl)
+    window.addEventListener('keydown', handleKeyboardControl, true)
+    return () => window.removeEventListener('keydown', handleKeyboardControl, true)
   })
 
-  async function handleSpin() {
+  function changeTomePage(page: string, activate: boolean) {
+    return updateArcaneState(() => requestArcaneTomePage(page, activate), setTomeState)
+  }
+
+  function activatePotion(id: number) {
+    return updateArcaneState(() => requestArcanePotion(id), (state) => {
+      setPotions(state)
+      setConfirmedPotionUse(state.active?.bottle.id === id ? id : null)
+    })
+  }
+
+  async function updateArcaneState<T>(request: () => Promise<T>, apply: (state: T) => void) {
+    if (demoMode || !tomeState || spinInProgressRef.current || isSpinning || arcaneCommandPending.current) return
+    arcaneCommandPending.current = true
+    setIsArcaneUpdating(true)
+    setIsAutoSpinning(false)
+    setArcaneError(null)
+    slotStateRevisionGuardRef.current.advance()
+    try {
+      const next = await request()
+      if (isMountedRef.current) apply(next)
+    } catch (error) {
+      const state = await requestSlotState(gameId).catch(() => null)
+      if (isMountedRef.current) {
+        if (state) applySlotState(state)
+        setArcaneError(error instanceof Error ? error.message : 'The Arcane workbench could not be updated.')
+      }
+    } finally {
+      arcaneCommandPending.current = false
+      if (isMountedRef.current) setIsArcaneUpdating(false)
+    }
+  }
+
+  async function handleSpin(playedPressCue?: SlotSoundCueId) {
+    if (arcaneCommandPending.current) return
     if (isHelpOpen || isSymbolGuideOpen || isSettingsOpen || isReloadPromptOpen ||
         spinInProgressRef.current || isSpinning || collectionAwardPresentation !== null || rainbowBonusSummaryPendingRef.current) {
       return
@@ -1516,7 +1592,7 @@ export function useSlotsPageController({
       setIsFreeSpinBadgePopping(false)
     }
     beginPerformance(!isFastAutoSpin)
-    if (!isFastAutoSpin && !expectedFreeSpin) {
+    if (!isFastAutoSpin && !expectedFreeSpin && soundSet.events.leverPull !== playedPressCue) {
       playCue(soundSet.events.leverPull)
     }
     if (expectedFreeSpin) {
@@ -1563,7 +1639,9 @@ export function useSlotsPageController({
     const animation = startSpinAnimation({
       reelCount: reelsBeforeSpin.length,
       rowsPerReel: expectedRowCount,
-      symbolIds: animationSymbolIds,
+      symbolIds: tomeState?.activePage && presentation?.tomeTriggerSymbol
+        ? animationSymbolIds.filter(id => id !== presentation.tomeTriggerSymbol)
+        : animationSymbolIds,
       displayFrame,
       setReelMotion: (reelIndex, state) => {
         setReelMotion((currentMotion) =>
@@ -1628,13 +1706,13 @@ export function useSlotsPageController({
             sealCollections,
             freeSpinFeatureMode,
             ...(expectsGodsTumble ? { olympusTumbleShowcase: showGodsTumbleShowcase } : {}),
-          }, tumbleRules)
+          }, tumbleRules, symbolSet.definitions)
         : await requestSpin({
             gameId,
             wagerPoints: wagerForSpin,
             useFreeSpin: expectedFreeSpin,
             useSpecialBoost: requestedSpecialBoost,
-          }, tumbleRules)
+          }, tumbleRules, symbolSet.definitions)
 
       const energyAwardResult = energyCompletionAward?.decode(result)
       if (energyAwardResult === null) {
@@ -1738,9 +1816,13 @@ export function useSlotsPageController({
         freeSpinsAwarded: presentedFreeSpinsAwarded,
         narrative: outcomeNarrative,
       })
-      const lineWins = result.lightningCollection
-        ? result.payout.paylines.filter(({ paylineId }) => paylineId !== lightningCollectionPayoutId)
-        : result.payout.paylines
+      const wand = result.arcaneWandCollection
+      const lineWins = result.payout.paylines.filter(({ paylineId }) =>
+        !(result.lightningCollection && paylineId === lightningCollectionPayoutId) &&
+        !(wand && paylineId === arcaneWandPaylineId))
+      if (result.arcaneTome !== undefined) setTomeState(result.arcaneTome)
+      if (result.arcanePotions !== undefined) setPotions(result.arcanePotions)
+      setTomeIngredientsAwarded(result.arcaneIngredientsAwarded ?? {})
       const bestPayline = findBestPayline(lineWins)
       const winSoundCue = selectOutcomeSoundEvent(
         bestPayline,
@@ -1766,7 +1848,11 @@ export function useSlotsPageController({
       setResultAtmosphereId((current) => current + 1)
       const spinWinnings = awardedRand
       setLastWin(spinWinnings)
-      setLightningCollection(result.lightningCollection ?? null)
+      setLightningCollection(wand ? {
+        collector: wand.wand,
+        cells: wand.cells,
+        totalPoints: wand.totalPoints,
+      } : result.lightningCollection ?? null)
       if (featureSet.moneyGrab?.presentation === 'separate-award') {
         setLastCollectorAward(slotPointsToRand(result.moneyGrabPoints, result.pointValueInCents))
       }
@@ -1843,7 +1929,7 @@ export function useSlotsPageController({
           )
         }
       }
-      if (result.lightningCollection && !prefersReducedMotionRef.current) {
+      if ((wand || result.lightningCollection) && !prefersReducedMotionRef.current) {
         await waitForPresentation(lightningCollectionDurationMs, presentationSignal)
       }
       await animateMoneyGrab(result, isFastAutoSpin, presentationSignal)
@@ -2050,9 +2136,8 @@ export function useSlotsPageController({
       return
     }
 
-    if (soundSet.events.spinButtonClick) {
-      playCue(soundSet.events.spinButtonClick)
-    }
+    const pressCue = soundSet.events.spinButtonClick
+    if (pressCue !== undefined) playCue(pressCue)
 
     if (isSpecialSpinDelayActive) {
       if (specialSpinDelayTimerRef.current !== null) {
@@ -2060,7 +2145,7 @@ export function useSlotsPageController({
         specialSpinDelayTimerRef.current = null
       }
       setIsSpecialSpinDelayActive(false)
-      void handleSpin()
+      void handleSpin(pressCue)
       return
     }
 
@@ -2075,7 +2160,7 @@ export function useSlotsPageController({
       }, 420)
     }
 
-    void handleSpin()
+    void handleSpin(pressCue)
   }
 
   function reelStripStyle(reelIndex: number) {
@@ -2153,6 +2238,15 @@ export function useSlotsPageController({
     lastWin,
     lastSpinOutcome,
     lightningCollection,
+    tomeState,
+    potions,
+    activatePotion,
+    confirmedPotionUse,
+    playPotionCue,
+    tomeIngredientsAwarded,
+    isArcaneUpdating,
+    arcaneError,
+    changeTomePage,
     mascotActionKey,
     mascotPhase,
     mascotSet,
@@ -2195,6 +2289,8 @@ export function useSlotsPageController({
     wagerIndex,
     wagerOptions,
     winAwardFlyover,
+    spinTotalRef,
+    winAmountRef,
     winningPaylineCount,
     winningPaylines,
     winningPositions,

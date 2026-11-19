@@ -1,3 +1,5 @@
+// Edited: 2026-11-18T14:43:56-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:27:28-06:00 | Computer: Vinnabok
 import type { SlotSymbolGuideEntry } from '@fortuneforge/slot-client-core'
 import type { SlotExperienceSet } from './experience.js'
 import contracts from './engineGuideContracts.js'
@@ -42,6 +44,23 @@ export function formatCalibratedMultiplier(base: number, calibration: number): s
   return `${Number((base * calibration).toFixed(6))}×`
 }
 
+function getClassicPaylineGuideEntry(symbol: string, calibration: number, firstLabel: string): SlotSymbolGuideEntry {
+  const payouts = basePayouts[symbol]
+  if (!payouts || !Object.hasOwn(basePayouts, symbol)) throw new Error("Unknown classic payline symbol " + symbol)
+  return {
+    symbol,
+    firstLabel,
+    firstValue: formatCalibratedMultiplier(payouts.three, calibration),
+    secondLabel: '5',
+    secondValue: formatCalibratedMultiplier(payouts.five, calibration),
+  }
+}
+
+export function createClassicPaylineGuide(gameId: string, symbolIds: readonly string[]): SlotSymbolGuideEntry[] {
+  const { payoutMultiplier } = getSlotEngineGuideContract(gameId)
+  return symbolIds.map(symbol => getClassicPaylineGuideEntry(symbol, payoutMultiplier, '3–4'))
+}
+
 function modeDescription(mode: string, usesDirectValueTokens: boolean): string {
   return mode.split('-').map((part) => ({
     sync: 'linked reels',
@@ -78,13 +97,9 @@ export function withEngineGuide(
         sealSymbols.includes(entry.symbol as typeof sealSymbols[number]) && !contract.usesCollections ||
         entry.symbol === 'FREE' && contract.scatterAwardedSpins === 0) return []
     if (lineEntries.has(entry.symbol)) {
-      const payouts = basePayouts[entry.symbol]
       return [{
         ...entry,
-        firstLabel: entry.symbol === 'ACE' ? '3' : '3–4',
-        firstValue: multiplier(payouts.three),
-        secondLabel: '5',
-        secondValue: multiplier(payouts.five),
+        ...getClassicPaylineGuideEntry(entry.symbol, contract.payoutMultiplier, entry.symbol === 'ACE' ? '3' : '3–4'),
       }]
     }
     if (entry.symbol === 'BANANA') return [{ ...entry, secondValue: multiplier(3) }]

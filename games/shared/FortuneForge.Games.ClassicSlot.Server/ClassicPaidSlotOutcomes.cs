@@ -1,4 +1,8 @@
+// Edited: 2026-11-18T18:14:04-06:00 | Computer: Vinnabok
 using FortuneForge.Games.Slots;
+#if ARCANE_ARCHIVES
+using FortuneForge.Games.ArcaneArchives;
+#endif
 #if OLYMPUS_TUMBLE
 using FortuneForge.Games.GodsOfOlympus;
 #endif
@@ -7,8 +11,11 @@ internal sealed class ClassicPaidSlotOutcomes(IGameRandomSource random)
 {
     public PaidSlotOutcomeResponse Resolve(PaidSlotOutcomeRequest request)
     {
+#if ARCANE_ARCHIVES
+        return new ArcanePaidSlotOutcomes(random).Resolve(request);
+#else
         PaidSlotOutcomeProtocol.ValidateRequest(request, SelectedEngine.GameId);
-        if (request.IsNeonDiscoPlay || request.NeonDiscoMultiplier is not null ||
+        if (request.Arcane is not null || request.IsNeonDiscoPlay || request.NeonDiscoMultiplier is not null ||
             !request.IsFreeSpin && request.FreeSpinFeatureMode is not null)
             throw new ArgumentException("The admission uses an unsupported feature.", nameof(request));
 
@@ -30,5 +37,6 @@ internal sealed class ClassicPaidSlotOutcomes(IGameRandomSource random)
         return PaidSlotOutcomeResponse.Create(request, PaidSlotOutcomeProtocol.ClassicSlotKind,
             engine.Spin(request.WagerPoints, request.PlayerId, request.SpecialBoostApplied,
                 request.EnergyBalance, request.FreeSpinFeatureMode, request.PityMissesBefore, request.IsFreeSpin));
+#endif
     }
 }

@@ -1,12 +1,19 @@
+// Edited: 2026-11-18T18:41:52-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T18:24:49-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T18:11:03-06:00 | Computer: VINNABOK
+// Edited: 2026-11-18T17:59:23-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T14:43:56-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:29:57-06:00 | Computer: Vinnabok
 import type {
   GridPosition,
   LightningCollection,
   SlotCabinetTheme,
+  SlotPotionSoundEvent,
   SlotSoundSet,
   SlotSymbolId,
   SlotSymbolSet,
 } from '@fortuneforge/slot-client-core'
-import type { ComponentType } from 'react'
+import type { ComponentType, RefObject } from 'react'
 import type { SlotFeatureSet, SlotHelpDefinition } from './features.js'
 import type { MascotSet } from './mascot.js'
 import type { SlotOutcomeNarrative } from './outcomeNarratives.js'
@@ -16,6 +23,7 @@ export type SlotRulesSet = {
   initialReels: readonly (readonly SlotSymbolId[])[]
   pointValueInCents: number
   wagerOptions: readonly number[]
+  defaultWagerRand?: number
   autoSpinDelayMs: number
   autoSpinSpeedMultiplier: number
   baseSpinSpeedMultiplier: number
@@ -44,7 +52,67 @@ export type SlotPresentationFlyover = {
   chestDropHeight: number
 }
 
+export type SlotTomeState = {
+  selectedPage: string
+  activePage: string | null
+  boostedSpinsRemaining: number
+  grimoireReady: boolean
+  ingredients: Readonly<Record<string, number>>
+  pages: readonly Readonly<{ id: string; label: string; ingredients: readonly string[] }>[]
+}
+
+export type SlotPotionPreview = Readonly<{
+  ingredientId: SlotSymbolId
+  name: string
+  effect: string
+  potency: number
+}>
+
+export type SlotPotionBottle = SlotPotionPreview & Readonly<{ id: number }>
+
+export type SlotPotionState = Readonly<{
+  capacity: number
+  majority: number
+  pot: readonly SlotSymbolId[]
+  bottles: readonly SlotPotionBottle[]
+  active: Readonly<{ bottle: SlotPotionBottle; spinsRemaining: number }> | null
+  preview: SlotPotionPreview | null
+}>
+
+export type SlotTomePanelProps = {
+  state: SlotTomeState
+  potions: SlotPotionState | null
+  awarded: Readonly<Record<string, number>>
+  cabinetRef: RefObject<HTMLDivElement | null>
+  settledSpin: Readonly<{
+    key: number
+    reels: readonly (readonly SlotSymbolId[])[]
+  }> | null
+  reducedMotion: boolean
+  disabled: boolean
+  error: string | null
+  onOpen: () => void
+  onChangePage: (page: string, activate: boolean) => void
+  onUsePotion: (id: number) => void
+  confirmedPotionUse?: number | null
+  onPotionCue?: (event: SlotPotionSoundEvent) => void
+}
+
+export type SlotWinHelpContentProps = {
+  onClose: () => void
+}
+
 export type SlotExperiencePresentation = {
+  winHelp?: Readonly<{
+    Content: ComponentType<SlotWinHelpContentProps>
+    title: string
+    eyebrow?: string
+    theme?: string
+    firstOpenStorageKey?: string
+  }>
+  TomePanel?: ComponentType<SlotTomePanelProps>
+  tomeTriggerSymbol?: SlotSymbolId
+  winPresentation?: 'payline-popups'
   mainWordmark?: Readonly<{ src: string; width: number; height: number; className: string }>
   stageWordmark?: Readonly<{ src: string; width: number; height: number; className: string }>
   specialBackdropImage?: string

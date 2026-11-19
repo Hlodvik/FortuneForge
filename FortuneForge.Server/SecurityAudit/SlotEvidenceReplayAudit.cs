@@ -1,4 +1,15 @@
+// Edited: 2026-11-18T18:01:37-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:45:56-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:30:05-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:35:09-06:00 | Computer: Vinnabok
 using System.Text.Json;
+using ArcanePotions = FortuneForge.Games.ArcaneArchives.ArcanePotions;
+using ArcanePotionState = FortuneForge.Games.ArcaneArchives.ArcanePotionState;
+using ArcaneTome = FortuneForge.Games.ArcaneArchives.ArcaneTome;
+using ArcaneTomeState = FortuneForge.Games.ArcaneArchives.ArcaneTomeState;
+using ArcaneTomeProgress = FortuneForge.Games.ArcaneArchives.ArcaneTomeProgress;
+using ArcaneArchivesEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
+using ArcaneWandCollector = FortuneForge.Games.ArcaneArchives.ArcaneWandCollector;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.JadeDragon;
 using FortuneForge.Server.Activity;
@@ -97,7 +108,8 @@ internal static class SlotEvidenceReplayAudit
                 findings.AddRange(InspectDemo(data, result, response!, engineAudit));
             else if (usesOlympusTumble)
                 findings.AddRange(InspectOlympusSettlement(root, data, result, engineAudit, settledPayout, summary));
-            else if (engineAudit.EngineVersion == ArcaneLightningCollector.EngineVersion)
+            else if (engineAudit.EngineVersion == ArcaneLightningCollector.EngineVersion ||
+                ArcaneArchivesEngine.IsWandEngineVersion(engineAudit.EngineVersion))
                 findings.AddRange(InspectArcaneSettlement(data, result, engineAudit, settledPayout, summary));
             else if (GoldFoundrySlotDefinitions.IsModel(engineAudit.BaseGame))
                 findings.AddRange(GoldFoundryAudit.InspectPaidSettlement(data, result, engineAudit, settledPayout, summary));
@@ -236,11 +248,55 @@ internal static class SlotEvidenceReplayAudit
         var isFreeSpin = data.GetProperty("isFreeSpin").GetBoolean();
         var wagerCents = isFreeSpin ? 0 : RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
         var payoutCents = RandMoney.PointsToCents(settled.TotalPoints, result.PointValueInCents);
-        if (isFreeSpin != result.IsFreeSpin || isFreeSpin != audit.IsDerivedFreeSpin || summary.Participants.Count != 1 ||
+        if (isFreeSpin != result.IsFreeSpin || isFreeSpin != audit.IsDerivedFreeSpin ||
+            ArcaneArchivesEngine.IsWandEngineVersion(audit.EngineVersion) && result.ChargedWagerCents != wagerCents ||
+            summary.Participants.Count != 1 ||
             summary.Participants[0].WagerCents != wagerCents || summary.Participants[0].PayoutCents != payoutCents ||
             summary.Participants[0].NetCents != payoutCents - wagerCents)
             return [new("slot-arcane-financial-mismatch", "error",
                 "The Arcane Archives stake and payout do not balance with the paid round summary.")];
+        var usesPotions = ArcaneArchivesEngine.SupportsPotionEngineVersion(audit.EngineVersion);
+        if (data.TryGetProperty("arcaneTome", out var tome) && tome.ValueKind != JsonValueKind.Null)
+        {
+            var before = tome.GetProperty("before").Deserialize<ArcaneTomeState>(RoundAuditCapture.Json)
+                ?? throw new JsonException("Missing admitted Arcane Tome state.");
+            var progress = tome.GetProperty("progress").Deserialize<ArcaneTomeProgress>(RoundAuditCapture.Json)
+                ?? throw new JsonException("Missing settled Arcane Tome state.");
+            if (!ArcaneArchivesEngine.IsWandEngineVersion(audit.EngineVersion) ||
+                !ArcaneArchivesEngine.MatchesTomeState(result.ReelSetId, before))
+                return [new("slot-arcane-tome-mismatch", "error",
+                    "The Arcane Archives reel set does not match the admitted Tome and ingredient state.")];
+            var expected = ArcaneTome.CompleteSpin(before, result.Reels, isFreeSpin,
+                requireIngredient: audit.EngineVersion == ArcaneArchivesEngine.PreviousWandEngineVersion);
+            ArcaneTome.ValidateState(progress.State);
+            if (!ArcaneTome.SameState(progress.State, expected.State) || !SameMap(progress.IngredientsAwarded, expected.IngredientsAwarded))
+                return [new("slot-arcane-tome-mismatch", "error",
+                    "The Arcane Archives Tome progression does not match the captured reel symbols and page.")];
+            if (usesPotions)
+                return InspectArcanePotionProgress(data, result, audit, before, isFreeSpin);
+        }
+        else if (usesPotions || ArcaneArchivesEngine.IsBoostedReelSet(result.ReelSetId))
+            return [new("slot-arcane-tome-mismatch", "error",
+                "The Arcane Archives spin requires captured Tome state for its reel set.")];
+        return [];
+    }
+
+    private static IReadOnlyList<RoundAuditFinding> InspectArcanePotionProgress(
+        JsonElement data, SpinResult result, SlotSpinEngineAudit audit, ArcaneTomeState tome, bool isFreeSpin)
+    {
+        if (!data.TryGetProperty("arcanePotions", out var potions))
+            return [new("slot-arcane-potion-mismatch", "error", "The captured Arcane potion progression is missing.")];
+
+        var before = potions.GetProperty("before").Deserialize<ArcanePotionState>(RoundAuditCapture.Json)
+            ?? throw new JsonException("Missing admitted Arcane potion state.");
+        var after = potions.GetProperty("after").Deserialize<ArcanePotionState>(RoundAuditCapture.Json)
+            ?? throw new JsonException("Missing settled Arcane potion state.");
+        var expected = ArcanePotions.CompleteSpin(before,
+            ArcaneTome.OrderedIngredientUnits(tome, result.Reels, isFreeSpin), isFreeSpin);
+        if (audit.ArcanePotionApplied != ArcanePotions.ForSpin(before, isFreeSpin) ||
+            !ArcanePotions.SameState(after, expected))
+            return [new("slot-arcane-potion-mismatch", "error",
+                "The Arcane potion in use or brewed potion progression differs from the admitted state and reel symbols.")];
         return [];
     }
 
@@ -506,6 +562,7 @@ internal static class SlotEvidenceReplayAudit
         engine.MoneyGrabPoints == response.MoneyGrabPoints &&
         engine.BananaBonusPoints == response.BananaBonusPoints &&
         SlotRoundAudit.SameLightningCollection(engine.LightningCollection, response.LightningCollection) &&
+        ArcaneWandCollector.SameCollection(engine.ArcaneWandCollection, response.ArcaneWandCollection) &&
         (engine.OlympusTumble is null && response.OlympusTumble is null ||
          JsonSerializer.Serialize(engine.OlympusTumble, RoundAuditCapture.Json) ==
              JsonSerializer.Serialize(response.OlympusTumble, RoundAuditCapture.Json)) &&

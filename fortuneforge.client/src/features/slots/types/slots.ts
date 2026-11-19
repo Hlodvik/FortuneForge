@@ -1,3 +1,7 @@
+// Edited: 2026-11-18T18:00:18-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T14:52:25-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:30:40-06:00 | Computer: Vinnabok
+import type { SlotPotionState, SlotTomeState } from '@fortuneforge/slot-game-runtime/experience'
 import type { SlotSymbolId as SharedSlotSymbolId } from '@fortuneforge/slot-client-core'
 import type { GodsTumbleResult } from '@fortuneforge/games-gods-of-olympus/tumble'
 import { GODS_TUMBLE_MULTIPLIERS } from '@fortuneforge/games-gods-of-olympus/tumble'
@@ -22,6 +26,8 @@ export const slotSymbolIds: readonly SlotSymbolId[] = [
   'POWER',
   'BOLT',
   'BANANA',
+  'WAND',
+  'FORTUNE_RUNE',
   'PAW',
   'RAND_05',
   'RAND_1',
@@ -52,6 +58,14 @@ export type SlotTumbleRules = Readonly<{
 export type LightningCollection = {
   collector: GridPosition
   cells: (GridPosition & { amountPoints: number })[]
+  totalPoints: number
+}
+
+export const arcaneWandPaylineId = 903
+
+export type ArcaneWandCollection = {
+  wand: GridPosition
+  cells: (GridPosition & { symbolId: SlotSymbolId; multiplier: number; amountPoints: number; potionBonusPoints?: number })[]
   totalPoints: number
 }
 
@@ -110,6 +124,10 @@ export type SpinResult = {
   monkeyPawCount: number
   moneyGrabPoints: number
   lightningCollection?: LightningCollection | null
+  arcaneWandCollection?: ArcaneWandCollection | null
+  arcaneTome?: SlotTomeState | null
+  arcanePotions?: SlotPotionState | null
+  arcaneIngredientsAwarded?: Readonly<Record<string, number>> | null
   bananaBonusPoints: number
   sealsAwarded: Record<string, number>
   sealCollections: SlotSealCollection[]

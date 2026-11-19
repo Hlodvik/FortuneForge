@@ -1,6 +1,14 @@
+// Edited: 2026-11-18T18:02:58-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:35:11-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T14:49:30-06:00 | Computer: Vinnabok
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using FortuneForge.Games.Abstractions.Analytics;
+using ArcaneArchivesEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
+using ArcanePotionBottle = FortuneForge.Games.ArcaneArchives.ArcanePotionBottle;
+using ArcanePotionState = FortuneForge.Games.ArcaneArchives.ArcanePotionState;
+using ArcanePotions = FortuneForge.Games.ArcaneArchives.ArcanePotions;
+using ArcaneTome = FortuneForge.Games.ArcaneArchives.ArcaneTome;
 using FortuneForge.Games.MidnightVault;
 using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Controllers;
@@ -239,6 +247,99 @@ public sealed class SlotRoundAuditTests
     }
 
     [Fact]
+    public void ArcaneWand_ReplaysPaidReceiptWithItsWagerAndConstellationPayout()
+    {
+        var random = new SeededRandom(20261118);
+        var service = new SpinService(Provider(), new CryptoReelGenerator(random),
+            new CombinationEvaluator(), new PayoutCalculator(), random);
+        var admission = new SlotSpinAdmission(12, 300, false, 0, false, 0, null, 0, null)
+        {
+            AdmissionId = Guid.NewGuid(),
+            StartedAtUtc = DateTime.UtcNow
+        };
+        var result = Enumerable.Range(0, 500).Select(_ =>
+            service.SpinAdmitted(SlotSpecialRoundProfiles.ArcaneArchivesGameId, admission, "arcane-wand-paid"))
+            .First(spin => spin.ArcaneWandCollection is not null);
+        Assert.Equal(300, result.ChargedWagerCents);
+        var wand = result.ArcaneWandCollection!;
+        var award = Assert.Single(result.Payout.Paylines, line => line.PaylineId == 903);
+        Assert.Equal(wand.TotalPoints, award.AmountPoints);
+
+        var saved = SavedEvidence(result);
+        Assert.Empty(SlotEvidenceReplayAudit.Inspect(saved.Summary, saved.PayloadJson));
+        var participant = Assert.Single(saved.Summary.Participants);
+        Assert.Equal(300, participant.WagerCents);
+        Assert.Equal(result.Payout.TotalPoints * 25, participant.PayoutCents);
+
+        var corrupt = JsonNode.Parse(saved.PayloadJson)!;
+        corrupt["data"]!["result"]!["chargedWagerCents"] = 250;
+        Assert.Contains(SlotEvidenceReplayAudit.Inspect(saved.Summary, corrupt.ToJsonString()),
+            finding => finding.Code == "slot-arcane-financial-mismatch");
+    }
+
+    [Fact]
+    public void ArcanePotion_ReplaysBoostedWandAndRejectsChangedPotionProgress()
+    {
+        var random = new SeededRandom(20261118);
+        var service = new SpinService(Provider(), new CryptoReelGenerator(random),
+            new CombinationEvaluator(), new PayoutCalculator(), random);
+        var bottle = new ArcanePotionBottle(1, "QUICKSILVER", 6);
+        var potions = new ArcanePotionState([], [], new(bottle, ArcanePotions.Duration), 2);
+        var admission = new SlotSpinAdmission(12, 300, false, 0, false, 0, null, 0, null)
+        {
+            AdmissionId = Guid.NewGuid(),
+            StartedAtUtc = DateTime.UtcNow,
+            ArcaneTomeBefore = ArcaneTome.Empty,
+            ArcanePotionsBefore = potions
+        };
+
+        var result = Enumerable.Range(0, 500).Select(_ =>
+            service.SpinAdmitted(ArcaneArchivesEngine.GameId, admission, "arcane-potion-replay"))
+            .First(spin => spin.ArcaneWandCollection is not null);
+        Assert.Equal(bottle, result.EngineAudit!.ArcanePotionApplied);
+        Assert.Contains(result.ArcaneWandCollection!.Cells, cell => cell.PotionBonusPoints > 0);
+        var paid = SavedEvidence(result, potions);
+        Assert.Empty(SlotEvidenceReplayAudit.Inspect(paid.Summary, paid.PayloadJson));
+
+        var changed = JsonNode.Parse(paid.PayloadJson)!;
+        changed["data"]!["arcanePotions"]!["after"]!["active"]!["spinsRemaining"] = ArcanePotions.Duration;
+        Assert.Contains(SlotEvidenceReplayAudit.Inspect(paid.Summary, changed.ToJsonString()),
+            finding => finding.Code == "slot-arcane-potion-mismatch");
+
+        var removed = result with { EngineAudit = result.EngineAudit with { ArcanePotionApplied = null } };
+        Assert.Contains(SlotRoundAudit.Check(removed, removed.Payout, isPaid: true),
+            finding => finding.Code == "slot-arcane-wand-mismatch");
+    }
+
+    [Theory]
+    [InlineData("MOONCAP_MUSHROOM")]
+    [InlineData("NIGHTSHADE_BERRIES")]
+    [InlineData("PHOENIX_FEATHER")]
+    public void ArcanePotion_ReplaysTheAdjustedStripsAndRejectsBaseStrips(string ingredient)
+    {
+        var random = new SeededRandom(20261118);
+        var service = new SpinService(Provider(), new CryptoReelGenerator(random),
+            new CombinationEvaluator(), new PayoutCalculator(), random);
+        var bottle = new ArcanePotionBottle(1, ingredient, 12);
+        var admission = new SlotSpinAdmission(12, 300, false, 0, false, 0, null, 0, null)
+        {
+            AdmissionId = Guid.NewGuid(),
+            StartedAtUtc = DateTime.UtcNow,
+            ArcaneTomeBefore = ArcaneTome.Empty,
+            ArcanePotionsBefore = new([], [], new(bottle, ArcanePotions.Duration), 2)
+        };
+        var result = service.SpinAdmitted(ArcaneArchivesEngine.GameId, admission, "arcane-potion-replay");
+        var audit = result.EngineAudit!;
+        Assert.Equal(bottle, audit.ArcanePotionApplied);
+        Assert.Empty(SlotRoundAudit.Check(result, result.Payout, isPaid: true));
+
+        var baseStrips = ArcaneArchivesEngine.FindReelSet(audit.ReelSet.Id);
+        var changed = result with { EngineAudit = audit with { ReelSet = baseStrips! } };
+        Assert.Contains(SlotRoundAudit.Check(changed, changed.Payout, isPaid: true),
+            finding => finding.Code == "slot-arcane-potion-mismatch");
+    }
+
+    [Fact]
     public void ArcaneLightning_HistoricalEnergySpinStillReplays()
     {
         var result = SpinArcane(legacy: true);
@@ -313,7 +414,8 @@ public sealed class SlotRoundAuditTests
             response, generated.AddMilliseconds(-1), generated.AddMilliseconds(1)));
     }
 
-    private static FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture SavedEvidence(SpinResult result)
+    private static FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture SavedEvidence(
+        SpinResult result, ArcanePotionState? arcanePotionsBefore = null)
     {
         var wagerCents = result.IsFreeSpin ? 0 : RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
         result = result with { ChargedWagerCents = wagerCents };
@@ -334,6 +436,8 @@ public sealed class SlotRoundAuditTests
         var discoBefore = isDisco ? 1 : 0;
         var multiplierBefore = result.EngineAudit?.NeonDiscoCascade?.StartingMultiplier ?? NeonDiscoCascade.InitialMultiplier;
         var discoRemaining = isNeon ? NeonPlayPolicy.NextDiscoSpins(discoBefore, isDisco, result.NeonArcade) : 0;
+        var tome = ArcaneArchivesEngine.SupportsPotionEngineVersion(result.EngineAudit?.EngineVersion) ? ArcaneTome.Empty : null;
+        var potionState = tome is null ? null : arcanePotionsBefore ?? ArcanePotions.Empty;
         return SinglePlayerRoundRecord.Create(catalogueGameId, result.SpinId.ToString("N"),
             "audit-test-player", wagerCents, payoutCents, DateTime.UtcNow, DateTime.UtcNow,
             "slotSpinResults", result.SpinId.ToString("N"),
@@ -351,7 +455,18 @@ public sealed class SlotRoundAuditTests
                 neonDiscoMultiplierBefore = multiplierBefore,
                 neonDiscoMultiplier = NeonPlayPolicy.NextDiscoMultiplier(multiplierBefore, discoRemaining,
                     result.NeonDiscoCascade, result.NeonArcade),
-                crucible = crucible is null ? null : new { wageredBeforeCents = 0L, settlement = crucible }
+                crucible = crucible is null ? null : new { wageredBeforeCents = 0L, settlement = crucible },
+                arcaneTome = tome is null ? null : new
+                {
+                    before = tome,
+                    progress = ArcaneTome.CompleteSpin(tome, result.Reels, result.IsFreeSpin)
+                },
+                arcanePotions = potionState is null ? null : new
+                {
+                    before = potionState,
+                    after = ArcanePotions.CompleteSpin(potionState,
+                        ArcaneTome.OrderedIngredientUnits(tome!, result.Reels, result.IsFreeSpin), result.IsFreeSpin)
+                }
             },
             "slot-reels-paylines-and-features-v1", true, SlotRoundAudit.AuditorVersion).Audit;
     }
@@ -445,17 +560,19 @@ public sealed class SlotRoundAuditTests
     {
         public GameDefinition GetGame(string id)
         {
-            var current = provider.GetGame(id)!;
-            if (!legacy) return current;
+            var current = FortuneForge.Games.Slots.Runtime.ClassicSlotDefinitionFactory.Create(
+                new(id, 3, 5, 40, 10, UsesEnergy: legacy, PayoutMultiplier: 0.716m,
+                    PaylinePatternIds: [1,2,3,4,5,6,7,8,9,10,18,19,20,21,22,23])).CreateGame();
             return new GameDefinition
             {
                 Id = current.Id, Layout = current.Layout, Symbols = current.Symbols,
                 Matching = current.Matching, Wagering = current.Wagering, Paylines = current.Paylines,
                 FreeGames = current.FreeGames, SpecialPoints = current.SpecialPoints,
-                Energy = new() { SymbolId = "BOLT", PointsPerVisibleSymbol = 1 },
+                Energy = current.Energy,
                 Math = new()
                 {
-                    ReelSetId = "classic-reels-v4", PaytableId = current.Math.PaytableId,
+                    ReelSetId = legacy ? "classic-reels-v4" : ArcaneLightningCollector.ReelSetId,
+                    PaytableId = current.Math.PaytableId,
                     PaylinePayoutSteps = current.Math.PaylinePayoutSteps,
                     PayoutMultiplier = current.Math.PayoutMultiplier, Targets = current.Math.Targets
                 }

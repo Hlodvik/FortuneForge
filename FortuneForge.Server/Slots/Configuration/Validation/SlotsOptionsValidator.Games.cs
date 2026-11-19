@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T14:45:02-06:00 | Computer: Vinnabok
 using FortuneForge.Server.Slots.Models;
 using Microsoft.Extensions.Options;
 
@@ -40,7 +41,7 @@ public sealed partial class SlotsOptionsValidator
         }
 
         var symbolIds = symbolSet.Symbols.Select(symbol => symbol.Id).ToHashSet(StringComparer.Ordinal);
-        if (!symbolIds.Contains(game.Symbols.WildSymbolId))
+        if (game.Symbols.WildSymbolId.Length > 0 && !symbolIds.Contains(game.Symbols.WildSymbolId))
         {
             errors.Add(
                 $"Game '{game.Id}' references missing wild symbol '{game.Symbols.WildSymbolId}'.");

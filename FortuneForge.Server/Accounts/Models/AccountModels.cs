@@ -1,3 +1,6 @@
+// Edited: 2026-11-18T17:59:35-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:30:13-06:00 | Computer: Vinnabok
+using FortuneForge.Games.ArcaneArchives;
 using System.Text.Json.Serialization;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Bonuses;
@@ -68,6 +71,10 @@ public sealed record SlotSpinAdmission(
     public string? MathModelId { get; init; }
     public MidnightVaultBonusRound? BonusRound { get; init; }
     public IReadOnlyList<MidnightVaultBonusRound> BonusRoundsBeforeAdmission { get; init; } = [];
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ArcaneTomeState? ArcaneTomeBefore { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ArcanePotionState? ArcanePotionsBefore { get; init; }
     internal SpinResult? ResolvedOutcome { get; init; }
     internal NeonNitroChoiceOffer? PendingNeonNitroChoice { get; init; }
 }
@@ -96,6 +103,12 @@ public sealed record SlotSpinSettlement(
     public MidnightVaultBonusRound? BonusRound { get; init; }
     public IReadOnlyList<MidnightVaultBonusRound> QueuedBonusRounds { get; init; } = [];
     public IReadOnlyList<MidnightVaultBonusRound> AwardedBonusRounds { get; init; } = [];
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ArcaneTomeState? ArcaneTome { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ArcanePotionState? ArcanePotions { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, long>? ArcaneIngredientsAwarded { get; init; }
     public int NeonDiscoSpinsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? NeonDiscoMultiplier { get; init; }
@@ -115,6 +128,10 @@ public sealed record SlotStateResponse(
     IReadOnlyList<SlotSealCollection> SealCollections,
     string? FreeSpinFeatureMode)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ArcaneTomeView? ArcaneTome { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ArcanePotionView? ArcanePotions { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public long? CrucibleWageredCents { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

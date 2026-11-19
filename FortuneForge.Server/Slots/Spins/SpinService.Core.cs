@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T14:45:02-06:00 | Computer: Vinnabok
 using System.Collections.Concurrent;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
@@ -111,7 +112,7 @@ public sealed partial class SpinService(
 
         var game = definitions.GetGame(gameId)
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
-        if (useFreeSpin && ArcaneLightningCollector.IsModel(game))
+        if (useFreeSpin && game.Id == SlotSpecialRoundProfiles.ArcaneArchivesGameId)
             ArcaneLightningCollector.ValidateCarryWager(game, wagerPoints);
         else if (useFreeSpin && gameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId)
             ValidateOlympusCarryWager(game, wagerPoints);

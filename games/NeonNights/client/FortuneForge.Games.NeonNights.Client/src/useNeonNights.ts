@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T14:56:58-06:00 | Computer: Vinnabok
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   cancelSpinAnimation, finishSpinAnimation, getSlotKeyboardAction, reelLandingSettleDurationMs,
@@ -5,6 +6,7 @@ import {
   usePrefersReducedMotion, useSlotAudio, waitForPresentation, waitForPresentationFrame,
   type PaylinePayout, type ReelMotionState, type SpinAnimation,
 } from '@fortuneforge/slot-client-core'
+import { getPaylineWinTimings } from '@fortuneforge/slot-client-core/slotWinPresentation'
 import { createNeonApi, NeonRequestError } from './api.js'
 import { getNeonWinReaction, getNeonWinTier, NEON_NIGHTS_SOUNDS, neonBaseMusic, neonCarMusicCueId, neonDiscoMusic, type NeonWinTier } from './audio.js'
 import { neonCabinet, neonDefaultWagerIndex, neonRules, neonSymbols } from './manifest.js'
@@ -312,19 +314,17 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
     const wager = toRand(result.wagerPoints)
     const winTier = getNeonWinTier(amount, wager)
     const tier = winTier === 'big' ? 'jackpot' : winTier === 'great' && amount >= 25 ? 'big' : 'win'
-    const speed = fast ? 1.35 : 1
-    const hold = (tier === 'jackpot' ? 2400 : tier === 'big' ? 1500 : 820) / speed
+    const timing = getPaylineWinTimings(tier, fast)
+    const { hold, count: countDuration, flight: flyDuration } = timing
     if (!await waitForPresentation(fast ? 40 : 110, signal) || !await waitForPresentationFrame(signal)) { settle(); return }
     const frame = document.querySelector('.slot-game-frame')?.getBoundingClientRect()
     const left = frame ? frame.left + frame.width / 2 : innerWidth / 2
     const top = frame ? frame.top + frame.height * .38 : innerHeight * .38
     const id = Date.now()
     setWinAward({ id, displayAmount: 0, tier, winTier, flight: null, left, top, travelX: 0, travelY: 0, endScale: 1, durationMs: hold })
-    const countDuration = tier === 'win' ? hold * .72 : hold
     if (!await animateNumber(0, amount, countDuration, signal, displayAmount => {
       if (mounted.current) setWinAward(current => current?.id === id ? { ...current, displayAmount } : current)
     }) || !await waitForPresentation(hold - countDuration + (carPlay ? carAwardHoldMs : 0), signal)) { settle(); return }
-    const flyDuration = 540 / speed
     const totalSlot = carPlay || result.neonDiscoCascade
       ? document.querySelector('.neon-round-subtotal')
       : result.payout.paylines.length > 1 ? document.querySelector('.neon-spin-total') : null
@@ -343,7 +343,7 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
       travelY: target ? target.top + target.height / 2 - flightTop : 0,
     } : current)
     await Promise.all([waitForPresentation(flyDuration, signal), (async () => {
-      if (await waitForPresentation(flyDuration * .28, signal)) await animateNumber(beforeAward, finalBalance, (tier === 'win' ? 420 : 720) / speed, signal, next => { if (mounted.current) setBalance(next) })
+      if (await waitForPresentation(flyDuration * .28, signal)) await animateNumber(beforeAward, finalBalance, timing.balanceCount, signal, next => { if (mounted.current) setBalance(next) })
     })()])
     settle()
   }

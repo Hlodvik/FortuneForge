@@ -1,3 +1,5 @@
+// Edited: 2026-11-18T14:51:01-06:00 | Computer: Vinnabok
+// Edited: 2026-11-18T16:27:28-06:00 | Computer: Vinnabok
 import type { SlotCabinetTheme } from '@fortuneforge/slot-client-core'
 import { ARCANE_ARCHIVES_VISUALS as art } from './visuals'
 
@@ -9,8 +11,8 @@ export const ARCANE_ARCHIVES_CABINET_THEME: SlotCabinetTheme = {
   title: 'Arcane Archives',
   subtitle: 'Unlock the Forbidden Stacks',
   celebrationEffect: 'arcane-orbit',
+  paylineTrace: { color: '#f2cd79', glowColor: '#dfb3ff' },
   emblemImage: art.emblem,
-  accentImage: art.accent,
   backdropImage: art.backdrop,
   visualsBackdropImage: art.backdrop,
   pageBackdropImage: art.backdrop,

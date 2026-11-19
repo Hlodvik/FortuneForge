@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T19:58:40-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T18:41:52-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T18:24:49-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T18:11:03-06:00 | Computer: VINNABOK
@@ -5,7 +6,6 @@
 // Edited: 2026-11-18T14:43:56-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T16:30:40-06:00 | Computer: Vinnabok
 import { ResponsiveSlotImage } from './components/ResponsiveSlotImage'
-import { GODS_TUMBLE_MULTIPLIERS } from '@fortuneforge/games-gods-of-olympus/tumble'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -131,6 +131,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     symbolSet,
     toggleMuted,
     toggleResultsOnly,
+    tumbleMultiplierValues,
     useFreeGameForNextSpin,
     usesGodsTumble,
     visibleSealCollections,
@@ -163,9 +164,9 @@ export function SlotsPageView(controller: SlotsPageController) {
   const specialIntroImage = presentation?.specialIntroImage
   const collectionFeature = isGodsTumbleBoard && !useFreeGameForNextSpin ? undefined : featureSet.collections
   const godsTumbleAward = godsTumbleFrame?.phase === 'award' ? godsTumbleFrame.award : null
-  const godsMultiplierPositions = godsTumbleFrame?.phase === 'multiplier'
+  const godsMultiplierPositions = godsTumbleFrame?.phase === 'multiplier' && tumbleMultiplierValues
     ? displayedReels.flatMap((reel, reelIndex) => reel.flatMap((symbol, rowIndex) =>
-      Object.hasOwn(GODS_TUMBLE_MULTIPLIERS, symbol) ? [{ reel: reelIndex, row: rowIndex }] : []))
+      Object.hasOwn(tumbleMultiplierValues, symbol) ? [{ reel: reelIndex, row: rowIndex }] : []))
     : []
   const godsTumbleHighlights = godsTumbleAward?.positions ??
     (godsTumbleFrame?.phase === 'clear' ? godsTumbleFrame.cleared : undefined)

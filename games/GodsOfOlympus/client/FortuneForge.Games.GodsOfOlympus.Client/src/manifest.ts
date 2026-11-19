@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T19:58:40-06:00 | Computer: Vinnabok
 import './styles.css'
 import { withEngineGuide } from '@fortuneforge/slot-game-runtime/engine-guide'
 import { GODS_OF_OLYMPUS_SOUNDS } from './sounds'
@@ -11,6 +12,8 @@ import { GodsTumbleAwardBadge } from './GodsTumbleAwardBadge'
 import {
   GODS_TUMBLE_COLUMNS,
   GODS_TUMBLE_INITIAL_REELS,
+  GODS_TUMBLE_MULTIPLIER_CAP,
+  GODS_TUMBLE_MULTIPLIERS,
   GODS_TUMBLE_ROWS,
   GODS_TUMBLE_SYMBOLS,
 } from './tumble'
@@ -53,7 +56,7 @@ const HELP: SlotHelpDefinition = {
     {
       badge: 'ZEUS',
       title: 'Zeus multipliers',
-      body: 'A multiplier coin can land on the starting board or during a tumble. If the spin wins, all landed coins add together and multiply the total tumble award, up to 25×.',
+      body: `A multiplier coin can land on the starting board or during a tumble. If the spin wins, all landed coins add together and multiply the total tumble award, up to ${GODS_TUMBLE_MULTIPLIER_CAP}×.`,
     },
     {
       badge: 'GODS',
@@ -89,6 +92,8 @@ export const GODS_OF_OLYMPUS_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide
       rows: GODS_TUMBLE_ROWS,
       symbols: GODS_TUMBLE_SYMBOLS,
       initialReels: GODS_TUMBLE_INITIAL_REELS,
+      multiplierValues: GODS_TUMBLE_MULTIPLIERS,
+      multiplierCap: GODS_TUMBLE_MULTIPLIER_CAP,
     },
   }),
   presentation: { TumbleAwardBadge: GodsTumbleAwardBadge },

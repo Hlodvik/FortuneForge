@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T19:58:40-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T18:41:52-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T18:24:49-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T18:11:03-06:00 | Computer: VINNABOK
@@ -18,6 +19,15 @@ import type { SlotFeatureSet, SlotHelpDefinition } from './features.js'
 import type { MascotSet } from './mascot.js'
 import type { SlotOutcomeNarrative } from './outcomeNarratives.js'
 
+export type SlotTumbleRules = Readonly<{
+  columns: number
+  rows: number
+  symbols: readonly SlotSymbolId[]
+  initialReels: readonly (readonly SlotSymbolId[])[]
+  multiplierValues: Readonly<Partial<Record<SlotSymbolId, number>>>
+  multiplierCap: number
+}>
+
 export type SlotRulesSet = {
   gameId: string
   initialReels: readonly (readonly SlotSymbolId[])[]
@@ -30,12 +40,7 @@ export type SlotRulesSet = {
   reelTravelRowCount: number
   specialBoostCost: number
   energyMeterCapacity: number
-  tumble?: Readonly<{
-    columns: number
-    rows: number
-    symbols: readonly SlotSymbolId[]
-    initialReels: readonly (readonly SlotSymbolId[])[]
-  }>
+  tumble?: SlotTumbleRules
 }
 
 export type SlotPresentationFlyover = {

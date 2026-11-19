@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T19:58:40-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T18:42:45-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T18:30:20-06:00 | Computer: VINNABOK
 // Edited: 2026-11-18T18:00:18-06:00 | Computer: Vinnabok
@@ -2283,6 +2284,7 @@ export function useSlotsPageController({
     symbolSet,
     toggleMuted,
     toggleResultsOnly,
+    tumbleMultiplierValues: tumbleRules?.multiplierValues,
     useFreeGameForNextSpin,
     usesGodsTumble,
     visibleSealCollections,

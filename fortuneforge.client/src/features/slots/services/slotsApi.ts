@@ -1,16 +1,21 @@
+// Edited: 2026-11-18T19:58:40-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T18:00:18-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T16:27:57-06:00 | Computer: Vinnabok
 import {
   arcaneWandPaylineId,
   isSlotSymbolId,
   type SlotSealCollection,
-  type SlotTumbleRules,
   type SpinResult,
 } from '../types/slots'
-import type { SlotPotionBottle, SlotPotionPreview, SlotPotionState, SlotTomeState } from '@fortuneforge/slot-game-runtime/experience'
+import type {
+  SlotPotionBottle,
+  SlotPotionPreview,
+  SlotPotionState,
+  SlotTomeState,
+  SlotTumbleRules,
+} from '@fortuneforge/slot-game-runtime/experience'
 import type { SlotSymbolSet } from '../config/symbolSets'
 import { fetchWithAccountSession } from '../../account/services/accountsApi'
-import { GODS_TUMBLE_MULTIPLIERS } from '@fortuneforge/games-gods-of-olympus/tumble'
 
 type SpinRequest = {
   gameId: string
@@ -105,7 +110,7 @@ export async function requestSpin(
   }
 
   const result = (await response.json()) as unknown
-  if (!isSpinResult(result, symbolDefinitions)) {
+  if (!isSpinResult(result, symbolDefinitions, tumbleRules)) {
     throw new Error('The spin server returned an invalid reel result.')
   }
 
@@ -138,7 +143,7 @@ export async function requestDemoSpin(
   }
 
   const result = (await response.json()) as unknown
-  if (!isSpinResult(result, symbolDefinitions)) {
+  if (!isSpinResult(result, symbolDefinitions, tumbleRules)) {
     throw new Error('The spin server returned an invalid reel result.')
   }
 
@@ -252,7 +257,11 @@ function isTomeState(value: unknown): value is SlotTomeState {
       : value.boostedSpinsRemaining > 0 && value.pages.some(page => page.id === value.activePage))
 }
 
-function isSpinResult(result: unknown, symbolDefinitions?: SlotSymbolSet['definitions']): result is SpinResult {
+function isSpinResult(
+  result: unknown,
+  symbolDefinitions?: SlotSymbolSet['definitions'],
+  tumbleRules?: SlotTumbleRules,
+): result is SpinResult {
   if (!isRecord(result) || !isRecord(result.payout)) {
     return false
   }
@@ -319,7 +328,7 @@ function isSpinResult(result: unknown, symbolDefinitions?: SlotSymbolSet['defini
     result.reels.every(
       (reel) => Array.isArray(reel) && reel.length > 0 && reel.every(symbol => typeof symbol === 'string' && (symbolDefinitions
         ? Object.hasOwn(symbolDefinitions, symbol)
-        : isSlotSymbolId(symbol))),
+        : isSlotSymbolId(symbol) || (result.olympusTumble != null && tumbleRules?.symbols.includes(symbol) === true))),
     ) &&
     Array.isArray(result.reelStops) &&
     result.reelStops.length === result.reels.length &&
@@ -421,7 +430,7 @@ function validGodsTumbleResult(result: SpinResult, rules: SlotTumbleRules): bool
   let reels = initialReels
   let total = 0
   let landedMultiplier = initialReels.flat().reduce((sum, symbol) =>
-    sum + (GODS_TUMBLE_MULTIPLIERS[symbol as keyof typeof GODS_TUMBLE_MULTIPLIERS] ?? 0), 0)
+    sum + (rules.multiplierValues[symbol] ?? 0), 0)
   for (const step of steps) {
     if (!isRecord(step) || !validGodsTumbleReels(step.reels, rules) || !isNonNegativeInteger(step.amountPoints) ||
       !Array.isArray(step.awards) || step.awards.length === 0 || step.awards.length > 3 ||
@@ -453,7 +462,7 @@ function validGodsTumbleResult(result: SpinResult, rules: SlotTumbleRules): bool
       const refills = step.cleared.filter(position => position.reel === reel).length
       for (let row = 0; row < refills; row++) {
         const symbol = step.reels[reel][row]
-        landedMultiplier += GODS_TUMBLE_MULTIPLIERS[symbol as keyof typeof GODS_TUMBLE_MULTIPLIERS] ?? 0
+        landedMultiplier += rules.multiplierValues[symbol] ?? 0
       }
     }
     total += stepPoints
@@ -462,7 +471,7 @@ function validGodsTumbleResult(result: SpinResult, rules: SlotTumbleRules): bool
   if (multiplier === undefined && baseTotalPoints === undefined) return total === totalPoints
   return isNonNegativeInteger(baseTotalPoints) && baseTotalPoints === total &&
     typeof multiplier === 'number' && Number.isInteger(multiplier) &&
-    multiplier === (total > 0 && landedMultiplier > 0 ? Math.min(landedMultiplier, 25) : 1) &&
+    multiplier === (total > 0 && landedMultiplier > 0 ? Math.min(landedMultiplier, rules.multiplierCap) : 1) &&
     totalPoints === baseTotalPoints * multiplier
 }
 

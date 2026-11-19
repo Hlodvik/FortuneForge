@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T18:37:11-06:00 | Computer: Vinnabok
 using System.Text.Json;
 using FortuneForge.Server.Controllers;
 using FortuneForge.Server.RoundAudit;
@@ -14,6 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
+using NeonDiscoDefinitions = FortuneForge.Games.NeonNights.NeonDiscoDefinitions;
 
 namespace FortuneForge.Server.Tests.Slots;
 
@@ -86,10 +88,7 @@ public sealed class NeonArcadeTests
     {
         var provider = Definitions();
         var game = provider.GetGame(SlotSpecialRoundProfiles.NeonNightsGameId)!;
-        var strips = provider.GetReelSet(game.Math.ReelSetId)!.Reels;
-        var stops = Enumerable.Range(0, strips.Count)
-            .Select(reel => Start(strips[reel], "3")).ToArray();
-        var random = new StopsThenZero(stops);
+        var random = new StopsThenSeededRefills(DiscoWinningStops());
         var engine = new SpinService(provider, new CryptoReelGenerator(random),
             new CombinationEvaluator(), new PayoutCalculator(), random);
 
@@ -124,9 +123,8 @@ public sealed class NeonArcadeTests
         var provider = Definitions();
         var game = provider.GetGame(SlotSpecialRoundProfiles.NeonNightsGameId)!;
         var strips = provider.GetReelSet(game.Math.ReelSetId)!.Reels;
-        var stops = Enumerable.Range(0, strips.Count)
-            .Select(reel => Start(strips[reel], reel == 0 ? "POWER" : "3")).ToArray();
-        var random = new StopsThenZero(stops);
+        var triggerStops = strips.Select((strip, reel) => Start(strip, reel == 0 ? "POWER" : "3"));
+        var random = new StopsThenSeededRefills([.. triggerStops, .. DiscoWinningStops()]);
         var engine = new SpinService(provider, new CryptoReelGenerator(random),
             new CombinationEvaluator(), new PayoutCalculator(), random);
         var store = new DemoAudit();
@@ -340,6 +338,9 @@ public sealed class NeonArcadeTests
 
     private static int Start(List<string> strip, string symbol) => strip.IndexOf(symbol);
 
+    private static int[] DiscoWinningStops() =>
+        NeonDiscoDefinitions.CreateReelSet().Reels.Select(strip => Start(strip, "2")).ToArray();
+
     internal static OptionsSlotsDefinitionProvider Definitions()
     {
         using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "appsettings.json")));
@@ -352,11 +353,13 @@ public sealed class NeonArcadeTests
         public int Next(int maximumExclusive) => values[cursor++] % maximumExclusive;
     }
 
-    private sealed class StopsThenZero(IReadOnlyList<int> stops) : IRandomIndexSource
+    private sealed class StopsThenSeededRefills(IReadOnlyList<int> stops) : IRandomIndexSource
     {
+        // The production strips can land several WILDs when every refill uses stop zero.
+        private readonly Random refills = new(73);
         private int cursor;
         public int Next(int maximumExclusive) => cursor < stops.Count
-            ? stops[cursor++] % maximumExclusive : 0;
+            ? stops[cursor++] : refills.Next(maximumExclusive);
     }
 
     private sealed class DemoAudit : IDemoSlotAuditStore

@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T19:29:04-06:00 | Computer: Vinnabok
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
@@ -15,7 +16,7 @@ type EngineContract = {
   }
   layout: { paylineCount: number }
   math: { payoutMultiplier: number; paylinePayoutSteps: number[] }
-  symbols: { nativeWildMatchLengths: number[]; wildSubstitutionMatchLengths: number[] }
+  symbols: { wildSymbolId: string; nativeWildMatchLengths: number[]; wildSubstitutionMatchLengths: number[] }
   paytable: { symbolId: string; matchLength: number; multiplier: number }[]
 }
 const fixture = JSON.parse(readFileSync(new URL('./__fixtures__/engineGuide-contracts.json', import.meta.url), 'utf8')) as {
@@ -43,7 +44,17 @@ describe.each(audited)('$catalog.title audited guide', game => {
     const pathIds = profile.paylinePatternIds ?? Array.from({ length: engine.layout.paylineCount }, (_, index) => index + 1)
     expect(experience.help.paylinePatternIds).toEqual(pathIds)
     expect(experience.help.paylineCount).toBe(engine.layout.paylineCount)
-    expect(getSlotEngineGuideContract(engine.gameId).payoutMultiplier).toBe(engine.math.payoutMultiplier)
+    expect(getSlotEngineGuideContract(engine.gameId)).toMatchObject({
+      payoutMultiplier: engine.math.payoutMultiplier,
+      paylinePatternIds: pathIds,
+      scatterRequiredSymbols: profile.scatterRequiredSymbols,
+      scatterAwardedSpins: profile.scatterAwardedSpins,
+      collectionTarget: profile.collectionTarget,
+      collectionAwardedSpins: profile.collectionAwardedSpins,
+      usesCollections: profile.usesCollections,
+      usesEnergy: profile.usesEnergy,
+      usesDirectValueTokens: profile.usesDirectValueTokens,
+    })
     if (profile.scatterAwardedSpins > 0) {
       expect(experience.help.freeGames).toMatchObject({ requiredSymbols: profile.scatterRequiredSymbols, awardedSpins: profile.scatterAwardedSpins })
       expect(entry('FREE')?.firstLabel).toBe(`${profile.scatterRequiredSymbols}+`)
@@ -66,13 +77,25 @@ describe.each(audited)('$catalog.title audited guide', game => {
       const shown = rule.matchLength === 3 ? entry(rule.symbolId)?.firstValue : entry(rule.symbolId)?.secondValue
       expect(Number.parseFloat(shown ?? ''), `${rule.symbolId}/${rule.matchLength}`).toBeCloseTo(rule.multiplier * engine.math.payoutMultiplier, 6)
     }
-    expect(engine.symbols.nativeWildMatchLengths).toEqual([3, 5])
-    expect(engine.symbols.wildSubstitutionMatchLengths).toEqual([5])
-    expect(entry('ACE')?.firstLabel).toBe('3')
-    expect(entry('POWER')?.firstValue).not.toContain('+1')
-    expect(experience.symbols.guideNote).toContain('Four-symbol wins award no special points.')
+    if (game.id === 'arcane-archives') {
+      expect(engine.symbols.wildSymbolId).toBe('')
+      expect(engine.symbols.nativeWildMatchLengths).toEqual([])
+      expect(engine.symbols.wildSubstitutionMatchLengths).toEqual([])
+      expect(experience.help.wildSubstitution).toBe(false)
+      expect(experience.symbols.guideEntries.map(candidate => candidate.symbol)).toEqual(
+        [...new Set(engine.paytable.map(rule => rule.symbolId))],
+      )
+      expect(experience.symbols.guideNote).toBeUndefined()
+      expect(experience.help.fiveMatchPayoutNote).toContain('same symbol values')
+    } else {
+      expect(engine.symbols.nativeWildMatchLengths).toEqual([3, 5])
+      expect(engine.symbols.wildSubstitutionMatchLengths).toEqual([5])
+      expect(entry('ACE')?.firstLabel).toBe('3')
+      expect(entry('POWER')?.firstValue).not.toContain('+1')
+      expect(experience.symbols.guideNote).toContain('Four-symbol wins award no special points.')
+      expect(experience.help.fiveMatchPayoutNote).toContain('use the same symbol multipliers')
+    }
     expect(experience.help.fourMatchPayoutNote).toContain('pay the three-symbol rate')
-    expect(experience.help.fiveMatchPayoutNote).toContain('use the same symbol multipliers')
     expect(engine.math.paylinePayoutSteps.every(step => step === 0)).toBe(true)
   })
 
@@ -126,8 +149,8 @@ it('matches the Gold Foundry guide to exported line prices', () => {
   }
 })
 
-it('preserves the separately maintained Rainbow Realm, Midnight Vault and Neon experiences', () => {
-  for (const id of ['rainbow-realm', 'dragon-hoard', 'neon-nights']) {
+it('preserves the separately maintained Arcane, Rainbow Realm, Midnight Vault and Neon experiences', () => {
+  for (const id of ['arcane-archives', 'rainbow-realm', 'dragon-hoard', 'neon-nights']) {
     const experience = manifests.find(game => game.id === id)!.experience
     expect(withEngineGuide(experience)).toBe(experience)
   }

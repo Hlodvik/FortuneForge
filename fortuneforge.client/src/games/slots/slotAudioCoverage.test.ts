@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T19:29:08-06:00 | Computer: Vinnabok
 import { describe, expect, it } from 'vitest'
 import { loadAllSlotGameManifests } from './routeRegistry'
 import { createThemedSlotAudio } from '../../features/slots/config/themedSlotAudio'
@@ -36,10 +37,41 @@ describe('slot audio coverage', () => {
         events.leverPull, events.reelSpin, events.reelStop, events.specialReelSpin!, events.specialReelStop!,
         ...Object.values(events.collectionArrival!), ...Object.values(events.results).flat(),
         events.tripleSevens!, events.bonusComplete!]
-      const sources = ids.map(id => cues[id]!.source)
-      expect(new Set(sources).size).toBe(20)
+      const playableIds = new Set(ids)
+      if (game.id === 'arcane-archives') {
+        const paylineWin = ['arcane-payline-win']
+        const paylineEvents = { five: paylineWin, premium: paylineWin, 'single-three': paylineWin }
+        expect(events).toMatchObject({
+          utilityButtonClick: 'arcane-utility-click',
+          betStep: 'bet-step',
+          spinButtonClick: 'arcane-spin-press',
+          leverPull: 'arcane-spin-press',
+          collectorWin: 'arcane-wand-win',
+          results: paylineEvents,
+          specialResults: paylineEvents,
+          potion: {
+            bottling: ['arcane-potion-bottle-cast', 'arcane-potion-bottle-whoosh'],
+            activation: ['arcane-potion-use-cast', 'arcane-potion-use-award'],
+          },
+        })
+        expect(playableIds.size).toBe(18)
+        for (const id of [events.utilityButtonClick!, events.collectorWin!, ...Object.values(events.potion!).flat()]) {
+          playableIds.add(id)
+        }
+        const results = new Set(['arcane-payline-win', events.collectorWin!, ...events.potion!.bottling])
+        for (const id of [events.utilityButtonClick!, events.spinButtonClick!, ...results, ...events.potion!.activation]) {
+          expect(cues[id]).toMatchObject({
+            source: expect.stringContaining(`assets/audio/${id}.ogg`),
+            category: results.has(id) ? 'result' : 'effect',
+          })
+        }
+      } else {
+        expect(playableIds.size).toBe(20)
+      }
+      const sources = [...playableIds].map(id => cues[id]!.source)
+      expect(new Set(sources).size).toBe(playableIds.size)
       expect(sources.every(source => source.includes('assets/audio/'))).toBe(true)
-      for (const id of ids) {
+      for (const id of playableIds) {
         expect(cues[id]!.enabled).toBe(true)
       }
       for (const id of musicIds) {

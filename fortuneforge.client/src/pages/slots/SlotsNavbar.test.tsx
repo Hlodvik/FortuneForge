@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Edited: 2026-11-18T19:28:38-06:00 | Computer: VINNABOK
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -58,7 +59,8 @@ describe.each(games)('$catalog.title site navigation', game => {
       expect(balance && avatar && (balance.compareDocumentPosition(avatar) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTruthy()
     }
     expect(navbar.querySelector('[aria-label^="Payment alerts"]')).toBeNull()
-    expect(host.querySelector('[aria-label^="Payment alerts"]') !== null).toBe(!demoMode)
+    const showsPaymentAlerts = !demoMode && game.id !== 'arcane-archives'
+    expect(host.querySelector('[aria-label^="Payment alerts"]') !== null).toBe(showsPaymentAlerts)
     expect(host.querySelectorAll('button[aria-label="How to win"]')).toHaveLength(1)
     expect(host.querySelectorAll('button[aria-label="Open settings"]')).toHaveLength(1)
     expect(host.querySelector('h1')?.textContent).toBe(game.experience.cabinet.title)

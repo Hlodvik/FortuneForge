@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T19:29:04-06:00 | Computer: Vinnabok
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -43,11 +44,13 @@ Require(routes.All(route => SlotSpecialRoundProfiles.TryGet(route.GameId, out _)
 var sourceDirectories = new[]
 {
     "FortuneForge.Server/Slots",
+    "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives",
     "games/MidnightVault/src/FortuneForge.Games.MidnightVault",
     "games/GoldFoundry/src/FortuneForge.Games.GoldFoundry",
     "games/NeonNights/src/FortuneForge.Games.NeonNights",
     "games/JadeDragon/src/FortuneForge.Games.JadeDragon",
-    "games/shared/FortuneForge.Games.Slots.Contracts"
+    "games/shared/FortuneForge.Games.Slots.Contracts",
+    "games/shared/FortuneForge.Games.Slots.Runtime"
 };
 var sourcePaths = sourceDirectories.SelectMany(directory =>
         Directory.EnumerateFiles(Path.Combine(repository, directory), "*", SearchOption.AllDirectories))

@@ -356,7 +356,17 @@ try {
     Assert-HostingApiCompatibility -Repository $scopeRepoRoot -CandidateSha $shaC -LiveApiSha $shaA
     $fixture.NameChanges = @('scripts/site-release-contract.json', 'scripts/site-release-contract.mjs', 'scripts/smoke-site.mjs')
     Assert-HostingApiCompatibility -Repository $scopeRepoRoot -CandidateSha $shaC -LiveApiSha $shaA
-    foreach ($path in @('FortuneForge.Server/Games/Craps/CrapsController.cs', 'games/Craps/server/Contracts.cs', 'games/catalog/games/craps.game.json', 'Dockerfile', 'scripts/unknown-codegen.mjs', 'unknown/config.json')) {
+    foreach ($path in @('.gitignore', 'workhistory.md', 'games/ArcaneArchives/TASKS.md', 'games/JadeDragon/README.md',
+        'scripts/verify-game-route-inventory.mjs')) {
+        $fixture.NameChanges = @($visual.Path, $path)
+        Assert-HostingApiCompatibility -Repository $scopeRepoRoot -CandidateSha $shaC -LiveApiSha $shaA
+    }
+    foreach ($path in @('FortuneForge.Server/Games/Craps/CrapsController.cs', 'games/Craps/server/Contracts.cs',
+        'games/catalog/games/craps.game.json', 'games/ArcaneArchives/game-release.json',
+        'Dockerfile', 'scripts/unknown-codegen.mjs', 'unknown/config.json',
+        '.gitignore.bak', '.gitignore/config.json', 'nested/workhistory.md', 'workhistory.md.json',
+        'games/ArcaneArchives/TASKS.md.ts', 'games/ArcaneArchives/TASKS.md/config.json',
+        'games/ArcaneArchives/server/TASKS.md', 'games/ArcaneArchives/../TASKS.md', 'FortuneForge.Server/README.md')) {
         $fixture.NameChanges = @($visual.Path, $path)
         Assert-ScopeThrows { Assert-HostingApiCompatibility -Repository $scopeRepoRoot -CandidateSha $shaC -LiveApiSha $shaA } "hosting-only incompatible or unknown API delta $path"
     }

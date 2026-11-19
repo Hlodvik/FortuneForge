@@ -649,7 +649,7 @@ function Assert-HostingApiCompatibility {
         # Positive allowlist: API/runtime/catalogue/configuration or unknown
         # changes require the API first. A test waiver never changes this gate.
         if ($path -cmatch '[\\\x00-\x1f\x7f]|(^|/)\.\.?(/|$)' -or
-            $path -cnotmatch '^(fortuneforge\.client/|packages/client-presentation/|games/[A-Za-z0-9-]+/client/|FortuneForge\.Server\.Tests/|games/.+/tests/|docs/|\.github/|scripts/(deploy\.ps1$|ReleaseGuardrails\.psm1$|verify-release\.ps1$|verify-game-navbar\.mjs$|verify-ci-emulator-order\.mjs$|publish-site-hosting\.mjs$|site-release-contract\.(mjs|json)$|smoke-site\.mjs$|tests/)|README\.md$|package(-lock)?\.json$)') {
+            $path -cnotmatch '^(fortuneforge\.client/|packages/client-presentation/|games/[A-Za-z0-9-]+/client/|FortuneForge\.Server\.Tests/|games/.+/tests/|games/[A-Za-z0-9-]+/[A-Za-z0-9][A-Za-z0-9._-]*\.md$|docs/|\.github/|scripts/(deploy\.ps1$|ReleaseGuardrails\.psm1$|verify-release\.ps1$|verify-game-navbar\.mjs$|verify-game-route-inventory\.mjs$|verify-ci-emulator-order\.mjs$|publish-site-hosting\.mjs$|site-release-contract\.(mjs|json)$|smoke-site\.mjs$|tests/)|\.gitignore$|workhistory\.md$|README\.md$|package(-lock)?\.json$)') {
             throw "Hosting candidate changes API or unclassified source ($path). Release API and Hosting together."
         }
     }

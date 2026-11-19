@@ -73,3 +73,22 @@ Desktop.ini
 
 # Generated Jade Dragon presentation
 fortuneforge.client/public/games/jade-dragon/
+
+# Reviewed local archives, preview-only audio and generated debugger profiles.
+# Preserve these files on disk. Offline audio regeneration uses local Neon WAV
+# masters and an FFmpeg installation; these archives are not production inputs.
+/output/artwork/arcane-archives-2026-11-18/
+/output/artwork/neon-nights-2026-11-02/
+/output/artwork/themed-slots-audio-2026-11-02/
+/output/disco-floor-preview/
+/output/maintenance-2026-11-02/
+/output/neon-arcade-local-v2/
+/output/neon-payline-review-2026-11-02/
+/output/neon-street-art-review/
+/output/rainbow-charm-calibration/
+/fortuneforge.client/public/assets/slots/midnight-vault/v5/
+/games/AndarBahar/samples/FortuneForge.Games.AndarBahar.Web/Properties/launchSettings.json
+/games/DragonTiger/samples/FortuneForge.Games.DragonTiger.Web/Properties/launchSettings.json
+/games/HiLo/samples/FortuneForge.Games.HiLo.Web/Properties/launchSettings.json
+/games/Mines/samples/FortuneForge.Games.Mines.Web/Properties/launchSettings.json
+/tools/FortuneForge.CrapsBrowserFixture/Properties/launchSettings.json

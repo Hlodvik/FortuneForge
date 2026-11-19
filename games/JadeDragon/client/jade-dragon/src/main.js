@@ -26,7 +26,7 @@ function finishCurrentSpin(){
  renderer?.finishSpin();
  renderer?.finishCascade();
 }
-$('#instant-results').addEventListener('change',()=>{if(renderer)renderer.speed=$('#instant-results').checked?2:1;});
+$('#instant-results').addEventListener('change',()=>{audio.button();if(renderer)renderer.speed=$('#instant-results').checked?2:1;});
 function countdown(){return new Promise(resolve=>{const done=()=>{clearTimeout(timeout);skipCountdown=null;resolve();};const timeout=setTimeout(done,reduced?80:450/(renderer?.speed||1));skipCountdown=done;});}
 const artHost=document.createElement('div');artHost.className='fortune-arrival';$('#bonus-arrival').prepend(artHost);const art=new LivingArtwork(artHost);
 let renderer;try{renderer=new JadeRenderer($('#canvas-host'));renderer.setGrid([['S01','S02','S03','S04'],['S04','S05','S06','S01'],['S07','S08','S01','S02'],['S05','S02','S04','S03'],['S08','S01','S03','S04']]);}catch{$('#message').textContent='3D could not start. Enable browser hardware acceleration and reload.';}
@@ -86,7 +86,7 @@ async function init(){
   update();
  }catch(error){$('#loading p').textContent=error.message;$('#message').textContent=error.message;}
 }
-async function arrival(mode,count){const overlay=$('#bonus-arrival');overlay.dataset.theme=mode==='dragon'?'wrath':mode==='pearl'?'moon':'garden';$('#arrival-name').textContent=mode==='dragon'?'Dragon’s Awakening':'Free Games';$('#arrival-spins').textContent=`${count} FREE GAMES`;overlay.hidden=false;$('#free-games-popup').hidden=true;audio.feature(mode==='dragon'?'wrath':'moon');try{await art.start(mode);await wait(1400);}catch{await wait(300);}finally{art.stop();overlay.hidden=true;}}
+async function arrival(mode,count){const overlay=$('#bonus-arrival');overlay.dataset.theme=mode==='dragon'?'wrath':mode==='pearl'?'moon':'garden';$('#arrival-name').textContent=mode==='dragon'?'Dragon’s Awakening':'Free Games';$('#arrival-spins').textContent=`${count} FREE GAMES`;overlay.hidden=false;$('#free-games-popup').hidden=true;audio.special();try{await art.start(mode);await wait(1400);}catch{await wait(300);}finally{art.stop();overlay.hidden=true;}}
 async function playCascade(result, previousFeatureTotal, payoutPointValueInCents) {
  const { steps } = result.jadeDragonCascade;
  const toast = $('#special-toast');
@@ -103,7 +103,7 @@ async function playCascade(result, previousFeatureTotal, payoutPointValueInCents
    toast.textContent = 'Cascade ' + (index + 1) + ' · ' + step.multiplier + '× · +' + money(awardCents);
    toast.hidden = false;
    update();
-   await renderer.playCascadeStep(step);
+   await renderer.playCascadeStep(step, () => audio.land());
   }
  } finally {
   toast.hidden = true;
@@ -113,18 +113,19 @@ async function playCascade(result, previousFeatureTotal, payoutPointValueInCents
  return finalGrid;
 }
 
-async function spin(boost=false){
+async function spin(boost=false, manual=false){
  if(!ready||busy||modal||uncertain||(boost&&rules.cascadeRules))return;
  const free=state.freeSpinsRemaining>0,wager=free?state.freeSpinWagerPoints:bet;
  if(!free&&balance<wager*pointValueInCents){stop();$('#message').textContent='Your balance is too low for this bet.';return;}
  const previousFeatureTotal=free?featureTotal:0;
+ if (boost) audio.special();
+ else if (manual) audio.spin();
  roundIsFree=free;busy=true;instantRequested=false;renderer.speed=$('#instant-results').checked?2:1;
  win=0;$('#message').textContent='';$('#free-games-popup').hidden=true;update();
  try{
   if(free&&!instantRequested){$('#free-popup-count').textContent=state.freeSpinsRemaining;$('#free-games-popup').hidden=false;await countdown();$('#free-games-popup').hidden=true;}
   if(!ready||uncertain)return;
   if(!instantRequested)renderer.startSpin();
-  audio.spin();
   const request={wagerPoints:wager,useFreeSpin:free,useSpecialBoost:boost};
   if(rules.cascadeRules)request.jadeDragonEngineVersion=rules.engineVersion;
   const result=await callHost('spin',request);
@@ -133,7 +134,7 @@ async function spin(boost=false){
   const payoutPointValueInCents=result.payoutPointValueInCents??result.pointValueInCents;
   const settledWin=result.payout.totalPoints*payoutPointValueInCents;
   if(!result.jadeDragonCascade){win=settledWin;featureTotal=previousFeatureTotal+(free?win:0);}
-  await renderer.settleSpin(result.reels,{instant:instantRequested,onLand:reel=>audio.land(reel)});
+  await renderer.settleSpin(result.reels,{instant:instantRequested,onLand:()=>audio.land()});
   if(!ready)return;
 
   let finalGrid=result.reels;
@@ -208,11 +209,15 @@ function renderRules() {
   paytableRow(symbol.id, symbol.payouts.map(amount => amount > 0 ? amount + '×' : '—')),
  ));
 }
-$('#spin').onclick=event=>{if(busy||event.detail>1){finishCurrentSpin();return;}spin();};$('#boost').onclick=()=>spin(true);$('#auto').onclick=()=>{if(auto)stop();else{auto=true;update();if(!busy)spin();}};
-for(const [id,delta] of [['#bet-minus',-1],['#bet-plus',1]])$(id).onclick=()=>{if(busy||auto||state?.freeSpinsRemaining||uncertain)return;bet=BET_POINTS[Math.max(0,Math.min(BET_POINTS.length-1,BET_POINTS.indexOf(bet)+delta))];update();};
-const openRules=()=>{stop();modal=true;$('#rules').showModal();update();};$('#info').onclick=openRules;$('#close-rules').onclick=()=>$('#rules').close();$('#rules').addEventListener('close',()=>{modal=false;update();});
+$('#spin').onclick=event=>{if(busy||event.detail>1){finishCurrentSpin();return;}spin(false,true);};
+$('#boost').onclick=()=>spin(true);
+$('#auto').onclick=()=>{audio.button();if(auto)stop();else{auto=true;update();if(!busy)spin();}};
+for(const [id,delta] of [['#bet-minus',-1],['#bet-plus',1]])$(id).onclick=()=>{if(busy||auto||state?.freeSpinsRemaining||uncertain)return;audio.button();bet=BET_POINTS[Math.max(0,Math.min(BET_POINTS.length-1,BET_POINTS.indexOf(bet)+delta))];update();};
+$('#info').onclick=()=>{audio.button();stop();modal=true;$('#rules').showModal();update();};
+$('#close-rules').onclick=()=>{audio.button();$('#rules').close();};
+$('#rules').addEventListener('close',()=>{modal=false;update();});
 $('#sound').onclick=async()=>{const enabled=await audio.toggle();$('#sound').classList.toggle('sound-on',enabled);$('#sound').setAttribute('aria-label',enabled?'Mute sound':'Enable sound');};
-$('#fullscreen').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{});
+$('#fullscreen').onclick=()=>{audio.button();return document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{});};
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});addEventListener('pagehide',stop);$('#canvas-host').addEventListener('renderer-lost',()=>{stop();ready=false;uncertain=true;finishCurrentSpin();$('#message').textContent='Graphics paused. Reload to recover your server balance.';update();});
-document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat&&!['BUTTON','INPUT','SELECT','A'].includes(document.activeElement?.tagName)){e.preventDefault();if(!auto){if(busy)finishCurrentSpin();else spin();}}});
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat&&!['BUTTON','INPUT','SELECT','A'].includes(document.activeElement?.tagName)){e.preventDefault();if(!auto){if(busy)finishCurrentSpin();else spin(false,true);}}});
 init();

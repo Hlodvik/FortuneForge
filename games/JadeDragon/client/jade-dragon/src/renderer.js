@@ -326,7 +326,7 @@ export class JadeRenderer {
     ));
   }
 
-  playCascadeStep(step) {
+  playCascadeStep(step, onLand) {
     validateGrid(step.reels);
     if (!this.motion || this.contextLost) {
       this.setGrid(step.reels);
@@ -341,6 +341,7 @@ export class JadeRenderer {
         time: 0,
         last: performance.now(),
         dropping: false,
+        onLand,
         resolve,
       };
     });
@@ -356,6 +357,7 @@ export class JadeRenderer {
     const dropStart = CASCADE_AWARD_TIME + CASCADE_CLEAR_TIME;
     if (!cascade.hasDrop || cascade.time >= dropStart + CASCADE_DROP_TIME) {
       this.finishCascade();
+      if (cascade.hasDrop) cascade.onLand?.();
       return;
     }
     if (cascade.time >= dropStart && !cascade.dropping) {

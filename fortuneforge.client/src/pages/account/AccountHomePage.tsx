@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T22:44:06-06:00 | Computer: Vinnabok
 import { ResponsiveSlotImage } from '../../features/slots/components/ResponsiveSlotImage'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type MouseEvent, type SyntheticEvent } from 'react'
 import heroArtwork from '../../assets/branding/fortune-forge-hero-v1.webp'
@@ -9,6 +10,7 @@ import { orderByCataloguePopularity, useCataloguePopularity } from '../../featur
 import { useRecentGameActivity } from '../../features/catalog/recentGameActivity'
 import { HOME_CATEGORIES, HOME_GAME_CATALOG, parseHomeCategory, type CategoryFilter, type LobbyGame } from './homeGameCatalog'
 import { AccountLobbyShell } from './AccountLobbyShell'
+import { SiteNavbar } from '../../components/SiteNavbar'
 import './accountOverlay.css'
 
 const catalogueAnchor = 'home-lobby-games-title'
@@ -44,9 +46,10 @@ export function HomePage() {
     const { pathname, search, hash } = window.location
     return `${pathname}${search}${hash === legacyCatalogueHash ? '' : hash}`
   })
-  const { account, error, isLoading, reload } = useAuthenticatedAccount(returnPath)
+  const homeEntry = returnPath.split(/[?#]/, 1)[0] === '/home'
+  const { account, error, isLoading, reload } = useAuthenticatedAccount(returnPath, homeEntry ? { unauthenticatedRedirect: '/' } : undefined)
   const [overlay, setOverlay] = useState<HomeOverlay>(() => typeof window === 'undefined' ? null : overlayFromPath(window.location.pathname))
-  const isOverlayOpen = overlay !== null
+  const isOverlayOpen = overlay !== null && account !== null && !isLoading && error === null
   const overlayDialog = useRef<HTMLDialogElement>(null)
   const scrollToLegacyCatalogue = useRef(false)
   const recent = useRecentGameActivity(account?.userId)
@@ -112,7 +115,7 @@ export function HomePage() {
     document.title = overlay === 'history' ? 'User History — Fortune Forge'
       : overlay === 'settings' ? 'Account Settings — Fortune Forge'
         : 'Home — Fortune Forge'
-  }, [overlay])
+  }, [overlay, accountId, isLoading, error])
 
   useEffect(() => {
     if (!isOverlayOpen) return undefined
@@ -143,11 +146,17 @@ export function HomePage() {
     document.getElementById(catalogueAnchor)?.scrollIntoView?.({ block: 'start' })
   }, [accountId, isLoading])
 
+  if (isLoading || account === null || error !== null) {
+    return <div className="site-route-state">
+      <SiteNavbar mode="public" currentPublicPage="landing" />
+      <main className="route-state">
+        {error !== null ? <AccountError message={error} onRetry={reload} /> : <AccountLoading label="Opening your account…" />}
+      </main>
+    </div>
+  }
+
   return (
     <AccountLobbyShell account={account} activeNav={overlay === 'history' ? 'history' : overlay === 'settings' ? 'account' : 'home'} onOpenOverlay={openOverlay} homeLayout>
-        {isLoading && <AccountLoading label="Opening your account…" />}
-        {!isLoading && error !== null && <AccountError message={error} onRetry={reload} />}
-        {!isLoading && account !== null && (
           <section className="home-lobby__dashboard" aria-label={`${account.playerName}'s game dashboard`}>
             <section className="home-lobby__welcome">
               <img className="home-lobby__hero-art" src={heroArtwork} alt="" width="1600" height="640" decoding="async" fetchPriority="high" />
@@ -184,13 +193,11 @@ export function HomePage() {
             </section>
 
           </section>
-        )}
         <dialog ref={overlayDialog} className={`home-lobby__overlay home-lobby__overlay--${overlay ?? 'closed'}`} aria-label={overlay === 'history' ? 'Game history' : 'Account settings'} onClick={handleOverlayBackdrop} onCancel={handleOverlayCancel}>
           <button className="home-lobby__overlay-close" type="button" aria-label="Close panel" onClick={closeOverlay}>×</button>
-          {account !== null && overlay !== null && <Suspense fallback={<div className="home-lobby__notice" role="status">Opening…</div>}>
+          {overlay !== null && <Suspense fallback={<div className="home-lobby__notice" role="status">Opening…</div>}>
             {overlay === 'history' ? <AccountHistoryContent account={account} /> : <AccountSettingsContent account={account} reload={reload} />}
           </Suspense>}
-          {account === null && <div className="home-lobby__notice" role={error ? 'alert' : 'status'}>{error ?? 'Opening your account…'}{error && <button type="button" onClick={reload}>Try again</button>}</div>}
         </dialog>
     </AccountLobbyShell>
   )

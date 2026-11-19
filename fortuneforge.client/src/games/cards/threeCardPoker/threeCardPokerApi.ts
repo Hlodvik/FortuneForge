@@ -1,3 +1,5 @@
+// Edited: 2026-11-18T22:54:26-06:00 | Computer: Vinnabok
+import { requestCardRoomSession } from '../../../features/account/services/cardRoomActivityApi'
 import { fetchWithAccountSession } from '../../../features/account/services/accountsApi'
 import type { CardRank, PlayingCardModel } from '../shared/cards'
 import {
@@ -40,7 +42,7 @@ export async function getThreeCardPokerStatus(signal?: AbortSignal): Promise<Thr
   return readResponse(await fetchWithAccountSession(`${basePath}/status`, { method: 'GET', cache: 'no-store', signal }), isStatus, 'status')
 }
 export async function getThreeCardPokerSession(signal?: AbortSignal): Promise<ThreeCardPokerSession> {
-  return readResponse(await fetchWithAccountSession(`${basePath}/session`, { method: 'GET', cache: 'no-store', signal }), isSession, 'session')
+  return readResponse(await requestCardRoomSession('three-card-poker', signal), isSession, 'session')
 }
 export async function getThreeCardPokerSnapshot(signal?: AbortSignal): Promise<ThreeCardPokerMutationResponse> {
   return readResponse(await fetchWithAccountSession(`${basePath}/snapshot`, { method: 'GET', cache: 'no-store', signal }), isMutation, 'snapshot')

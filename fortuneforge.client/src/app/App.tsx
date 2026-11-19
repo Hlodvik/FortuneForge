@@ -1,6 +1,8 @@
+// Edited: 2026-11-18T22:59:30-06:00 | Computer: Vinnabok
 import { useEffect, useState } from 'react'
 import { findSlotRoute } from '../games/slots'
 import { AppRoutes } from './AppRoutes'
+import { siteShellClasses } from './siteShellClasses'
 import { usePageTitle } from './usePageTitle'
 import { useGamePresence } from '../features/catalog/useGamePresence'
 import { AccountAccessBoundary } from '../features/account/AccountAccessBoundary'
@@ -18,9 +20,7 @@ export default function App() {
   const usesThemeSpecificSlotBackdrop =
     slotRoute?.shellBackdrop === 'theme'
   const appShellClassName = [
-    'app-shell',
-    pathname === '/' ? 'app-shell--landing' : '',
-    pathname === '/home' || pathname.startsWith('/home/') || pathname === '/balance' ? 'app-shell--home' : '',
+    ...siteShellClasses(pathname),
     isPlayableGameRoute ? 'app-shell--game' : '',
     pathname.startsWith('/slots/') ? 'app-shell--slot-game' : '',
     pathname === '/cards' || pathname.startsWith('/cards/')

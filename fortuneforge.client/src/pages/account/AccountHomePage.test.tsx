@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Edited: 2026-11-18T22:45:13-06:00 | Computer: Vinnabok
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -10,6 +11,7 @@ const state = vi.hoisted(() => ({
   popularity: null as { id: string; route: string; playCount: number | null }[] | null,
   popularityError: '', hiddenRoutes: [] as string[], balance: 139174.75,
   loading: false, error: null as string | null, signedOut: false, playerName: 'Avery', returnPath: '', reload: vi.fn(),
+  unauthenticatedRedirect: undefined as string | undefined,
 }))
 afterEach(() => {
   state.recent = []; state.recentError = null; state.popularity = null; state.popularityError = ''; state.hiddenRoutes = []
@@ -20,8 +22,9 @@ afterEach(() => {
 vi.mock('../../components/PlayerAccountMenus', () => ({ PlayerAccountMenus: ({ showBalance }: { showBalance: boolean }) =>
   <details data-show-balance={showBalance}><summary>Account menu</summary><button>Log out</button></details>,
 }))
-vi.mock('../../features/account/useAuthenticatedAccount', () => ({ useAuthenticatedAccount: (returnPath: string) => {
+vi.mock('../../features/account/useAuthenticatedAccount', () => ({ useAuthenticatedAccount: (returnPath: string, options?: { unauthenticatedRedirect?: string }) => {
   state.returnPath = returnPath
+  state.unauthenticatedRedirect = options?.unauthenticatedRedirect
   return { account: state.signedOut ? null : { userId: 'home-test', playerName: state.playerName, role: 'player', balances: { slotsCredits: state.balance } },
     error: state.error, isLoading: state.loading, reload: state.reload }
 } }))
@@ -37,6 +40,31 @@ const staticHome = () => { const host = document.createElement('div'); host.inne
 const play = (gameId: string, hour = 12) => ({ gameId, playedAtUtc: '2026-10-26T' + hour + ':00:00Z' })
 
 describe('account home', () => {
+  it('sends signed-out home visits to the public landing page', () => {
+    window.history.replaceState(null, '', '/home?category=Slots')
+    staticHome()
+    expect(state.unauthenticatedRedirect).toBe('/')
+  })
+  it.each(['/home/history', '/home/settings'])('keeps login handling for protected %s', path => {
+    window.history.replaceState(null, '', path)
+    staticHome()
+    expect(state.returnPath).toBe(path)
+    expect(state.unauthenticatedRedirect).toBeUndefined()
+  })
+  it.each([
+    { signedOut: true, loading: true, error: null },
+    { signedOut: true, loading: false, error: null },
+    { signedOut: true, loading: false, error: 'Account service unavailable.' },
+    { signedOut: false, loading: true, error: null },
+    { signedOut: false, loading: false, error: 'Account service unavailable.' },
+  ])('does not mount player chrome before the session is verified: %j', session => {
+    Object.assign(state, session)
+    const host = staticHome()
+    expect(host.querySelector('.home-lobby__sidebar, .home-lobby__dashboard, .home-lobby__topbar')).toBeNull()
+    expect(host.querySelector('.site-navbar--public')).not.toBeNull()
+    expect(host.textContent).not.toContain('Welcome back')
+    expect(host.textContent).toContain(session.error ?? 'Opening your account')
+  })
   it('keeps Account, Add Funds, History and Help in the single sidebar while games remain in the main catalogue', () => {
     const host = staticHome()
     expect(host.querySelectorAll('.home-lobby__sidebar')).toHaveLength(1)

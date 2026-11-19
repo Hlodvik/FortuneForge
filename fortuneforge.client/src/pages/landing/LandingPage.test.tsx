@@ -1,4 +1,7 @@
-import { createElement } from 'react'
+// @vitest-environment jsdom
+// Edited: 2026-11-18T22:48:14-06:00 | Computer: Vinnabok
+import { act, createElement } from 'react'
+import { createRoot } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -22,6 +25,41 @@ describe('public landing page', () => {
     expect(markup).toContain('class="ff-landing ff-landing--opening" role="status"')
     expect(markup).toContain('Opening your home…')
     expect(markup).not.toMatch(/<img|<video|ff-landing__hero/)
+  })
+
+  it.each([true, false])('redirects from the public root only with a verified account: %s', async signedIn => {
+    state.signedIn = signedIn
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+    const replace = vi.fn()
+    const originalWindow = window
+    const location = new Proxy({}, { get(_target, property) {
+      if (property === 'replace') return replace
+      return Reflect.get(originalWindow.location, property, originalWindow.location)
+    } })
+    vi.stubGlobal('window', new Proxy(originalWindow, { get(target, property) {
+      if (property === 'location') return location
+      const value = Reflect.get(target, property, target)
+      return typeof value === 'function' ? value.bind(target) : value
+    } }))
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    try {
+      await act(async () => root.render(createElement(LandingPage)))
+      if (signedIn) {
+        expect(replace).toHaveBeenCalledExactlyOnceWith('/home')
+        expect(host.textContent).toContain('Opening your home…')
+        expect(host.querySelector('.ff-landing__hero')).toBeNull()
+      } else {
+        expect(replace).not.toHaveBeenCalled()
+        expect(host.textContent).toContain('Your next game')
+        expect(host.querySelector('a[href="/login"]')).not.toBeNull()
+      }
+    } finally {
+      await act(async () => root.unmount())
+      host.remove()
+      vi.unstubAllGlobals()
+    }
   })
 
   it('uses the approved dark hero and updated headline without How it works', () => {

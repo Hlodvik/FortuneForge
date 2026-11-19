@@ -1,3 +1,4 @@
+# Edited: 2026-11-18T22:48:21-06:00 | Computer: VINNABOK
 $ErrorActionPreference = 'Stop'
 $scopeRepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Import-Module (Join-Path $scopeRepoRoot 'scripts/ReleaseGuardrails.psm1') -Force
@@ -69,6 +70,47 @@ foreach ($project in @('FortuneForge.Games.DragonTiger.Tests.csproj', 'FortuneFo
 }
 Assert-ScopeEqual $fullText.Contains('run games:check') $true 'full suite retains all game checks'
 Assert-ScopeEqual $fullText.Contains("run test`n") $true 'full suite retains all client tests'
+$siteContract = Get-ReleaseSiteContract -Repository $scopeRepoRoot
+foreach ($replacement in @(
+    @{ assetDirectory = '../escape' }, @{ assetDirectory = 'assets' }, @{ assetDirectory = 'assets/site/../game' },
+    @{ preservedGameDirectory = '../escape' }, @{ preservedGameDirectory = 'assets' },
+    @{ outputDirectory = 'fortuneforge.client/src' }, @{ outputDirectory = '../dist-site' },
+    @{ gamePrefixes = @('/safe/', '/safe/') }, @{ gamePrefixes = @('/safe/../game/') },
+    @{ gamePrefixes = @() }, @{ gamePrefixes = '/safe/' }, @{ unexpected = 'unclassified' }
+)) {
+    $invalidContract = $siteContract | ConvertTo-Json -Depth 8 | ConvertFrom-Json
+    foreach ($key in $replacement.Keys) { $invalidContract | Add-Member -NotePropertyName $key -NotePropertyValue $replacement[$key] -Force }
+    Assert-ScopeThrows { Get-ReleaseSiteContract -Contract $invalidContract } 'site contract rejects unsafe namespaces, invalid routes or unexpected fields'
+}
+$missingContract = $siteContract | ConvertTo-Json -Depth 8 | ConvertFrom-Json
+$missingContract.PSObject.Properties.Remove('outputDirectory')
+Assert-ScopeThrows { Get-ReleaseSiteContract -Contract $missingContract } 'site contract requires all authoritative fields'
+$sitePlan = Get-ReleaseVerificationPlan -Repository 'synthetic-unread-repository' -CandidateSha ('c' * 40) -Target site -Rollback -Adoption
+Assert-ScopeEqual $sitePlan.mode 'site' 'site target is independent of game workspaces and live diff classification'
+Assert-ScopeEqual $sitePlan.workspace '' 'site verification never selects a game workspace'
+$siteCommands = @(Get-ReleaseVerificationCommands -Plan $sitePlan -Repository $scopeRepoRoot -Target site)
+$siteText = ($siteCommands | ForEach-Object { $_.Executable + ' ' + ($_.Arguments -join ' ') }) -join "`n"
+foreach ($required in @('deploy-guardrails.tests.ps1', 'site-hosting-release.test.mjs', 'web:test:site', 'web:lint', 'web:build:site', 'verify:site-build')) {
+    Assert-ScopeEqual $siteText.Contains($required) $true "site verification retains $required"
+}
+foreach ($excluded in @('games:build', 'games:check', 'verify:game-', '--workspace @fortuneforge/games-', 'dotnet')) {
+    Assert-ScopeEqual $siteText.Contains($excluded) $false "site verification excludes $excluded"
+}
+Assert-ScopeEqual @($siteCommands | Where-Object { ($_.Arguments -join ' ') -ceq 'run web:build' }).Count 0 'site verification cannot build the full frontend game graph'
+Assert-ScopeThrows { Get-ReleaseVerificationCommands -Plan $sitePlan -Repository $scopeRepoRoot -Target api } 'site verification cannot serve an API target'
+Assert-ScopeThrows { Get-ReleaseVerificationCommands -Plan (New-ReleaseVerificationPlan -FullReason 'full') -Repository $scopeRepoRoot -Target site } 'site target cannot accidentally enter full game verification'
+Assert-ScopeThrows { Get-ReleaseVerificationPlan -Repository $scopeRepoRoot -CandidateSha ('c' * 40) -Target site -LivePlaytest } 'site target cannot enter API live playtest'
+$waivedSiteCommands = @(Get-ReleaseVerificationCommands -Plan $sitePlan -Repository $scopeRepoRoot -Target site -SkipTestSuites -TestWaiverReason 'Explicit synthetic test waiver')
+$waivedSiteText = ($waivedSiteCommands | ForEach-Object { $_.Arguments -join ' ' }) -join "`n"
+Assert-ScopeEqual $waivedSiteText.Contains('web:test:site') $false 'site application suite waiver is honored'
+Assert-ScopeEqual $waivedSiteText.Contains('site-hosting-release.test.mjs') $true 'site application waiver retains publication policy tests'
+$testFreeSiteCommands = @(Get-ReleaseVerificationCommands -Plan $sitePlan -Repository $scopeRepoRoot -Target site -TestFree -TestWaiverReason 'Explicit synthetic no-test waiver')
+$testFreeSiteText = ($testFreeSiteCommands | ForEach-Object { $_.Arguments -join ' ' }) -join "`n"
+Assert-ScopeEqual $testFreeSiteText.Contains('--test') $false 'site explicit no-test route omits node tests'
+Assert-ScopeEqual $testFreeSiteText.Contains('tests.ps1') $false 'site explicit no-test route omits PowerShell tests'
+foreach ($required in @('web:lint', 'web:build:site', 'verify:site-build')) {
+    Assert-ScopeEqual $testFreeSiteText.Contains($required) $true "site no-test route retains deterministic $required"
+}
 Assert-ReleaseTestWaiver -Target hosting
 Assert-ReleaseTestWaiver -Target hosting -SkipTestSuites -TestWaiverReason 'Owner requested reviewed visual release without test suites.'
 foreach ($target in @('api', 'all')) {
@@ -78,7 +120,7 @@ foreach ($reason in @('', '   ')) {
     Assert-ScopeThrows { Assert-ReleaseTestWaiver -Target hosting -SkipTestSuites -TestWaiverReason $reason } 'missing waiver reason'
 }
 Assert-ScopeThrows { Assert-ReleaseTestWaiver -Target hosting -TestWaiverReason 'Orphan reason' } 'reason without explicit waiver'
-foreach ($target in @('hosting', 'api', 'all')) {
+foreach ($target in @('hosting', 'site', 'api', 'all')) {
     Assert-ReleaseTestWaiver -Target $target -TestFree -TestWaiverReason 'Owner requested the explicit test-free route.'
 }
 foreach ($reason in @('', '   ', "`n")) {
@@ -169,10 +211,14 @@ foreach ($plan in @($scoped, (New-ReleaseVerificationPlan -FullReason 'Tooling c
 $scopeDeploySource = Get-Content -LiteralPath (Join-Path $scopeRepoRoot 'scripts/deploy.ps1') -Raw
 foreach ($required in @("(Join-Path `$repoRoot 'scripts/verify-release.ps1')", "'-Repository', `$releaseCheckout",
     "'-ExpectedSha', `$candidateSha", "'-ExpectedToolingSha', `$mainSha", 'verificationPlan = $verificationPlan',
-    "'run', 'smoke:production'", "'scripts/tests/deploy-guardrails.tests.ps1'")) {
+    "else { 'smoke:production' }", "@('run', `$smokeScript)", "'scripts/tests/deploy-guardrails.tests.ps1'")) {
     Assert-ScopeEqual $scopeDeploySource.Contains($required) $true "deployment retains $required"
 }
 Assert-ScopeEqual ((Get-ReleaseToolPaths) -contains 'scripts/tests/release-scope.tests.ps1') $true 'scope tests protected from dirty-tooling bypass'
+foreach ($path in @('scripts/publish-site-hosting.mjs', 'scripts/tests/site-hosting-release.test.mjs', 'scripts/site-release-contract.json',
+    'fortuneforge.client/scripts/verify-site-build.mjs', 'fortuneforge.client/scripts/check-site-types.mjs')) {
+    Assert-ScopeEqual ((Get-ReleaseToolPaths) -ccontains $path) $true "site release tool protected from dirty-tooling bypass: $path"
+}
 $waiverGuard = 'Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason'
 Assert-ScopeEqual ($scopeDeploySource.IndexOf($waiverGuard) -lt $scopeDeploySource.IndexOf('function Get-LiveHosting')) $true 'invalid waiver rejected before live reads'
 Assert-ScopeEqual $scopeDeploySource.Contains("@('-SkipTestSuites', '-TestWaiverReason', `$TestWaiverReason)") $true 'waiver switch and exact reason forwarded to trusted verifier'
@@ -307,6 +353,8 @@ try {
     }
 
     Assert-HostingApiCompatibility -Repository $scopeRepoRoot -CandidateSha $shaC -LiveApiSha $shaC -RequireExact
+    Assert-HostingApiCompatibility -Repository $scopeRepoRoot -CandidateSha $shaC -LiveApiSha $shaA
+    $fixture.NameChanges = @('scripts/site-release-contract.json', 'scripts/site-release-contract.mjs', 'scripts/smoke-site.mjs')
     Assert-HostingApiCompatibility -Repository $scopeRepoRoot -CandidateSha $shaC -LiveApiSha $shaA
     foreach ($path in @('FortuneForge.Server/Games/Craps/CrapsController.cs', 'games/Craps/server/Contracts.cs', 'games/catalog/games/craps.game.json', 'Dockerfile', 'scripts/unknown-codegen.mjs', 'unknown/config.json')) {
         $fixture.NameChanges = @($visual.Path, $path)
@@ -481,7 +529,7 @@ foreach ($pattern in @('!(assets|index.html|release.json)', '!(assets|index.html
 foreach ($unsafe in @('assets/[literal].js', 'assets/(a|b).js', 'assets/a b.js', '../escape')) {
     Assert-ScopeThrows { New-ReleaseHostingIgnorePatterns -Paths @('index.html', $unsafe) } 'unsupported Firebase literal segment'
 }
-foreach ($name in @('Write-ReleaseRecord', 'New-HostingReleaseContext')) {
+foreach ($name in @('Write-ReleaseRecord', 'New-HostingReleaseContext', 'New-SiteReleaseContext')) {
     $function = $deployAst.Find({ param($Node) $Node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $Node.Name -ceq $name }, $false)
     . ([scriptblock]::Create($function.Extent.Text))
 }
@@ -503,6 +551,7 @@ function Assert-ReleaseCheckout {
     $script:HostingCheckpoints++
 }
 $hostingContext = $null
+$siteContext = $null
 try {
     $hostingContext = New-HostingReleaseContext -Checkout $hostingFixture -CandidateSha $shaC -RecordPath (Join-Path $hostingFixture 'synthetic-record.json')
     Assert-ScopeEqual $hostingContext.FileCount 3 'built index, asset and candidate marker staged exactly'
@@ -518,15 +567,62 @@ try {
     }
     [System.IO.File]::WriteAllText((Join-Path $hostingContext.Directory 'assets/injected.js'), '// unmanifested')
     Assert-ScopeEqual ($stagedConfig.hosting.ignore -ccontains 'assets/!(app.js)') $true 'exact SDK complement excludes later injected sibling'
+
+    # An alternate namespace proves the JSON contract owns both paths, rather
+    # than duplicating production directory values in PowerShell.
+    $syntheticSiteContract = [pscustomobject]@{ assetDirectory = 'assets/synthetic-site'; preservedGameDirectory = 'synthetic-game-shell';
+        outputDirectory = 'fortuneforge.client/dist-synthetic-site'; gamePrefixes = @('/synthetic-game/') }
+    [System.IO.Directory]::CreateDirectory((Join-Path $hostingFixture 'scripts')) | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $hostingFixture 'scripts/site-release-contract.json'), ($syntheticSiteContract | ConvertTo-Json -Depth 8))
+    $siteDist = Join-Path $hostingFixture $syntheticSiteContract.outputDirectory
+    $siteAssetPath = $syntheticSiteContract.assetDirectory + '/app.js'
+    [System.IO.Directory]::CreateDirectory((Join-Path $siteDist $syntheticSiteContract.assetDirectory)) | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $siteDist 'index.html'), '<html>synthetic site</html>')
+    [System.IO.File]::WriteAllText((Join-Path $siteDist $siteAssetPath), '// synthetic site asset')
+    $baselineMarkerText = '{ "schemaVersion": 1, "target": "hosting", "sourceSha": "' + $shaC + '" }' + "`n"
+    $siteContext = New-SiteReleaseContext -Checkout $hostingFixture -CandidateSha $shaC -RecordPath (Join-Path $hostingFixture 'synthetic-site-record.json') -BaselineHosting ([pscustomobject]@{ MarkerText = $baselineMarkerText })
+    Assert-ScopeEqual $siteContext.FileCount 2 'site context stages only built site index and assets'
+    Assert-ScopeEqual (Test-Path -LiteralPath (Join-Path $siteDist 'release.json')) $false 'site build remains untouched by generated marker'
+    Assert-ScopeEqual ([System.IO.File]::ReadAllText($siteContext.BaselineMarkerPath)) $baselineMarkerText 'original live marker text is preserved exactly'
+    Assert-ScopeEqual (Get-ReleaseTextHash $baselineMarkerText) $siteContext.BaselineMarkerSha256 'baseline marker digest recorded'
+    $siteManifest = Get-Content -LiteralPath $siteContext.ArtifactManifestPath -Raw | ConvertFrom-Json
+    Assert-ScopeEqual $siteManifest.schemaVersion 1 'site manifest schema'
+    Assert-ScopeEqual $siteManifest.sourceSha $shaC 'site manifest is bound to candidate'
+    Assert-ScopeEqual @($siteManifest.files).Count 2 'site publisher receives an exact manifest'
+    Assert-ScopeEqual (($siteManifest.files | Sort-Object path | ForEach-Object path) -join ',') ($siteAssetPath + ',index.html') 'site manifest follows contract and excludes game and generated metadata'
+    foreach ($file in $siteManifest.files) {
+        $path = Join-Path $siteContext.Directory $file.path
+        Assert-ScopeEqual (Get-Item -LiteralPath $path).Length $file.bytes 'site manifest records exact file lengths'
+        Assert-ScopeEqual (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() $file.sha256 'site manifest records exact file hashes'
+        Assert-ScopeThrows { [System.IO.File]::WriteAllText($path, 'mutated') } 'site artifact bytes cannot change during publish'
+    }
+    foreach ($path in @($siteContext.ArtifactManifestPath, $siteContext.BaselineMarkerPath)) {
+        Assert-ScopeThrows { [System.IO.File]::WriteAllText($path, '{}') } 'site exact manifest and baseline cannot change during publish'
+    }
+    [System.IO.File]::WriteAllText((Join-Path $siteContext.Directory ($syntheticSiteContract.assetDirectory + '/injected.js')), '// unmanifested')
+    Assert-ScopeEqual @($siteManifest.files).Count 2 'newly injected site asset is absent from publisher allowlist'
+    [System.IO.File]::WriteAllText((Join-Path $siteDist 'game.js'), '// forbidden game artifact')
+    Assert-ScopeThrows { Enter-ReleaseHostingLock -Directory $siteDist -CandidateSha $shaC -Scope site -SiteContract $syntheticSiteContract } 'site lock rejects full or game artifact leakage'
+    Remove-Item -LiteralPath (Join-Path $siteDist 'game.js')
+    Assert-ScopeThrows { Enter-ReleaseHostingLock -Directory $siteDist -CandidateSha $shaC } 'ordinary Hosting lock still requires a candidate stamp'
+    Assert-ScopeThrows { New-SiteReleaseContext -Checkout $hostingFixture -CandidateSha $shaC -RecordPath (Join-Path $hostingFixture 'synthetic-site-record.json') -BaselineHosting ([pscustomobject]@{ MarkerText = '' }) } 'site staging never overwrites prior release artifacts'
 }
 finally {
+    if ($siteContext) { Exit-ReleaseSourceLock -Lock $siteContext.Lock }
     if ($hostingContext) { Exit-ReleaseSourceLock -Lock $hostingContext.Lock }
     Set-Item Function:Assert-ReleaseCheckout -Value $checkoutFunction
     Remove-Item Function:Write-ReleaseRecord
     Remove-Item Function:New-HostingReleaseContext
+    Remove-Item Function:New-SiteReleaseContext
 }
 foreach ($required in @('New-HostingReleaseContext -Checkout $releaseCheckout', "'--config', `$hostingContext.ConfigPath", 'hostingArtifactManifestSha256', 'hostingConfigSha256')) {
     Assert-ScopeEqual $scopeDeploySource.Contains($required) $true "verified Hosting context retains $required"
+}
+foreach ($required in @("'all', 'api', 'hosting', 'site'", 'New-SiteReleaseContext -Checkout $releaseCheckout',
+    'scripts/publish-site-hosting.mjs', "'--baseline-version', `$hostingBefore.VersionName", "'--baseline-release', `$hostingBefore.ReleaseName",
+    "'--artifact-manifest', `$hostingContext.ArtifactManifestPath", "'--baseline-marker', `$hostingContext.BaselineMarkerPath",
+    '$hostingAfter.VersionName -cne $siteResult.versionName', '$hostingAfter.ReleaseName -cne $siteResult.releaseName', "'smoke:site'")) {
+    Assert-ScopeEqual $scopeDeploySource.Contains($required) $true "site publication retains $required"
 }
 
 $indexFunction = $deployAst.Find({ param($Node) $Node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $Node.Name -ceq 'New-FirestorePublicationContext' }, $false)

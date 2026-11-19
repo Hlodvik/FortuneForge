@@ -1,14 +1,15 @@
+// Edited: 2026-11-18T22:49:02-06:00 | Computer: Vinnabok
 import { useEffect } from 'react'
 import { fetchWithAccountSession, getCurrentAccount } from '../account/services/accountsApi'
-import { SLOT_ROUTE_DEFINITIONS } from '../../games/slots/routeRegistry'
+import { SLOT_ROUTE_METADATA } from '../../games/slots/routeMetadata'
 import { isGameActivityApiEnabled } from './gameActivityCapability'
 
 const cardGames = ['blackjack', 'texas-holdem', 'solitaire', 'free-solitaire', 'three-card-poker', 'house-holdem', 'hearts']
 const otherGames = ['dragon-tiger', 'mines', 'andar-bahar', 'hi-lo', 'baccarat', 'casino-war', 'video-poker', 'roulette', 'craps', 'keno', 'sic-bo', 'liars-dice', '2048', 'drop-merge']
-const gameRoutes = new Map([
+const gameRoutes = new Map<string, string>([
   ...cardGames.map(id => [`/cards/${id}`, id] as const),
   ...otherGames.map(id => [`/games/${id}`, id] as const),
-  ...SLOT_ROUTE_DEFINITIONS.flatMap(game => game.playPath ? [[game.playPath, game.id] as const] : []),
+  ...SLOT_ROUTE_METADATA.flatMap(game => game.playPath ? [[game.playPath, game.id] as const] : []),
 ])
 
 export function presenceGameId(pathname: string): string | undefined {

@@ -1,3 +1,5 @@
+// Edited: 2026-11-18T22:54:26-06:00 | Computer: Vinnabok
+import { requestCardRoomSession, requestSolitaireResultClaim } from '../../../features/account/services/cardRoomActivityApi'
 import { fetchWithAccountSession } from '../../../features/account/services/accountsApi'
 import type { CardRank, CardSuit } from '../shared/cards'
 import type {
@@ -77,11 +79,7 @@ export function stableSolitaireMutation(
 }
 
 export async function getSolitaireSession(signal?: AbortSignal): Promise<SolitaireSession> {
-  const response = await fetchWithAccountSession('/api/solitaire/session', {
-    method: 'GET',
-    cache: 'no-store',
-    signal,
-  })
+  const response = await requestCardRoomSession('solitaire', signal)
   return readResponse(response, isSolitaireSession, 'Solitaire session')
 }
 
@@ -189,10 +187,7 @@ export async function claimSolitaireResult(
   matchId: string,
   idempotencyKey: string,
 ): Promise<SolitaireMutationResponse> {
-  return mutationRequest(`/matches/${encodeURIComponent(matchId)}/claim`, {
-    method: 'POST',
-    headers: mutationHeaders(idempotencyKey),
-  })
+  return readResponse(await requestSolitaireResultClaim(matchId, idempotencyKey), isSolitaireMutationResponse, 'Solitaire mutation')
 }
 
 export async function postCommandWithReconciliation(

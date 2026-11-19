@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Edited: 2026-11-18T22:53:33-06:00 | Computer: Vinnabok
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -11,7 +12,7 @@ vi.mock('../../features/account/useAuthenticatedAccount', () => ({ useAuthentica
   error: null, isLoading: false,
 }) }))
 vi.mock('../../features/account/services/accountsApi', () => ({ getSlotHistory: async () => ({ spins: state.slots }) }))
-vi.mock('../cards/useCardRoomHistory', () => ({ useCardRoomHistory: () => ({
+vi.mock('../../features/account/history/useCardRoomHistory', () => ({ useCardRoomHistory: () => ({
   activities: [
     { id: 'hi-lo-1', matchId: 'round-1', game: 'hi-lo', gameLabel: 'Hi-Lo', title: 'Hi-Lo game', summary: 'R2.14 won', startedAtUtc: '2026-10-23T12:00:00Z', completedAtUtc: '2026-10-23T12:01:00Z', unseen: true, requiresClaim: false, winningsCredits: 2.14 },
     { id: 'andar-bahar-1', matchId: 'round-2', game: 'andar-bahar', gameLabel: 'Andar Bahar', title: 'Andar Bahar game', summary: 'R0.95 won', startedAtUtc: '2026-10-24T12:00:00Z', completedAtUtc: '2026-10-24T12:00:00Z', unseen: true, requiresClaim: false, winningsCredits: .95, wagerCredits: .5, netCredits: .45 },

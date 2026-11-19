@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T22:49:02-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T16:27:28-06:00 | Computer: Vinnabok
 import arcaneArchivesTitle from '../../assets/catalogue/slots/arcane-archives-title-v1.webp'
 import candyCarnivalTitle from '../../assets/catalogue/slots/candy-carnival-title-v2.webp'
@@ -19,9 +20,8 @@ import { GOLD_FOUNDRY_CATALOG } from './goldFoundry/catalog'
 import { MIDNIGHT_VAULT_CATALOG } from './dragonHoard/catalog'
 import { JADE_DRAGON_CATALOG } from './jadeDragon/catalog'
 import { NEON_NIGHTS_CATALOG } from './neonNights/catalog'
-import { SLOT_ROUTE_DEFINITIONS } from './routeRegistry'
-import type { SlotGameCatalogDefinition } from './shared/slotGameManifest'
-import type { SlotGameCatalogEntry } from './catalogTypes'
+import { SLOT_ROUTE_METADATA } from './routeMetadata'
+import type { SlotGameCatalogDefinition, SlotGameCatalogEntry } from './catalogTypes'
 
 export type { SlotGameCatalogEntry } from './catalogTypes'
 
@@ -74,7 +74,7 @@ const catalogDefinitions: readonly SlotGameCatalogDefinition[] = [
   MIDNIGHT_VAULT_CATALOG,
 ]
 
-const routesById = new Map(SLOT_ROUTE_DEFINITIONS.map((definition) => [definition.id, definition]))
+const routesById = new Map<string, (typeof SLOT_ROUTE_METADATA)[number]>(SLOT_ROUTE_METADATA.map((definition) => [definition.id, definition]))
 
 export const SLOT_GAME_CATALOG: readonly SlotGameCatalogEntry[] = catalogDefinitions.map(
   (catalog) => {

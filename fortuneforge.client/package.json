@@ -11,7 +11,9 @@
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "preview": "vite preview",
-    "prebuild": "node ../scripts/build-jade-dragon.mjs"
+    "prebuild": "node ../scripts/build-jade-dragon.mjs",
+    "build:site": "node ./scripts/check-site-types.mjs && vite build --config vite.site.config.ts && node ./scripts/verify-site-build.mjs",
+    "test:site": "vitest run --config vite.site.config.ts src/features/account/accountSessionHooks.test.tsx src/pages/account/AccountHomePage.test.tsx src/pages/account/AccountHomePage.overlay.test.tsx src/pages/account/AccountHomePage.visibility.test.tsx src/pages/landing/LandingPage.test.tsx src/pages/auth/LoginPage.test.tsx src/app/SiteApp.test.tsx src/app/RouteStateLayout.test.tsx build/siteBuildBoundary.test.ts src/features/account/history src/pages/account/AccountHistoryPage.test.tsx"
   },
   "dependencies": {
     "@fortuneforge/client-presentation": "0.1.0",

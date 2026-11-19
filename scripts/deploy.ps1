@@ -1,6 +1,7 @@
+# Edited: 2026-11-18T22:46:29-06:00 | Computer: VINNABOK
 [CmdletBinding()]
 param(
-    [ValidateSet('all', 'api', 'hosting')]
+    [ValidateSet('all', 'api', 'hosting', 'site')]
     [string]$Target = 'all',
     [string]$Commit = 'HEAD',
     [ValidatePattern('^[a-z0-9][a-z0-9_-]{0,62}$')]
@@ -29,8 +30,8 @@ $serviceName = 'fortuneforge-api'
 $baseUrl = 'https://fortuneforgegame.web.app'
 Import-Module (Join-Path $PSScriptRoot 'ReleaseGuardrails.psm1') -Force
 Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason -LivePlaytest:$LivePlaytest -TestFree:$TestFree
-if ($ContinuousAudit -and $Target -eq 'hosting') { throw '-ContinuousAudit applies only to an API release.' }
-if ($PSBoundParameters.ContainsKey('GameWorkerBindingsFile') -and $Target -eq 'hosting') {
+if ($ContinuousAudit -and $Target -in @('hosting', 'site')) { throw '-ContinuousAudit applies only to an API release.' }
+if ($PSBoundParameters.ContainsKey('GameWorkerBindingsFile') -and $Target -in @('hosting', 'site')) {
     throw '-GameWorkerBindingsFile applies only to a release that includes the API.'
 }
 
@@ -191,15 +192,7 @@ function New-HostingReleaseContext {
     $staged = $null
     try {
         $directory = $RecordPath + '.hosting'
-        if (Test-Path -LiteralPath $directory) { throw 'The unique Hosting artifact directory already exists; nothing will be overwritten.' }
-        [System.IO.Directory]::CreateDirectory($directory) | Out-Null
-        foreach ($file in $original.Files) {
-            $destination = Join-Path $directory $file.Path
-            [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($destination)) | Out-Null
-            $writer = [System.IO.File]::Open($destination, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
-            try { $file.Stream.Position = 0; $file.Stream.CopyTo($writer) }
-            finally { $writer.Dispose() }
-        }
+        Copy-LockedReleaseArtifact -ArtifactLock $original -Directory $directory
         $staged = Enter-ReleaseHostingLock -Directory $directory -CandidateSha $CandidateSha
         if ($staged.FileCount -ne $original.FileCount -or $staged.ManifestSha256 -cne $original.ManifestSha256) { throw 'Staged Hosting artifact bytes differ from the verified build manifest.' }
         $config = Get-Content -LiteralPath (Join-Path $Checkout 'firebase.json') -Raw | ConvertFrom-Json -ErrorAction Stop
@@ -224,6 +217,55 @@ function New-HostingReleaseContext {
         if ($configHash -cne (Get-ReleaseTextHash $text)) { throw 'Generated Firebase configuration changed before its immutable handle was acquired.' }
         return [pscustomobject]@{ Lock = $staged; Directory = $directory; ConfigPath = $configPath;
             ConfigSha256 = $configHash; ManifestSha256 = $staged.ManifestSha256; FileCount = $staged.FileCount }
+    }
+    catch { Exit-ReleaseSourceLock -Lock $staged; throw }
+    finally { Exit-ReleaseSourceLock -Lock $original }
+}
+
+function New-SiteReleaseContext {
+    param([string]$Checkout, [string]$CandidateSha, [string]$RecordPath, $BaselineHosting)
+    Assert-ReleaseCheckout -Repository $Checkout -Sha $CandidateSha
+    $contract = Get-ReleaseSiteContract -Repository $Checkout
+    $original = Enter-ReleaseHostingLock -Directory (Join-Path $Checkout $contract.outputDirectory) -CandidateSha $CandidateSha -Scope site -SiteContract $contract
+    $staged = $null
+    try {
+        $directory = $RecordPath + '.site'
+        Copy-LockedReleaseArtifact -ArtifactLock $original -Directory $directory
+        $staged = Enter-ReleaseHostingLock -Directory $directory -CandidateSha $CandidateSha -Scope site -SiteContract $contract
+        if ($staged.FileCount -ne $original.FileCount -or $staged.ManifestSha256 -cne $original.ManifestSha256) { throw 'Staged site artifact bytes differ from the verified build manifest.' }
+
+        function Add-SiteContextFile([string]$Path, [string]$Text) {
+            $writer = [System.IO.File]::Open($Path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+            try { $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes($Text); $writer.Write($bytes, 0, $bytes.Length) }
+            finally { $writer.Dispose() }
+            $reader = [System.IO.File]::Open($Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+            $staged.Streams.Add($reader)
+            $hash = [System.Security.Cryptography.SHA256]::Create()
+            try { $actual = ([System.BitConverter]::ToString($hash.ComputeHash($reader))).Replace('-', '').ToLowerInvariant() }
+            finally { $hash.Dispose() }
+            $reader.Position = 0
+            if ($actual -cne (Get-ReleaseTextHash $Text)) { throw 'Generated site publication input changed before its immutable handle was acquired.' }
+            return $actual
+        }
+
+        # The publisher selects exactly these locked files. Newly injected files
+        # cannot silently join a release even though directory entries are mutable.
+        $manifestPath = $RecordPath + '.site-manifest.json'
+        $manifest = [ordered]@{ schemaVersion = 1; sourceSha = $CandidateSha; files = @($staged.Files | ForEach-Object {
+            [ordered]@{ path = $_.Path; bytes = $_.Bytes; sha256 = $_.Sha256 }
+        }) }
+        $manifestHash = Add-SiteContextFile -Path $manifestPath -Text ($manifest | ConvertTo-Json -Depth 8)
+        $markerPath = ''
+        $markerHash = ''
+        if (-not [string]::IsNullOrEmpty($BaselineHosting.MarkerText)) {
+            $markerPath = $RecordPath + '.site-baseline-marker.json'
+            $markerHash = Add-SiteContextFile -Path $markerPath -Text $BaselineHosting.MarkerText
+        }
+        return [pscustomobject]@{ Lock = $staged; Directory = $directory; ConfigSha256 = '';
+            ManifestSha256 = $staged.ManifestSha256; FileCount = $staged.FileCount;
+            ArtifactManifestPath = $manifestPath; ArtifactManifestSha256 = $manifestHash;
+            BaselineMarkerPath = $markerPath; BaselineMarkerSha256 = $markerHash;
+            PublisherRecordPath = $RecordPath + '.site-result.json' }
     }
     catch { Exit-ReleaseSourceLock -Lock $staged; throw }
     finally { Exit-ReleaseSourceLock -Lock $original }
@@ -267,6 +309,7 @@ function Get-LiveHosting {
         IndexSha256 = Get-ReleaseTextHash ([string]$index.Content)
         ReleaseName = [string]$latest[0].name
         VersionName = [string]$latest[0].version.name
+        MarkerText = $(if ($marker) { [string]$marker.Content } else { '' })
     }
 }
 
@@ -466,7 +509,7 @@ function Wait-FirestoreRulesPublished {
 
 function Assert-LiveTargets {
     param([string]$CandidateSha, $Hosting, $Api)
-    if ($Target -in @('all', 'hosting')) {
+    if ($Target -in @('all', 'hosting', 'site')) {
         Assert-HostingAdoptionRelease -LiveSha $Hosting.SourceSha -AdoptUnstampedLive:$AdoptUnstampedLive `
             -ObservedRelease $Hosting.ReleaseName -ExpectedRelease $ExpectedHostingRelease
         Assert-LiveReleaseSource -Repository $repoRoot -CandidateSha $CandidateSha -Target 'Hosting' `
@@ -484,7 +527,7 @@ function Assert-LiveTargets {
 
 function Assert-UnchangedLiveTargets {
     param($BeforeHosting, $BeforeApi, $BeforeRules)
-    if ($Target -in @('all', 'hosting')) {
+    if ($Target -in @('all', 'hosting', 'site')) {
         $now = Get-LiveHosting
         if ($now.ReleaseName -cne $BeforeHosting.ReleaseName -or
             $now.VersionName -cne $BeforeHosting.VersionName -or
@@ -577,7 +620,7 @@ if (-not $InspectLive) {
 $hostingBefore = $null
 $apiBefore = $null
 $rulesBefore = $null
-if ($Target -in @('all', 'hosting')) { $hostingBefore = Get-LiveHosting }
+if ($Target -in @('all', 'hosting', 'site')) { $hostingBefore = Get-LiveHosting }
 $apiBefore = Get-LiveApi
 if ($Target -in @('all', 'api')) {
     $rulesBefore = Get-LiveFirestoreRules
@@ -613,7 +656,7 @@ Assert-ReleaseCheckout -Repository $repoRoot -Sha $candidateSha
 $releaseToolPaths = @(Get-ReleaseToolPaths)
 Assert-ReleaseToolingMatchesCommit -Repository $repoRoot -Sha $mainSha -Paths $releaseToolPaths
 Assert-LiveTargets -CandidateSha $candidateSha -Hosting $hostingBefore -Api $apiBefore
-if ($Target -ceq 'hosting') {
+if ($Target -cin @('hosting', 'site')) {
     Assert-HostingApiCompatibility -Repository $repoRoot -CandidateSha $candidateSha -LiveApiSha $apiBefore.SourceSha
 }
 $verificationPlan = Get-ReleaseVerificationPlan -Repository $repoRoot -CandidateSha $candidateSha `
@@ -648,6 +691,9 @@ $record = [ordered]@{
     hostingArtifactManifestSha256 = ''
     hostingArtifactFileCount = 0
     hostingConfigSha256 = ''
+    siteArtifactManifestSha256 = ''
+    siteBaselineMarkerSha256 = ''
+    sitePublisherRecord = ''
     target = $Target
     candidateSha = $candidateSha
     toolingSha = $mainSha
@@ -668,6 +714,7 @@ $record = [ordered]@{
     previousApiRevision = if ($apiBefore) { $apiBefore.RevisionName } else { '' }
     previousFirestoreRulesRelease = if ($rulesBefore) { $rulesBefore.ReleaseName } else { '' }
     newHostingRelease = ''
+    newHostingVersion = ''
     newApiRevision = ''
     newFirestoreRulesRelease = ''
     status = 'preflight'
@@ -711,7 +758,7 @@ try {
     if ($TestFree) {
         Write-Warning 'Deployment guardrail tests are NOT RUN on the explicit test-free route.'
     }
-    else {
+    elseif ($Target -cne 'site') {
         # Guard tests use synthetic command responses, never disposable repositories.
         Invoke-Checked -Executable 'powershell.exe' -Arguments @(
             '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
@@ -733,8 +780,14 @@ try {
     Assert-ReleaseToolingMatchesCommit -Repository $repoRoot -Sha $mainSha -Paths $releaseToolPaths
     Assert-UnchangedLiveTargets -BeforeHosting $hostingBefore -BeforeApi $apiBefore -BeforeRules $rulesBefore
 
-    if ($Target -in @('all', 'hosting')) {
-        $hostingContext = New-HostingReleaseContext -Checkout $releaseCheckout -CandidateSha $candidateSha -RecordPath $recordPath
+    if ($Target -in @('all', 'hosting', 'site')) {
+        if ($Target -ceq 'site') {
+            $hostingContext = New-SiteReleaseContext -Checkout $releaseCheckout -CandidateSha $candidateSha -RecordPath $recordPath -BaselineHosting $hostingBefore
+            $record.siteArtifactManifestSha256 = $hostingContext.ArtifactManifestSha256
+            $record.siteBaselineMarkerSha256 = $hostingContext.BaselineMarkerSha256
+            $record.sitePublisherRecord = $hostingContext.PublisherRecordPath
+        }
+        else { $hostingContext = New-HostingReleaseContext -Checkout $releaseCheckout -CandidateSha $candidateSha -RecordPath $recordPath }
         $record.hostingArtifactManifestSha256 = $hostingContext.ManifestSha256
         $record.hostingArtifactFileCount = $hostingContext.FileCount
         $record.hostingConfigSha256 = $hostingContext.ConfigSha256
@@ -873,7 +926,7 @@ try {
         }
     }
 
-    if ($Target -in @('all', 'hosting')) {
+    if ($Target -in @('all', 'hosting', 'site')) {
         Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
         $apiForHosting = Get-LiveApi
         $expectedApiForHosting = if ($Target -ceq 'all') { $apiAfter } else { $apiBefore }
@@ -887,12 +940,34 @@ try {
             throw 'Hosting changed before publication. Restart the deployment.'
         }
         if (-not $hostingContext) { throw 'No locked verified Hosting artifact context exists.' }
-        Write-Host "`nPublishing stamped Firebase Hosting build..." -ForegroundColor Yellow
-        Invoke-Checked -Executable 'npx.cmd' -Arguments @(
-            '--yes', 'firebase-tools@14.4.0', 'deploy', '--only', 'hosting',
-            '--config', $hostingContext.ConfigPath,
-            '--project', $project, '--account', $firebaseAccount, '--non-interactive'
-        ) -WorkingDirectory $releaseCheckout
+        $siteResult = $null
+        if ($Target -ceq 'site') {
+            Write-Host "`nPublishing site while preserving live game artifacts..." -ForegroundColor Yellow
+            $siteArguments = @((Join-Path $repoRoot 'scripts/publish-site-hosting.mjs'),
+                '--project', $project, '--site', $project,
+                '--baseline-version', $hostingBefore.VersionName, '--baseline-release', $hostingBefore.ReleaseName,
+                '--directory', $hostingContext.Directory, '--source-sha', $candidateSha,
+                '--artifact-manifest', $hostingContext.ArtifactManifestPath,
+                '--record-path', $hostingContext.PublisherRecordPath)
+            if ($hostingContext.BaselineMarkerPath) { $siteArguments += @('--baseline-marker', $hostingContext.BaselineMarkerPath) }
+            Invoke-Checked -Executable 'node.exe' -Arguments $siteArguments -WorkingDirectory $releaseCheckout
+            $siteResult = Get-Content -LiteralPath $hostingContext.PublisherRecordPath -Raw | ConvertFrom-Json -ErrorAction Stop
+            if ($siteResult.sourceSha -cne $candidateSha -or
+                $siteResult.versionName -cnotmatch "^sites/$project/versions/[^/]+$" -or
+                $siteResult.releaseName -cnotmatch "^sites/$project/releases/[^/]+$" -or
+                $siteResult.versionName -ceq $hostingBefore.VersionName -or
+                $siteResult.releaseName -ceq $hostingBefore.ReleaseName) {
+                throw 'Site publisher did not record a new release/version for the verified candidate.'
+            }
+        }
+        else {
+            Write-Host "`nPublishing stamped Firebase Hosting build..." -ForegroundColor Yellow
+            Invoke-Checked -Executable 'npx.cmd' -Arguments @(
+                '--yes', 'firebase-tools@14.4.0', 'deploy', '--only', 'hosting',
+                '--config', $hostingContext.ConfigPath,
+                '--project', $project, '--account', $firebaseAccount, '--non-interactive'
+            ) -WorkingDirectory $releaseCheckout
+        }
 
         $hostingAfter = $null
         for ($attempt = 1; $attempt -le 10; $attempt++) {
@@ -905,12 +980,16 @@ try {
             $hostingAfter.ReleaseName -ceq $hostingBefore.ReleaseName) {
             throw 'Hosting did not serve a new stamped release after deployment.'
         }
+        if ($Target -ceq 'site' -and ($hostingAfter.VersionName -cne $siteResult.versionName -or
+            $hostingAfter.ReleaseName -cne $siteResult.releaseName)) { throw 'Live Hosting differs from the recorded site release/version.' }
         $record.newHostingRelease = $hostingAfter.ReleaseName
+        $record.newHostingVersion = $hostingAfter.VersionName
         Write-ReleaseRecord -Record $record -Path $recordPath
     }
 
     Write-Host "`nRunning production smoke..." -ForegroundColor Yellow
-    Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'smoke:production') -WorkingDirectory $releaseCheckout
+    $smokeScript = if ($Target -ceq 'site') { 'smoke:site' } else { 'smoke:production' }
+    Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', $smokeScript) -WorkingDirectory $releaseCheckout
     $record.status = 'complete'
     $record.completedAtUtc = [DateTime]::UtcNow.ToString('o')
     Write-ReleaseRecord -Record $record -Path $recordPath

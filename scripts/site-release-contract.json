@@ -1,0 +1,11 @@
+{
+  "assetDirectory": "assets/site",
+  "preservedGameDirectory": "game-shell",
+  "gamePrefixes": [
+    "/slots/",
+    "/cards/",
+    "/games/",
+    "/demo/"
+  ],
+  "outputDirectory": "fortuneforge.client/dist-site"
+}

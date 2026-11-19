@@ -1,5 +1,6 @@
+// Edited: 2026-11-18T22:54:10-06:00 | Computer: Vinnabok
 import image from '../../../assets/catalogue/slots/gold-foundry-title-v1.webp'
-import type { SlotGameCatalogDefinition } from '../shared/slotGameManifest'
+import type { SlotGameCatalogDefinition } from '../catalogTypes'
 
 // Lobby-only metadata and card art: opening the lobby never loads the game package.
 export const GOLD_FOUNDRY_CATALOG: SlotGameCatalogDefinition = {

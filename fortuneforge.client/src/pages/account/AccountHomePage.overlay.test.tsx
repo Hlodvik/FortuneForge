@@ -1,12 +1,14 @@
 // @vitest-environment jsdom
+// Edited: 2026-11-18T22:49:42-06:00 | Computer: Vinnabok
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
 
+const session = vi.hoisted(() => ({ loading: false }))
 vi.mock('../../components/PlayerAccountMenus', () => ({ PlayerAccountMenus: () => <details><summary>Account menu</summary><a href="/home/settings">Settings</a></details> }))
 vi.mock('../../features/account/useAuthenticatedAccount', () => ({ useAuthenticatedAccount: () => ({
-  account: { userId: 'player-1', playerName: 'Avery', role: 'Player', email: 'avery@example.com', balances: { slotsCredits: 100 } },
-  error: null, isLoading: false, reload: vi.fn(),
+  account: session.loading ? null : { userId: 'player-1', playerName: 'Avery', role: 'Player', email: 'avery@example.com', balances: { slotsCredits: 100 } },
+  error: null, isLoading: session.loading, reload: vi.fn(),
 }) }))
 vi.mock('../../features/catalog/recentGameActivity', () => ({ useRecentGameActivity: () => ({ games: [], isLoading: false, error: null, refresh: vi.fn() }) }))
 vi.mock('../../features/catalog/catalogPopularity', async importOriginal => ({
@@ -20,6 +22,7 @@ vi.mock('./AccountSettingsPage', () => ({ AccountSettingsContent: () => <section
 import { HomePage } from './AccountHomePage'
 
 afterEach(() => {
+  session.loading = false
   window.history.replaceState(null, '', '/')
   document.body.style.overflow = ''
   delete (HTMLDialogElement.prototype as Partial<HTMLDialogElement>).showModal
@@ -32,6 +35,29 @@ function stubDialog() {
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', '') }
   HTMLDialogElement.prototype.close = function () { this.removeAttribute('open') }
 }
+
+it.each(['settings', 'history'])('opens direct %s links after account verification completes', async overlay => {
+  stubDialog()
+  session.loading = true
+  window.history.replaceState(null, '', `/home/${overlay}`)
+  const host = document.createElement('div')
+  document.body.append(host)
+  const root = createRoot(host)
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  try {
+    await act(async () => root.render(<HomePage />))
+    expect(host.querySelector('.home-lobby__overlay')).toBeNull()
+    expect(document.body.style.overflow).not.toBe('hidden')
+    session.loading = false
+    await act(async () => root.render(<HomePage />))
+    expect(host.querySelector<HTMLDialogElement>('.home-lobby__overlay')?.open).toBe(true)
+    expect(host.textContent).toContain(overlay === 'settings' ? 'Settings panel content' : 'History panel content')
+    expect(document.body.style.overflow).toBe('hidden')
+  } finally {
+    await act(async () => root.unmount())
+    host.remove()
+  }
+})
 
 it('opens History over Home without a page reload and returns to Home on close', async () => {
   stubDialog()

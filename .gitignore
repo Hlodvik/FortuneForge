@@ -1,3 +1,4 @@
+# Edited: 2026-11-18T22:51:39-06:00 | Computer: Vinnabok
 # Visual Studio and editors
 .vs/
 .vscode/
@@ -16,6 +17,7 @@ coverage/
 # Node and Vite output
 **/node_modules/
 **/dist/
+**/dist-site/
 **/dist-ssr/
 **/playwright-report/
 **/test-results/

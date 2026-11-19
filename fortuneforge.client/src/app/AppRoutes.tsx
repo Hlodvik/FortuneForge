@@ -1,11 +1,13 @@
-import { Component, lazy, Suspense, useEffect, type ReactNode } from 'react'
+// Edited: 2026-11-18T22:49:02-06:00 | Computer: Vinnabok
+import { lazy, Suspense, type ReactNode } from 'react'
 import { RouteStateLayout } from './RouteStateLayout'
+import { resolveSiteRoute, SiteNotFoundPage } from './SiteRoutes'
+import { RouteErrorBoundary, RouteErrorState, RouteLoadingState } from './RouteBoundary'
 import { GameLoadingScreen } from '../features/game-loading/GameLoadingScreen'
 import { GameLoadingRouteProvider } from '../features/game-loading/GameLoadingRouteContext'
 import { resolveGameLoadingEntry } from '../features/game-loading/gameLoadingRegistry'
 import type { SlotRouteDefinition } from '../games/slots'
 
-const LandingPage = lazy(() => import('../pages/landing/LandingPage').then((module) => ({ default: module.LandingPage })))
 const AuthenticatedBlackjackRoute = lazy(() => import('./routes/BlackjackRoute').then((module) => ({ default: module.AuthenticatedBlackjackRoute })))
 const AuthenticatedThreeCardPokerRoute = lazy(() => import('./routes/ThreeCardPokerRoute').then((module) => ({ default: module.AuthenticatedThreeCardPokerRoute })))
 const AuthenticatedHouseHoldemRoute = lazy(() => import('./routes/HouseHoldemRoute').then((module) => ({ default: module.AuthenticatedHouseHoldemRoute })))
@@ -33,19 +35,6 @@ const AuthenticatedCrapsRoute = lazy(() => import('./routes/CrapsRoute').then((m
 const AuthenticatedLiarsDiceRoute = lazy(() => import('./routes/LiarsDiceRoute').then((module) => ({ default: module.AuthenticatedLiarsDiceRoute })))
 const JadeDragonRoute = lazy(() => import('./routes/JadeDragonRoute').then((module) => ({ default: module.JadeDragonRoute })))
 const SlotGameRoute = lazy(() => import('./routes/SlotGameRoute').then((module) => ({ default: module.SlotGameRoute })))
-const CreateAccountPage = lazy(() => import('../pages/auth/CreateAccountPage').then((module) => ({ default: module.CreateAccountPage })))
-const LoginPage = lazy(() => import('../pages/auth/LoginPage').then((module) => ({ default: module.LoginPage })))
-const VerifyEmailPage = lazy(() => import('../pages/auth/VerifyEmailPage').then((module) => ({ default: module.VerifyEmailPage })))
-const HomePage = lazy(() => import('../pages/account/AccountHomePage').then((module) => ({ default: module.HomePage })))
-const AccountPasswordPage = lazy(() => import('../pages/account/AccountPasswordPage').then((module) => ({ default: module.AccountPasswordPage })))
-const AccountReviewPage = lazy(() => import('../pages/account/AccountReviewPage').then((module) => ({ default: module.AccountReviewPage })))
-const PurchaseCreditsPage = lazy(() => import('../pages/payments/PurchaseCreditsPage').then((module) => ({ default: module.PurchaseCreditsPage })))
-const PaymentInvoicesPage = lazy(() => import('../pages/payments/PaymentInvoicesPage').then((module) => ({ default: module.PaymentInvoicesPage })))
-const PaymentInvoicePage = lazy(() => import('../pages/payments/PaymentInvoicePage').then((module) => ({ default: module.PaymentInvoicePage })))
-const AdminPaymentInvoicesPage = lazy(() => import('../pages/payments/AdminPaymentInvoicesPage').then((module) => ({ default: module.AdminPaymentInvoicesPage })))
-const AdminOperationsRoute = lazy(() => import('./routes/AdminOperationsRoute').then((module) => ({ default: module.AdminOperationsRoute })))
-const AdminPortalRoute = lazy(() => import('./routes/AdminPortalRoute').then((module) => ({ default: module.AdminPortalRoute })))
-const NotFoundPage = lazy(() => import('../pages/not-found/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
 
 export function AppRoutes({
   pathname,
@@ -57,14 +46,10 @@ export function AppRoutes({
   onSpinStateChange?: (isSpinning: boolean) => void
 }) {
   const loadingEntry = resolveGameLoadingEntry(pathname)
-  const invoiceMatch = pathname.match(/^\/home\/invoices\/([A-Za-z0-9]+)$/)
-  const adminInvoiceMatch = pathname.match(/^\/admin\/invoices\/([A-Za-z0-9]+)$/)
   let route: ReactNode
 
-  if (pathname === '/') route = <LandingPage />
-  else if (pathname === '/slots') route = <CatalogueHomeRedirect href="/home?category=Slots" />
-  else if (pathname === '/cards') route = <CatalogueHomeRedirect href="/home?category=Cards" />
-  else if (pathname === '/games') route = <CatalogueHomeRedirect href="/home" />
+  const siteRoute = resolveSiteRoute(pathname)
+  if (siteRoute !== null) route = siteRoute
   else if (pathname === '/games/asteroids') route = <AuthenticatedAsteroidsRoute />
   else if (pathname === '/games/2048') route = <AuthenticatedTwentyFortyEightRoute />
   else if (pathname === '/games/drop-merge') route = <AuthenticatedDropMergeRoute />
@@ -94,63 +79,13 @@ export function AppRoutes({
   else if (slotRoute !== null && pathname === slotRoute.playPath) {
     route = <SlotGameRoute definition={slotRoute} pathname={pathname} onSpinStateChange={onSpinStateChange} />
   }
-  else if (pathname === '/create-account') route = <CreateAccountPage />
-  else if (pathname === '/login') route = <LoginPage />
-  else if (pathname === '/verify-email') route = <VerifyEmailPage />
-  else if (pathname === '/account/review') route = <AccountReviewPage />
-  else if (pathname === '/home' || pathname === '/home/settings' || pathname === '/home/history') route = <HomePage />
-  else if (pathname === '/home/change-password') route = <AccountPasswordPage />
-  else if (pathname === '/balance') route = <PurchaseCreditsPage />
-  else if (pathname === '/home/rand' || pathname === '/home/credits') route = <LegacyBalanceRedirect />
-  else if (pathname === '/home/invoices') route = <PaymentInvoicesPage />
-  else if (invoiceMatch !== null) route = <PaymentInvoicePage invoiceId={invoiceMatch[1]} />
-  else if (pathname === '/admin/invoices') route = <AdminPaymentInvoicesPage />
-  else if (pathname === '/admin/operations') route = <AdminOperationsRoute />
-  else if (pathname === '/admin') route = <AdminPortalRoute />
-  else if (adminInvoiceMatch !== null) route = <PaymentInvoicePage invoiceId={adminInvoiceMatch[1]} adminView />
-  else route = <NotFoundPage />
+  else route = <SiteNotFoundPage />
 
   return (
     <GameLoadingRouteProvider entry={loadingEntry} pathname={pathname}>
-      <RouteErrorBoundary key={pathname} pathname={pathname}>
+      <RouteErrorBoundary key={pathname} fallback={<RouteStateLayout pathname={pathname}><RouteErrorState /></RouteStateLayout>}>
         <Suspense fallback={pathname === '/slots/jade-dragon' ? null : <RouteStateLayout pathname={pathname} entry={loadingEntry}>{loadingEntry ? <GameLoadingScreen entry={loadingEntry} /> : <RouteLoadingState />}</RouteStateLayout>}>{route}</Suspense>
       </RouteErrorBoundary>
     </GameLoadingRouteProvider>
   )
-}
-
-function CatalogueHomeRedirect({ href }: { href: string }) {
-  useEffect(() => { window.location.replace(href) }, [href])
-  return <RouteStateLayout><main className="route-state" role="status">Opening your home…</main></RouteStateLayout>
-}
-
-function LegacyBalanceRedirect() {
-  useEffect(() => {
-    window.location.replace(`/balance${window.location.search}${window.location.hash}`)
-  }, [])
-  return <RouteStateLayout><main className="route-state" role="status">Opening your balance…</main></RouteStateLayout>
-}
-
-function RouteLoadingState() {
-  return <main className="route-state" role="status">Opening Fortune Forge…</main>
-}
-
-class RouteErrorBoundary extends Component<{ children: ReactNode; pathname: string }, { failed: boolean }> {
-  state = { failed: false }
-
-  static getDerivedStateFromError() {
-    return { failed: true }
-  }
-
-  render() {
-    if (!this.state.failed) return this.props.children
-    return (
-      <RouteStateLayout pathname={this.props.pathname}><main className="route-state route-state--error" role="alert">
-        <strong>This page could not be loaded.</strong>
-        <span>Check your connection, then try loading the page again.</span>
-        <button type="button" onClick={() => window.location.reload()}>Try again</button>
-        <a href="/">Return to Fortune Forge</a>
-      </main></RouteStateLayout>
-    )
-  }
 }

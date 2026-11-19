@@ -1,0 +1,12 @@
+// Edited: 2026-11-18T22:49:02-06:00 | Computer: Vinnabok
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.site.tsbuildinfo",
+    "paths": {
+      "@fortuneforge/slot-client-core/components/ResponsiveSlotImage": ["../packages/slot-client-core/src/components/ResponsiveSlotImage.tsx"]
+    }
+  },
+  "files": ["src/site-main.tsx"],
+  "include": []
+}

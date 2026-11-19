@@ -1,18 +1,16 @@
 // @vitest-environment jsdom
+// Edited: 2026-11-18T22:53:33-06:00 | Computer: Vinnabok
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
 import type { CardRoomHistoryResult } from '../../games/cards/shared/cardRoomHistoryApi'
 
 const state = vi.hoisted(() => ({ history: [] as CardRoomHistoryResult[], seen: vi.fn() }))
-vi.mock('../../games/cards/shared/cardRoomHistoryApi', () => ({
+vi.mock('../../features/account/history/cardRoomHistoryApi', () => ({
   getCardRoomHistory: async () => state.history,
   markCardRoomResultSeen: state.seen,
+  getActiveCardRoomActivity: async () => null,
 }))
-vi.mock('../../games/cards/blackjack/blackjackTableApi', () => ({ getBlackjackTableSession: async () => ({ kind: 'idle' }) }))
-vi.mock('../../games/cards/texasHoldem/creditHoldemApi', () => ({ getCreditHoldemSession: async () => ({ kind: 'idle' }) }))
-vi.mock('../../games/cards/solitaire/solitaireApi', () => ({ getSolitaireSession: async () => ({ kind: 'idle' }) }))
-vi.mock('../../games/cards/threeCardPoker/threeCardPokerApi', () => ({ getThreeCardPokerSession: async () => ({ kind: 'idle' }) }))
 import { useCardRoomHistory } from './useCardRoomHistory'
 
 afterEach(() => { vi.unstubAllGlobals(); state.seen.mockReset() })

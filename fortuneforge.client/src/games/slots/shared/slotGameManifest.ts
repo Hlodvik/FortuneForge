@@ -1,16 +1,8 @@
+// Edited: 2026-11-18T22:54:10-06:00 | Computer: Vinnabok
 import type { SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 
-export type SlotGameCatalogDefinition = {
-  id: string
-  title: string
-  shortTitle: string
-  description: string
-  image: string
-  imagePresentation: 'contain' | 'cover'
-  /** Keeps edge-to-edge emblems clear of the catalogue-card frame. */
-  imageScale?: 'standard' | 'compact'
-  slotDivBackgroundImage?: string
-}
+import type { SlotGameCatalogDefinition } from '../catalogTypes'
+export type { SlotGameCatalogDefinition } from '../catalogTypes'
 
 export type SlotGameManifest = {
   id: string

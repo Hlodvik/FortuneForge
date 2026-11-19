@@ -1,10 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
-import {
-  AccountRequestError,
-  clearAccountToken,
-  getCurrentAccount,
-  type AccountSummary,
-} from './services/accountsApi'
+// Edited: 2026-11-18T22:44:06-06:00 | Computer: Vinnabok
+import { useEffect } from 'react'
+import type { AccountSummary } from './services/accountsApi'
+import { useOptionalAccountSession } from './useOptionalAccountSession'
 
 type AuthenticatedAccountState = {
   account: AccountSummary | null
@@ -13,47 +10,12 @@ type AuthenticatedAccountState = {
   reload: () => void
 }
 
-export function useAuthenticatedAccount(returnPath = '/home'): AuthenticatedAccountState {
-  const [account, setAccount] = useState<AccountSummary | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [reloadKey, setReloadKey] = useState(0)
-  const reload = useCallback(() => setReloadKey((key) => key + 1), [])
-
+export function useAuthenticatedAccount(returnPath = '/home', options: { unauthenticatedRedirect?: string } = {}): AuthenticatedAccountState {
+  const { account, error, isLoading, reload, status } = useOptionalAccountSession()
+  const redirect = options.unauthenticatedRedirect ?? `/login?returnTo=${encodeURIComponent(returnPath)}`
   useEffect(() => {
-    const loginUrl = `/login?returnTo=${encodeURIComponent(returnPath)}`
-    let isActive = true
-    setIsLoading(true)
-    setError(null)
-    void getCurrentAccount()
-      .then((loadedAccount) => {
-        if (isActive) {
-          setAccount(loadedAccount)
-        }
-      })
-      .catch((requestError: unknown) => {
-        if (requestError instanceof AccountRequestError && requestError.status === 401) {
-          clearAccountToken()
-          window.location.replace(loginUrl)
-          return
-        }
+    if (status === 'unauthenticated') window.location.replace(redirect)
+  }, [redirect, status])
 
-        if (isActive) {
-          setError(requestError instanceof Error
-            ? requestError.message
-            : 'Your account could not be loaded.')
-        }
-      })
-      .finally(() => {
-        if (isActive) {
-          setIsLoading(false)
-        }
-      })
-
-    return () => {
-      isActive = false
-    }
-  }, [reloadKey, returnPath])
-
-  return { account, error, isLoading, reload }
+  return { account, error, isLoading: isLoading || status === 'unauthenticated', reload }
 }

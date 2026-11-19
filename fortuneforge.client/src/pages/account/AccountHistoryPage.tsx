@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T22:53:33-06:00 | Computer: Vinnabok
 import { useEffect, useState } from 'react'
 import { ForgeCoin } from '../../components/ForgeCreditAmount'
 import {
@@ -7,7 +8,7 @@ import {
 } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { CardRoomHistory } from '../../games/cards/shared/CardRoomHistory'
-import { useCardRoomHistory } from '../cards/useCardRoomHistory'
+import { useCardRoomHistory } from '../../features/account/history/useCardRoomHistory'
 import { AccountLobbyShell } from './AccountLobbyShell'
 import '../../games/cards/shared/cardRoomHeader.css'
 import '../index.css'

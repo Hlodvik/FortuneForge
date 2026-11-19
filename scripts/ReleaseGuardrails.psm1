@@ -1,3 +1,4 @@
+# Edited: 2026-11-18T22:46:29-06:00 | Computer: VINNABOK
 function Assert-ReleaseSha {
     param([Parameter(Mandatory)][string]$Sha)
 
@@ -395,7 +396,13 @@ function Get-ReleaseToolPaths {
       'scripts/tests/deploy-guardrails.tests.ps1', 'scripts/tests/release-scope.tests.ps1',
       'scripts/verify-release.ps1', 'scripts/verify-game-navbar.mjs',
       'scripts/tests/game-navbar-boundary.test.mjs', 'scripts/verify-ci-emulator-order.mjs',
-      'scripts/tests/ci-emulator-order.test.mjs', '.github/workflows/ci.yml', '.gcloudignore')
+      'scripts/tests/ci-emulator-order.test.mjs', 'scripts/publish-site-hosting.mjs',
+      'scripts/tests/site-hosting-release.test.mjs', 'fortuneforge.client/scripts/verify-site-build.mjs',
+      'fortuneforge.client/scripts/check-site-types.mjs',
+      'scripts/site-release-contract.mjs', 'scripts/site-release-contract.json', 'scripts/smoke-site.mjs',
+      'fortuneforge.client/vite.site.config.ts', 'fortuneforge.client/tsconfig.site.json',
+      'fortuneforge.client/build/siteBuildBoundary.mjs',
+      '.github/workflows/ci.yml', '.gcloudignore')
 }
 
 function Assert-ReleaseCheckout {
@@ -531,9 +538,42 @@ function Exit-ReleaseSourceLock {
     if ($Lock) { foreach ($stream in $Lock.Streams) { $stream.Dispose() } }
 }
 
+function Get-ReleaseSiteContract {
+    [CmdletBinding(DefaultParameterSetName = 'Repository')]
+    param(
+        [Parameter(ParameterSetName = 'Repository')][string]$Repository = (Split-Path -Parent $PSScriptRoot),
+        [Parameter(Mandatory, ParameterSetName = 'Contract')]$Contract
+    )
+    if ($PSCmdlet.ParameterSetName -ceq 'Repository') {
+        $Contract = Get-Content -LiteralPath (Join-Path $Repository 'scripts/site-release-contract.json') -Raw | ConvertFrom-Json -ErrorAction Stop
+    }
+    $keys = @('assetDirectory', 'preservedGameDirectory', 'gamePrefixes', 'outputDirectory')
+    if ($Contract -isnot [pscustomobject] -or @($Contract.PSObject.Properties).Count -ne $keys.Count -or
+        @($Contract.PSObject.Properties.Name | Where-Object { $_ -cnotin $keys }).Count -ne 0 -or
+        $Contract.assetDirectory -isnot [string] -or $Contract.assetDirectory -cnotmatch '^assets/[a-z][a-z0-9-]*$' -or
+        $Contract.preservedGameDirectory -isnot [string] -or $Contract.preservedGameDirectory -cnotmatch '^[a-z][a-z0-9-]*$' -or
+        $Contract.preservedGameDirectory -ceq 'assets' -or
+        $Contract.outputDirectory -isnot [string] -or $Contract.outputDirectory -cnotmatch '^fortuneforge\.client/dist-[a-z][a-z0-9-]*$' -or
+        $Contract.gamePrefixes -isnot [array] -or $Contract.gamePrefixes.Count -eq 0) {
+        throw 'Site release contract must declare safe, separate asset, preserved-game and build-output namespaces and game route prefixes.'
+    }
+    $prefixes = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($prefix in $Contract.gamePrefixes) {
+        if ($prefix -isnot [string] -or $prefix -cnotmatch '^/[a-z][a-z0-9-]*/$' -or -not $prefixes.Add($prefix)) {
+            throw 'Site release contract game prefixes must be unique safe route segments.'
+        }
+    }
+    return $Contract
+}
+
 function Enter-ReleaseHostingLock {
-    param([Parameter(Mandatory)][string]$Directory, [Parameter(Mandatory)][string]$CandidateSha)
+    param([Parameter(Mandatory)][string]$Directory, [Parameter(Mandatory)][string]$CandidateSha,
+        [ValidateSet('hosting', 'site')][string]$Scope = 'hosting', $SiteContract = $null)
     Assert-ReleaseSha $CandidateSha
+    if ($Scope -ceq 'site') {
+        $SiteContract = if ($null -eq $SiteContract) { Get-ReleaseSiteContract } else { Get-ReleaseSiteContract -Contract $SiteContract }
+        $siteAssetPattern = '^' + [regex]::Escape($SiteContract.assetDirectory) + '/[A-Za-z0-9_./-]+$'
+    }
     if ([System.Environment]::OSVersion.Platform -ne [System.PlatformID]::Win32NT) { throw 'Hosting artifact locking requires Windows sharing semantics.' }
     $root = [System.IO.Path]::GetFullPath($Directory).TrimEnd('\') + '\'
     $pending = [System.Collections.Generic.Stack[string]]::new()
@@ -549,6 +589,10 @@ function Enter-ReleaseHostingLock {
                 if ($entry.PSIsContainer) { $pending.Push($entry.FullName); continue }
                 $relative = $entry.FullName.Substring($root.Length).Replace('\', '/')
                 if ($relative -cmatch '[\x00-\x1f\x7f]') { throw 'Ambiguous Hosting artifact path.' }
+                if ($Scope -ceq 'site' -and $relative -cne 'index.html' -and
+                    ($relative -cnotmatch $siteAssetPattern -or $relative -cmatch '(^|/)\.\.?(/|$)')) {
+                    throw "Site-only artifacts must contain only index.html and $($SiteContract.assetDirectory) files ($relative)."
+                }
                 $stream = [System.IO.File]::Open($entry.FullName, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
                 $streams.Add($stream)
                 $hash = [System.Security.Cryptography.SHA256]::Create()
@@ -559,14 +603,30 @@ function Enter-ReleaseHostingLock {
                 $files.Add([pscustomobject]@{ Path = $relative; Bytes = $stream.Length; Sha256 = $hex; Stream = $stream })
             }
         }
-        if (-not (Test-Path -LiteralPath (Join-Path $Directory 'index.html')) -or -not (Test-Path -LiteralPath (Join-Path $Directory 'release.json'))) { throw 'Verified Hosting artifacts require index.html and a candidate stamp.' }
-        $marker = [System.IO.File]::ReadAllText((Join-Path $Directory 'release.json')) | ConvertFrom-Json -ErrorAction Stop
-        if ($marker.schemaVersion -ne 1 -or $marker.target -cne 'hosting' -or $marker.sourceSha -cne $CandidateSha) { throw 'Locked Hosting stamp does not match the verified candidate.' }
+        if (-not (Test-Path -LiteralPath (Join-Path $Directory 'index.html') -PathType Leaf)) { throw 'Verified Hosting artifacts require index.html.' }
+        if ($Scope -ceq 'hosting') {
+            if (-not (Test-Path -LiteralPath (Join-Path $Directory 'release.json') -PathType Leaf)) { throw 'Verified Hosting artifacts require a candidate stamp.' }
+            $marker = [System.IO.File]::ReadAllText((Join-Path $Directory 'release.json')) | ConvertFrom-Json -ErrorAction Stop
+            if ($marker.schemaVersion -ne 1 -or $marker.target -cne 'hosting' -or $marker.sourceSha -cne $CandidateSha) { throw 'Locked Hosting stamp does not match the verified candidate.' }
+        }
         $lines = $manifest.ToArray()
         [System.Array]::Sort($lines, [System.StringComparer]::Ordinal)
         return [pscustomobject]@{ Streams = $streams; Files = $files.ToArray(); FileCount = $streams.Count; ManifestSha256 = Get-ReleaseTextHash ($lines -join "`n") }
     }
     catch { foreach ($stream in $streams) { $stream.Dispose() }; throw }
+}
+
+function Copy-LockedReleaseArtifact {
+    param([Parameter(Mandatory)]$ArtifactLock, [Parameter(Mandatory)][string]$Directory)
+    if (Test-Path -LiteralPath $Directory) { throw 'The unique Hosting artifact directory already exists; nothing will be overwritten.' }
+    [System.IO.Directory]::CreateDirectory($Directory) | Out-Null
+    foreach ($file in $ArtifactLock.Files) {
+        $destination = Join-Path $Directory $file.Path
+        [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($destination)) | Out-Null
+        $writer = [System.IO.File]::Open($destination, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+        try { $file.Stream.Position = 0; $file.Stream.CopyTo($writer) }
+        finally { $writer.Dispose() }
+    }
 }
 
 function Assert-HostingApiCompatibility {
@@ -589,7 +649,7 @@ function Assert-HostingApiCompatibility {
         # Positive allowlist: API/runtime/catalogue/configuration or unknown
         # changes require the API first. A test waiver never changes this gate.
         if ($path -cmatch '[\\\x00-\x1f\x7f]|(^|/)\.\.?(/|$)' -or
-            $path -cnotmatch '^(fortuneforge\.client/|packages/client-presentation/|games/[A-Za-z0-9-]+/client/|FortuneForge\.Server\.Tests/|games/.+/tests/|docs/|\.github/|scripts/(deploy\.ps1$|ReleaseGuardrails\.psm1$|verify-release\.ps1$|verify-game-navbar\.mjs$|verify-ci-emulator-order\.mjs$|tests/)|README\.md$|package(-lock)?\.json$)') {
+            $path -cnotmatch '^(fortuneforge\.client/|packages/client-presentation/|games/[A-Za-z0-9-]+/client/|FortuneForge\.Server\.Tests/|games/.+/tests/|docs/|\.github/|scripts/(deploy\.ps1$|ReleaseGuardrails\.psm1$|verify-release\.ps1$|verify-game-navbar\.mjs$|verify-ci-emulator-order\.mjs$|publish-site-hosting\.mjs$|site-release-contract\.(mjs|json)$|smoke-site\.mjs$|tests/)|README\.md$|package(-lock)?\.json$)') {
             throw "Hosting candidate changes API or unclassified source ($path). Release API and Hosting together."
         }
     }
@@ -712,6 +772,11 @@ function New-ReleaseVerificationPlan {
     )
     $plan = [ordered]@{ mode = 'full'; workspace = ''; baseSha = $BaseSha;
         candidateSha = $CandidateSha; reason = ''; changedPaths = @($Changes | ForEach-Object { $_.Path }) }
+    if ($Target -ceq 'site') {
+        $plan.mode = 'site'
+        $plan.reason = 'Site-only graph, build and publisher checks; existing game artifacts are preserved.'
+        return [pscustomobject]$plan
+    }
     if ($FullReason) { $plan.reason = $FullReason; return [pscustomobject]$plan }
     if ($Target -cne 'hosting') { $plan.reason = 'Only Hosting-only releases may use visual scope.'; return [pscustomobject]$plan }
     if ($Changes.Count -eq 0) { $plan.reason = 'No visual changes to scope.'; return [pscustomobject]$plan }
@@ -765,6 +830,9 @@ function Get-ReleaseVerificationPlan {
         [switch]$Rollback, [switch]$Adoption, [switch]$LivePlaytest
     )
     Assert-ReleaseSha $CandidateSha
+    if ($Target -ceq 'site' -and -not $LivePlaytest) {
+        return New-ReleaseVerificationPlan -Target site -BaseSha $HostingBaseSha -CandidateSha $CandidateSha
+    }
     if ($LivePlaytest) {
         if ($Target -cnotin @('api', 'all')) { throw '-LivePlaytest requires an API or combined release.' }
         $plan = New-ReleaseVerificationPlan -Target $Target -BaseSha $HostingBaseSha -CandidateSha $CandidateSha -FullReason 'Explicit live playtest: broad application suites deferred; fixed focused backend tests remain mandatory.'
@@ -833,7 +901,7 @@ function Assert-ReleaseTestWaiver {
         throw '-LivePlaytest requires -Target api/all and -SkipTestSuites with an explicit reason.'
     }
     if ($SkipTestSuites) {
-        if ($Target -cne 'hosting' -and -not $LivePlaytest) { throw '-SkipTestSuites requires Hosting-only scope or explicit -LivePlaytest for API/all.' }
+        if ($Target -cnotin @('hosting', 'site') -and -not $LivePlaytest) { throw '-SkipTestSuites requires Hosting-only scope or explicit -LivePlaytest for API/all.' }
         if ([string]::IsNullOrWhiteSpace($TestWaiverReason)) { throw '-SkipTestSuites requires a nonempty -TestWaiverReason.' }
     }
     elseif ($TestFree) {
@@ -894,11 +962,26 @@ function Get-ReleaseVerificationCommands {
         [switch]$LivePlaytest, [switch]$TestFree, [string]$FocusedResultsDirectory = ''
     )
     Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason -LivePlaytest:$LivePlaytest -TestFree:$TestFree
-    if ($Plan.mode -cnotin @('full', 'game-visual', 'live-playtest')) { throw 'Unknown verification mode.' }
+    if ($Plan.mode -cnotin @('full', 'game-visual', 'live-playtest', 'site')) { throw 'Unknown verification mode.' }
+    if (($Plan.mode -ceq 'site') -ne ($Target -ceq 'site')) { throw 'Site verification requires the site-only target and plan.' }
     if (($Plan.mode -ceq 'live-playtest') -ne [bool]$LivePlaytest) { throw 'Live-playtest plan and explicit verification flag must match.' }
     if ($LivePlaytest -and [string]::IsNullOrWhiteSpace($FocusedResultsDirectory)) { throw 'Live playtest requires fresh focused test reports.' }
     if ($Plan.mode -ceq 'game-visual' -and $Plan.workspace -cnotmatch '^@fortuneforge/games-[a-z0-9-]+$') { throw 'Invalid scoped workspace.' }
     $commands = [System.Collections.Generic.List[object]]::new()
+    if ($Plan.mode -ceq 'site') {
+        if (-not $TestFree) {
+            # The guardrail entry point includes the release-scope suite.
+            $commands.Add([pscustomobject]@{ Executable = 'powershell.exe'; Arguments = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $Repository 'scripts/tests/deploy-guardrails.tests.ps1')) })
+            $commands.Add([pscustomobject]@{ Executable = 'node.exe'; Arguments = @('--test', (Join-Path $Repository 'scripts/tests/site-hosting-release.test.mjs')) })
+        }
+        if (-not ($SkipTestSuites -or $TestFree)) {
+            $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'web:test:site') })
+        }
+        foreach ($script in @('web:lint', 'web:build:site', 'verify:site-build')) {
+            $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', $script) })
+        }
+        return $commands.ToArray()
+    }
     foreach ($script in @('verify:game-source', 'verify:game-routes')) {
         $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', $script) })
     }
@@ -943,4 +1026,4 @@ function Get-ReleaseVerificationCommands {
     return $commands.ToArray()
 }
 
-Export-ModuleMember -Function Assert-ReleaseSha, Assert-CommitOnMain, Assert-ReleaseToolingMatchesCommit, Assert-LiveReleaseSource, Assert-HostingAdoptionRelease, Get-ReleaseTextHash, Get-FirestoreRulesHash, Assert-FirestoreRulesUnchanged, Get-HostingSourceSha, Get-ServingApiRevision, Get-ApiRevisionSourceSha, Assert-ServingApiUnchanged, Test-FirestoreIndexDefinitionMatches, Test-FirestoreIndexBelongsToGroup, Assert-NonRedundantFirestoreCompositeIndexes, Get-UnreadyFirestoreIndexes, Assert-SupportedFirestoreFieldOverrides, Get-UnreadyFirestoreFieldOverrides, New-FirestoreIndexPublicationPlan, Get-ReleaseToolPaths, Assert-ReleaseCheckout, Get-ReleaseLocalPreflight, Enter-ReleaseWorkspaceLock, Enter-ReleaseSourceLock, Exit-ReleaseSourceLock, Enter-ReleaseHostingLock, Assert-HostingApiCompatibility, Assert-ReleaseUploadPaths, New-ReleaseUploadIgnoreText, New-ReleaseHostingIgnorePatterns, Get-ReleaseBuiltImage, Assert-ApiRevisionImage, New-ReleaseVerificationPlan, Get-ReleaseVerificationPlan, Assert-ReleaseTestWaiver, Get-ReleaseFocusedTestScopes, Assert-ReleaseFocusedTestResult, Get-ReleaseVerificationCommands
+Export-ModuleMember -Function Assert-ReleaseSha, Assert-CommitOnMain, Assert-ReleaseToolingMatchesCommit, Assert-LiveReleaseSource, Assert-HostingAdoptionRelease, Get-ReleaseTextHash, Get-FirestoreRulesHash, Assert-FirestoreRulesUnchanged, Get-HostingSourceSha, Get-ServingApiRevision, Get-ApiRevisionSourceSha, Assert-ServingApiUnchanged, Test-FirestoreIndexDefinitionMatches, Test-FirestoreIndexBelongsToGroup, Assert-NonRedundantFirestoreCompositeIndexes, Get-UnreadyFirestoreIndexes, Assert-SupportedFirestoreFieldOverrides, Get-UnreadyFirestoreFieldOverrides, New-FirestoreIndexPublicationPlan, Get-ReleaseToolPaths, Assert-ReleaseCheckout, Get-ReleaseLocalPreflight, Enter-ReleaseWorkspaceLock, Enter-ReleaseSourceLock, Exit-ReleaseSourceLock, Get-ReleaseSiteContract, Enter-ReleaseHostingLock, Copy-LockedReleaseArtifact, Assert-HostingApiCompatibility, Assert-ReleaseUploadPaths, New-ReleaseUploadIgnoreText, New-ReleaseHostingIgnorePatterns, Get-ReleaseBuiltImage, Assert-ApiRevisionImage, New-ReleaseVerificationPlan, Get-ReleaseVerificationPlan, Assert-ReleaseTestWaiver, Get-ReleaseFocusedTestScopes, Assert-ReleaseFocusedTestResult, Get-ReleaseVerificationCommands

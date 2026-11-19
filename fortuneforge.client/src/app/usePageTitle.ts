@@ -1,5 +1,6 @@
+// Edited: 2026-11-18T22:49:02-06:00 | Computer: Vinnabok
 import { useLayoutEffect } from 'react'
-import { findSlotRoute } from '../games/slots'
+import { findSlotRouteMetadata } from '../games/slots/routeMetadata'
 
 const pageTitles: Record<string, string> = {
   '/': 'Fortune Forge — Play Your Way',
@@ -60,7 +61,7 @@ export function usePageTitle(pathname: string) {
 }
 
 export function pageTitleForPath(pathname: string): string {
-  const slotRoute = findSlotRoute(pathname)
+  const slotRoute = findSlotRouteMetadata(pathname)
   return slotRoute !== null
     ? `${slotRoute.shortTitle}${slotRoute.demoPath === pathname ? ' Demo' : ''} — Fortune Forge`
     : pathname.startsWith('/home/invoices/') ||

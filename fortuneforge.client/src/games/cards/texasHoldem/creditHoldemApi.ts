@@ -1,3 +1,5 @@
+// Edited: 2026-11-18T22:54:26-06:00 | Computer: Vinnabok
+import { requestCardRoomSession } from '../../../features/account/services/cardRoomActivityApi'
 import { fetchWithAccountSession } from '../../../features/account/services/accountsApi'
 import type { CardRank, CardSuit, PlayingCardModel } from '../shared/cards'
 
@@ -161,9 +163,7 @@ export async function getCreditHoldemStatus(signal?: AbortSignal): Promise<Credi
   }), isCreditHoldemStatus, 'credit Hold’em status')
 }
 export async function getCreditHoldemSession(signal?: AbortSignal): Promise<CreditHoldemSession> {
-  return readResponse(await fetchWithAccountSession(`${basePath}/session`, {
-    method: 'GET', cache: 'no-store', signal,
-  }), isCreditHoldemSession, 'credit Hold’em session')
+  return readResponse(await requestCardRoomSession('texas-holdem', signal), isCreditHoldemSession, 'credit Hold’em session')
 }
 export function joinCreditHoldemQueue(
   expectedVersion: number,

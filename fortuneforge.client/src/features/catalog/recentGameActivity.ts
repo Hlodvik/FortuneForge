@@ -1,7 +1,8 @@
+// Edited: 2026-11-18T22:49:02-06:00 | Computer: Vinnabok
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchWithAccountSession, getSlotHistory } from '../account/services/accountsApi'
 import { getCardRoomHistory } from '../../games/cards/shared/cardRoomHistoryApi'
-import { findSlotRouteByServerId, SLOT_ROUTE_DEFINITIONS } from '../../games/slots/routeRegistry'
+import { findSlotRouteMetadataByServerId, SLOT_ROUTE_METADATA } from '../../games/slots/routeMetadata'
 import { isGameActivityApiEnabled } from './gameActivityCapability'
 
 export type RecentGameActivity = Readonly<{ gameId: string; playedAtUtc: string }>
@@ -9,7 +10,7 @@ const gameIds = new Set([
   'blackjack', 'dragon-tiger', 'mines', 'texas-holdem', 'solitaire', 'free-solitaire', 'three-card-poker',
   'house-holdem', 'hearts', 'andar-bahar', 'hi-lo', 'baccarat', 'casino-war', 'video-poker',
   'roulette', 'craps', 'keno', 'sic-bo', 'liars-dice', '2048', 'drop-merge',
-  ...SLOT_ROUTE_DEFINITIONS.map((game) => game.id),
+  ...SLOT_ROUTE_METADATA.map((game) => game.id),
 ])
 
 export function mergeRecentGameActivity(...sources: readonly (readonly RecentGameActivity[])[]): RecentGameActivity[] {
@@ -42,7 +43,7 @@ async function getHistoricalActivity(signal?: AbortSignal): Promise<RecentGameAc
   return mergeRecentGameActivity(
     cards.status === 'fulfilled' ? cards.value.flatMap((item) => item.completedAtUtc === null ? [] : [{ gameId: item.game, playedAtUtc: item.completedAtUtc }]) : [],
     slots.status === 'fulfilled' ? slots.value.spins.flatMap((item) => {
-      const game = findSlotRouteByServerId(item.gameId)
+      const game = findSlotRouteMetadataByServerId(item.gameId)
       return game === null ? [] : [{ gameId: game.id, playedAtUtc: item.createdAtUtc }]
     }) : [],
   )

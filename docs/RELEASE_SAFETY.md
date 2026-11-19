@@ -5,6 +5,53 @@ its exact committed `main` HEAD. It never creates a worktree, repository copy or
 branch, switches commits, stashes/resets/cleans source, or deletes a release folder.
 A push does not deploy.
 
+## Site-only release
+
+Use `npm run deploy:site` to update the public landing page, login/registration,
+account home/settings/history, payments and admin screens without targeting games.
+This uses the same clean, committed `main` checkout and immutable-source protections
+as the normal release. It does not deploy the API or Firestore.
+
+```powershell
+# Local preflight before any credentials, build or publication.
+npm run deploy:site -- -PreflightOnly
+# Publish the reviewed, committed candidate when ready.
+npm run deploy:site
+```
+
+The dedicated `web:build:site` command type-checks only the site entry graph and
+builds `fortuneforge.client/dist-site`. It does not run game workspace builds,
+Jade Dragon's prebuild, or the complete application's game type-check. The build
+fails if playable game packages, manifests or game routes enter its dependency
+graph. Public game assets are not copied. New site bundles and catalogue art use
+`/assets/site/**`; the authoritative contract is
+`scripts/site-release-contract.json`. `web:test:site`, lint, release guardrails,
+publisher tests and `verify:site-build` run before publication. Post-release
+`smoke:site` checks only site documents and the signed-out account API boundary.
+
+Publication uses the [Firebase Hosting REST API](https://firebase.google.com/docs/reference/hosting/rest/v1beta1/sites.versions/clone) to clone the exact live version,
+retain its complete file manifest, and add only the locked site artifact and
+release marker. It preserves the prior full application's HTML by its existing
+compressed content hash under `/game-shell/<version>.html`. Game URL families
+(`/slots/**`, `/cards/**`, `/games/**`, `/demo/**`) keep serving that preserved
+entry; existing static game files still take precedence. Exact `/slots`, `/cards`
+and `/games` catalogue links remain site routes. Site-to-game links use document
+navigation so the correct game shell loads. Successive site releases retain the
+same game entry, even after the original version expires under Hosting retention.
+
+The publisher verifies every inherited file hash before and after finalizing,
+checks unchanged API routing, and refuses game blob uploads or overwriting old
+immutable assets. It rechecks the live release immediately before its single
+publish call. Firebase does not provide a compare-and-swap release operation;
+serialize deployments from other machines/publishers as well as this checkout.
+The release record includes the pinned game entry and Hosting manifest digests.
+A later ordinary `deploy:hosting` or combined deployment intentionally replaces
+the complete game/site application again.
+
+A site release still requires an existing finalized Hosting baseline and the
+normal frontend/API compatibility check. Backend changes require the appropriate
+API or combined release. No deployment is triggered by building or committing.
+
 ## Normal release
 
 After reconciling and committing the intended change to `main`, reserve this

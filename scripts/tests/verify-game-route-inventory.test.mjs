@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T22:54:25-06:00 | Computer: Vinnabok
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { readFileSync, realpathSync } from 'node:fs'
@@ -11,7 +12,7 @@ const source = relative => readFileSync(new URL(`../../${relative}`, import.meta
 const current = {
   appRoutes: source('fortuneforge.client/src/app/AppRoutes.tsx'),
   catalog: source('fortuneforge.client/src/pages/games/OtherGamesPage.tsx'),
-  slotRoutes: source('fortuneforge.client/src/games/slots/routeRegistry.ts'),
+  slotRoutes: source('fortuneforge.client/src/games/slots/routeMetadata.ts'),
   runtimeCatalog: source('FortuneForge.Server/Admin/Management/AdminManagementCatalog.cs'),
   slotCatalog: source('fortuneforge.client/src/games/slots/catalog.ts'),
   jadeCatalog: source('fortuneforge.client/src/games/slots/jadeDragon/catalog.ts'),

@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T22:54:25-06:00 | Computer: Vinnabok
 import { readFileSync, realpathSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { embeddedSlotSmokeInventory, gameSmokeRoutes, nonSlotSmokeInventory, slotSmokeInventory } from './game-smoke-inventory.mjs'
@@ -89,7 +90,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToP
   verifyGameRouteInventory({
     appRoutes: source('fortuneforge.client/src/app/AppRoutes.tsx'),
     catalog: source('fortuneforge.client/src/pages/games/OtherGamesPage.tsx'),
-    slotRoutes: source('fortuneforge.client/src/games/slots/routeRegistry.ts'),
+    slotRoutes: source('fortuneforge.client/src/games/slots/routeMetadata.ts'),
     runtimeCatalog: source('FortuneForge.Server/Admin/Management/AdminManagementCatalog.cs'),
     slotCatalog: source('fortuneforge.client/src/games/slots/catalog.ts'),
     jadeCatalog: source('fortuneforge.client/src/games/slots/jadeDragon/catalog.ts'),

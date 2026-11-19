@@ -1,3 +1,4 @@
+// Edited: 2026-11-18T22:54:10-06:00 | Computer: Vinnabok
 /// <reference types="node" />
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -29,13 +30,16 @@ describe('slot route resource isolation', () => {
   it('does not restore eager page or full-manifest imports in entry registries', () => {
     const appRoutesSource = source('../../app/AppRoutes.tsx')
     const appSource = source('../../app/App.tsx')
+    const siteRoutesSource = source('../../app/SiteRoutes.tsx')
     const slotIndexSource = source('./index.ts')
     const routeRegistrySource = source('./routeRegistry.ts')
     const catalogSource = source('./catalog.ts')
     const catalogLoadersSource = source('./catalogLoaders.ts')
 
     expect(appRoutesSource).not.toMatch(/^import .*\.\.\/pages\//m)
-    expect(appRoutesSource).toContain("lazy(() => import('../pages/")
+    expect(siteRoutesSource).not.toMatch(/^import .*\.\.\/pages\//m)
+    expect(siteRoutesSource).toContain("lazy(() => import('../pages/")
+    expect(appRoutesSource).toContain("from './SiteRoutes'")
     expect(appSource).not.toContain('SLOT_EXPERIENCE_SETS_BY_ROUTE')
     expect(slotIndexSource).not.toMatch(/^import .*\/manifest/m)
     expect(routeRegistrySource).not.toMatch(/^import .*\/manifest/m)

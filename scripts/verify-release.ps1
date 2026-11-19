@@ -1,7 +1,8 @@
+# Edited: 2026-11-18T22:46:29-06:00 | Computer: VINNABOK
 [CmdletBinding()]
 param(
     [string]$Repository = '', [string]$ExpectedSha = '', [string]$ExpectedToolingSha = '',
-    [ValidateSet('all', 'api', 'hosting')][string]$Target = 'all',
+    [ValidateSet('all', 'api', 'hosting', 'site')][string]$Target = 'all',
     [string]$HostingBaseSha = '', [string]$ExpectedMode = '', [string]$ExpectedWorkspace = '',
     [switch]$Rollback, [switch]$Adoption,
     [switch]$SkipTestSuites, [string]$TestWaiverReason = '', [switch]$LivePlaytest,
@@ -64,8 +65,9 @@ if ($Repository -or $ExpectedSha -or $ExpectedToolingSha -or $ExpectedMode -or $
     if ($plan.mode -cne $ExpectedMode -or $plan.workspace -cne $ExpectedWorkspace) { throw 'Verification scope differs from the independently recalculated live-to-candidate plan.' }
 }
 else {
-    # Standalone npm run verify:release remains full verification.
-    $plan = New-ReleaseVerificationPlan -FullReason 'Standalone verification defaults to the full suite.'
+    # The dedicated site verifier never builds game packages; the ordinary
+    # standalone npm run verify:release retains its full-suite default.
+    $plan = New-ReleaseVerificationPlan -Target $Target -FullReason 'Standalone verification defaults to the full suite.'
 }
 Write-Host "`nVerification mode: $($plan.mode) $($plan.workspace)" -ForegroundColor Yellow
 Write-Host "Scope reason: $($plan.reason)"

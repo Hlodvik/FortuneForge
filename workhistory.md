@@ -21,3 +21,6 @@ Earlier provenance comments and logs remain preserved in their existing files.
 - Included Arcane Archives task notes, which describe work already integrated.
 - Retained about 1.81 GiB of local archives outside Git, including 20 Neon WAV masters used by optional offline regeneration and the local FFmpeg runtime. Those inputs remain on disk; Git alone does not reproduce that optional regeneration workflow.
 - Retained the unreferenced Midnight Vault v5 review cue and localhost debugger profiles locally. No preview-only cue is included in the production release.
+
+- Edited: 2026-11-18T23:15:43-06:00 | Computer: Vinnabok | File: scripts/tests/release-scope.tests.ps1
+  - Used .NET SHA-256 directly for binary fixture hashes so nested Windows PowerShell release checks do not depend on Get-FileHash module availability.

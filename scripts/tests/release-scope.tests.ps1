@@ -603,7 +603,10 @@ try {
     foreach ($file in $siteManifest.files) {
         $path = Join-Path $siteContext.Directory $file.path
         Assert-ScopeEqual (Get-Item -LiteralPath $path).Length $file.bytes 'site manifest records exact file lengths'
-        Assert-ScopeEqual (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() $file.sha256 'site manifest records exact file hashes'
+        $siteFileHasher = [System.Security.Cryptography.SHA256]::Create()
+        try { $actualFileHash = ([System.BitConverter]::ToString($siteFileHasher.ComputeHash([System.IO.File]::ReadAllBytes($path)))).Replace('-', '').ToLowerInvariant() }
+        finally { $siteFileHasher.Dispose() }
+        Assert-ScopeEqual $actualFileHash $file.sha256 'site manifest records exact file hashes'
         Assert-ScopeThrows { [System.IO.File]::WriteAllText($path, 'mutated') } 'site artifact bytes cannot change during publish'
     }
     foreach ($path in @($siteContext.ArtifactManifestPath, $siteContext.BaselineMarkerPath)) {

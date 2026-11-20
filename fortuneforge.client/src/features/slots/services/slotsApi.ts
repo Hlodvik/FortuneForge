@@ -224,7 +224,9 @@ function isPotionPreview(value: unknown): value is SlotPotionPreview {
 }
 
 function isPotionBottle(value: unknown): value is SlotPotionBottle {
-  return isRecord(value) && isPositiveInteger(value.id) && isPotionPreview(value)
+  return isRecord(value) && isPositiveInteger(value.id) &&
+    (value.variantId === undefined || (typeof value.variantId === 'string' && value.variantId.length > 0)) &&
+    (value.lockedWagerPoints === undefined || isPositiveInteger(value.lockedWagerPoints)) && isPotionPreview(value)
 }
 
 function isPotionState(value: unknown): value is SlotPotionState {

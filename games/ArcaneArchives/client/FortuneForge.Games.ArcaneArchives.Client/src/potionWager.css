@@ -1,0 +1,38 @@
+.arcane-potion-wager {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.arcane-potion-wager[data-locked] {
+  color: #f5d68c;
+}
+
+.arcane-potion-wager[data-locked] .arcane-potion-wager__amount {
+  display: inline-block;
+  color: #ffe6a8;
+  text-shadow: 0 0 0.6rem #e9ac549c;
+}
+
+.arcane-potion-wager__amount[data-rolling] {
+  position: relative;
+  z-index: 1;
+  transform-origin: center;
+  animation: arcane-potion-wager-glow 420ms ease-out both;
+}
+
+@keyframes arcane-potion-wager-glow {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0.15rem #ffd575);
+  }
+  42% {
+    transform: scale(1.68);
+    filter: drop-shadow(0 0 0.4rem #ffd575) drop-shadow(0 0 0.65rem #b97936);
+  }
+  100% {
+    transform: scale(1.42);
+    filter: drop-shadow(0 0 0.26rem #ffd575) drop-shadow(0 0 0.44rem #b97936);
+  }
+}

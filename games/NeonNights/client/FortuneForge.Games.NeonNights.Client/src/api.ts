@@ -100,6 +100,7 @@ function isCarRespinOffer(value: unknown): value is NeonCarRespinOffer {
 export function isNeonState(value: unknown): value is NeonState {
   return record(value) && natural(value.freeSpinsRemaining) && natural(value.neonDiscoSpinsRemaining) && discoMultiplier(value.neonDiscoMultiplier) &&
     (value.freeSpinWagerPoints === null || natural(value.freeSpinWagerPoints)) &&
+    (value.neonDiscoWagerPoints == null || natural(value.neonDiscoWagerPoints) && value.neonDiscoWagerPoints > 0) &&
     (value.freeSpinFeatureMode === null || typeof value.freeSpinFeatureMode === 'string') &&
     (value.neonCarRoundWinPoints == null || natural(value.neonCarRoundWinPoints)) &&
     (value.neonDiscoRoundWinPoints == null || natural(value.neonDiscoRoundWinPoints)) &&

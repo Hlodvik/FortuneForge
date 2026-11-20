@@ -73,7 +73,11 @@ export type SlotPotionPreview = Readonly<{
   potency: number
 }>
 
-export type SlotPotionBottle = SlotPotionPreview & Readonly<{ id: number }>
+export type SlotPotionBottle = SlotPotionPreview & Readonly<{
+  id: number
+  lockedWagerPoints?: number
+  variantId?: string
+}>
 
 export type SlotPotionState = Readonly<{
   capacity: number
@@ -96,6 +100,7 @@ export type SlotTomePanelProps = {
   reducedMotion: boolean
   disabled: boolean
   error: string | null
+  pointValueInCents: number
   onOpen: () => void
   onChangePage: (page: string, activate: boolean) => void
   onUsePotion: (id: number) => void
@@ -107,6 +112,14 @@ export type SlotWinHelpContentProps = {
   onClose: () => void
 }
 
+export type SlotPotionWagerReadoutProps = Readonly<{
+  wager: number
+  selectedWager: number
+  lockedPotionId: number | null
+  confirmedPotionUse: number | null
+  reducedMotion: boolean
+}>
+
 export type SlotExperiencePresentation = {
   winHelp?: Readonly<{
     Content: ComponentType<SlotWinHelpContentProps>
@@ -116,6 +129,7 @@ export type SlotExperiencePresentation = {
     firstOpenStorageKey?: string
   }>
   TomePanel?: ComponentType<SlotTomePanelProps>
+  PotionWagerReadout?: ComponentType<SlotPotionWagerReadoutProps>
   tomeTriggerSymbol?: SlotSymbolId
   winPresentation?: 'payline-popups'
   mainWordmark?: Readonly<{ src: string; width: number; height: number; className: string }>

@@ -65,7 +65,7 @@
   }
 }
 
-.arcane-workbench__pot {
+:is(.arcane-workbench__pot, .arcane-cauldron__artwork) {
   position: relative;
   --arcane-cauldron-opening: 28%;
 }
@@ -86,6 +86,15 @@
 .arcane-workbench__stir > img {
   display: block;
   width: 100%;
+}
+
+.arcane-cauldron__artwork .arcane-workbench__stir {
+  width: 100%;
+  translate: -50% 0;
+}
+
+.arcane-cauldron__artwork .arcane-workbench__stir > img {
+  display: none;
 }
 
 .arcane-workbench__stir::before,

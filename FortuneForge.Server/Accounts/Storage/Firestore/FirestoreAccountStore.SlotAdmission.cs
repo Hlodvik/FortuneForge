@@ -9,6 +9,7 @@ using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.ArcaneArchives;
 using FortuneForge.Games.JadeDragon;
 using Google.Cloud.Firestore;
 
@@ -157,6 +158,15 @@ public sealed partial class FirestoreAccountStore
                     }
                 }
 
+                var arcaneTome = gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId
+                    ? ReadArcaneTome(guardSnapshot) : null;
+                if (arcaneTome is not null)
+                    ArcaneTome.EnsureSpinAllowed(arcaneTome);
+                var arcanePotions = arcaneTome is not null ? ReadArcanePotions(guardSnapshot) : null;
+                if (ArcanePotions.LockedWagerForSpin(arcanePotions, useFreeSpin) is { } lockedWager &&
+                    wagerPoints != lockedWager)
+                    throw new ArcanePotionWagerLockedException(lockedWager);
+
                 var availableCents = ReadRandBalanceCents(slotsCreditsSnapshot);
                 var storedFreeSpinWagerCents = ReadLong(guardSnapshot, "freeSpinWagerCents");
                 if (!isNeon && storedFreeSpinWagerCents <= 0)
@@ -174,6 +184,13 @@ public sealed partial class FirestoreAccountStore
                 if ((isNeon || isJade) && !useFreeSpin && freeGamesAvailable > 0)
                     throw new SlotFreeSpinsRequiredException();
                 var isNeonDiscoPlay = isNeon && !useFreeSpin && neonDiscoSpinsBefore > 0;
+                var neonDiscoWagerBefore = isNeon
+                    ? ReadNeonDiscoWagerPoints(guardSnapshot, neonDiscoSpinsBefore) : null;
+                if (isNeonDiscoPlay)
+                {
+                    NeonPlayPolicy.ValidateDiscoWager(neonDiscoSpinsBefore, neonDiscoWagerBefore, wagerPoints);
+                    neonDiscoWagerBefore ??= wagerPoints;
+                }
                 if (useSpecialBoost && specialBoostCost <= 0)
                 {
                     throw new ArgumentOutOfRangeException(
@@ -272,10 +289,9 @@ public sealed partial class FirestoreAccountStore
                     MathModelId = mathModelId,
                     BonusRound = admittedRound,
                     BonusRoundsBeforeAdmission = roundsBefore,
-                    ArcaneTomeBefore = gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId
-                        ? ReadArcaneTome(guardSnapshot) : null,
-                    ArcanePotionsBefore = gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId
-                        ? ReadArcanePotions(guardSnapshot) : null
+                    ArcaneTomeBefore = arcaneTome,
+                    ArcanePotionsBefore = arcanePotions,
+                    ArcanePotionWagerTracked = arcanePotions is not null
                 };
                 // The worker only computes outcomes. Failure aborts this transaction before
                 // any admission, wallet, or entitlement change can become durable.
@@ -366,6 +382,7 @@ public sealed partial class FirestoreAccountStore
                 if (isNeon)
                 {
                     guardData["neonDiscoSpinsRemaining"] = neonDiscoSpinsBefore;
+                    guardData["neonDiscoWagerPoints"] = neonDiscoWagerBefore ?? 0L;
                     guardData["neonDiscoMultiplier"] = neonDiscoMultiplierBefore;
                     if (pendingNitroOffer is not null)
                     {
@@ -411,6 +428,7 @@ public sealed partial class FirestoreAccountStore
                 if (isNeon)
                 {
                     admissionData["neonDiscoMultiplierBefore"] = neonDiscoMultiplierBefore;
+                    admissionData["neonDiscoWagerPointsBefore"] = neonDiscoWagerBefore ?? 0L;
                     if (pendingNitroResult is not null)
                     {
                         admissionData["pendingNeonNitroSpinId"] = pendingNitroResult.SpinId.ToString("N");
@@ -430,7 +448,10 @@ public sealed partial class FirestoreAccountStore
                 if (admission.ArcaneTomeBefore is not null)
                     admissionData[ArcaneTomeBeforeField] = JsonSerializer.Serialize(admission.ArcaneTomeBefore);
                 if (admission.ArcanePotionsBefore is not null)
+                {
                     admissionData[ArcanePotionsBeforeField] = JsonSerializer.Serialize(admission.ArcanePotionsBefore);
+                    admissionData[ArcanePotionWagerTrackedField] = admission.ArcanePotionWagerTracked;
+                }
                 transaction.Create(admissionReference, admissionData);
                 return admission;
             },

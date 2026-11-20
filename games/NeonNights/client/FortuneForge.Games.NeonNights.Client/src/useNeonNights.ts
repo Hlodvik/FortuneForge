@@ -277,6 +277,7 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
     setState(current => ({
       ...current, neonCarRespinOffer: null, neonCarRoundWinPoints: null,
       neonDiscoRoundWinPoints: queuedDisco ? current.neonDiscoRoundWinPoints : null,
+      neonDiscoWagerPoints: queuedDisco ? current.neonDiscoWagerPoints : null,
     }))
     setSkippedRespinSpinId(null); setRespinAttempt(null)
     setDiscoMultiplier(state.neonDiscoMultiplier)
@@ -289,6 +290,9 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
     if (busy.current || respinSelecting || nitroChoice) return
     if (state.freeSpinsRemaining > 0) {
       setSpinError(isCarPlayMode(state.freeSpinFeatureMode) ? 'Car Plays are locked to the triggering wager.' : 'Free spins are locked to the wager that won them.'); return
+    }
+    if (state.neonDiscoSpinsRemaining > 0 || discoActive) {
+      setSpinError('Disco Plays are locked to the triggering wager.'); return
     }
     const index = Math.min(neonRules.wagerOptions.length - 1, Math.max(0, Math.round(nextIndex)))
     setIsAutoSpinning(false); setSpinError(null)
@@ -428,6 +432,7 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
         const totalRand = roundWinPoints == null ? cents(roundWinnings + award) : toRand(roundWinPoints)
         setState({ freeSpinsRemaining: result.freeSpinsRemaining, freeSpinWagerPoints: result.freeSpinWagerPoints,
           freeSpinFeatureMode: result.freeSpinFeatureMode, neonDiscoSpinsRemaining: result.neonDiscoSpinsRemaining,
+          neonDiscoWagerPoints: result.neonDiscoWagerPoints,
           neonDiscoMultiplier: result.neonDiscoMultiplier, neonDiscoRoundWinPoints: result.neonDiscoRoundWinPoints,
           neonCarRoundWinPoints: result.neonCarRoundWinPoints,
           neonCarRespinOffer: result.neonCarRespinOffer, pendingNeonNitroChoice: null })
@@ -581,6 +586,7 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
         freeSpinWagerPoints: result.freeSpinWagerPoints,
         freeSpinFeatureMode: result.freeSpinFeatureMode,
         neonDiscoSpinsRemaining: result.neonDiscoSpinsRemaining,
+        neonDiscoWagerPoints: result.neonDiscoWagerPoints,
         neonDiscoMultiplier: result.neonDiscoMultiplier,
         neonDiscoRoundWinPoints: demoMode ? null : result.neonDiscoRoundWinPoints,
         neonCarRespinOffer: demoMode ? null : result.neonCarRespinOffer,
@@ -684,12 +690,14 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
       setSpinError(error instanceof Error ? error.message : 'Neon Nights could not complete the spin.')
       const recoverNitro = carPlay && (!(error instanceof NeonRequestError) || error.status >= 500) ||
         error instanceof NeonRequestError && error.code === 'nitro-choice-required'
-      if (!demoMode && (recoverNitro || error instanceof NeonRequestError && error.code === 'free-spins-required')) {
+      if (!demoMode && (recoverNitro || error instanceof NeonRequestError &&
+        (error.code === 'free-spins-required' || error.code === 'neon-disco-wager-locked'))) {
         const recovered = await api.state().catch(() => null)
         if (mounted.current && recovered) {
           settledState = recovered
           restoreState(recovered)
-          if (recovered.pendingNeonNitroChoice || (!recoverNitro && (recovered.freeSpinsRemaining > 0 || recovered.neonCarRespinOffer))) setSpinError(null)
+          if (recovered.pendingNeonNitroChoice || (!recoverNitro &&
+            (recovered.freeSpinsRemaining > 0 || recovered.neonDiscoSpinsRemaining > 0 || recovered.neonCarRespinOffer))) setSpinError(null)
         }
       }
     } finally {

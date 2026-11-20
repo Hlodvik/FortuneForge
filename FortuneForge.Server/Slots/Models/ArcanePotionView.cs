@@ -1,14 +1,20 @@
 // Edited: 2026-11-18T18:01:37-06:00 | Computer: Vinnabok
+using System.Text.Json.Serialization;
 using FortuneForge.Games.ArcaneArchives;
 
 namespace FortuneForge.Server.Slots.Models;
 
-public sealed record ArcanePotionBottleView(long Id, string IngredientId, string Name, string Effect, int Potency)
+public sealed record ArcanePotionBottleView(long Id, string IngredientId, string Name, string Effect, int Potency,
+    long LockedWagerPoints)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? VariantId { get; init; }
+
     internal static ArcanePotionBottleView FromBottle(ArcanePotionBottle bottle)
     {
         var description = ArcanePotions.Describe(bottle);
-        return new(bottle.Id, description.IngredientId, description.Name, description.Effect, description.Potency);
+        return new(bottle.Id, description.IngredientId, description.Name, description.Effect, description.Potency,
+            ArcanePotions.LockedWagerPoints(bottle)) { VariantId = bottle.VariantId };
     }
 }
 

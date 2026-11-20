@@ -1,3 +1,4 @@
+using System.Globalization;
 using FortuneForge.Games.Cards;
 using FortuneForge.Games.CasinoWar;
 using FortuneForge.Server.Cards.CasinoWar;
@@ -102,6 +103,34 @@ public sealed class CasinoWarContractTests
             "player-1", new CreateCasinoWarRoundRequest(2m, 0m), "casino-war-start-0006", CancellationToken.None));
     }
 
+    [Theory]
+    [InlineData("79228162514264337593543950335")]
+    [InlineData("-79228162514264337593543950335")]
+    [InlineData("1000000000000000000")]
+    [InlineData("-1000000000000000000")]
+    public async Task Service_RejectsExtremeStakesBeforeStoreAccess(string rawStake)
+    {
+        var stake = decimal.Parse(rawStake, CultureInfo.InvariantCulture);
+        var store = new InMemoryCasinoWarStore();
+        var service = new CasinoWarService(store, TimeProvider.System, OpeningWinShoe);
+        var requests = new[]
+        {
+            new CreateCasinoWarRoundRequest(stake, 0m),
+            new CreateCasinoWarRoundRequest(1m, stake),
+        };
+
+        foreach (var request in requests)
+        {
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.StartAsync(
+                "player-1", request, "casino-war-bounds-0001", CancellationToken.None));
+        }
+
+        Assert.Equal(0, store.StartCallCount);
+        Assert.Equal(100_000, store.BalanceCents);
+        Assert.Equal(0, store.LedgerEntryCount);
+        Assert.Equal(0, store.EventCount);
+    }
+
     private static IReadOnlyList<PlayingCard> OpeningWinShoe() =>
     [
         new(CardRank.Ace, CardSuit.Clubs), new(CardRank.King, CardSuit.Diamonds),
@@ -125,11 +154,13 @@ public sealed class CasinoWarContractTests
         private string? decisionIdempotencyKey;
 
         public long BalanceCents { get; private set; } = 100_000;
+        public int StartCallCount { get; private set; }
         public int LedgerEntryCount { get; private set; }
         public int EventCount { get; private set; }
 
         public Task<CasinoWarStoreResult> StartAsync(string userId, string idempotencyKey, long primaryStakeCents, long tieStakeCents, IReadOnlyList<PlayingCard> shuffledShoe, DateTimeOffset nowUtc, CancellationToken cancellationToken)
         {
+            StartCallCount++;
             if (round is not null)
             {
                 if (round.UserId != userId || startIdempotencyKey != idempotencyKey ||

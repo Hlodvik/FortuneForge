@@ -90,15 +90,16 @@ internal static class BaccaratMoney
 
     public static long ToStakeCents(decimal stake)
     {
+        var invalidStakeMessage = $"Choose a Baccarat stake in R{ToRand(StakeIncrementCents):0.00} increments from R{ToRand(MinimumStakeCents):0.00} through R{ToRand(MaximumStakeCents):0.00}.";
+        if (stake < ToRand(MinimumStakeCents) || stake > ToRand(MaximumStakeCents))
+            throw new ArgumentOutOfRangeException(nameof(stake), invalidStakeMessage);
         var cents = checked(stake * RandMoney.CentsPerRand);
         if (cents != decimal.Truncate(cents))
             throw new ArgumentOutOfRangeException(nameof(stake), "A Baccarat stake cannot include a fraction of a cent.");
         var value = checked((long)cents);
-        if (value < MinimumStakeCents || value > MaximumStakeCents || value % StakeIncrementCents != 0)
+        if (value % StakeIncrementCents != 0)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(stake),
-                $"Choose a Baccarat stake in R{ToRand(StakeIncrementCents):0.00} increments from R{ToRand(MinimumStakeCents):0.00} through R{ToRand(MaximumStakeCents):0.00}.");
+            throw new ArgumentOutOfRangeException(nameof(stake), invalidStakeMessage);
         }
         return value;
     }

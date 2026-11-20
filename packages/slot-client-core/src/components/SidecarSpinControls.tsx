@@ -14,6 +14,8 @@ type SidecarSpinControlsProps = {
   isStopRequested: boolean
   allowStop?: boolean
   autoSpinReplacement?: ReactNode
+  wagerReadout?: ReactNode
+  wagerLocked?: boolean
   onAutoSpinChange: (active: boolean) => void
   onSelectWager: (index: number) => void
   onSpin: () => void
@@ -36,6 +38,8 @@ export function SidecarSpinControls({
   isStopRequested,
   allowStop = true,
   autoSpinReplacement,
+  wagerReadout,
+  wagerLocked = false,
   onAutoSpinChange,
   onSelectWager,
   onSpin,
@@ -52,7 +56,7 @@ export function SidecarSpinControls({
   const betButtonRef = useRef<HTMLButtonElement>(null)
   const betMenuRef = useRef<HTMLDivElement>(null)
   const betMenuId = useId()
-  const betLocked = isSpinning || freeSpinsRemaining > 0 || specialControlsActive
+  const betLocked = isSpinning || freeSpinsRemaining > 0 || specialControlsActive || wagerLocked
   const minWager = slotPointsToRand(wagerOptions[0] ?? 0, pointValueInCents)
   const maxWager = slotPointsToRand(wagerOptions[wagerOptions.length - 1] ?? 0, pointValueInCents)
 
@@ -169,7 +173,8 @@ export function SidecarSpinControls({
               ref={betButtonRef}
               className={`sidecar-spin-controls__small${isBetOpen ? ' sidecar-spin-controls__small--active' : ''}`}
               type="button"
-              aria-label={`Change bet, currently ${formatRand(activeWager)}`}
+              aria-label={wagerLocked ? `Bet locked at ${formatRand(activeWager)}`
+                : `Change bet, currently ${formatRand(activeWager)}`}
               data-slot-utility-cue
               aria-haspopup="dialog"
               aria-expanded={isBetOpen}
@@ -263,7 +268,9 @@ export function SidecarSpinControls({
           )}
         </div>
       </div>
-      {!specialControlsActive && <div className="sidecar-spin-controls__bet-readout">BET <strong>{formatRand(activeWager)}</strong></div>}
+      {!specialControlsActive && <div className="sidecar-spin-controls__bet-readout">
+        {wagerReadout ?? <>BET <strong>{formatRand(activeWager)}</strong></>}
+      </div>}
     </div>
   )
 }

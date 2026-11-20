@@ -12,6 +12,8 @@ public static class NeonArcadeSlotDefinitions
     public const decimal PreviousBasePayoutMultiplier = 0.82m;
     public static decimal PayoutMultiplier { get; } = NeonPayoutSchedule.BaseLineScale;
     public static decimal CarPayoutMultiplier { get; } = NeonPayoutSchedule.CarLineScale;
+    public static decimal MinimumCombinedRtp => NeonPayoutSchedule.MinimumCombinedRtp;
+    public static decimal MaximumCombinedRtp => NeonPayoutSchedule.MaximumCombinedRtp;
     public const string PreviousModelId = "neon-arcade-local-v2";
     public const string PreviousDiscoModelId = "neon-arcade-local-v3";
     public const string PreviousClusterModelId = "neon-arcade-local-v4";
@@ -34,7 +36,8 @@ public static class NeonArcadeSlotDefinitions
     public const string PreviousNitroChoiceEngineVersion = "neon-arcade-special-plays-v16";
     internal const string ExpandedCarPaylinesEngineVersion = "neon-arcade-special-plays-v17";
     public const string PreviousDiscoWildEngineVersion = "neon-arcade-special-plays-v18";
-    public const string EngineVersion = "neon-arcade-special-plays-v19";
+    public const string PreviousCombinedRtpEngineVersion = "neon-arcade-special-plays-v19";
+    public const string EngineVersion = "neon-arcade-special-plays-v20";
     public const string SymbolSetId = "neon-arcade-symbols-v3";
     public const string ReelSetId = "neon-arcade-reels-v4";
     public const string PreviousPaytableId = "neon-arcade-paytable-v3";
@@ -114,15 +117,18 @@ public static class NeonArcadeSlotDefinitions
         engineVersion == PreviousNitroChoiceEngineVersion || UsesExpandedCarPaylines(engineVersion);
 
     internal static bool UsesExpandedCarPaylines(string? engineVersion) =>
-        engineVersion is ExpandedCarPaylinesEngineVersion or PreviousDiscoWildEngineVersion or EngineVersion;
+        engineVersion is ExpandedCarPaylinesEngineVersion or PreviousDiscoWildEngineVersion or
+            PreviousCombinedRtpEngineVersion or EngineVersion;
 
-    internal static bool SupportsDiscoWild(string? engineVersion) => engineVersion == EngineVersion;
+    internal static bool SupportsDiscoWild(string? engineVersion) =>
+        engineVersion is PreviousCombinedRtpEngineVersion or EngineVersion;
 
     internal static bool UsesCurrentPayoutSchedule(string? engineVersion) =>
         engineVersion == PreviousPayoutScheduleEngineVersion || SupportsNitroChoice(engineVersion);
 
     internal static decimal CarPayoutMultiplierForEngine(string engineVersion, decimal basePayoutMultiplier) =>
-        UsesCurrentPayoutSchedule(engineVersion) ? CarPayoutMultiplier : basePayoutMultiplier;
+        engineVersion == EngineVersion ? CarPayoutMultiplier :
+        UsesCurrentPayoutSchedule(engineVersion) ? NeonPayoutSchedule.PreviousCarLineScale : basePayoutMultiplier;
 
     public static bool SupportsPackageReplay(string? engineVersion) =>
         SupportsDiscoCascade(engineVersion);

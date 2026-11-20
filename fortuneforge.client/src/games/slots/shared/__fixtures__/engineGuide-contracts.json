@@ -1,10 +1,10 @@
 {
   "source": "Actual in-process OptionsSlotsDefinitionProvider, not client manifests",
-  "exportedUtc": "2026-11-19T01:30:41.8903325Z",
-  "assemblySha256": "cde650171cfcdc0b4b239512454ab8990b66787e34195a6f1837759757a32f03",
+  "exportedUtc": "2026-11-20T22:07:32.2722245Z",
+  "assemblySha256": "ae08e1718f01dbd236ac67415a75592bc6e86939bfaaf4515c5af2509cc6eb07",
   "sourceSha256": {
     "FortuneForge.Server/Accounts/Security/AntiAbuseRateLimiting.cs": "f93e9f420ff6d774eee34d53326fc386d6a68f2ffb89f46c7c364652e00795ce",
-    "FortuneForge.Server/Controllers/DemoSlotsController.cs": "c95fdbfe4e6de3d4d2346650561fcab2f97add569f55985c09e3278f303936b4",
+    "FortuneForge.Server/Controllers/DemoSlotsController.cs": "16faecb0da2fdcbfd856aba8975b740135d6ae2bfe0be766821ae6f90a0029b5",
     "FortuneForge.Server/RoundAudit/DemoSlotRoundRecording.cs": "240dde4f95f3ca9b592576a1643f0cbb497bd9fd8a24f84abb6c4a62680ebcba",
     "FortuneForge.Server/Slots/Bonuses/ArcaneLightningCollector.cs": "bb0a41d2b393e42fc52f9f95e6507bf5a907fedc0a606eb14abef724c5022b21",
     "FortuneForge.Server/Slots/Bonuses/EnergyBonus.cs": "b6b9fa35a517f4aeb870b1804ac8e0cceec60f45cc4beb570bdc53b393127a31",
@@ -25,7 +25,7 @@
     "FortuneForge.Server/Slots/Configuration/Validation/SlotsOptionsValidator.Paylines.cs": "e807643164f0721d8bc2a73580d91d885c3499931a72f95d23f44bc563f861c4",
     "FortuneForge.Server/Slots/Configuration/Validation/SlotsOptionsValidator.Wagering.cs": "06cb704efb550832de54681981f3751b0ce00cb61639ef88b5cb09725aa31510",
     "FortuneForge.Server/Slots/Configuration/Validation/SlotsOptionsValidator.cs": "4ed54507cde5f23972872a41aabe3888f22f023e6a83635c61907e3c723a00ab",
-    "FortuneForge.Server/Slots/Evaluation/CombinationEvaluator.cs": "7d0e7279aa2bbb2053cbdaa2989be1a1728c73a10b6025494c39316ea4259cc2",
+    "FortuneForge.Server/Slots/Evaluation/CombinationEvaluator.cs": "3e215da76179acd14cf2120cea2caa6a7c3aa1c3a9574bb5e76fc0feeaad81e0",
     "FortuneForge.Server/Slots/Evaluation/ICombinationEvaluator.cs": "18be9bb79e62ce4206643755138afb4f0557d1447c50130334b40d9789888154",
     "FortuneForge.Server/Slots/Games/GoldFoundry/GoldFoundryAudit.cs": "4280c1b18a033d5f5822edcbd6c75d7f7ea863260445f8676e06e135f7a458f2",
     "FortuneForge.Server/Slots/Games/GoldFoundry/GoldFoundryCrucible.cs": "df190e0a5390ba9e7b53164a1203bb7894759566ad8909f40bd3c84c959d721b",
@@ -40,13 +40,13 @@
     "FortuneForge.Server/Slots/Games/MidnightVault/MidnightVaultAudit.cs": "2893966e92d8648392563cc9b9a4b1fd3e299f8cacc1fb89b11ccf0be41b2e72",
     "FortuneForge.Server/Slots/Games/MidnightVault/MidnightVaultEngine.cs": "24cec3d05f88b655cce9ef4596b3ce8a88a4ff791ba0171b34f09e415a5983d6",
     "FortuneForge.Server/Slots/Games/NeonNights/NeonNightsEngine.cs": "26edfef2006c5c13295dbc1633c0d911b0b6b26c7c9c313d44428adc4b988bde",
-    "FortuneForge.Server/Slots/Games/StandaloneSlotPackageRegistry.cs": "8b74c69bd781eba8af4a4fe9b9754655664d9f50cdc9ee4e13205413ddbe811b",
-    "FortuneForge.Server/Slots/Models/ArcanePotionView.cs": "859defeeb26ffa7a09bceb9683a8d4d587861119297720a8655b4b25a9f3d2f5",
+    "FortuneForge.Server/Slots/Games/StandaloneSlotPackageRegistry.cs": "60d81777586c83eab43a0ec21fa6f15dbc892552eb55abe66c4ce6eb8a4d40e1",
+    "FortuneForge.Server/Slots/Models/ArcanePotionView.cs": "eba3400e86c2cf0c88c532ea9bb486e7d74f2d4d61929ebcc5a1d1d76f7ae7ae",
     "FortuneForge.Server/Slots/Models/SlotDefinitions.cs": "1050d5f922e3ccf31b428ec865a6686070a99f774d60856b6ede825abfe0b929",
-    "FortuneForge.Server/Slots/Models/SpinModels.cs": "7efdc31c85928332bb13cb52602bf8da3ef387508027e960f81fe1f36a87f9e3",
+    "FortuneForge.Server/Slots/Models/SpinModels.cs": "7a1299a3b996da611a307bc4f544c1b8b9ce73c91dbcc1d2e536b57ff92521af",
     "FortuneForge.Server/Slots/Models/WukongPawPrototypeEvidence.cs": "78567bd38dae1a13af00119a70105c47af0a07f5809ed255e8ebdc3a91bcdea9",
     "FortuneForge.Server/Slots/Payouts/IPayoutCalculator.cs": "2a112a7c3acdabc20f10726b3794e23b453eab9b3e835f269852543f1b4891ec",
-    "FortuneForge.Server/Slots/Payouts/PayoutCalculator.cs": "79640b701539ab1fe05dcaccca62c729d8009ec1ccc562b966dbb5f79bb83d26",
+    "FortuneForge.Server/Slots/Payouts/PayoutCalculator.cs": "3b638e99acb6103eb90b2779d4ede5ac9f34836398e2748fc9b0ee1fda03f99c",
     "FortuneForge.Server/Slots/Reels/CryptoRandomIndexSource.cs": "d4bee589e903bfe0ec407a4d6ff6981f3ad0dc2c94dfc450928baac79b0de716",
     "FortuneForge.Server/Slots/Reels/CryptoReelGenerator.cs": "556bf9660da9d76cd1394610b5d1cb634619b4f1872aef957e27c2f373292190",
     "FortuneForge.Server/Slots/Reels/IRandomIndexSource.cs": "cb4b3756e9019f181f687701816fecb4f236a4f3a746ed011802fbe51ef0b8e4",
@@ -54,7 +54,7 @@
     "FortuneForge.Server/Slots/Reels/PiratesFortuneBaseReelSet.cs": "7c6cb3859f6abb382e8cfd1812ddf1c377e85586701e4f60699e59d86dbaea0c",
     "FortuneForge.Server/Slots/Reels/WukongBaseReelSet.cs": "2750f150f03c222bdc927c6d6e168e03dd5625d7e6f28433782dc1a193375e3f",
     "FortuneForge.Server/Slots/SlotPackageUsings.cs": "ce0df56d467212c704b4a98e783fa603583682794c0b943b8d6b89cf994c4da3",
-    "FortuneForge.Server/Slots/Spins/PaidSlotWorker.cs": "c63882ab2866710edc511bd0b433f9801c04651229f5378ff0294b2c3ae88eee",
+    "FortuneForge.Server/Slots/Spins/PaidSlotWorker.cs": "efe04dd3254dee0bd47cef7e7f2bc42295f978b21e9676c95318084b972ee305",
     "FortuneForge.Server/Slots/Spins/SpinService.Core.cs": "055348cf1ba9e70c0547256ed05585b4e53bc0cba711962fd34b38ac6f1c5d16",
     "FortuneForge.Server/Slots/Spins/SpinService.Execution.cs": "fa9192be95c2203efb2d07f3bd2bcb67781f0e8d6319d8fb13641f7821ac09c2",
     "FortuneForge.Server/Slots/Spins/SpinService.Features.cs": "75ceafc629cf10128f5b2474fa91ad09c8000e0d27f2e52b448dcfa041dc51b4",
@@ -63,12 +63,12 @@
     "FortuneForge.Server/Slots/Spins/SpinService.Support.cs": "139fb73b47b2cf43988e810c945f10e48acb788e9ecab811be86f7d2cc2ba707",
     "FortuneForge.Server/Slots/Spins/SpinService.WukongPawPrototype.cs": "e06d55d5dc152ef0296b25d8d98921c3df29f411d96f6217367a1bc935faf5da",
     "FortuneForge.Server/appsettings.json": "cd26278ff58d160ac6eb90e9799f39584b378c445acb8572c3e5353274fccfcc",
-    "fortuneforge.client/src/games/slots/routeRegistry.ts": "5d001ded68d35d0eea6918927719e6f65fe67673639de389e23e807b0b8b260a",
-    "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneArchivesEngine.cs": "472f500ec083e16fcdd9c957703c21cc238ad2b718ba9307a470945de6b289ae",
+    "fortuneforge.client/src/games/slots/routeMetadata.ts": "5cface1f390fdbb199b73956c0f50e88dfecf055f3a2d7e6a9820949fb2bb9d9",
+    "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneArchivesEngine.cs": "9c779803ca0be040d291da8d00e049a0025109e21de7fa947e9189163dd3d50d",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneLightningCollector.cs": "6e5eecaf1fb30a6c3de219c6302754c0cde56772c7b96e60cfc28a9e2c00a811",
-    "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcanePaidSlotOutcomes.cs": "fcbed16542da2a5265c738913021a789b827f3ec17d2a3e6de73217b57902a2c",
-    "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcanePotions.cs": "d6841f33d328327580f855f670e09e0c6608f4a5559fc060d6d2b5ecf07283d2",
-    "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneTome.cs": "00d4d060675ccce3dceb9577ab586e1ff96e06341f9e37e03df7fa6dc4433fc5",
+    "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcanePaidSlotOutcomes.cs": "a180c2fcaaaef77e149cf05d6dba05b82b43c3e02593b3f77e97df7678ae229c",
+    "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcanePotions.cs": "ac109f3144de047cd36d63b643c4ba08ff6c8b5a4d144400d6155b90f45cad37",
+    "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneTome.cs": "98b9f98d2b27b4b0760d50b2b3331e8141bdc27c2a425be138742aa1b7c75812",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneWandCollector.cs": "53cd566ffa05d88bc9d01a6e241243544bc67ac74ffc38d7cd9daaa1063c1523",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/FortuneForge.Games.ArcaneArchives.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/LegacyArcaneWorkerEngine.cs": "ef1a64db05bb41ce058598c1a7d21495db59875fbfe0766d57784a11187101b2",
@@ -118,9 +118,9 @@
     "games/MidnightVault/src/FortuneForge.Games.MidnightVault/MidnightVaultOutcomeReplay.cs": "fe42f02f7df6c629b14710544a43ecfbea4cbdc09962da1c6490d8e20e1e49af",
     "games/MidnightVault/src/FortuneForge.Games.MidnightVault/MidnightVaultSlotDefinitions.cs": "797ef02e237794382ba73ccb0a341f5ddef82b738eb07b8bf6d2d209738b8e8d",
     "games/MidnightVault/src/FortuneForge.Games.MidnightVault/SlotBonusRounds.cs": "43f1ea5592c14e47f540be736e389c6ca341911c0f7d0b5d94ea68bee8d5b575",
-    "games/NeonNights/src/FortuneForge.Games.NeonNights/FortuneForge.Games.NeonNights.csproj": "72acfe53d163ae98d2940fee04a9d55bb9422bb12269bea0290675432608f60f",
+    "games/NeonNights/src/FortuneForge.Games.NeonNights/FortuneForge.Games.NeonNights.csproj": "e291a194b810899cb840620769706682d80f41997284dbbca23beeda9cd2c2a9",
     "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonArcadeBonus.cs": "5d2a3e3901f7cab668e4d8c21dcefe6206e2f0b056ce94d505130ffd86109539",
-    "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonArcadeSlotDefinitions.cs": "f8fa26984ffa222f6162b407a2d776c62f570f93bed63c7e941b7bdfbfa6d5af",
+    "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonArcadeSlotDefinitions.cs": "dbeb749bdb9a8e04408fadb1411ac695875bdbd2116f9ce4fe9afbd9b78e171f",
     "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonCarRespin.cs": "b49f87f2a1ada6a5f677ea9ece91f5208ce3edf7a068cbcae661e2ea3fa1fc21",
     "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonCombinationEvaluator.cs": "25c0dc5b011e0e7501bdbe7296ff10139d19a33db821b32ad5d48d2e9c57ad4c",
     "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonDefinitionSource.cs": "58a10424177b58725efebd00a4ebeaf59140c5bc6a22a2c2e9e52ecb120e10a2",
@@ -134,25 +134,26 @@
     "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonNitroWild.cs": "f087da3a74e3085c90e5af66353e9d3dc288b10bb79d174a36140ae203874b42",
     "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonOutcomeReplay.cs": "f454d715d0ec8b84f0f43885f06af3e398a92603d34c382eb5e9280f0918e535",
     "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonPayoutCalculator.cs": "dfaddc64928ba3deb9fa0cc6bba5f7d17fcc9aa86022aad366eb13c4cb2f6661",
-    "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonPayoutSchedule.cs": "dddb38fc395af8435140020861952f38fa820951ad11f6fab4f9abad868fd1bf",
-    "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonPlayPolicy.cs": "e6a91698a7f5950120107a57e4392cceb578838a7a93525bb5a3b32c5370d14c",
+    "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonPayoutSchedule.cs": "3fe3a430798273c33eba2b979143ad406d94249c81f4e520a88f4eb1cf61310d",
+    "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonPlayPolicy.cs": "da2ad5ae39fb1ba4bc24e7621056ff6a9a9dcff4678daa31a91bf548867a481b",
     "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonReelGenerator.cs": "e8659fb31b002f26acb883efdc41a4f99ebbc33ac401bdf185cdd21684409d59",
     "games/NeonNights/src/FortuneForge.Games.NeonNights/NeonSpecialPoints.cs": "c8325affd2df101b5e7aef43644104ec1093d8c0a28ca8fb0d86c18e11589cc5",
     "games/shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj": "732a4d6e6eb15f9d18867571503cf8c6f9882d46fd36e509dc139e30b85b949e",
-    "games/shared/FortuneForge.Games.Slots.Contracts/PaidSlotOutcome.cs": "7f060e8249e739d9c41881f98595e29b74f49176fba47f71de2e0ee0bb182d93",
+    "games/shared/FortuneForge.Games.Slots.Contracts/PaidSlotOutcome.cs": "ba5b85f1d53511e978347439a053cc672d0c771ed72c62ebe8e40290c04cabe4",
     "games/shared/FortuneForge.Games.Slots.Contracts/SlotContracts.cs": "35354fcf5ebefedc92593e02432384f5c87d00bd1a1958b36cc8f6165269d463",
-    "games/shared/FortuneForge.Games.Slots.Contracts/SlotDefinitions.cs": "3dd07789453e51d871a19399d08ce64b739c579ed9c000dcdc499e624b34bff5",
+    "games/shared/FortuneForge.Games.Slots.Contracts/SlotDefinitions.cs": "ed096ac9e7d8fd73c60465d4778f1c8c226dafcb34382bb38c9d831340e23238",
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotDefinitionFactory.cs": "5fd9306653be3b77f37b2c6c42c09bf167f3476d624079ac5c520282add286a4",
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.Features.cs": "1a90144de4eaebe547793cacb56ae2ef1aec6a3eaec20def710f4aada5fead2d",
-    "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.Math.cs": "273d4e1a0b6ee3d4420b9e53d3856a434af420b3e7d41746cef3a91007751809",
+    "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.Math.cs": "22b45f317ca0af2c297d73d58667894e4a953e5904abfc6debfc173274bfc957",
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.cs": "ec704a46ceb973638eac3103f0cf826350d098eefecc7b8c1793215b5cff0cc1",
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotModels.cs": "abef0260b493c997942c889918aa00b359b4a86c72358d20b7ee7f873ac9b7a7",
     "games/shared/FortuneForge.Games.Slots.Runtime/CryptographicSlotRandom.cs": "29577cd422bb20bd436c763a8e7397a6249c5940a85202e0c75845d407e03c8f",
+    "games/shared/FortuneForge.Games.Slots.Runtime/ExactStraightThreePaylines.cs": "3ab89f1658a36059e2861395ace956325409e3a040da85ada5332033afa1586b",
     "games/shared/FortuneForge.Games.Slots.Runtime/FortuneForge.Games.Slots.Runtime.csproj": "6a7dfebc95bcedd1275bcf64efa67329f44f1979d3cfb0444fb8930d6c4cd2f8",
-    "games/shared/FortuneForge.Games.Slots.Runtime/FrozenSlotDefinitions.cs": "431676e590738f6b8dcd20dc35f99ca51a00cc03110f35f5fd5b132961b5dd35",
+    "games/shared/FortuneForge.Games.Slots.Runtime/FrozenSlotDefinitions.cs": "f160054b9b037a178810a8b435118925897f0896646b7b558f9673767e6ab3be",
     "games/shared/FortuneForge.Games.Slots.Runtime/SlotProfile.cs": "8ddcb43c4a85d8b7299af8b1ec35c4b53fae7d40f1dea3e5c12f4357c7146b97",
     "tools/FortuneForge.SlotContracts/FortuneForge.SlotContracts.csproj": "523e1acf37e3aa58e538d30e430959517e441d03be7cf60dfd74ec67b825c6be",
-    "tools/FortuneForge.SlotContracts/Program.cs": "843e1015431a77fc0c2758e28a53645fe66744b472dd352efc632ff6ad9929c9"
+    "tools/FortuneForge.SlotContracts/Program.cs": "8d1d77b36c3a549f907d77ada1f71da76537dd7a30adce59cb2439bc7293469e"
   },
   "games": [
     {
@@ -2534,7 +2535,7 @@
         "usesDirectValueTokens": false,
         "scatterFeatureMode": null,
         "collectionFeatureMode": null,
-        "baseReelSetId": "arcane-archives-payline-reels-v5",
+        "baseReelSetId": "arcane-archives-payline-reels-v8",
         "targetHitRate": null,
         "paylinePatternIds": [
           1,
@@ -2554,7 +2555,7 @@
           22,
           23
         ],
-        "payoutMultiplier": 0.716
+        "payoutMultiplier": 0.357
       },
       "layout": {
         "reelCount": 5,
@@ -2582,9 +2583,9 @@
         "allowedWagerPoints": []
       },
       "math": {
-        "reelSetId": "arcane-archives-payline-reels-v5",
-        "paytableId": "arcane-archives-paytable-v2",
-        "payoutMultiplier": 0.716,
+        "reelSetId": "arcane-archives-payline-reels-v8",
+        "paytableId": "arcane-archives-paytable-v3",
+        "payoutMultiplier": 0.357,
         "paylinePayoutSteps": [
           0,
           0,
@@ -2749,7 +2750,7 @@
         {
           "symbolId": "4",
           "matchLength": 3,
-          "multiplier": 1
+          "multiplier": 2
         },
         {
           "symbolId": "4",
@@ -3562,7 +3563,7 @@
       "math": {
         "reelSetId": "neon-arcade-reels-v4",
         "paytableId": "neon-arcade-paytable-v4",
-        "payoutMultiplier": 0.765,
+        "payoutMultiplier": 0.929,
         "paylinePayoutSteps": [
           0,
           0,

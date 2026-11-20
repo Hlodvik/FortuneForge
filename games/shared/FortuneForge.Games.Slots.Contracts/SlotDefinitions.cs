@@ -37,6 +37,14 @@ public sealed class GameMatchingRules
 {
     public int MinimumRunLength { get; init; }
     public bool AllowMultipleRunsPerPayline { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public SlotPaylineMatchMode PaylineMatchMode { get; init; }
+}
+
+public enum SlotPaylineMatchMode
+{
+    Classic,
+    ExactStraightThreeAndFullPayline
 }
 
 public sealed class GameMathDefinition

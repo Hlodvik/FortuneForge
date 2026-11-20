@@ -181,14 +181,23 @@ describe('slot game manifests', () => {
     }
   })
 
-  it('defines the sixteen Arcane Archives reel symbols and five payline symbols', () => {
+  it('guides all sixteen Arcane Archives reel symbols', () => {
     const arcane = ARCANE_ARCHIVES_SLOT_GAME.experience
     expect(arcane.features).toEqual({})
     expect(arcane.rules.defaultWagerRand).toBe(3)
     expect(arcane.help.wildSubstitution).toBe(false)
     expect(arcane.help.freeGames).toBeUndefined()
     expect(arcane.symbols.guideNote).toBeUndefined()
-    expect(arcane.symbols.guideEntries.map(entry => entry.symbol)).toEqual(['2', '3', '4', '5', '6'])
+    const guide = arcane.symbols.guideEntries
+    expect(guide.map(entry => entry.symbol).sort()).toEqual(Object.keys(arcane.symbols.definitions).sort())
+    expect(guide.filter(entry => entry.secondValue).map(entry => entry.symbol)).toEqual(['2', '3', '4', '5', '6'])
+    expect(guide.filter(entry => entry.companionSymbol).map(entry => [entry.symbol, entry.companionSymbol, entry.firstValue])).toEqual([
+      ['POWER', 'WAND', '2×'], ['BOLT', 'WAND', '4×'], ['FORTUNE_RUNE', 'WAND', '10×'],
+    ])
+    const ingredients = guide.filter(entry => entry.firstValue === 'Ingredient')
+    expect(ingredients).toHaveLength(6)
+    expect(ingredients.every(entry => entry.details?.map(detail => detail.label).join(',') === 'Main,Secondary')).toBe(true)
+    expect(guide.find(entry => entry.symbol === 'ACE')?.firstValue).toBe('Unlocks a 5-spin Tome boost')
     expect(Object.keys(arcane.symbols.definitions)).toHaveLength(16)
     expect(Object.values(arcane.symbols.definitions).map(symbol => symbol?.label)).toEqual([
       'Ogham Right', 'Ogham Left', 'Ogham Three Slashes', 'VII', 'Pentagram',

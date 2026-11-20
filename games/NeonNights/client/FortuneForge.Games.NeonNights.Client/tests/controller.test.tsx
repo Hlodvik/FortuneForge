@@ -69,6 +69,29 @@ it('recovers the authoritative locked wager after an awarded-round conflict', as
     expect(c.spinError).toBeNull()
   } finally { act(() => root.unmount()) }
 })
+it('recovers the Disco triggering wager from another tab before any retry', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  const root = createRoot(document.createElement('div'))
+  let c!: NeonNightsController
+  function Harness() { c = useNeonNights({ account }); return null }
+  mocks.state.mockResolvedValueOnce(emptyNeonState).mockResolvedValueOnce({ ...emptyNeonState,
+    neonDiscoSpinsRemaining: 12, neonDiscoWagerPoints: 150 })
+  mocks.spin.mockRejectedValueOnce(new NeonRequestError('Disco wager is locked.', 409, { code: 'neon-disco-wager-locked' }))
+  try {
+    await act(async () => root.render(<Harness />))
+    await act(async () => c.handleSpinButtonClick())
+    expect(mocks.state).toHaveBeenCalledTimes(2)
+    expect(c.activeWager).toBe(1.5)
+    expect(c.state.neonDiscoSpinsRemaining).toBe(12)
+    expect(c.balance).toBe(20)
+    expect(c.spinError).toBeNull()
+    act(() => c.selectWager(0))
+    expect(c.activeWager).toBe(1.5)
+    expect(c.selectedWagerPoints).toBe(300)
+    expect(c.spinError).toContain('locked')
+  } finally { act(() => root.unmount()) }
+})
+
 it('Car Plays expand the cabinet and wait for a manual spin', async () => {
   vi.useFakeTimers()
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
@@ -168,10 +191,12 @@ it.each(['landed', 'reloaded'] as const)('holds a %s final Car spin until the re
     ...emptyNeonState, spinId: choice.spinId, gameId: NEON_GAME_ID, symbolSetId: NEON_CAR_SYMBOL_SET_ID,
     wagerPoints: 50, pointValueInCents: 1, reels, isFreeSpin: true, freeSpinsAwarded: 0,
     slotsCreditsBalance: 22, payout: { totalPoints: 250, paylines: [] }, bananaBonusPoints: 0,
-    neonCarRoundWinPoints: 900, neonArcade: { featureGamesEnabled: true, bonusSymbolCount: 0, activators: [] },
+    neonCarRoundWinPoints: 900, neonDiscoSpinsRemaining: 12, neonDiscoWagerPoints: 700,
+    neonArcade: { featureGamesEnabled: true, bonusSymbolCount: 0, activators: [] },
     neonNitroWild: { ...evidence, expandedReel: 1 },
   }
-  const starting = { ...emptyNeonState, freeSpinsRemaining: 1, freeSpinWagerPoints: 50, freeSpinFeatureMode: 'car-rows' }
+  const starting = { ...emptyNeonState, freeSpinsRemaining: 1, freeSpinWagerPoints: 50, freeSpinFeatureMode: 'car-rows',
+    neonDiscoSpinsRemaining: 12, neonDiscoWagerPoints: 700 }
   mocks.state.mockResolvedValueOnce(mode === 'landed' ? starting : { ...starting, pendingNeonNitroChoice: choice })
   if (mode === 'landed') mocks.spin.mockResolvedValueOnce({ pendingNeonNitroChoice: choice })
   mocks.chooseNitro.mockRejectedValueOnce(new TypeError('Connection dropped')).mockResolvedValueOnce(settled)
@@ -194,6 +219,10 @@ it.each(['landed', 'reloaded'] as const)('holds a %s final Car spin until the re
     expect(c.displayedReels).toEqual(reels)
     expect(c.balance).toBe(22)
     expect(c.roundSummary).toEqual({ totalRand: 9, mode: 'car-rows' })
+    expect(c.state.neonDiscoWagerPoints).toBe(700)
+    await act(async () => c.dismissRoundSummary())
+    expect(c.discoActive).toBe(true)
+    expect(c.activeWager).toBe(7)
   } finally { act(() => root.unmount()) }
 })
 
@@ -278,32 +307,45 @@ it('retains the server round total after reloading a Car round whose free respin
   } finally { act(() => root.unmount()) }
 })
 
-it('restores the Disco subtotal and uses the settled total on the final spin', async () => {
+it('restores the Disco wager and subtotal, charges that wager, then unlocks after the final tally', async () => {
   vi.useFakeTimers()
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   const root = createRoot(document.createElement('div'))
   let c!: NeonNightsController
   function Harness() { c = useNeonNights({ account }); return null }
-  mocks.state.mockResolvedValueOnce({ ...emptyNeonState, neonDiscoSpinsRemaining: 1, neonDiscoRoundWinPoints: 650 })
+  mocks.state.mockResolvedValueOnce({ ...emptyNeonState, neonDiscoSpinsRemaining: 2, neonDiscoWagerPoints: 150, neonDiscoRoundWinPoints: 650 })
   const reels = Array.from({ length: 5 }, () => ['2', '4', '5', '7'] as const)
     .map(reel => [...reel])
   const result: NeonSpinResult = {
     ...emptyNeonState, spinId: 'last-disco-spin', gameId: NEON_GAME_ID, symbolSetId: NEON_DISCO_SYMBOL_SET_ID,
-    wagerPoints: 300, pointValueInCents: 1, reels, isFreeSpin: false, freeSpinsAwarded: 0,
+    wagerPoints: 150, pointValueInCents: 1, reels, isFreeSpin: false, freeSpinsAwarded: 0,
     slotsCreditsBalance: 17, payout: { totalPoints: 0, paylines: [] }, bananaBonusPoints: 0,
     neonArcade: { featureGamesEnabled: true, bonusSymbolCount: 0, activators: [] },
     neonDiscoCascade: { initialReels: reels, steps: [], totalPoints: 0 },
     neonDiscoRoundWinPoints: 650,
   }
-  mocks.spin.mockResolvedValueOnce(result)
+  mocks.spin.mockResolvedValueOnce({ ...result, spinId: 'next-disco-spin', slotsCreditsBalance: 18.5, neonDiscoSpinsRemaining: 1, neonDiscoWagerPoints: 150 })
+    .mockResolvedValueOnce(result)
   try {
     await act(async () => root.render(<Harness />))
     expect(c.discoActive).toBe(true)
     expect(c.roundWinnings).toBe(6.5)
+    expect(c.activeWager).toBe(1.5)
+    act(() => c.selectWager(0))
+    expect(c.selectedWagerPoints).toBe(300)
     await act(async () => { c.handleSpinButtonClick(); await vi.runAllTimersAsync() })
+    expect(c.roundSummary).toBeNull()
+    expect(c.state.neonDiscoWagerPoints).toBe(150)
+    expect(c.activeWager).toBe(1.5)
+    await act(async () => { c.handleSpinButtonClick(); await vi.runAllTimersAsync() })
+    expect(mocks.spin).toHaveBeenCalledWith(expect.objectContaining({ wagerPoints: 150, useFreeSpin: false }), false)
+    expect(c.balance).toBe(17)
     expect(c.roundSummary).toEqual({ totalRand: 6.5, mode: 'neon-disco' })
     expect(c.roundWinnings).toBe(6.5)
     await act(async () => c.dismissRoundSummary())
     expect(c.roundWinnings).toBe(0)
+    expect(c.state.neonDiscoWagerPoints).toBeNull()
+    act(() => c.selectWager(0))
+    expect(c.activeWager).toBe(.5)
   } finally { act(() => root.unmount()) }
 })

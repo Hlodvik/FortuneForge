@@ -1,23 +1,27 @@
 // Edited: 2026-11-18T19:10:04-06:00 | Computer: VINNABOK
 // Edited: 2026-11-18T18:43:19-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T18:19:50-06:00 | Computer: VINNABOK
-import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import type { SlotPotionSoundEvent } from '@fortuneforge/slot-client-core'
 import type { SlotPotionBottle, SlotPotionState, SlotTomePanelProps } from '@fortuneforge/slot-game-runtime/experience'
 import { cauldronOpening } from './ArcaneIngredientFlights'
-import { getPotionArtwork } from './potionArtwork'
+import { ArcanePotionPour } from './ArcanePotionPour'
+import { getPotionArtwork, type PotionArtwork } from './potionArtwork'
 import './potionMotion.css'
+
+type Point = { x: number; y: number }
 
 type Action = {
   bottle: SlotPotionBottle
   kind: SlotPotionSoundEvent
+  bottlePosition: Point | null
 }
 
 type WorkbenchRefs = {
   cabinetRef: RefObject<HTMLElement | null>
   cauldronRef: RefObject<HTMLButtonElement | null>
-  shelfRef: RefObject<HTMLButtonElement | null>
+  bottlesRef: RefObject<HTMLUListElement | null>
 }
 
 type PotionMotionProps = WorkbenchRefs & Pick<SlotTomePanelProps, 'confirmedPotionUse' | 'onPotionCue'> & {
@@ -25,63 +29,131 @@ type PotionMotionProps = WorkbenchRefs & Pick<SlotTomePanelProps, 'confirmedPoti
   arrival: number | null
   settledSpinKey: number | null
   reducedMotion: boolean
+  activationOriginRef: RefObject<(Point & { id: number }) | null>
 }
 
-const clipDuration = { bottling: 2200, activation: 1550 }
+function centerOf(element?: Element | null): Point | null {
+  const bounds = element?.getBoundingClientRect()
+  if (!bounds || bounds.width <= 0 || bounds.height <= 0) return null
+  return { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 }
+}
+
+function bottleCenter(row: HTMLUListElement | null, id: SlotPotionBottle['id']) {
+  return centerOf(row?.querySelector(`button[data-bottle-id="${id}"]`))
+}
 
 export function ArcanePotionMotion({
-  state, arrival, settledSpinKey, confirmedPotionUse, onPotionCue, reducedMotion, cabinetRef, cauldronRef, shelfRef,
+  state, arrival, settledSpinKey, confirmedPotionUse, onPotionCue, reducedMotion,
+  cabinetRef, cauldronRef, bottlesRef, activationOriginRef,
 }: PotionMotionProps) {
   const previous = useRef({ state, arrival, settledSpinKey, confirmedPotionUse })
   const awaitingArrival = useRef<Action[]>([])
   const playedAction = useRef<Action | null>(null)
   const [queue, setQueue] = useState<Action[]>([])
+  const [reels, setReels] = useState<Element | null>(null)
+  const [rimBottle, setRimBottle] = useState<number | null>(null)
   const action = queue[0]
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    setReels(cabinetRef.current?.querySelector('.slot-machine__reels') ?? null)
+  }, [cabinetRef])
+
+  useLayoutEffect(() => {
     const before = previous.current
     previous.current = { state, arrival, settledSpinKey, confirmedPotionUse }
     if (settledSpinKey !== null && settledSpinKey !== before.settledSpinKey) {
       const known = new Set(before.state.bottles.map(bottle => bottle.id))
       for (const bottle of state.bottles) {
-        if (!known.has(bottle.id)) awaitingArrival.current.push({ bottle, kind: 'bottling' })
+        if (!known.has(bottle.id)) {
+          awaitingArrival.current.push({ bottle, kind: 'bottling', bottlePosition: bottleCenter(bottlesRef.current, bottle.id) })
+        }
       }
     }
 
     const ready = arrival !== null && arrival !== before.arrival ? awaitingArrival.current.splice(0) : []
     const activeBottle = state.active?.bottle
     if (activeBottle && activeBottle.id === confirmedPotionUse && confirmedPotionUse !== before.confirmedPotionUse) {
-      ready.push({ bottle: activeBottle, kind: 'activation' })
+      const origin = activationOriginRef.current
+      const bottlePosition = origin?.id === activeBottle.id ? origin : bottleCenter(bottlesRef.current, activeBottle.id)
+      ready.push({ bottle: activeBottle, kind: 'activation', bottlePosition })
     }
     if (ready.length) setQueue(current => [...current, ...ready])
-  }, [arrival, confirmedPotionUse, settledSpinKey, state])
+  }, [activationOriginRef, arrival, bottlesRef, confirmedPotionUse, settledSpinKey, state])
 
   useEffect(() => {
     if (!action) return
+    if (action.kind === 'activation' && action.bottle.id !== state.active?.bottle.id) {
+      setQueue(current => current[0] === action ? current.slice(1) : current)
+      return
+    }
     if (playedAction.current !== action) {
       playedAction.current = action
       onPotionCue?.(action.kind)
     }
     if (reducedMotion) setQueue(current => current[0] === action ? current.slice(1) : current)
-  }, [action, onPotionCue, reducedMotion])
+  }, [action, onPotionCue, reducedMotion, state.active?.bottle.id])
 
-  const reelSurface = cabinetRef.current?.querySelector('.slot-machine__reels')
-  const active = state.active
-  const activeArt = active && getPotionArtwork(active.bottle.ingredientId)
+  const active = state.active?.bottle
+  const activeArt = active && getPotionArtwork(active)
+  const opening = !!active && !reducedMotion &&
+    queue.some(item => item.kind === 'activation' && item.bottle.id === active.id)
+  const complete = () => setQueue(current => current[0] === action ? current.slice(1) : current)
   return <>
-    {activeArt && reelSurface && createPortal(
-      <div className="arcane-potion-aura" style={{ '--potion-glow': activeArt.glow } as CSSProperties} aria-hidden="true">
-        {!reducedMotion && <img src={activeArt.effect} alt="" />}
-      </div>,
-      reelSurface,
+    {active && activeArt && reels?.parentElement && (!opening || rimBottle === active.id) && createPortal(
+      <PotionFrame key={active.id} art={activeArt} reducedMotion={reducedMotion} opening={opening} />,
+      reels.parentElement,
     )}
-    {action && !reducedMotion && <PotionClip key={action.kind + action.bottle.id} action={action}
-      cabinetRef={cabinetRef} cauldronRef={cauldronRef} shelfRef={shelfRef}
-      onComplete={() => setQueue(current => current[0] === action ? current.slice(1) : current)} />}
+    {action?.kind === 'activation' && active?.id === action.bottle.id && activeArt && !reducedMotion &&
+      <ArcanePotionPour key={action.bottle.id} art={activeArt} reels={reels} origin={action.bottlePosition}
+        onImpact={() => setRimBottle(action.bottle.id)} onComplete={complete} />}
+    {action?.kind === 'bottling' && !reducedMotion &&
+      <BottlingClip key={action.bottle.id} action={action} cauldronRef={cauldronRef} bottlesRef={bottlesRef}
+        onComplete={complete} />}
   </>
 }
 
-function PotionClip({ action, cabinetRef, cauldronRef, shelfRef, onComplete }: WorkbenchRefs & {
+function PotionFrame({ art, reducedMotion, opening }: { art: PotionArtwork; reducedMotion: boolean; opening: boolean }) {
+  const anchor = useRef<HTMLDivElement>(null)
+  const [moving, setMoving] = useState(false)
+  const [reveal, setReveal] = useState(opening)
+
+  useLayoutEffect(() => {
+    const element = anchor.current
+    if (!element) return
+    function fit() {
+      if (!element) return
+      const reel = element.getBoundingClientRect()
+      const side = reel.width * .145
+      const left = Math.min(side, Math.max(0, reel.left))
+      const right = Math.min(side, Math.max(0, document.documentElement.clientWidth - reel.right))
+      element.style.setProperty('--arcane-potion-rim-left', `${-left}px`)
+      element.style.setProperty('--arcane-potion-rim-right', `${-right}px`)
+      element.style.setProperty('--arcane-potion-rim-image-left', `${left - side}px`)
+      element.style.setProperty('--arcane-potion-rim-image-width', `${reel.width + 2 * side}px`)
+    }
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(fit)
+    observer?.observe(element)
+    window.addEventListener('resize', fit)
+    fit()
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', fit)
+    }
+  }, [])
+
+  return <div ref={anchor} className="arcane-potion-frame" data-opening={reveal && !reducedMotion || undefined}
+    data-ambient={!art.rim && !reducedMotion || undefined} style={{ '--potion-glow': art.glow } as CSSProperties}
+    data-moving={moving && !reducedMotion || undefined} aria-hidden="true"
+    onAnimationEnd={event => { if (event.target === event.currentTarget) setReveal(false) }}>
+    <div className="arcane-potion-frame__crop">
+      <img className="arcane-potion-frame__still" src={art.rimStill} alt="" />
+      {!reducedMotion && art.rim && <img className="arcane-potion-frame__moving" src={art.rim} alt=""
+        onLoad={() => setMoving(true)} onError={() => setMoving(false)} />}
+    </div>
+  </div>
+}
+
+function BottlingClip({ action, cauldronRef, bottlesRef, onComplete }: Pick<WorkbenchRefs, 'cauldronRef' | 'bottlesRef'> & {
   action: Action
   onComplete: () => void
 }) {
@@ -89,8 +161,7 @@ function PotionClip({ action, cabinetRef, cauldronRef, shelfRef, onComplete }: W
   const timer = useRef<number | undefined>(undefined)
   const completed = useRef(onComplete)
   completed.current = onComplete
-  const bottling = action.kind === 'bottling'
-  const art = getPotionArtwork(action.bottle.ingredientId)
+  const art = getPotionArtwork(action.bottle)
 
   useEffect(() => {
     // Move on if an animation is unavailable or slow to download.
@@ -98,41 +169,33 @@ function PotionClip({ action, cabinetRef, cauldronRef, shelfRef, onComplete }: W
     return () => window.clearTimeout(timer.current)
   }, [])
 
-  const shelfButton = shelfRef.current
-  const ledge = shelfButton?.querySelector('[data-arcane-shelf-ledge]')?.getBoundingClientRect()
-  const shelf = ledge && ledge.width > 0 ? ledge : shelfButton?.getBoundingClientRect()
-  const cabinet = cabinetRef.current?.getBoundingClientRect()
+  const row = bottlesRef.current
+  const liveBottle = bottleCenter(row, action.bottle.id)
   const cauldron = cauldronRef.current && cauldronOpening(cauldronRef.current)
-  const shelfX = shelf ? shelf.left + shelf.width / 2 : 0
-  const shelfY = shelf ? shelf.top + shelf.height / 2 : 0
-  const cabinetX = cabinet ? cabinet.left + cabinet.width / 2 : shelfX
-  const origin = bottling ? cauldron : { x: shelfX, y: shelfY }
-  if (!art || !origin || !shelf?.width) return null
+  const fallback = centerOf(row) ?? cauldron
+  const destination = liveBottle ?? action.bottlePosition ?? fallback
+  const origin = cauldron
+  if (!art || !origin || !destination) return null
 
   const style = {
     left: origin.x,
     top: origin.y,
     '--potion-glow': art.glow,
-    '--potion-transfer-x': `${shelfX - origin.x}px`,
-    '--potion-transfer-y': `${shelfY - origin.y}px`,
+    '--potion-transfer-x': `${destination.x - origin.x}px`,
+    '--potion-transfer-y': `${destination.y - origin.y}px`,
   } as CSSProperties
 
   return createPortal(
     <div className="arcane-potion-motion" aria-hidden="true">
-      {transfer ? <img className="arcane-potion-motion__transfer" style={style} src={art.bottle} alt=""
+      {transfer || !art.bottling ? <img className="arcane-potion-motion__transfer" style={style} src={art.bottle} alt=""
         onAnimationEnd={onComplete} onError={onComplete} />
-        : <div className="arcane-potion-motion__clip" style={style} data-action={action.kind}
-          data-face-right={!bottling && cabinetX >= shelfX || undefined}>
-          <img src={art[action.kind] + '#' + action.bottle.id} alt="" onLoad={() => {
+        : <div className="arcane-potion-motion__clip" style={style}>
+          <img src={art.bottling + '#' + action.bottle.id} alt="" onLoad={() => {
             window.clearTimeout(timer.current)
             timer.current = window.setTimeout(() => {
-              if (bottling) {
-                setTransfer(true)
-                timer.current = window.setTimeout(() => completed.current(), 1000)
-              } else {
-                completed.current()
-              }
-            }, clipDuration[action.kind])
+              setTransfer(true)
+              timer.current = window.setTimeout(() => completed.current(), 1000)
+            }, 2200)
           }} onError={onComplete} />
         </div>}
     </div>,

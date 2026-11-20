@@ -35,6 +35,6 @@ export function NeonDiscoHelp({ wager }: { wager: number }) {
         </tr>)}</tbody>
       </table>
     </div>
-    <p className="win-help__fine-print">Disco uses Jack, Queen, King, Ace, Martini, Neon Seven, Neon Disco Ball and Disco Wild. Each spin costs one wager; its following cascades cost nothing extra.</p>
+    <p className="win-help__fine-print">Disco uses Jack, Queen, King, Ace, Martini, Neon Seven, Neon Disco Ball and Disco Wild. Each spin costs the triggering wager, locked for all twelve spins; its following cascades cost nothing extra.</p>
   </>
 }

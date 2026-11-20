@@ -1554,6 +1554,96 @@
   white-space: nowrap;
 }
 
+.symbol-value-guide .symbol-value-guide__item > .symbol-value-guide__match,
+.symbol-value-guide__detail-toggle {
+  grid-column: 2 / -1;
+  grid-row: 2;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.symbol-value-guide__match img {
+  width: 1.6rem;
+  height: 1.6rem;
+  object-fit: contain;
+  filter: brightness(1.6) drop-shadow(0 0 0.16rem rgb(255 212 147 / 45%));
+}
+
+.symbol-value-guide__match strong {
+  color: #fce2a4;
+  white-space: nowrap;
+}
+
+.symbol-value-guide__match-multiplier {
+  color: #c9b7e3;
+  font-size: 0.85em;
+}
+
+.symbol-value-guide__detail-toggle {
+  min-height: 1.55rem;
+  padding: 0 0.32rem;
+  border: 1px solid rgb(236 204 140 / 38%);
+  border-radius: 0.3rem;
+  background: rgb(236 204 140 / 8%);
+  color: #f5d99b;
+  cursor: pointer;
+  font: inherit;
+}
+
+.symbol-value-guide__detail-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.symbol-value-guide__detail-toggle svg {
+  width: 1em;
+  height: 1em;
+}
+
+.symbol-value-guide__detail-toggle[aria-expanded='true'] svg {
+  rotate: 180deg;
+}
+
+.symbol-value-guide__details {
+  grid-column: 2 / -1;
+  margin-block-start: 0.2rem;
+  padding-block-start: 0.33rem;
+  border-top: 1px solid rgb(236 204 140 / 28%);
+  color: #f2e0f1;
+  font: 650 0.75rem/1.4 system-ui, sans-serif;
+}
+
+.symbol-value-guide__details p {
+  margin: 0.1rem 0;
+}
+
+.symbol-value-guide__item[data-details-above] {
+  position: relative;
+  z-index: 1;
+}
+
+.symbol-value-guide__item[data-details-above] .symbol-value-guide__details {
+  position: absolute;
+  inset: auto 0 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #a98260;
+  border-radius: 0.4rem;
+  background: #281936;
+  box-shadow: 0 0.25rem 0.7rem #120a24aa;
+}
+
+.symbol-value-guide:has(.symbol-value-guide__match) .symbol-value-guide__item--single-value > span:nth-of-type(2) {
+  grid-column: 2 / -1;
+  overflow: visible;
+  white-space: normal;
+}
+
+.symbol-value-guide--modal:has(.symbol-value-guide__detail-toggle) .symbol-value-guide__grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .symbol-value-guide__restore {
   display: none;
 }

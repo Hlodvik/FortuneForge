@@ -33,6 +33,8 @@ internal static class SlotRoundAudit
         var arcaneWandVersion = usesArcaneWand ? audit.EngineVersion : null;
         if (arcaneWandVersion != ArcaneArchivesEngine.WandEngineVersion(audit.BaseGame) ||
             arcaneWandVersion != ArcaneArchivesEngine.WandEngineVersion(audit.EffectiveGame) ||
+            !ArcaneArchivesEngine.HasExpectedPaylineMath(audit.EngineVersion, audit.BaseGame) ||
+            !ArcaneArchivesEngine.HasExpectedPaylineMath(audit.EngineVersion, audit.EffectiveGame) ||
             (usesArcaneWand
                 ? result.ReelSetId != audit.BaseGame.Math.ReelSetId ||
                   result.ReelSetId != audit.EffectiveGame.Math.ReelSetId
@@ -40,6 +42,9 @@ internal static class SlotRoundAudit
             return [new("slot-arcane-wand-version-mismatch", "error",
                 "The Arcane wand evidence does not match its frozen engine and reel model.")];
         var usesArcanePotions = ArcaneArchivesEngine.SupportsPotionEngineVersion(audit.EngineVersion);
+        if (usesArcanePotions && !ArcaneArchivesEngine.HasExpectedPotionPaytable(audit.EngineVersion, audit.Paytable))
+            return [new("slot-arcane-paytable-mismatch", "error",
+                "The captured Arcane paytable does not match its frozen engine.")];
         if (audit.ArcanePotionApplied is not null &&
             (!usesArcanePotions || !isPaid || result.IsFreeSpin || audit.ArcanePotionApplied.Id <= 0))
             return [new("slot-arcane-potion-mismatch", "error",
@@ -335,7 +340,8 @@ internal static class SlotRoundAudit
             var basePayout = new PayoutCalculator().Calculate(evaluations, payoutGame, paytable, result.WagerPoints);
             var arcanePotion = result.EngineAudit?.ArcanePotionApplied;
             if (arcanePotion is not null)
-                basePayout = ArcanePotions.BoostPaylines(basePayout, arcanePotion);
+                basePayout = ArcanePotions.BoostPaylines(basePayout, arcanePotion, result.WagerPoints,
+                    useLegacyMandrake: ArcaneArchivesEngine.UsesLegacyMandrake(result.EngineAudit?.EngineVersion));
             var neonFreeSpinsAwarded = 0;
             if (NeonArcadeSlotDefinitions.IsModel(baseGame))
             {

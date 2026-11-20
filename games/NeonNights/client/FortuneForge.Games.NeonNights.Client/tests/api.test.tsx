@@ -41,6 +41,19 @@ it('accepts base results and a four-cell Disco cluster with exclusive Disco refi
   expect(isNeonSpinResult(discoResult())).toBe(true)
 })
 
+it('restores a Disco wager independently from queued Car and accepts legacy rounds without one', async () => {
+  const queued = { ...baseResult(), freeSpinsRemaining: 7, freeSpinWagerPoints: 300,
+    neonDiscoSpinsRemaining: 12, neonDiscoWagerPoints: 150 }
+  const api = createNeonApi(async () => Response.json(queued))
+  await expect(api.state()).resolves.toEqual(queued)
+  expect(isNeonState({ ...queued, neonDiscoWagerPoints: null })).toBe(true)
+  const { neonDiscoWagerPoints: omitted, ...legacy } = queued
+  expect(omitted).toBe(150)
+  expect(isNeonState(legacy)).toBe(true)
+  for (const invalid of [0, -1, 1.5, '150', Number.MAX_SAFE_INTEGER + 1])
+    expect(isNeonState({ ...queued, neonDiscoWagerPoints: invalid })).toBe(false)
+})
+
 function wildDiscoResult() {
   const value = discoResult()
   value.reels[0][0] = value.neonDiscoCascade.initialReels[0][0] = 'DISCO_WILD'

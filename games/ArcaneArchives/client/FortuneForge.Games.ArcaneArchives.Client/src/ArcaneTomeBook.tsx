@@ -114,7 +114,7 @@ export function ArcaneTomeBook({ state, disabled, reducedMotion, onChangePage, s
       <p>{isActive
         ? `${page.label} · ${state.boostedSpinsRemaining} boosted ${state.boostedSpinsRemaining === 1 ? 'spin' : 'spins'} left`
         : state.grimoireReady
-          ? 'Activate this page to collect two units of each featured ingredient per landing for five paid spins.'
+          ? 'Activate this page to spin again and collect two units per featured ingredient landing for five paid spins.'
           : 'Land a Grand Grimoire to activate a page. Its featured ingredients give two units per landing for five paid spins.'}</p>
       {state.grimoireReady && !isActive && <button className="arcane-tome-activate" type="button"
         disabled={turnDisabled} onClick={() => onChangePage(page.id, true)}>Activate {page.label}</button>}

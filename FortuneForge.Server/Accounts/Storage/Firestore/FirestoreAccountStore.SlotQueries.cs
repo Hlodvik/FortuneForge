@@ -62,6 +62,7 @@ public sealed partial class FirestoreAccountStore
                     return new SlotStateResponse(remaining, wager, 0, 0, [], mode)
                     {
                         NeonDiscoSpinsRemaining = discoRemaining,
+                        NeonDiscoWagerPoints = ReadNeonDiscoWagerPoints(state[0], discoRemaining),
                         NeonDiscoMultiplier = discoRemaining > 0 ? ReadNeonDiscoMultiplier(state[0]) : NeonDiscoCascade.InitialMultiplier,
                         NeonDiscoRoundWinPoints = discoRemaining > 0
                             ? ReadLong(state[0], "neonDiscoRoundWinPoints") : null,
@@ -152,6 +153,12 @@ public sealed partial class FirestoreAccountStore
         if (!NeonDiscoCascade.IsValidMultiplier(multiplier))
             throw new InvalidOperationException("The saved Neon Disco multiplier is invalid.");
         return (int)multiplier;
+    }
+
+    private static long? ReadNeonDiscoWagerPoints(DocumentSnapshot guard, int spinsRemaining)
+    {
+        var wager = ReadLong(guard, "neonDiscoWagerPoints");
+        return NeonPlayPolicy.DiscoLockedWager(spinsRemaining, wager == 0 ? null : wager);
     }
 
     private static IReadOnlyList<MidnightVaultBonusRound> ReadMidnightBonusRounds(

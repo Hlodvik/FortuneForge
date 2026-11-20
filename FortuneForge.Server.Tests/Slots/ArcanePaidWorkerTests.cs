@@ -29,9 +29,11 @@ public sealed class ArcanePaidWorkerTests(MidnightVaultPaidEmulatorFixture emula
     private const decimal PointValueInCents = 25;
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task SignedWorkerHonorsTheAdmittedTomeAndPotionOrLeavesPriorStateIntact(bool legacyWorker)
+    [InlineData(false, null)]
+    [InlineData(true, null)]
+    [InlineData(false, ArcanePotions.AstralConvergence)]
+    [InlineData(false, ArcanePotions.RuneboundElixir)]
+    public async Task SignedWorkerHonorsTheAdmittedTomeAndPotionOrLeavesPriorStateIntact(bool legacyWorker, string? variantId)
     {
         var database = emulator.Database();
         var store = new FirestoreAccountStore(database);
@@ -47,13 +49,20 @@ public sealed class ArcanePaidWorkerTests(MidnightVaultPaidEmulatorFixture emula
         var tome = ArcaneTome.SelectPage(
             ArcaneTome.CompleteSpin(ArcaneTome.Empty, [[ArcaneTome.GrimoireSymbolId]], false).State,
             "herbalism", true);
-        var brewed = ArcanePotions.CompleteSpin(ArcanePotions.Empty,
-            Enumerable.Repeat("PHOENIX_FEATHER", ArcanePotions.Majority).ToArray(), false);
+        var brewed = ArcanePotions.CompleteSpin(ArcanePotions.Empty, variantId switch
+        {
+            ArcanePotions.AstralConvergence => ["MANDRAKE_ROOT", "MANDRAKE_ROOT", "MOONCAP_MUSHROOM", "MOONCAP_MUSHROOM",
+                "PHOENIX_FEATHER", "PHOENIX_FEATHER", "QUICKSILVER", "QUICKSILVER"],
+            ArcanePotions.RuneboundElixir => ["MANDRAKE_ROOT", "MANDRAKE_ROOT", "MOONCAP_MUSHROOM", "MOONCAP_MUSHROOM",
+                "PHOENIX_FEATHER", "PHOENIX_FEATHER", "WOLFSBANE_WINE", "WOLFSBANE_WINE"],
+            _ => Enumerable.Repeat("PHOENIX_FEATHER", ArcanePotions.Majority).ToArray()
+        }, false, wagerPoints: WagerPoints);
         var potion = Assert.Single(brewed.Bottles);
+        var active = ArcanePotions.Use(brewed, potion.Id);
         await guard.Reference.UpdateAsync(new Dictionary<string, object>
         {
             ["arcaneTomeJson"] = JsonSerializer.Serialize(tome),
-            ["arcanePotionsJson"] = JsonSerializer.Serialize(ArcanePotions.Use(brewed, potion.Id))
+            ["arcanePotionsJson"] = JsonSerializer.Serialize(active)
         });
 
         var signingKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
@@ -96,7 +105,7 @@ public sealed class ArcanePaidWorkerTests(MidnightVaultPaidEmulatorFixture emula
         {
             var admission = await Admit();
             var resolved = Assert.IsType<SpinResult>(admission.ResolvedOutcome);
-            Assert.Equal(potion, resolved.EngineAudit!.ArcanePotionApplied);
+            Assert.Equal(ArcanePotions.ForSpin(active, isFreeSpin: false), resolved.EngineAudit!.ArcanePotionApplied);
             Assert.True(ArcaneArchivesEngine.IsBoostedReelSet(resolved.ReelSetId));
             Assert.DoesNotContain(ArcaneTome.GrimoireSymbolId, resolved.EngineAudit.ReelSet.Reels.SelectMany(strip => strip));
             Assert.False(ArcaneArchivesEngine.PotionReelsMatch(resolved.EngineAudit.ReelSet, null));
@@ -105,10 +114,32 @@ public sealed class ArcanePaidWorkerTests(MidnightVaultPaidEmulatorFixture emula
             var settled = await store.RecordSlotSpinAsync(UserId, resolved, admission, DateTime.UtcNow, default);
             Assert.Equal(ArcaneTome.BoostedSpinCount - 1, settled.ArcaneTome!.BoostedSpinsRemaining);
             Assert.Equal(ArcanePotions.Duration - 1, settled.ArcanePotions!.Active!.SpinsRemaining);
+            var reloaded = await store.GetSlotStateAsync(UserId, GameId, PointValueInCents, default);
+            Assert.Equal(variantId, reloaded.ArcanePotions!.Active!.Bottle.VariantId);
         }
 
         Assert.Equal(new PaidArcaneSpinOptions(ArcaneArchivesEngine.EngineVersion, true,
-            new PaidArcanePotion(potion.Id, potion.IngredientId, potion.Potency)), received);
+            new PaidArcanePotion(potion.Id, potion.IngredientId, potion.Potency) { VariantId = variantId }), received);
+    }
+
+    [Fact]
+    public void OnlyTheRarePotionEngineAcceptsTheVariantInWorkerRequests()
+    {
+        var arcane = new PaidArcaneSpinOptions(ArcaneArchivesEngine.PreviousBalancedPotionEngineVersion, false,
+            new PaidArcanePotion(1, "MANDRAKE_ROOT", 10) { VariantId = ArcanePotions.AstralConvergence });
+        var request = new PaidSlotOutcomeRequest(Guid.NewGuid(), GameId, UserId, WagerPoints,
+            false, false, 0, null, 0, null)
+        {
+            Arcane = arcane
+        };
+        var resolver = new ArcanePaidSlotOutcomes(new SeededRandom());
+        Assert.Throws<ArgumentException>(() => resolver.Resolve(request));
+        var legacy = resolver.Resolve(request with { Arcane = arcane with { Potion = null } });
+        Assert.Equal(ArcaneArchivesEngine.PreviousBalancedPotionEngineVersion,
+            legacy.Outcome.GetProperty("audit").GetProperty("engineVersion").GetString());
+        var current = resolver.Resolve(request with { Arcane = arcane with { EngineVersion = ArcaneArchivesEngine.EngineVersion } });
+        Assert.Equal(ArcaneArchivesEngine.EngineVersion,
+            current.Outcome.GetProperty("audit").GetProperty("engineVersion").GetString());
     }
 
     [Fact]

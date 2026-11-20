@@ -52,6 +52,8 @@ internal static class NeonSlotSimulation
         bool compareVisibleRespin, decimal releaseRtpCeiling)
     {
         var overall = new Simulation(definitions, seed, wager);
+        var minimumRtp = NeonArcadeSlotDefinitions.MinimumCombinedRtp;
+        var maximumRtp = Math.Min(releaseRtpCeiling, NeonArcadeSlotDefinitions.MaximumCombinedRtp);
         for (var cycle = 0; cycle < baseCycles; cycle++)
             overall.PlayBaseCycle(compareVisibleRespin);
 
@@ -78,16 +80,17 @@ internal static class NeonSlotSimulation
             overall.DeliberateCar.PaidSpins.Print("Car with deliberate respin policy");
             overall.DeliberateCar.PrintRounds();
             Console.WriteLine($"Overall RTP with deliberate respins on the same spins: {deliberateRtp:P3}");
-            if (deliberateRtp >= releaseRtpCeiling) Environment.ExitCode = 1;
+            if (deliberateRtp < minimumRtp || deliberateRtp > maximumRtp) Environment.ExitCode = 1;
         }
         var bankroll = overall.Bankroll.EstimateBankrollDepletion(wager, unchecked(seed + 1));
         Console.WriteLine($"Bankroll trial (100 starting bets, up to 1,000 base cycles): {bankroll.RuinRate:P2} ran out; " +
             $"median ending balance {bankroll.MedianEndingBalance / (decimal)wager:N1} bets.");
-        Console.WriteLine($"Observed overall RTP {(overall.Overall.Rtp < releaseRtpCeiling ? "below" : "at or above")} " +
-            $"the {releaseRtpCeiling:P0} release ceiling.");
+        var withinTarget = overall.Overall.Rtp >= minimumRtp && overall.Overall.Rtp <= maximumRtp;
+        Console.WriteLine($"Observed overall RTP {(withinTarget ? "within" : "outside")} " +
+            $"the {minimumRtp:P0}–{maximumRtp:P0} combined target.");
         if (bankroll.RuinRate <= 0.5m)
             Console.WriteLine("Bankroll depletion falls short of the existing majority requirement.");
-        if (overall.Overall.Rtp >= releaseRtpCeiling || bankroll.RuinRate <= 0.5m) Environment.ExitCode = 1;
+        if (!withinTarget || bankroll.RuinRate <= 0.5m) Environment.ExitCode = 1;
     }
 
     private static int ReadOption(string[] args, string name, int fallback)

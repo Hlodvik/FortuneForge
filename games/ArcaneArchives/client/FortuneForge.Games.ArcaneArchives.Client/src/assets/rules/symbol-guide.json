@@ -1,0 +1,55 @@
+{
+  "constellations": [
+    {
+      "symbolId": "POWER",
+      "multiplier": 2
+    },
+    {
+      "symbolId": "BOLT",
+      "multiplier": 4
+    },
+    {
+      "symbolId": "FORTUNE_RUNE",
+      "multiplier": 10
+    }
+  ],
+  "potions": [
+    {
+      "ingredientId": "MANDRAKE_ROOT",
+      "name": "Mandrake Tonic",
+      "effect": "Scribe Mark payline value",
+      "secondaryPotency": 1
+    },
+    {
+      "ingredientId": "NIGHTSHADE_BERRIES",
+      "name": "Nightshade Elixir",
+      "effect": "Constellation frequency",
+      "secondaryPotency": 2
+    },
+    {
+      "ingredientId": "MOONCAP_MUSHROOM",
+      "name": "Mooncap Draught",
+      "effect": "VII and pentagram frequency",
+      "secondaryPotency": 2
+    },
+    {
+      "ingredientId": "PHOENIX_FEATHER",
+      "name": "Phoenix Infusion",
+      "effect": "Wand frequency",
+      "secondaryPotency": 3
+    },
+    {
+      "ingredientId": "WOLFSBANE_WINE",
+      "name": "Wolfsbane Cordial",
+      "effect": "VII and pentagram payline value",
+      "secondaryPotency": 1
+    },
+    {
+      "ingredientId": "QUICKSILVER",
+      "name": "Quicksilver Essence",
+      "effect": "Constellation value",
+      "secondaryPotency": 3
+    }
+  ],
+  "tomeBoostedSpins": 5
+}

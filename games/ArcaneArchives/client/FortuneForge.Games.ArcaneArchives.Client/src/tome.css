@@ -26,7 +26,7 @@
   cursor: pointer;
 }
 
-.arcane-tome-summary button:hover,
+.arcane-tome-summary button:not(.arcane-ready-potions__bottle):hover,
 .arcane-tome-dialog button:hover,
 .arcane-tome-dialog button[aria-pressed='true'] {
   background: #4b3255;
@@ -130,14 +130,34 @@
 
 .arcane-workbench {
   display: flex;
+  align-items: flex-start;
   justify-content: center;
   flex-wrap: wrap;
   gap: 0.3rem;
 }
 
-@media (pointer: coarse) and (orientation: landscape) and (max-width: 1000px) and (max-height: 500px) {
+.arcane-workbench__cauldron {
+  display: grid;
+  justify-items: center;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+@media (orientation: landscape) and (max-height: 580px) {
   .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .arcane-archives__wordmark {
-    width: 6.5rem;
+    width: clamp(4.25rem, calc(100dvh - 18rem), 6.5rem);
+  }
+
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__layout {
+    width: min(100%, max(9.5rem, calc(100dvh - 13rem)));
+  }
+
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__spin-total {
+    min-height: 1.35rem;
+  }
+
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__main .slots-page__playbar {
+    margin-block-start: 0;
   }
 
   .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] > .slots-page__keyboard-help {
@@ -152,24 +172,23 @@
     pointer-events: auto;
   }
 
-  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__playbar {
-    position: absolute;
-    top: 5.5rem;
-    inset-inline-end: calc(100% + 1.25rem);
-    width: max-content;
-    margin: 0;
-  }
-
   .arcane-tome-summary {
-    /* The touch controls can be wider than the short-screen cabinet. */
+    /* Keep the workbench buttons beside the reels on short landscape screens. */
     contain: inline-size;
     position: relative;
   }
 
+  .arcane-tome-summary[data-workbench] {
+    min-height: 0;
+  }
+
   .arcane-workbench {
-    flex: none;
+    position: absolute;
+    inset-inline-end: max(calc(100% + 0.75rem), 11rem);
+    inset-block-end: 0;
+    justify-content: end;
     inline-size: max-content;
-    max-inline-size: calc(100vw - 2rem);
+    max-inline-size: calc((100vw - 100%) / 2 - 2rem);
   }
 
   .arcane-tome-summary output {
@@ -188,6 +207,96 @@
   color: #eccc8c;
 }
 
+.arcane-ready-potions {
+  position: relative;
+  inline-size: min(100%, var(--arcane-cauldron-size, clamp(9rem, 42vw, 15rem)));
+  min-inline-size: 0;
+  margin-block-start: 0.2rem;
+}
+
+.arcane-ready-potions__bottles {
+  display: flex;
+  justify-content: safe center;
+  gap: 0.2rem;
+  inline-size: 100%;
+  margin: 0;
+  padding: 0.22rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #98775b transparent;
+  list-style: none;
+}
+
+.arcane-ready-potions__bottles > li {
+  flex: none;
+}
+
+.arcane-tome-summary .arcane-ready-potions__bottle {
+  display: grid;
+  place-items: center;
+  inline-size: clamp(3rem, calc(2.45rem + 2.4vw), 4.75rem);
+  aspect-ratio: 1;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.arcane-ready-potions__bottle img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 0.15rem 0.32rem #130c1c);
+}
+
+.arcane-ready-potions__bottle:is(:hover, :focus-visible) img {
+  filter: brightness(1.2) drop-shadow(0 0.15rem 0.4rem #c08774a3);
+}
+
+.arcane-ready-potions__bottle:focus-visible {
+  outline: 2px solid #eccc8c;
+  outline-offset: 1px;
+}
+
+.arcane-ready-potions__bottle[aria-disabled='true'] {
+  opacity: 0.66;
+  cursor: default;
+}
+
+.arcane-ready-potions__tooltip {
+  position: absolute;
+  z-index: 4;
+  inset-inline-start: 50%;
+  inset-block-end: calc(100% + 0.25rem);
+  translate: -50% 0;
+  display: grid;
+  gap: 0.2rem;
+  inline-size: min(14rem, calc(100vw - 4rem));
+  padding: 0.52rem 0.65rem;
+  border: 1px solid #907256;
+  border-radius: 0.45rem;
+  background: #21152e;
+  box-shadow: 0 0.4rem 0.9rem #0f0a18a8;
+  color: #f8e1bc;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.arcane-ready-potions__tooltip strong {
+  color: #ffe9b7;
+  font-size: 0.86rem;
+}
+
+.arcane-workbench__error {
+  margin: 0;
+  color: #ffd5bd;
+}
+
 .arcane-cauldron {
   display: grid;
   gap: 0.65rem;
@@ -195,8 +304,13 @@
   text-align: center;
 }
 
-.arcane-cauldron__art {
+.arcane-cauldron__artwork {
   width: min(65%, 11rem);
+}
+
+.arcane-cauldron__art {
+  display: block;
+  width: 100%;
 }
 
 .arcane-cauldron ol {
@@ -215,104 +329,174 @@
   background: #332242;
 }
 
-.arcane-cauldron ol img,
-.arcane-potion-shelf img {
+.arcane-cauldron ol img {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-.arcane-potion-preview,
-.arcane-potion-shelf li > div {
+.arcane-potion-preview {
   display: grid;
   gap: 0.15rem;
-}
-
-.arcane-potion-preview {
   padding: 0.65rem;
   border: 1px solid #77608c;
   border-radius: 0.5rem;
   background: #342345;
 }
 
-.arcane-potion-preview span,
-.arcane-potion-shelf li span {
+.arcane-potion-preview span {
   color: #d4bedf;
   font-size: 0.85em;
 }
 
-.arcane-potion-shelf {
-  display: grid;
-  gap: 0.65rem;
-}
-
-.arcane-potion-shelf ul {
-  display: grid;
-  gap: 0.3rem;
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__playbar {
+  position: relative;
+  z-index: 9;
+  inset: auto;
+  display: block;
+  justify-self: end;
+  width: max-content;
   padding: 0;
+  margin: 0.35rem 0 0;
 }
 
-.arcane-potion-shelf ul li {
-  display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
-  min-height: 3.2rem;
-  padding: 0.4rem;
-  border-bottom: 1px solid #6c506d;
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .sidecar-spin-controls {
+  --sidecar-bet-placement: above;
+  --sidecar-control-spin: clamp(4.75rem, 11dvh, 6.25rem);
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  gap: 0.55rem;
 }
 
-@media (min-width: 1250px) {
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .sidecar-spin-controls__spin {
+  grid-area: 1 / 3;
+  margin: 0;
+}
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .sidecar-spin-controls__bet-readout {
+  grid-column: 1 / -1;
+  margin: -0.2rem 0 0;
+}
+
+@media (max-height: 650px), (max-width: 600px) and (max-height: 740px) and (orientation: portrait) {
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .sidecar-spin-controls {
+    --sidecar-control-spin: clamp(3.75rem, 12dvh, 4.75rem);
+    row-gap: 0.18rem;
+  }
+
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .sidecar-spin-controls__spin {
+    grid-row: 1 / span 2;
+  }
+
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .sidecar-spin-controls__bet-readout {
+    grid-area: 2 / 1 / auto / 3;
+    margin: 0;
+  }
+}
+
+@media (max-width: 600px) and (max-height: 740px) and (orientation: portrait) {
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__stage {
+    --arcane-compact-cabinet-width: min(100%, max(12rem, calc((100dvh - var(--arcane-compact-reserve, 29.5rem)) * 1.5)));
+  }
+
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .arcane-archives__wordmark {
+    width: clamp(5.25rem, calc(5.25rem + (100dvh - 35.5rem) * 0.3), 8.5rem);
+  }
+
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__cabinet-spotlight {
+    width: var(--arcane-compact-cabinet-width);
+    justify-self: center;
+  }
+
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__playbar {
+    margin-inline-end: calc((100% - var(--arcane-compact-cabinet-width)) / 2);
+  }
+}
+
+@media (max-width: 360px) and (max-height: 740px) and (orientation: portrait) {
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__stage {
+    --arcane-compact-reserve: 32.5rem;
+  }
+}
+
+@media (min-width: 721px) and (height > 580px) {
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__layout {
+    /* Leave room below the reels for the workbench controls and playbar. */
+    --arcane-cabinet-width: min(46rem, calc(100dvh - 13rem), calc((100dvh - 26rem) * 1.5));
+    grid-template-columns: minmax(0, var(--arcane-cabinet-width));
+    width: min(100%, var(--arcane-cabinet-width));
+  }
+}
+
+@media (min-width: 1100px) and (min-height: 620px) {
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__layout:has(.arcane-tome-summary[data-workbench]) {
+    --arcane-workbench-gap: clamp(0.75rem, 1.6vw, 2rem);
+    --arcane-lectern-size: clamp(17rem, min(26vw, 49dvh), 29rem);
+    --arcane-cauldron-size: clamp(11.5rem, min(calc(24vw - 6.5rem), 33dvh), 20.5rem);
+    --arcane-workbench-width: calc(var(--arcane-workbench-gap) + var(--arcane-lectern-size));
+    grid-template-columns: minmax(0, var(--arcane-cabinet-width)) var(--arcane-workbench-width);
+    width: min(100%, calc(var(--arcane-cabinet-width) + var(--arcane-workbench-width)));
+    gap: 0;
+  }
+
   .arcane-tome-summary[data-workbench] .arcane-workbench {
     position: absolute;
     z-index: 3;
-    top: clamp(7rem, 18vh, 12rem);
-    right: calc(100% + 1.25rem);
-    width: clamp(8rem, 13vw, 12rem);
-    height: clamp(14rem, 28vw, 19rem);
+    inset-block-start: clamp(0rem, calc((100dvh - 42rem) * 0.18), 4rem);
+    inset-inline-start: calc(100% + var(--arcane-workbench-gap));
+    display: grid;
+    justify-items: center;
+    gap: 0;
+    inline-size: var(--arcane-lectern-size);
     isolation: isolate;
   }
 
-  .arcane-tome-summary .arcane-workbench :is(.arcane-workbench__tome, .arcane-workbench__pot) {
-    position: absolute;
+  .arcane-tome-summary[data-workbench] .arcane-workbench :is(.arcane-workbench__tome, .arcane-workbench__pot) {
     display: grid;
     justify-items: center;
+    min-height: 0;
     padding: 0;
     border: 0;
     background: transparent;
   }
 
-  .arcane-tome-summary .arcane-workbench__tome {
-    top: 0;
-    left: 0;
+  .arcane-tome-summary[data-workbench] .arcane-workbench__tome {
     width: 100%;
+    /* The cauldron sits in front of the foot of the lectern. */
+    block-size: calc(var(--arcane-lectern-size) * 0.59);
+    overflow: clip;
   }
 
-  .arcane-tome-summary .arcane-workbench__pot {
-    top: 46%;
-    left: 14%;
-    width: 72%;
+  .arcane-tome-summary[data-workbench] .arcane-workbench__tome-label {
+    display: none;
   }
 
-  .arcane-workbench img {
+  .arcane-workbench__pot {
+    z-index: 1;
+    width: var(--arcane-cauldron-size);
+    --arcane-cauldron-art-top: calc(var(--arcane-cauldron-size) * -0.14);
+  }
+
+  .arcane-workbench :is(.arcane-workbench__tome, .arcane-workbench__pot) > img {
     display: block;
     width: 100%;
+    height: auto;
     transition: filter 0.2s ease;
   }
 
-  .arcane-workbench button:hover img,
-  .arcane-workbench button:focus-visible img {
+  .arcane-workbench :is(.arcane-workbench__tome, .arcane-workbench__pot):is(:hover, :focus-visible) img {
     filter: brightness(1.18);
   }
 
-  .arcane-workbench__tome span {
-    position: absolute;
-    top: 22%;
-    color: #361e20;
-    font-family: Palatino, Georgia, serif;
-    font-size: 1rem;
+  .arcane-workbench__pot > img {
+    margin-block-start: var(--arcane-cauldron-art-top);
   }
 
-  .arcane-workbench__pot span {
-    margin-top: -1rem;
+  .arcane-workbench__pot > span {
+    margin-block-start: calc(var(--arcane-cauldron-size) * -0.075);
+  }
+
+  .arcane-workbench__pot > span {
     padding: 0.2rem 0.35rem;
     color: #fff2d6;
     border-radius: 0.3rem;
@@ -321,16 +505,12 @@
 
   .arcane-workbench .arcane-workbench__stir {
     width: 100%;
+    top: var(--arcane-cauldron-art-top);
     translate: -50% 0;
   }
 
   .arcane-workbench .arcane-workbench__stir > img {
     display: none;
-  }
-
-  .arcane-workbench__shelf {
-    position: absolute;
-    top: 100%;
   }
 }
 
@@ -340,7 +520,7 @@
   }
 }
 
-@media (max-width: 600px), (pointer: coarse) and (orientation: landscape) and (max-width: 1000px) and (max-height: 500px) {
+@media (max-width: 600px), (orientation: landscape) and (max-height: 580px) {
   .arcane-workbench__wide-status,
   .arcane-workbench__wide-units {
     display: none;

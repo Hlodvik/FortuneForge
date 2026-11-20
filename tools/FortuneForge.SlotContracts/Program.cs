@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using FortuneForge.Games.ArcaneArchives;
 using FortuneForge.Games.Slots;
 using FortuneForge.Server.Controllers;
 using FortuneForge.Server.RoundAudit;
@@ -19,10 +20,16 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
-if (args.Length != 2) throw new ArgumentException("Usage: exporter <repository-root> <new-output-directory>");
+var json = new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true };
+if (args is ["--arcane-symbol-guide", var guideOutput])
+{
+    ExportArcaneSymbolGuide(guideOutput);
+    return;
+}
+if (args.Length != 2) throw new ArgumentException(
+    "Usage: exporter <repository-root> <new-output-directory> or exporter --arcane-symbol-guide <output-file>");
 var repository = Path.GetFullPath(args[0]);
 var output = Path.GetFullPath(args[1]);
-var json = new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true };
 var compiledAssembly = typeof(SpinService).Assembly.Location;
 
 var configuration = Path.Combine(repository, "FortuneForge.Server/appsettings.json");
@@ -31,7 +38,7 @@ var options = configurationDocument.RootElement.GetProperty("Slots").Deserialize
 var validation = new SlotsOptionsValidator().Validate(null, options);
 Require(!validation.Failed, string.Join("\n", validation.Failures ?? []));
 var definitions = new OptionsSlotsDefinitionProvider(Options.Create(options));
-var routeFile = "fortuneforge.client/src/games/slots/routeRegistry.ts";
+var routeFile = "fortuneforge.client/src/games/slots/routeMetadata.ts";
 var routesSource = File.ReadAllText(Path.Combine(repository, routeFile));
 var routePattern = "id: '([^']+)', (?:gameReleaseId: '[^']+', )?title: (?:'([^']*)'|\"([^\"]*)\"),[^{}]*?playPath: '([^']+)', demoPath: '([^']+)', serverGameIds: \\['([^']+)'\\]";
 var routes = Regex.Matches(routesSource, routePattern).Select(match =>
@@ -281,6 +288,26 @@ void WriteNew(string directory, string filename, object value)
     // Match the repository's LF policy on Windows as well as Linux.
     file.Write(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value, json).ReplaceLineEndings("\n") + "\n"));
 }
+
+void ExportArcaneSymbolGuide(string filename)
+{
+    var collection = ArcaneWandCollector.Calculate([[
+        ArcaneWandCollector.WandSymbolId,
+        ArcaneWandCollector.AetherSymbolId,
+        ArcaneWandCollector.LightningSymbolId,
+        ArcaneWandCollector.FortuneSymbolId,
+    ]], wagerPoints: 1) ?? throw new InvalidOperationException("The Arcane wand guide could not price the constellations.");
+    var guide = new
+    {
+        constellations = collection.Cells.Select(cell => new { cell.SymbolId, cell.Multiplier }),
+        potions = ArcanePotions.Catalog,
+        tomeBoostedSpins = ArcaneTome.BoostedSpinCount,
+    };
+    var path = Path.GetFullPath(filename);
+    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+    File.WriteAllText(path, JsonSerializer.Serialize(guide, json).ReplaceLineEndings("\n") + "\n");
+}
+
 static void NormalizeNewRoundIds(JsonNode? node, Guid spinId)
 {
     var prefix = spinId.ToString("D") + ":";

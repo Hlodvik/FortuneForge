@@ -74,6 +74,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     isGodsTumbleBoard,
     isHelpOpen,
     isSpinServiceDisabled,
+    isTomeActivationRequired,
     energyAward,
     isEnergyAwardCompleting,
     isReloadPromptOpen,
@@ -94,6 +95,8 @@ export function SlotsPageView(controller: SlotsPageController) {
     potions,
     activatePotion,
     confirmedPotionUse,
+    isPotionWagerLocked,
+    preferredWager,
     playPotionCue,
     tomeIngredientsAwarded,
     isArcaneUpdating,
@@ -146,6 +149,7 @@ export function SlotsPageView(controller: SlotsPageController) {
   } = controller
   const LightningCollectionOverlay = presentation?.LightningCollectionOverlay
   const TomePanel = presentation?.TomePanel
+  const PotionWagerReadout = presentation?.PotionWagerReadout
   const winHelp = presentation?.winHelp
   const WinHelpContent = winHelp?.Content
   const firstOpenStorageKey = winHelp?.firstOpenStorageKey
@@ -333,10 +337,10 @@ export function SlotsPageView(controller: SlotsPageController) {
   const guideSymbols = symbolSet
   const symbolValueGuide = !isGodsTumbleBoard && <SymbolValueGuide
     symbolSet={guideSymbols}
-    showSidePanel={usesPiratesControls && !isArcaneArchives}
+    showSidePanel={usesPiratesControls}
     wager={isArcaneArchives ? activeWagerDisplay : undefined}
     pointValueInCents={isArcaneArchives ? controller.pointValueInCents : undefined}
-    sidePanelClassName={isPiratesFortune ? 'symbol-value-guide--pirates' : undefined}
+    sidePanelClassName={isArcaneArchives ? 'symbol-value-guide--arcane' : isPiratesFortune ? 'symbol-value-guide--pirates' : undefined}
     showValueTokens={Boolean(moneyGrabFeature?.valueSymbolPrefix)}
     isOpen={controller.isSymbolGuideOpen}
     onOpenChange={controller.setIsSymbolGuideOpen}
@@ -616,6 +620,7 @@ export function SlotsPageView(controller: SlotsPageController) {
             reducedMotion={prefersReducedMotion}
             disabled={isSpinning || isArcaneUpdating}
             error={arcaneError}
+            pointValueInCents={controller.pointValueInCents}
             onOpen={() => setIsAutoSpinning(false)}
             onChangePage={(page, activate) => { void changeTomePage(page, activate) }}
             onUsePotion={(id) => { void activatePotion(id) }}
@@ -670,7 +675,15 @@ export function SlotsPageView(controller: SlotsPageController) {
             {usesPiratesControls ? (
               <SidecarSpinControls
                 activeWager={activeWagerDisplay}
-                disabled={isSpinServiceDisabled || isArcaneUpdating || (usesSidecarControls && rainbowBonusSummary !== null)}
+                wagerLocked={isPotionWagerLocked}
+                wagerReadout={PotionWagerReadout && <PotionWagerReadout
+                  wager={activeWagerDisplay}
+                  selectedWager={preferredWager}
+                  lockedPotionId={freeSpinsRemaining === 0 && isPotionWagerLocked ? potions?.active?.bottle.id ?? null : null}
+                  confirmedPotionUse={confirmedPotionUse}
+                  reducedMotion={prefersReducedMotion}
+                />}
+                disabled={isSpinServiceDisabled || isArcaneUpdating || isTomeActivationRequired || (usesSidecarControls && rainbowBonusSummary !== null)}
                 freeSpinsRemaining={freeSpinsRemaining}
                 isAutoSpinning={isAutoSpinning}
                 isFreeSpinBadgePopping={isFreeSpinBadgePopping}
@@ -694,7 +707,7 @@ export function SlotsPageView(controller: SlotsPageController) {
               <div className="slots-page__spin-stack">
                 <div className="slots-page__spin-button-shell">
                   <SpinButton
-                    disabled={isSpinServiceDisabled || rainbowBonusSummary !== null}
+                    disabled={isSpinServiceDisabled || isTomeActivationRequired || rainbowBonusSummary !== null}
                     iconSrc={cabinetTheme.spinIconImage}
                     isSpinning={isSpinning}
                     isStopRequested={isStopRequested}
@@ -716,7 +729,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                     <button
                       className={`slots-page__auto-spin${isAutoSpinning ? ' slots-page__auto-spin--active' : ''}`}
                       type="button"
-                      disabled={isSpinServiceDisabled}
+                      disabled={isSpinServiceDisabled || isTomeActivationRequired}
                       aria-pressed={isAutoSpinning}
                       onClick={() => {
                         setSpinError(null)

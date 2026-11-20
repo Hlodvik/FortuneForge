@@ -1,0 +1,13 @@
+{
+  "templateRelease": "v10.5.2",
+  "description": "Reviewed GET-only security header, CORS, and configuration exposure checks; no exploit, browser, code, DNS, or callback templates.",
+  "templates": [
+    { "path": "http/misconfiguration/http-missing-security-headers.yaml", "sha256": "7f45803f73ac6810b9b302df6be2c472a82d9164a7807328614efa83e6eac275" },
+    { "path": "http/misconfiguration/weak-csp-detect.yaml", "sha256": "19a538b692c062b1d6bcb075b572663fcce3fa8f02289413eece914fdd6747d2" },
+    { "path": "http/misconfiguration/csp-script-src-wildcard.yaml", "sha256": "c3c7f64a33f7290dc8c849d64d6d80a3f55ee502261408c9d16c881ca6fb2434" },
+    { "path": "http/exposures/configs/git-config.yaml", "sha256": "bd8bdfa0b5ed5bf4d3712edb793adfd0987d9282e51c6f7d673bf14b9e4dd524" },
+    { "path": "http/exposures/files/appsettings-file-disclosure.yaml", "sha256": "44f839086d9d9909fffcbfc67739e79ab4a3cba17fbef094d071a6f6df05f736" },
+    { "path": "http/exposures/files/aspnet-launchsettings-exposure.yaml", "sha256": "0749f09f3ec027d7758da1a88bda7e88025b5154c51d1e0814d9457771ff7905" },
+    { "path": "http/vulnerabilities/generic/cors-misconfig.yaml", "sha256": "d66bde195f5e6918aafdf2ae0474a9752963df2fd2e3fe440679d2d6687bdd2f" }
+  ]
+}

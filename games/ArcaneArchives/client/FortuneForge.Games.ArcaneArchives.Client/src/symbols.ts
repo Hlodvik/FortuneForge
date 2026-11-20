@@ -2,6 +2,7 @@
 // Edited: 2026-11-18T16:27:28-06:00 | Computer: Vinnabok
 import type { SlotSymbolSet } from '@fortuneforge/slot-client-core'
 import { createClassicPaylineGuide } from '@fortuneforge/slot-game-runtime/engine-guide'
+import guide from './assets/rules/symbol-guide.json' with { type: 'json' }
 import { ARCANE_ARCHIVES_VISUALS as art } from './visuals'
 
 export const ARCANE_ARCHIVES_GAME_ID = 'arcane-archives-v1'
@@ -36,5 +37,25 @@ export const ARCANE_ARCHIVES_SYMBOLS: SlotSymbolSet = {
     id,
     { ...symbol, id, animatedImage: symbol.image },
   ])),
-  guideEntries: createClassicPaylineGuide(ARCANE_ARCHIVES_GAME_ID, Object.keys(paylineSymbols)),
+  guideEntries: [
+    ...createClassicPaylineGuide(ARCANE_ARCHIVES_GAME_ID, Object.keys(paylineSymbols))
+      .map(entry => ({ ...entry, firstLabel: '3' })),
+    { symbol: 'WAND', firstLabel: '', firstValue: 'Collects all visible constellations' },
+    ...guide.constellations.map(({ symbolId, multiplier }) => ({
+      symbol: symbolId,
+      companionSymbol: 'WAND',
+      firstLabel: '',
+      firstValue: `${multiplier}×`,
+    })),
+    { symbol: 'ACE', firstLabel: '', firstValue: `Unlocks a ${guide.tomeBoostedSpins}-spin Tome boost` },
+    ...guide.potions.map(({ ingredientId, name, effect, secondaryPotency }) => ({
+      symbol: ingredientId,
+      firstLabel: '',
+      firstValue: 'Ingredient',
+      details: [
+        { label: 'Main', text: `${name} · ${effect}` },
+        { label: 'Secondary', text: `+${secondaryPotency} potency per unit` },
+      ],
+    })),
+  ],
 }

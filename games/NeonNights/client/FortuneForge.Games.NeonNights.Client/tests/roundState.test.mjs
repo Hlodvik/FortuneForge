@@ -14,13 +14,20 @@ test('Car plays expand the cabinet and charge the locked triggering wager', () =
   assert.equal(getNeonCharge(legacy, 500), 150)
   assert.equal(getNeonRows(legacy), 7)
 })
-test('Disco keeps the chosen wager and its own twelve-spin state', () => {
+test('Disco charges its triggering wager throughout its twelve-spin state', () => {
   const disco = previewRound('POWER', 150)
   assert.equal(disco.neonDiscoSpinsRemaining, 12)
   assert.equal(disco.freeSpinsRemaining, 0)
-  assert.equal(getNeonWager(disco, 500), 500)
-  assert.equal(getNeonCharge(disco, 500), 500)
+  assert.equal(getNeonWager(disco, 500), 150)
+  assert.equal(getNeonCharge(disco, 500), 150)
   assert.equal(getNeonRows(disco), 4)
+  assert.equal(getNeonWager({ ...disco, neonDiscoSpinsRemaining: 0 }, 500), 500)
+})
+test('queued Disco retains its own wager while Car has priority', () => {
+  const queued = { ...previewRound('6', 300), neonDiscoSpinsRemaining: 12, neonDiscoWagerPoints: 150 }
+  assert.equal(getNeonCharge(queued, 500), 300)
+  assert.equal(getNeonCharge({ ...queued, freeSpinsRemaining: 0 }, 500), 150)
+  assert.equal(getNeonWager({ ...emptyNeonState, neonDiscoSpinsRemaining: 8 }, 500), 500)
 })
 const result = () => ({ ...emptyNeonState, spinId: 'neon-result', gameId: 'neon-nights-v1', symbolSetId: 'neon-arcade-symbols-v3',
   wagerPoints: 50, pointValueInCents: 1, reels: Array.from({ length: 5 }, () => ['2', '3', '4', '5']),

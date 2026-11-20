@@ -172,7 +172,7 @@ export function NeonNightsView({ controller: c, renderShell }: { controller: Neo
               <output className="neon-special-spin-count" aria-label={discoVisible ? 'Disco spins remaining' : 'Car spins remaining'}>×{specialSpinCount}</output>
             )}
             isSpinning={c.isSpinning} isStopRequested={c.isStopRequested} allowStop={!c.discoActive && !c.isRespinning} onAutoSpinChange={active => { c.setSpinError(null); c.setIsAutoSpinning(active) }}
-            onSelectWager={c.selectWager} onSpin={c.handleSpinButtonClick} pointValueInCents={1} showFreeSpinBadge={false}
+            onSelectWager={c.selectWager} onSpin={c.handleSpinButtonClick} pointValueInCents={1} showFreeSpinBadge={false} wagerLocked={c.discoActive || c.state.neonDiscoSpinsRemaining > 0}
             specialControlsActive={carControlsActive} specialRoundLabel="Special Plays" wagerIndex={c.wagerIndex} wagerOptions={neonRules.wagerOptions} />
           {showRespinOptions && c.roundSummary && <button type="button" className="neon-respin-button"
             onClick={c.cancelRespinSelection}>Continue</button>}

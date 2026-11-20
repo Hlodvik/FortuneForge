@@ -350,9 +350,23 @@ public sealed class SlotsController(
         {
             return Conflict(new { code = "free-spins-required", error = exception.Message });
         }
+        catch (ArcaneTomeActivationRequiredException exception)
+        {
+            return Conflict(new { code = "arcane-tome-required", error = exception.Message });
+        }
+        catch (ArcanePotionWagerLockedException exception)
+        {
+            return Conflict(new { code = "arcane-potion-wager-locked", error = exception.Message,
+                lockedWagerPoints = exception.LockedWagerPoints });
+        }
         catch (NeonNitroChoiceConflictException exception)
         {
             return Conflict(new { code = "nitro-choice-required", error = exception.Message });
+        }
+        catch (NeonDiscoWagerLockedException exception)
+        {
+            return Conflict(new { code = "neon-disco-wager-locked", error = exception.Message,
+                lockedWagerPoints = exception.LockedWagerPoints });
         }
         catch (InsufficientSpecialPointsException exception)
         {
@@ -399,6 +413,7 @@ public sealed class SlotsController(
                 result.JadeDragonCascade is not null ? chargedWagerCents : 0,
             FreeSpinsRemaining = settlement.FreeSpinsRemaining,
             NeonDiscoSpinsRemaining = settlement.NeonDiscoSpinsRemaining,
+            NeonDiscoWagerPoints = settlement.NeonDiscoWagerPoints,
             NeonDiscoMultiplier = settlement.NeonDiscoMultiplier,
             NeonDiscoRoundWinPoints = settlement.NeonDiscoRoundWinPoints,
             NeonCarRespinOffer = settlement.NeonCarRespinOffer,

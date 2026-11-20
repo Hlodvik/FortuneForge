@@ -97,6 +97,7 @@ public sealed partial class FirestoreAccountStore
             FreeSpinWagerPoints = currentState.FreeSpinWagerPoints,
             FreeSpinFeatureMode = currentState.FreeSpinFeatureMode,
             NeonDiscoSpinsRemaining = currentState.NeonDiscoSpinsRemaining,
+            NeonDiscoWagerPoints = currentState.NeonDiscoWagerPoints,
             NeonDiscoMultiplier = currentState.NeonDiscoMultiplier,
             NeonDiscoRoundWinPoints = currentState.NeonDiscoRoundWinPoints,
             NeonCarRespinOffer = currentState.NeonCarRespinOffer,

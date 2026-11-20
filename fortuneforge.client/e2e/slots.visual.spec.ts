@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { account } from '../../tools/navigation-review-fixtures.mjs'
 
 type SpinRequest = {
   gameId: string
@@ -117,6 +118,240 @@ test('rules and payline guide', async ({ page }) => {
 
   await expect(page).toHaveScreenshot('rules-and-paylines.png')
 })
+
+test('Arcane Archives opens the illustrated guide on first visit and from How to win', async ({ page }) => {
+  await page.route('**/api/accounts/me', route => route.fulfill({ json: account }))
+  await page.route('**/api/catalog/visibility', route => route.fulfill({ json: {
+    version: 1,
+    games: [{ id: 'arcane-archives', route: '/slots/arcane-archives', visible: true }],
+  } }))
+  await page.route('**/api/slots/status**', route => route.fulfill({ status: 204 }))
+  await page.route('**/api/slots/state?**', route => route.fulfill({ json: {
+    freeSpinsRemaining: 0, freeSpinWagerPoints: null, specialPointsBalance: 0,
+    energyBalance: 0, sealCollections: [], freeSpinFeatureMode: null,
+  } }))
+  const path = '/slots/arcane-archives'
+  await page.goto(path)
+
+  const dialog = page.getByRole('dialog', { name: 'Welcome to Arcane Archives' })
+  const guide = dialog.frameLocator('iframe[title="Arcane Archives illustrated guide"]')
+  const close = dialog.getByRole('button', { name: 'Close win guide' })
+  await expect(close).toBeFocused({ timeout: 15_000 })
+  await page.keyboard.press('Tab')
+  await expect(guide.getByRole('link', { name: 'Skip to the guide' })).toBeFocused()
+  await guide.getByRole('link', { name: 'Grimoire', exact: true }).click()
+  await expect(guide.getByRole('heading', { name: 'Land the Grand Grimoire' })).toBeInViewport()
+  await expect(guide.locator('.boost-list > div').filter({ hasText: 'Transmutation' }))
+    .toContainText('Quicksilver + Phoenix Feather')
+  await expect(guide.locator('.boost-list > div').filter({ hasText: 'Tinctures' }))
+    .toContainText('Mooncap Mushroom + Wolfsbane Wine')
+  await expect(guide.locator('#paylines .scene-copy p'))
+    .toContainText('A straight or diagonal three-symbol match can start on reels 1, 2 or 3.')
+  await expect(guide.getByRole('region', { name: 'Bottle a potion' }))
+    .toContainText('locked wager')
+  await expect(guide.getByRole('region', { name: 'Put your potion to work' }))
+    .toContainText('three paid spins')
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await openStableSlot(page, path)
+  await expect(dialog).toHaveCount(0)
+  const help = page.getByRole('button', { name: 'How to win' })
+  await help.click()
+  await expect(dialog).toBeInViewport()
+  await guide.getByRole('link', { name: 'Rare potions', exact: true }).click()
+  await expect(guide.getByRole('heading', { name: 'Astral Convergence' })).toBeInViewport()
+  const astral = guide.locator('#rare-potions')
+  await expect(astral).toContainText('two units each of Mandrake Root, Quicksilver, and two other ingredients')
+  await expect(astral).toContainText('Constellations collected by a wand pay more.')
+  const runebound = guide.getByRole('article').filter({ hasText: 'Runebound Elixir' })
+  await expect(runebound).toContainText('two units each of three other ingredients from Nightshade Berries, Mooncap Mushroom, Phoenix Feather, and Wolfsbane Wine')
+  await expect(runebound).toContainText('Every winning payline pays more.')
+  const potion = guide.getByRole('combobox', { name: 'Potion' })
+  await expect(potion.locator('option')).toHaveCount(8)
+  await potion.selectOption('phoenix')
+  const activation = guide.getByRole('img', { name: /Phoenix Infusion pours/ })
+  await expect(activation).toHaveJSProperty('naturalWidth', 720)
+  await guide.getByRole('button', { name: 'Replay activation' }).click()
+  await expect(activation).toHaveJSProperty('naturalWidth', 720)
+  for (const [slug, name] of [
+    ['astral-convergence', 'Astral Convergence'],
+    ['runebound-elixir', 'Runebound Elixir'],
+  ]) {
+    await potion.selectOption(slug)
+    await expect(guide.getByRole('img', { name: new RegExp(`^${name} pours`) })).toHaveJSProperty('naturalWidth', 720)
+  }
+  await dialog.getByRole('button', { name: 'Enter the Archives' }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(help).toBeFocused()
+})
+
+for (const [layout, viewport, touch] of [
+  ['desktop', { width: 1440, height: 900 }, false],
+  ['phone', { width: 390, height: 844 }, true],
+  ['compact phone', { width: 320, height: 670 }, true],
+] as const) {
+  test.describe(`Arcane Archives on ${layout}`, () => {
+    test.use({ viewport, hasTouch: touch, isMobile: touch })
+
+    test('activates a potion directly from the bottles below the cauldron', async ({ page }) => {
+      const path = '/slots/arcane-archives'
+      const standardBottle = {
+        id: 17, ingredientId: 'MANDRAKE_ROOT', name: 'Mandrake Tonic', potency: 0, lockedWagerPoints: 2,
+        effect: 'Scribe Mark payline value +20% (minimum 1–5 points per qualifying spin, based on wager)',
+      }
+      const bottle = layout === 'desktop' ? {
+        ...standardBottle, variantId: 'astral-convergence', name: 'Astral Convergence',
+        effect: 'More wands and constellations. Wand matches pay more.',
+      } : layout === 'phone' ? {
+        ...standardBottle, variantId: 'runebound-elixir', name: 'Runebound Elixir',
+        effect: 'More VIIs and pentagrams. All paylines pay more.',
+      } : { ...standardBottle, variantId: undefined }
+      const essence = {
+        id: 18, ingredientId: 'QUICKSILVER', name: 'Quicksilver Essence', potency: 0, lockedWagerPoints: 12,
+        effect: 'Constellation value +2% (minimum 1 point per qualifying spin)',
+      }
+      const arcanePotions = { capacity: 8, majority: 5, pot: [], preview: null, bottles: [bottle, essence], active: null }
+      await page.addInitScript(() => window.localStorage.setItem('fortuneforge:arcane-archives:introduction:v1', '1'))
+      await page.route('**/api/accounts/me', route => route.fulfill({ json: account }))
+      await page.route('**/api/catalog/visibility', route => route.fulfill({ json: {
+        version: 1, games: [{ id: 'arcane-archives', route: path, visible: true }],
+      } }))
+      await page.route('**/api/slots/status**', route => route.fulfill({ status: 204 }))
+      await page.route('**/api/slots/state?**', route => route.fulfill({ json: {
+        freeSpinsRemaining: 0, freeSpinWagerPoints: null, specialPointsBalance: 0,
+        energyBalance: 0, sealCollections: [], freeSpinFeatureMode: null,
+        arcaneTome: {
+          selectedPage: 'herbalism', activePage: null, boostedSpinsRemaining: 0, grimoireReady: false,
+          ingredients: {
+            MANDRAKE_ROOT: 5, NIGHTSHADE_BERRIES: 0, MOONCAP_MUSHROOM: 0,
+            PHOENIX_FEATHER: 0, WOLFSBANE_WINE: 0, QUICKSILVER: 5,
+          },
+          pages: [
+            { id: 'herbalism', label: 'Herbalism', ingredients: ['MANDRAKE_ROOT', 'NIGHTSHADE_BERRIES'] },
+            { id: 'moon-and-flame', label: 'Transmutation', ingredients: ['QUICKSILVER', 'PHOENIX_FEATHER'] },
+            { id: 'distillation', label: 'Tinctures', ingredients: ['MOONCAP_MUSHROOM', 'WOLFSBANE_WINE'] },
+          ],
+        },
+        arcanePotions,
+      } }))
+
+      const activations: { method: string; body: unknown }[] = []
+      let releaseActivation!: () => void
+      const activationPending = new Promise<void>(resolve => { releaseActivation = resolve })
+      await page.route('**/api/slots/arcane/potions/activate', async route => {
+        activations.push({ method: route.request().method(), body: route.request().postDataJSON() })
+        await activationPending
+        await route.fulfill({ json: {
+          ...arcanePotions, bottles: [essence], active: { bottle, spinsRemaining: 3 },
+        } })
+      })
+
+      await openStableSlot(page, path)
+      const cauldron = page.getByRole('button', { name: /^Cauldron/ })
+      const first = page.getByRole('button', { name: `Use ${bottle.name}`, exact: true })
+      const second = page.getByRole('button', { name: `Use ${essence.name}`, exact: true })
+      await expect(first).toHaveAttribute('data-bottle-id', String(bottle.id))
+      if (bottle.variantId) {
+        const icon = first.locator('img')
+        await expect(icon).toHaveAttribute('src', new RegExp(`rare-${bottle.variantId}`))
+        await expect(icon).toHaveJSProperty('naturalWidth', 224)
+      }
+      await expect(second).toHaveAttribute('data-bottle-id', String(essence.id))
+      await expect(first).toBeVisible()
+      await expect(second).toBeVisible()
+      await expect(page.getByRole('button', { name: /Potion shelf/ })).toHaveCount(0)
+      await expect(page.getByText('Use', { exact: true })).toHaveCount(0)
+
+      const cauldronBox = await cauldron.boundingBox()
+      expect(cauldronBox).not.toBeNull()
+      for (const bottle of [first, second]) {
+        const bottleBox = await bottle.boundingBox()
+        expect(bottleBox).not.toBeNull()
+        expect(bottleBox!.y).toBeGreaterThanOrEqual(cauldronBox!.y + cauldronBox!.height - 1)
+      }
+
+      const tooltip = page.getByRole('tooltip')
+      if (touch) {
+        await first.scrollIntoViewIfNeeded()
+        const bottleBox = (await first.boundingBox())!
+        const input = await page.context().newCDPSession(page)
+        await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{
+          x: bottleBox.x + bottleBox.width / 2, y: bottleBox.y + bottleBox.height / 2,
+        }] })
+        await expect(tooltip).toContainText(bottle.effect)
+        await expect(tooltip).toContainText('Potion wager R0.5')
+        await input.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+        await input.detach()
+        await expect(tooltip).toBeVisible()
+      } else {
+        await first.hover()
+        await expect(tooltip).toBeVisible()
+        await expect(tooltip).toContainText(bottle.name)
+        await expect(tooltip).toContainText(bottle.effect)
+        await page.mouse.move(0, 0)
+        await expect(tooltip).toBeHidden()
+        await cauldron.focus()
+        await page.keyboard.press('Tab')
+        await expect(first).toBeFocused()
+        await expect(tooltip).toBeVisible()
+        await expect(tooltip).toContainText(bottle.name)
+        await expect(tooltip).toContainText(bottle.effect)
+        await expect(tooltip).toContainText('Potion wager R0.5')
+      }
+      expect(activations).toEqual([])
+
+      if (!touch) {
+        await page.getByRole('button', { name: /^Change bet/ }).click()
+        await page.getByRole('slider', { name: 'Bet amount' }).evaluate((slider: HTMLInputElement) => {
+          const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+          valueSetter?.call(slider, '199')
+          slider.dispatchEvent(new Event('input', { bubbles: true }))
+        })
+        await expect(page.getByRole('button', { name: 'Change bet, currently R100' })).toBeVisible()
+        await page.keyboard.press('Escape')
+        await page.emulateMedia({ reducedMotion: 'no-preference' })
+      }
+
+      if (viewport.width === 320) {
+        const spin = page.getByRole('button', { name: 'Spin the reels', exact: true })
+        await spin.scrollIntoViewIfNeeded()
+        const spinBox = (await spin.boundingBox())!
+        const helpBox = (await page.getByRole('button', { name: 'How to win' }).boundingBox())!
+        expect(spinBox.y + spinBox.height).toBeLessThanOrEqual(helpBox.y)
+      }
+
+      try {
+        if (touch) await first.tap()
+        else await first.click()
+        await expect.poll(() => activations).toEqual([{ method: 'POST', body: { potionId: bottle.id } }])
+        await expect(first).toBeDisabled()
+        await expect(second).toBeDisabled()
+      } finally {
+        releaseActivation()
+      }
+
+      await expect(first).toHaveCount(0)
+      await expect(second).toBeDisabled()
+      const wager = page.locator('.arcane-potion-wager__amount')
+      if (!touch) {
+        await expect(wager).toHaveAttribute('data-rolling', 'true')
+        await expect(wager).toHaveCSS('animation-name', 'arcane-potion-wager-glow')
+      }
+      await expect(wager).toHaveText('R0.5')
+      await expect(page.getByRole('button', { name: 'Bet locked at R0.5' })).toBeDisabled()
+      await expect(page.getByText(new RegExp(`${bottle.name} · 3(?: spins)? left`)).filter({ visible: true })).toBeVisible()
+      if (bottle.variantId) {
+        const frame = page.locator('.arcane-potion-frame__still')
+        await expect(frame).toHaveAttribute('src', new RegExp(`guide-${bottle.variantId}-still`))
+        await expect(frame).toHaveJSProperty('naturalWidth', 460)
+      }
+      await expect(page.getByRole('dialog')).toHaveCount(0)
+      expect(activations).toEqual([{ method: 'POST', body: { potionId: bottle.id } }])
+    })
+  })
+}
 
 test('Olympus shows a matched set before the tumble and settles the refill', async ({ page }) => {
   await mockDemoApi(page)

@@ -44,6 +44,7 @@ public sealed partial class FirestoreAccountStore
                 {
                     ["userId"] = userId,
                     ["neonDiscoSpinsRemaining"] = NeonArcadeSlotDefinitions.DiscoPlaySpins,
+                    ["neonDiscoWagerPoints"] = wagerPoints,
                     ["neonDiscoMultiplier"] = NeonDiscoCascade.InitialMultiplier,
                     ["neonDiscoRoundWinPoints"] = 0L,
                     ["updatedAt"] = Timestamp.FromDateTime(grantedAt)

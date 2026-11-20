@@ -44,7 +44,8 @@ public static class SlotDefinitionCloner
         Matching = new GameMatchingRules
         {
             MinimumRunLength = source.Matching.MinimumRunLength,
-            AllowMultipleRunsPerPayline = source.Matching.AllowMultipleRunsPerPayline
+            AllowMultipleRunsPerPayline = source.Matching.AllowMultipleRunsPerPayline,
+            PaylineMatchMode = source.Matching.PaylineMatchMode
         },
         Math = new GameMathDefinition
         {

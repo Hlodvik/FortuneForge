@@ -4,22 +4,27 @@ import { URL as NodeURL } from 'node:url'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ARCANE_ARCHIVES_EXPERIENCE_SET } from '@fortuneforge/games-arcane-archives/manifest'
 import { OCEAN_ODYSSEY_SLOT_GAME } from '@fortuneforge/games-ocean-odyssey/manifest'
+import type { SlotTomeState } from '@fortuneforge/slot-game-runtime/experience'
 import { DRAGON_HOARD_SLOT_GAME } from '../../games/slots/dragonHoard/manifest'
 import type { SlotExperienceSet } from './config/slotExperienceSets'
 import { CLASSIC_SLOT_SYMBOL_SET_ID } from './config/symbolSets'
-import { useSlotsPageController, type SlotsPageController } from './useSlotsPageController'
+import { useSlotsPageController, type SlotsPageController, type SlotsPageProps } from './useSlotsPageController'
 import { getPresentedFreeSpinsAwarded } from './presentation/freeSpinAwards'
 import type { SpinResult } from './types/slots'
 
 const mocks = vi.hoisted(() => ({
   request: vi.fn(), startLoop: vi.fn(), stopLoop: vi.fn(), playCue: vi.fn(),
+  paidRequest: vi.fn(), slotState: vi.fn(), selectTome: vi.fn(), usePotion: vi.fn(),
   playSequence: vi.fn(), stopResultCues: vi.fn(), noop: vi.fn(),
   preferences: { volume: 50, mode: 'all' as const },
 }))
 vi.mock('./services/slotsApi', async importOriginal => ({
   ...await importOriginal<typeof import('./services/slotsApi')>(),
   requestDemoAvailability: vi.fn(async () => undefined), requestDemoSpin: mocks.request,
+  requestSpin: mocks.paidRequest, requestSlotState: mocks.slotState, requestArcaneTomePage: mocks.selectTome,
+  requestArcanePotion: mocks.usePotion,
 }))
 vi.mock('./hooks/useSlotAudio', () => ({ useSlotAudio: () => ({
   preferences: mocks.preferences, startLoop: mocks.startLoop, stopLoop: mocks.stopLoop,
@@ -45,12 +50,12 @@ const withCurrentSymbolSet = (response: SpinResult): SpinResult =>
 let host: HTMLDivElement
 let root: Root
 let controller: SlotsPageController
-function Harness({ experience }: { experience: SlotExperienceSet }) {
-  controller = useSlotsPageController({ demoMode: true, experienceSet: experience })
+function Harness({ experience, account }: { experience: SlotExperienceSet; account?: SlotsPageProps['account'] }) {
+  controller = useSlotsPageController({ demoMode: account === undefined, account, experienceSet: experience })
   return <div />
 }
-async function mount(experience = OCEAN_ODYSSEY_SLOT_GAME.experience) {
-  await act(async () => root.render(<Harness experience={experience} />))
+async function mount(experience = OCEAN_ODYSSEY_SLOT_GAME.experience, account?: SlotsPageProps['account']) {
+  await act(async () => root.render(<Harness experience={experience} account={account} />))
 }
 async function spin() {
   await act(async () => { controller.handleSpinButtonClick() })
@@ -70,6 +75,98 @@ afterEach(() => {
   host.remove()
   vi.useRealTimers()
   vi.unstubAllGlobals()
+})
+
+it('stops Arcane autoplay and blocks manual and keyboard spins until the Tome boost is activated', async () => {
+  const experience = ARCANE_ARCHIVES_EXPERIENCE_SET
+  const initial: SlotTomeState = {
+    selectedPage: 'herbalism', activePage: null, boostedSpinsRemaining: 0, grimoireReady: false,
+    ingredients: {}, pages: [{ id: 'herbalism', label: 'Herbalism', ingredients: ['MANDRAKE_ROOT', 'NIGHTSHADE_BERRIES'] }],
+  }
+  const active = { ...initial, activePage: 'herbalism', boostedSpinsRemaining: 5 }
+  mocks.slotState.mockResolvedValueOnce({
+    arcaneTome: initial, freeSpinsRemaining: 0, freeSpinWagerPoints: null, freeSpinFeatureMode: null,
+    specialPointsBalance: 0, energyBalance: 0, sealCollections: [],
+  })
+  const result: SpinResult = {
+    ...fixture.baseLoss.response, gameId: experience.rules.gameId,
+    symbolSetId: experience.symbols.serverSymbolSetId ?? experience.symbols.id,
+    reels: experience.rules.initialReels.map(reel => [...reel]) as SpinResult['reels'], slotsCreditsBalance: 97,
+  }
+  mocks.paidRequest.mockResolvedValueOnce({ ...result, arcaneTome: { ...initial, grimoireReady: true } })
+    .mockResolvedValueOnce({ ...result, arcaneTome: { ...active, boostedSpinsRemaining: 4 } })
+  mocks.selectTome.mockResolvedValueOnce(active)
+  await mount(experience, {
+    userId: 'test-user', playerName: 'Player', email: 'player@example.test', createdAtUtc: '2026-11-20T00:00:00Z',
+    balances: { slotsCredits: 100, freeGames: 0 }, role: 'player',
+    slots: { spinsPlayed: 0, wins: 0, losses: 0, creditsWagered: 0, creditsWon: 0, netCredits: 0 },
+  })
+
+  await act(async () => controller.setIsAutoSpinning(true))
+  await act(async () => { await vi.advanceTimersByTimeAsync(100) })
+  expect(mocks.paidRequest).toHaveBeenCalledTimes(1)
+  expect(controller.isTomeActivationRequired).toBe(true)
+  expect(controller.isAutoSpinning).toBe(false)
+
+  await spin()
+  act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })))
+  await act(async () => { await vi.advanceTimersByTimeAsync(5_000) })
+  expect(mocks.paidRequest).toHaveBeenCalledTimes(1)
+
+  await act(async () => { await controller.changeTomePage('herbalism', true) })
+  expect(mocks.selectTome).toHaveBeenCalledWith('herbalism', true)
+  expect(controller.isTomeActivationRequired).toBe(false)
+  await spin()
+  expect(mocks.paidRequest).toHaveBeenCalledTimes(2)
+  expect(controller.tomeState?.boostedSpinsRemaining).toBe(4)
+})
+
+it('uses the earned potion wager for all three paid spins and restores the selected wager', async () => {
+  const experience = ARCANE_ARCHIVES_EXPERIENCE_SET
+  const bottle = { id: 1, ingredientId: 'MANDRAKE_ROOT', name: 'Mandrake Tonic', effect: 'Boost', potency: 0, lockedWagerPoints: 2 }
+  const potions = { capacity: 8, majority: 5, pot: [], bottles: [bottle], preview: null, active: null }
+  const arcaneTome: SlotTomeState = {
+    selectedPage: 'herbalism', activePage: null, boostedSpinsRemaining: 0, grimoireReady: false, ingredients: {},
+    pages: [{ id: 'herbalism', label: 'Herbalism', ingredients: ['MANDRAKE_ROOT', 'NIGHTSHADE_BERRIES'] }],
+  }
+  mocks.slotState.mockResolvedValueOnce({
+    arcaneTome, arcanePotions: potions, freeSpinsRemaining: 0, freeSpinWagerPoints: null, freeSpinFeatureMode: null,
+    specialPointsBalance: 0, energyBalance: 0, sealCollections: [],
+  })
+  mocks.usePotion.mockResolvedValueOnce({ ...potions, bottles: [], active: { bottle, spinsRemaining: 3 } })
+  const result: SpinResult = {
+    ...fixture.baseLoss.response, gameId: experience.rules.gameId,
+    symbolSetId: experience.symbols.serverSymbolSetId ?? experience.symbols.id,
+    reels: experience.rules.initialReels.map(reel => [...reel]) as SpinResult['reels'], wagerPoints: 2,
+  }
+  for (const spinsRemaining of [2, 1, 0]) {
+    mocks.paidRequest.mockResolvedValueOnce({
+      ...result, slotsCreditsBalance: 18.5 + spinsRemaining * .5,
+      arcanePotions: { ...potions, bottles: [], active: spinsRemaining > 0 ? { bottle, spinsRemaining } : null },
+    })
+  }
+
+  await mount(experience, {
+    userId: 'test-user', playerName: 'Player', email: 'player@example.test', createdAtUtc: '2026-11-20T00:00:00Z',
+    balances: { slotsCredits: 20, freeGames: 0 }, role: 'player',
+    slots: { spinsPlayed: 0, wins: 0, losses: 0, creditsWagered: 0, creditsWon: 0, netCredits: 0 },
+  })
+  await act(async () => controller.selectWager(controller.wagerOptions.indexOf(400)))
+  expect(controller.activeWagerDisplay).toBe(100)
+
+  await act(async () => { await controller.activatePotion(bottle.id) })
+  expect(controller.activeWagerDisplay).toBe(.5)
+  expect(controller.canAffordSelectedWager).toBe(true)
+  act(() => controller.changeWager(-1))
+  act(() => controller.selectWager(0))
+  expect(controller.preferredWager).toBe(100)
+
+  for (let index = 0; index < 3; index++) await spin()
+  expect(mocks.paidRequest).toHaveBeenCalledTimes(3)
+  for (const [request] of mocks.paidRequest.mock.calls) expect(request.wagerPoints).toBe(2)
+  expect(controller.isPotionWagerLocked).toBe(false)
+  expect(controller.activeWagerDisplay).toBe(100)
+  expect(controller.canAffordSelectedWager).toBe(false)
 })
 
 describe('symbol guide pauses slot controls', () => {

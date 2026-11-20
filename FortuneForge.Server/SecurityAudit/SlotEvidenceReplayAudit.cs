@@ -180,6 +180,14 @@ internal static class SlotEvidenceReplayAudit
                  response!.NeonDiscoMultiplier != NeonPlayPolicy.NextDiscoMultiplier(multiplierBefore,
                      response.NeonDiscoSpinsRemaining, engine.NeonDiscoCascade, engine.NeonArcade)))
                 Flag("slot-neon-disco-multiplier-mismatch", "The Disco multiplier does not match the captured demo spin.");
+            // Wager locks were added after the first Disco captures. Older evidence
+            // remains replayable; captured locks must follow the same play policy.
+            if ((request.NeonDiscoWagerPoints is not null || response!.NeonDiscoWagerPoints is not null) &&
+                (discoPlay && request.NeonDiscoWagerPoints is { } locked && locked != request.WagerPoints ||
+                 response!.NeonDiscoWagerPoints != NeonPlayPolicy.NextDiscoWager(
+                     request.NeonDiscoSpinsRemaining, request.NeonDiscoWagerPoints,
+                     discoPlay, engine.WagerPoints, engine.NeonArcade)))
+                Flag("slot-neon-disco-wager-mismatch", "The Disco wager differs from its captured demo lock.");
             return findings;
         }
 
@@ -212,6 +220,16 @@ internal static class SlotEvidenceReplayAudit
              multiplierAfter != NeonPlayPolicy.NextDiscoMultiplier(admittedMultiplier,
                  discoSpinsRemaining, engine.NeonDiscoCascade, engine.NeonArcade)))
             Flag("slot-neon-disco-multiplier-mismatch", "The Disco multiplier does not match the captured paid admission and settlement.");
+        if (data.TryGetProperty("neonDiscoWagerPointsBefore", out var wagerBefore))
+        {
+            long? lockedWager = wagerBefore.ValueKind == JsonValueKind.Null ? null : wagerBefore.GetInt64();
+            var expectedWager = NeonPlayPolicy.NextDiscoWager(discoSpinsBefore, lockedWager,
+                isDisco, engine.WagerPoints, engine.NeonArcade);
+            if (isDisco && lockedWager is { } locked && locked != engine.WagerPoints ||
+                !data.TryGetProperty("neonDiscoWagerPoints", out var wagerAfter) ||
+                (wagerAfter.ValueKind == JsonValueKind.Null ? (long?)null : wagerAfter.GetInt64()) != expectedWager)
+                Flag("slot-neon-disco-wager-mismatch", "The Disco wager differs from its captured paid admission and settlement.");
+        }
         return findings;
     }
 
@@ -291,8 +309,15 @@ internal static class SlotEvidenceReplayAudit
             ?? throw new JsonException("Missing admitted Arcane potion state.");
         var after = potions.GetProperty("after").Deserialize<ArcanePotionState>(RoundAuditCapture.Json)
             ?? throw new JsonException("Missing settled Arcane potion state.");
+        var tracked = potions.TryGetProperty("wagerTracked", out var marker) && marker.GetBoolean();
+        if (tracked && ArcanePotions.LockedWagerForSpin(before, isFreeSpin) is { } lockedWager &&
+            result.WagerPoints != lockedWager)
+            return [new("slot-arcane-potion-wager-mismatch", "error",
+                "The Arcane potion spin does not match the bottle's earned wager.")];
         var expected = ArcanePotions.CompleteSpin(before,
-            ArcaneTome.OrderedIngredientUnits(tome, result.Reels, isFreeSpin), isFreeSpin);
+            ArcaneTome.OrderedIngredientUnits(tome, result.Reels, isFreeSpin), isFreeSpin,
+            tracked ? result.WagerPoints : null,
+            allowRareRecipes: ArcaneArchivesEngine.SupportsRarePotions(audit.EngineVersion));
         if (audit.ArcanePotionApplied != ArcanePotions.ForSpin(before, isFreeSpin) ||
             !ArcanePotions.SameState(after, expected))
             return [new("slot-arcane-potion-mismatch", "error",

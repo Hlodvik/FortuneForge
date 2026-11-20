@@ -20,8 +20,8 @@ public sealed class ArcaneTomeTests
 {
     [Theory]
     [InlineData("herbalism", "MANDRAKE_ROOT", "NIGHTSHADE_BERRIES", "QUICKSILVER")]
-    [InlineData("moon-and-flame", "MOONCAP_MUSHROOM", "PHOENIX_FEATHER", "NIGHTSHADE_BERRIES")]
-    [InlineData("distillation", "WOLFSBANE_WINE", "QUICKSILVER", "PHOENIX_FEATHER")]
+    [InlineData("moon-and-flame", "QUICKSILVER", "PHOENIX_FEATHER", "MOONCAP_MUSHROOM")]
+    [InlineData("distillation", "MOONCAP_MUSHROOM", "WOLFSBANE_WINE", "QUICKSILVER")]
     public void AwakeningRequiresAGrimoireAndDoublesOnlyTheSelectedPairForFivePaidSpins(
         string page, string first, string second, string ordinary)
     {
@@ -31,10 +31,12 @@ public sealed class ArcaneTomeTests
         Assert.True(earned.State.GrimoireReady);
         Assert.Null(earned.State.ActivePage);
         Assert.Equal(1, earned.IngredientsAwarded[first]);
+        Assert.Throws<ArcaneTomeActivationRequiredException>(() => ArcaneTome.EnsureSpinAllowed(earned.State));
 
         var active = ArcaneTome.SelectPage(earned.State, page, activate: true);
         Assert.Equal(5, active.BoostedSpinsRemaining);
         Assert.False(active.GrimoireReady);
+        ArcaneTome.EnsureSpinAllowed(active);
         Assert.Same(active, ArcaneTome.SelectPage(active, page, activate: true));
         var otherPage = page == "herbalism" ? "distillation" : "herbalism";
         Assert.Throws<ArcaneTomeConflictException>(() => ArcaneTome.SelectPage(active, otherPage, activate: false));
@@ -56,6 +58,31 @@ public sealed class ArcaneTomeTests
         var unboosted = ArcaneTome.CompleteSpin(active, [[first, first]], false);
         Assert.Equal(2, unboosted.IngredientsAwarded[first]);
         Assert.Equal(13, unboosted.State.Ingredients[first]);
+    }
+
+    [Fact]
+    public void SavedLegacyBoostKeepsItsRecipeUntilItExpires()
+    {
+        const string page = "moon-and-flame";
+        var saved = ArcaneTome.Empty with { SelectedPage = page, ActivePage = page, BoostedSpinsRemaining = 1 };
+        var json = JsonSerializer.Serialize(saved);
+        Assert.DoesNotContain("RecipeVersion", json);
+        var reloaded = JsonSerializer.Deserialize<ArcaneTomeState>(json)!;
+        Assert.True(ArcaneTome.SameState(saved, reloaded));
+        Assert.Equal("Moon & Flame", ArcaneTome.ToView(reloaded)!.Pages.Single(item => item.Id == page).Label);
+
+        IReadOnlyList<IReadOnlyList<string>> reels = [["MOONCAP_MUSHROOM", "PHOENIX_FEATHER", "QUICKSILVER"]];
+        var finished = ArcaneTome.CompleteSpin(reloaded, reels, false);
+        Assert.Equal(2, finished.IngredientsAwarded["MOONCAP_MUSHROOM"]);
+        Assert.Equal(1, finished.IngredientsAwarded["QUICKSILVER"]);
+        Assert.Equal("Transmutation", ArcaneTome.ToView(finished.State)!.Pages.Single(item => item.Id == page).Label);
+
+        var nextBoost = ArcaneTome.SelectPage(finished.State with { GrimoireReady = true }, page, true);
+        var restored = JsonSerializer.Deserialize<ArcaneTomeState>(JsonSerializer.Serialize(nextBoost))!;
+        Assert.True(ArcaneTome.SameState(nextBoost, restored));
+        var updated = ArcaneTome.CompleteSpin(restored, reels, false);
+        Assert.Equal(1, updated.IngredientsAwarded["MOONCAP_MUSHROOM"]);
+        Assert.Equal(2, updated.IngredientsAwarded["QUICKSILVER"]);
     }
 
     [Fact]
@@ -124,6 +151,8 @@ public sealed class ArcaneTomePaidFirestoreTests(MidnightVaultPaidEmulatorFixtur
         var ordinarySettlement = await store.RecordSlotSpinAsync(userId, landed, admission, DateTime.UtcNow, default);
         Assert.True(ordinarySettlement.ArcaneTome?.GrimoireReady);
         Assert.NotEmpty(ordinarySettlement.ArcaneIngredientsAwarded!);
+        await Assert.ThrowsAsync<ArcaneTomeActivationRequiredException>(() => store.BeginSlotSpinAsync(
+            userId, gameId, 12, 25, false, false, 0, now.AddSeconds(1), TimeSpan.Zero, default));
 
         var reloadedStore = new FirestoreAccountStore(database);
         var state = await reloadedStore.GetSlotStateAsync(userId, gameId, 25, default);
@@ -230,8 +259,8 @@ public sealed class ArcaneTomePaidFirestoreTests(MidnightVaultPaidEmulatorFixtur
         var store = new FirestoreAccountStore(database);
         Assert.NotNull((await store.CreateAsync(userId, userId, userId.ToUpperInvariant(),
             userId + "@example.test", "local-test-password", "active", default)).Value);
-        await database.Collection("userBalances").Document(userId + "_slotsCredits")
-            .UpdateAsync("available", 10_000L);
+        var wallet = database.Collection("userBalances").Document(userId + "_slotsCredits");
+        await wallet.UpdateAsync("available", 10_000L);
 
         var model = ArcaneArchivesEngine.CreateReelSet();
         var rows = ArcaneArchivesEngine.CreateGame().Layout.VisibleRows;
@@ -266,9 +295,10 @@ public sealed class ArcaneTomePaidFirestoreTests(MidnightVaultPaidEmulatorFixtur
         Assert.Empty(refreshed.ArcanePotions.Bottles);
         Assert.Null(refreshed.ArcanePotions.Preview);
 
+        long[] ingredientWagers = [6, 8, 10, 14, 20];
         for (var number = 1; number <= ArcanePotions.Majority; number++)
         {
-            var admission = await store.BeginSlotSpinAsync(userId, gameId, 12, 25, false, false,
+            var admission = await store.BeginSlotSpinAsync(userId, gameId, ingredientWagers[number - 1], 25, false, false,
                 0, now.AddSeconds(number), TimeSpan.Zero, default);
             var spin = Engine(brewingStops).SpinAdmitted(gameId, admission, userId);
             var settlement = await store.RecordSlotSpinAsync(userId, spin, admission, DateTime.UtcNow, default);
@@ -282,20 +312,37 @@ public sealed class ArcaneTomePaidFirestoreTests(MidnightVaultPaidEmulatorFixtur
         var brewed = (await store.GetSlotStateAsync(userId, gameId, 25, default)).ArcanePotions!;
         var bottle = Assert.Single(brewed.Bottles);
         Assert.Equal(ingredient, bottle.IngredientId);
-        Assert.Contains("Ogham payline value", bottle.Effect);
+        Assert.Equal(10, bottle.LockedWagerPoints);
+        Assert.Contains("Scribe Mark payline value", bottle.Effect);
         Assert.Empty(brewed.Pot);
         var activated = await store.ActivateArcanePotionAsync(userId, bottle.Id, DateTime.UtcNow, default);
         Assert.Empty(activated.Bottles);
         Assert.Equal(ArcanePotions.Duration, activated.Active!.SpinsRemaining);
+        const int lockedWagerPoints = 10;
 
         for (var number = 1; number <= ArcanePotions.Duration + 1; number++)
         {
-            var admission = await store.BeginSlotSpinAsync(userId, gameId, 12, 25, false, false,
-                0, now.AddSeconds(ArcanePotions.Majority + number), TimeSpan.Zero, default);
+            var paidPotionSpin = number <= ArcanePotions.Duration;
+            var startedAt = now.AddSeconds(ArcanePotions.Majority + number);
+            if (paidPotionSpin)
+            {
+                var walletBefore = await wallet.GetSnapshotAsync();
+                var conflict = await Assert.ThrowsAsync<ArcanePotionWagerLockedException>(() =>
+                    store.BeginSlotSpinAsync(userId, gameId, 16, 25, false, false, 0, startedAt, TimeSpan.Zero, default));
+                Assert.Equal(lockedWagerPoints, conflict.LockedWagerPoints);
+                Assert.Equal(walletBefore.UpdateTime, (await wallet.GetSnapshotAsync()).UpdateTime);
+                var unchanged = await store.GetSlotStateAsync(userId, gameId, 25, default);
+                Assert.Equal(ArcanePotions.Duration - number + 1, unchanged.ArcanePotions!.Active!.SpinsRemaining);
+            }
+
+            var wager = paidPotionSpin ? lockedWagerPoints : 16;
+            var admission = await store.BeginSlotSpinAsync(userId, gameId, wager, 25, false, false,
+                0, startedAt, TimeSpan.Zero, default);
+            Assert.Equal(wager * 25, admission.ChargedWagerCents);
             await Assert.ThrowsAsync<ArcanePotionConflictException>(() =>
                 store.ActivateArcanePotionAsync(userId, bottle.Id, DateTime.UtcNow, default));
             var spin = Engine(dryStops).SpinAdmitted(gameId, admission, userId);
-            Assert.Equal(number <= ArcanePotions.Duration ? bottle.Id : (long?)null, spin.EngineAudit!.ArcanePotionApplied?.Id);
+            Assert.Equal(paidPotionSpin ? bottle.Id : (long?)null, spin.EngineAudit!.ArcanePotionApplied?.Id);
             Assert.Empty(SlotRoundAudit.Check(spin, spin.Payout, isPaid: true));
 
             var settlement = await store.RecordSlotSpinAsync(userId, spin, admission, DateTime.UtcNow, default);

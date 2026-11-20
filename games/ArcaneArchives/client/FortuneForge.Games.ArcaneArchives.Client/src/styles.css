@@ -3,6 +3,7 @@
 @import './arcaneArchivesWordmark.css';
 @import './winPayouts.css';
 @import './tome.css';
+@import './symbolGuideLayout.css';
 
 .slots-page__result-atmosphere[data-celebration='arcane-orbit']::before { content: '✧ ☾ ✦ ☾ ✧'; animation-name: result-arcane-orbit; }
 

@@ -1,3 +1,4 @@
+using FortuneForge.Games.Slots.Runtime;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Models;
 
@@ -27,6 +28,8 @@ public sealed class CombinationEvaluator : ICombinationEvaluator
         GameDefinition game,
         SymbolSetDefinition symbolSet)
     {
+        if (game.Matching.PaylineMatchMode == SlotPaylineMatchMode.ExactStraightThreeAndFullPayline)
+            return ClassicSlotEngine.Evaluate(reels, game, symbolSet);
         ValidateGrid(reels, game);
         var wildId = game.Symbols.WildSymbolId;
         var freeGameSymbolId = game.FreeGames?.SymbolId;

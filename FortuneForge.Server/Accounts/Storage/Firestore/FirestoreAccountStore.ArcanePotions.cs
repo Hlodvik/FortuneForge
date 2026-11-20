@@ -11,6 +11,7 @@ public sealed partial class FirestoreAccountStore
 {
     private const string ArcanePotionsField = "arcanePotionsJson";
     private const string ArcanePotionsBeforeField = "arcanePotionsBeforeJson";
+    private const string ArcanePotionWagerTrackedField = "arcanePotionWagerTracked";
 
     public Task<ArcanePotionState> ActivateArcanePotionAsync(
         string userId, long potionId, DateTime nowUtc, CancellationToken cancellationToken)
@@ -44,13 +45,19 @@ public sealed partial class FirestoreAccountStore
         var tome = admission.ArcaneTomeBefore
             ?? throw new InvalidOperationException("Arcane spin admission has no Tome state.");
         ArcanePotions.ValidateState(before);
-        if (!ArcanePotions.SameState(before, recorded) ||
+        var tracked = admissionRecord.TryGetValue<bool>(ArcanePotionWagerTrackedField, out var storedTracking) && storedTracking;
+        if (tracked != admission.ArcanePotionWagerTracked ||
+            tracked && ArcanePotions.LockedWagerForSpin(before, admission.IsFreeSpin) is { } lockedWager &&
+                admission.WagerPoints != lockedWager ||
+            !ArcanePotions.SameState(before, recorded) ||
             !ArcanePotions.SameState(before, ReadArcanePotions(guard)) ||
             result.EngineAudit?.ArcanePotionApplied != ArcanePotions.ForSpin(before, admission.IsFreeSpin))
             throw new InvalidOperationException("Arcane spin outcome differs from the admitted potion state.");
 
         return ArcanePotions.CompleteSpin(before,
-            ArcaneTome.OrderedIngredientUnits(tome, result.Reels, admission.IsFreeSpin), admission.IsFreeSpin);
+            ArcaneTome.OrderedIngredientUnits(tome, result.Reels, admission.IsFreeSpin), admission.IsFreeSpin,
+            tracked ? admission.WagerPoints : null,
+            allowRareRecipes: ArcaneArchivesEngine.SupportsRarePotions(result.EngineAudit?.EngineVersion));
     }
 
     private static ArcanePotionState ReadArcanePotions(DocumentSnapshot snapshot) =>

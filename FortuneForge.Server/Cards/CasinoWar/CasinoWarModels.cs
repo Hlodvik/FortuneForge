@@ -32,11 +32,14 @@ internal static class CasinoWarMoney
     private static long StakeCents(decimal? value, long minimum, long maximum, string label)
     {
         if (value is null) throw new ArgumentException($"A {label} stake is required.");
+        var invalidStakeMessage = $"The Casino War {label} stake is outside the allowed whole-rand range.";
+        if (value.Value < ToRand(minimum) || value.Value > ToRand(maximum))
+            throw new ArgumentOutOfRangeException(nameof(value), invalidStakeMessage);
         var cents = checked(value.Value * RandMoney.CentsPerRand);
         if (cents != decimal.Truncate(cents)) throw new ArgumentOutOfRangeException(nameof(value), $"A Casino War {label} stake cannot include a fraction of a cent.");
         var result = checked((long)cents);
-        if (result < minimum || result > maximum || result % StakeIncrementCents != 0)
-            throw new ArgumentOutOfRangeException(nameof(value), $"The Casino War {label} stake is outside the allowed whole-rand range.");
+        if (result % StakeIncrementCents != 0)
+            throw new ArgumentOutOfRangeException(nameof(value), invalidStakeMessage);
         return result;
     }
 }

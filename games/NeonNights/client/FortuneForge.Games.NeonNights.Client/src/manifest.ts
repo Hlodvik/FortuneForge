@@ -4,7 +4,7 @@ import { NEON_NIGHTS_SOUNDS } from './audio.js'
 import { neonCarPlayMode, neonDiscoRoundSpins } from './roundState.js'
 import { NEON_GAME_ID } from './types.js'
 import wordmark from './assets/symbols/neon-nights-wordmark-v1.webp'
-import payoutSchedule from './assets/rules/payout-schedule-v15.json' with { type: 'json' }
+import payoutSchedule from './assets/rules/payout-schedule-v20.json' with { type: 'json' }
 import wagering from './assets/rules/wagering.json' with { type: 'json' }
 
 const definitions = {
@@ -51,7 +51,7 @@ export const neonCabinet: SlotCabinetTheme = {
 export const neonSpecialRound: SlotSpecialRoundFeature = {
   id: 'neon-midnight-mix', title: 'Special Plays', earnStyle: 'orbit',
   earnLabel: `A sports car starts 7 paid Car Plays. A disco ball starts ${neonDiscoRoundSpins} paid cascade spins.`,
-  earnHint: 'Each Car Play costs the locked triggering wager and uses three extra rows. Each Disco spin costs one chosen wager; groups of four or more touching symbols pay and clear, with cascades building up to ×5.',
+  earnHint: 'Each Car Play costs the locked triggering wager and uses three extra rows. Each Disco spin costs the locked triggering wager; groups of four or more touching symbols pay and clear, with cascades building up to ×5.',
   activeModes: { [neonCarPlayMode]: 'Car Plays · three extra rows', 'arcade-rows': 'Car Plays · three extra rows' },
 }
 export const neonHelp: SlotHelpDefinition = {
@@ -61,7 +61,7 @@ export const neonHelp: SlotHelpDefinition = {
     { badge: '777', title: 'Triple sevens', body: 'Three triple-sevens symbols in a row, column or diagonal pay 12× the wager per qualifying pattern.' },
     { badge: '7', title: 'Car Plays', body: 'A sports car starts 7 paid Car Plays at the triggering wager. The cabinet expands to seven rows, and base-game paylines repeat at every height where they fit. Landing a sports car during Car Plays adds 7 more plays. After each paid Car spin with no win, you can respin one reel for free.' },
     { badge: 'N₂O', title: 'Nitro Wild', body: 'During Car Plays, the first Nitro on reels 1–4 charges the reel to its right. If the charged reel also lands a Nitro, the reel after that turns Wild. When the pair lands on reels 4 and 5, choose any reel to turn Wild.' },
-    { badge: String(neonDiscoRoundSpins), title: 'Disco Plays', body: `A disco ball starts ${neonDiscoRoundSpins} paid Disco spins using seven exclusive symbols. Match four or more identical symbols touching horizontally or vertically. Each winning board raises the multiplier from ×1 through ×2, ×3 and ×5. The multiplier carries into the next spin and drops one tier on a spin with no wins.` },
+    { badge: String(neonDiscoRoundSpins), title: 'Disco Plays', body: `A disco ball starts ${neonDiscoRoundSpins} paid Disco spins at the triggering wager using seven paying symbols and a Disco WILD. The wager stays locked for the round. Match four or more identical symbols touching horizontally or vertically. WILD substitutes in one paying group per cascade. Each winning board raises the multiplier from ×1 through ×2, ×3 and ×5. The multiplier carries into the next spin and drops one tier on a spin with no wins.` },
   ],
 }
 export const neonDefaultWagerIndex = (wagering.defaultPoints - wagering.minimumPoints) / wagering.incrementPoints

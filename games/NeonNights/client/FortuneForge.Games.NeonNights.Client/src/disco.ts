@@ -1,7 +1,7 @@
 import type { SlotSymbolSet } from '@fortuneforge/slot-client-core'
 import { NEON_NIGHTS_SYMBOL_IMAGES as images } from './symbols.js'
 import { NEON_DISCO_SYMBOL_SET_ID, type NeonDiscoSymbolId } from './types.js'
-import payoutSchedule from './assets/rules/payout-schedule-v15.json' with { type: 'json' }
+import payoutSchedule from './assets/rules/payout-schedule-v20.json' with { type: 'json' }
 
 export const discoClusterValues = ([
   ['2', 'Jack'], ['4', 'Queen'], ['5', 'King'], ['7', 'Ace'],

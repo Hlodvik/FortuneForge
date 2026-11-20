@@ -1,21 +1,87 @@
 /* Edited: 2026-11-18T18:19:50-06:00 | Computer: VINNABOK */
-.arcane-potion-aura {
-  position: absolute;
-  z-index: 3;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  box-shadow: inset 0 0 1rem color-mix(in srgb, var(--potion-glow), transparent 52%);
+.slot-machine__playfield:has(> .arcane-potion-frame) {
+  position: relative;
 }
 
-.arcane-potion-aura img {
+.arcane-potion-frame {
   position: absolute;
-  top: -20%;
-  left: -12.5%;
-  width: 125%;
-  height: 140%;
+  z-index: 20;
+  inset: 0;
+  pointer-events: none;
+}
+
+.arcane-potion-frame__crop {
+  position: absolute;
+  inset: -25% var(--arcane-potion-rim-right, 0px) -26% var(--arcane-potion-rim-left, 0px);
+  overflow: clip;
+}
+
+.arcane-potion-frame img {
+  position: absolute;
+  top: 0;
+  left: var(--arcane-potion-rim-image-left, 0px);
+  width: var(--arcane-potion-rim-image-width, 100%);
+  height: 100%;
   max-width: none;
   object-fit: fill;
+}
+
+.arcane-potion-frame__moving,
+.arcane-potion-frame[data-moving] .arcane-potion-frame__still {
+  opacity: 0;
+}
+
+.arcane-potion-frame[data-moving] .arcane-potion-frame__moving {
+  opacity: 1;
+}
+
+.arcane-potion-frame[data-ambient] .arcane-potion-frame__still {
+  animation: arcane-potion-rim-ambient 3.8s ease-in-out infinite;
+}
+
+@keyframes arcane-potion-rim-ambient {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 0 transparent); }
+  50% { filter: brightness(1.13) drop-shadow(0 0 0.25rem var(--potion-glow)); }
+}
+
+@property --arcane-potion-rim-reach {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 180deg;
+}
+
+@property --arcane-potion-rim-feather {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+.arcane-potion-frame[data-opening] img {
+  mask-image: conic-gradient(from 90deg,
+    #000 0deg max(0deg, calc(var(--arcane-potion-rim-reach) - var(--arcane-potion-rim-feather))),
+    transparent var(--arcane-potion-rim-reach) calc(360deg - var(--arcane-potion-rim-reach)),
+    #000 min(360deg, calc(360deg - var(--arcane-potion-rim-reach) + var(--arcane-potion-rim-feather))) 360deg
+  );
+}
+
+.arcane-potion-frame[data-opening] {
+  animation: arcane-potion-rim-opening 1.42s ease-in-out both;
+}
+
+@keyframes arcane-potion-rim-opening {
+  from {
+    --arcane-potion-rim-reach: 3deg;
+    --arcane-potion-rim-feather: 3deg;
+    opacity: .08;
+  }
+
+  28% { --arcane-potion-rim-feather: 13deg; opacity: 1; }
+
+  to {
+    --arcane-potion-rim-reach: 180deg;
+    --arcane-potion-rim-feather: 0deg;
+    opacity: 1;
+  }
 }
 
 .arcane-potion-motion {
@@ -24,6 +90,11 @@
   inset: 0;
   overflow: clip;
   pointer-events: none;
+}
+
+.arcane-potion-motion__pour {
+  width: 100%;
+  height: 100%;
 }
 
 .arcane-potion-motion__clip,
@@ -38,15 +109,6 @@
   translate: -81.5% -58%;
 }
 
-.arcane-potion-motion__clip[data-action='activation'] {
-  translate: -81.5% -49%;
-}
-
-.arcane-potion-motion__clip[data-face-right] {
-  translate: -18.5% -49%;
-  scale: -1 1;
-}
-
 .arcane-potion-motion__clip img {
   display: block;
   width: 100%;
@@ -57,12 +119,12 @@
   width: 3.1rem;
   height: 4rem;
   object-fit: contain;
-  translate: -50% -75%;
+  translate: -50% -50%;
   filter: drop-shadow(0 0 0.5rem var(--potion-glow));
-  animation: arcane-potion-shelve 530ms ease-in-out both;
+  animation: arcane-potion-transfer 530ms ease-in-out both;
 }
 
-@keyframes arcane-potion-shelve {
+@keyframes arcane-potion-transfer {
   0% { opacity: 0; transform: translateY(-2rem); }
   20% { opacity: 1; }
   58% {

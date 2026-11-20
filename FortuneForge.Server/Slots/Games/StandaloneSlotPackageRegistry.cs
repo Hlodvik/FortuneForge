@@ -126,8 +126,8 @@ public sealed class StandaloneSlotPackageRegistry
     public static ReelSetDefinition? GetReelSet(string id) => ArcaneEngine.FindReelSet(id) ??
         Definitions.Values.Select(package => package.Reels()).FirstOrDefault(value => value.Id == id);
 
-    public static PaytableDefinition? GetPaytable(string id) => Definitions.Values
-        .Select(package => package.Paytable()).FirstOrDefault(value => value.Id == id);
+    public static PaytableDefinition? GetPaytable(string id) => ArcaneEngine.FindPaytable(id) ??
+        Definitions.Values.Select(package => package.Paytable()).FirstOrDefault(value => value.Id == id);
 
     public bool TrySpin(string gameId, long wagerPoints, string playerId,
         bool specialBoostApplied, long currentEnergyBalance, string? featureMode,

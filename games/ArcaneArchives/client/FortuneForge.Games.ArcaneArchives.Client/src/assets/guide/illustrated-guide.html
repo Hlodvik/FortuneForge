@@ -1,0 +1,2737 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Arcane Archives – Illustrated Introduction</title>
+  <style>
+:root {
+  color-scheme: dark;
+  --night:#100e1c;
+  --ink:#f8efdd;
+  --soft:#d8cfe0;
+  --gold:#e4bd7f;
+  --lavender:#cdacee;
+  --serif:"Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+*, *::before, *::after { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  margin:0;
+  color:var(--ink);
+  font: 1rem/1.55 var(--sans);
+  background:
+    radial-gradient(ellipse at 19% 35%, #2e174350, transparent 42rem),
+    radial-gradient(ellipse at 92% 70%, #24233d73, transparent 43rem),
+    linear-gradient(#100d1a 0%, #171222 42%, #130f1c 76%, #10101b 100%);
+}
+img { display:block; max-width:100%; }
+a { color:inherit; }
+button { font:inherit; }
+button:focus-visible, a:focus-visible { outline:2px solid #ffda96; outline-offset:4px; }
+.skip { position:fixed; z-index:50; top:.7rem; left:.7rem; transform:translateY(-200%); padding:.45rem 1rem; background:#1f1428; border:1px solid var(--gold); }
+.skip:focus { transform:none; }
+.masthead {
+  position:relative;
+  isolation:isolate;
+  min-height:21.5rem;
+  background:
+    radial-gradient(ellipse at 50% 21%, #6a47754f, transparent 18rem),
+    linear-gradient(to bottom, #0b0b16c2 0%, #17112665 38%, #100d1a 99%),
+    url("assets/arcane-archives-library-v2.webp") center 48% / cover;
+}
+.masthead::after {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:0;
+  background:linear-gradient(90deg,#11101b8c,transparent 32%,transparent 68%,#11101b8c);
+  pointer-events:none;
+}
+.masthead-bar {
+  max-width:78rem;
+  padding:1rem clamp(1rem, 4vw, 2.75rem) .65rem;
+  margin:auto;
+}
+.masthead nav {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:clamp(.7rem, 2.2vw, 1.8rem);
+}
+.masthead nav a, .guide-link {
+  color:#f1d6aa;
+  font-weight:700;
+  font-size:.84rem;
+  text-decoration:none;
+}
+.masthead nav a:hover, .guide-link:hover { color:#fff1cc; text-decoration:underline; text-underline-offset:.24em; }
+.masthead-title {
+  display:grid;
+  justify-items:center;
+  gap:.28rem;
+  padding:.15rem 1rem 3.7rem;
+}
+.masthead-title h1 { margin:0; }
+.masthead-title img {
+  width:clamp(14rem, 34vw, 23rem);
+  height:auto;
+  filter:drop-shadow(0 .3rem .55rem #080610cb);
+}
+.guide-link { display:inline-flex; align-items:center; gap:.75rem; }
+.guide-link span { color:var(--gold); font-size:1.25em; }
+.story {
+  inline-size:min(100%, 78rem);
+  margin-inline:auto;
+  padding:0 clamp(1rem, 5vw, 4.05rem) 2.3rem;
+}
+.scene {
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr);
+  gap:clamp(1.7rem, 6.8vw, 7rem);
+  align-items:center;
+  min-height:clamp(18rem, 31.5vw, 28.5rem);
+  padding-block:clamp(.65rem, 2.1vw, 1.7rem);
+  scroll-margin-block-start:1.25rem;
+}
+.scene--reverse { grid-template-columns:minmax(0, 1fr) minmax(0, 1.25fr); }
+.scene--reverse .scene-art { grid-column:2; grid-row:1; }
+.scene--reverse .scene-copy { grid-column:1; grid-row:1; }
+.scene-art { min-width:0; }
+.scene-copy { min-width:0; }
+.scene-copy h2 {
+  margin:0 0 .5rem;
+  color:var(--ink);
+  font:500 clamp(2.15rem, 4.15vw, 3.95rem)/1.04 var(--serif);
+  letter-spacing:-.045em;
+  text-wrap:balance;
+}
+.scene-copy p {
+  max-inline-size:33em;
+  margin:0;
+  color:var(--soft);
+  font-size:clamp(.98rem, 1.25vw, 1.14rem);
+  line-height:1.65;
+}
+.scene-copy strong { color:#f3d4a3; font-weight:750; }
+.scene--grimoire { min-height:clamp(16rem,24vw,22rem); padding-block-end:0; }
+.scene--book { padding-block-start:0; }
+.boost-list { margin:1.15rem 0 0; }
+.boost-list > div { display:grid; gap:.05rem; margin:.65rem 0 0; }
+.boost-list dt { color:#f3d4a3; font:700 1.15rem/1.2 var(--serif); }
+.boost-list dd { margin:0; color:var(--soft); font-size:.89rem; }
+.grimoire-trail { display:block; position:relative; z-index:1; width:100%; height:clamp(3.8rem,8vw,7.3rem); margin-block:-1.7rem -1.1rem; pointer-events:none; }
+.ingredient-orbit, .wand-orbit {
+  position:relative;
+  isolation:isolate;
+  width:100%;
+  min-height:16rem;
+  aspect-ratio:1.35;
+  margin:0;
+}
+.ingredient-orbit ul, .wand-orbit ul { list-style:none; margin:0; padding:0; }
+.astral-rings {
+  position:absolute;
+  z-index:-1;
+  left:50%;
+  top:48%;
+  width:63%;
+  aspect-ratio:1.04;
+  translate:-50% -50%;
+  border:1px solid #ad8c584c;
+  border-radius:50%;
+  background:
+    radial-gradient(ellipse,#ac76eb16 0%, #6649a032 38%, transparent 71%),
+    repeating-conic-gradient(from -15deg,#a78c5d16 0 1deg,transparent 1deg 30deg);
+  mask-image:radial-gradient(ellipse,#000 65%,#000b 73%,transparent 81%);
+}
+.astral-rings::before, .astral-rings::after {
+  content:"";
+  position:absolute;
+  border:1px solid #c69e673e;
+  border-radius:50%;
+  inset:7%;
+}
+.astral-rings::after { inset:20%; border-style:dashed; }
+.ingredient-orbit li, .wand-orbit li {
+  position:absolute;
+  top:var(--y);
+  left:var(--x);
+  display:grid;
+  justify-items:center;
+  translate:-50% -50%;
+  width:36%;
+  min-width:0;
+  text-align:center;
+}
+.ingredient-orbit li img, .wand-orbit li img {
+  width:clamp(3.65rem, 9.1vw, 7.25rem);
+  aspect-ratio:1;
+  object-fit:contain;
+  filter:drop-shadow(0 .15rem .65rem #0a0815dd) drop-shadow(0 0 .55rem #ac75e34e);
+  animation:archive-float 5.8s ease-in-out var(--offset, 0s) infinite;
+}
+.ingredient-orbit li span, .wand-orbit li span {
+  color:#f0d7af;
+  font-size:clamp(.63rem, 1.05vw, .83rem);
+  font-weight:725;
+  line-height:1.2;
+  text-shadow:0 0 .35rem #110e21, 0 0 .65rem #110e21;
+}
+@property --orbit-turn { syntax:"<angle>"; inherits:false; initial-value:0deg; }
+.wand-orbit {
+  --constellation-size:clamp(3.65rem,9.1vw,7.25rem);
+  --wand-original-width:54%;
+  --wand-orbit-center:46%;
+  aspect-ratio:.9;
+}
+.wand-orbit .astral-rings { top:var(--wand-orbit-center); width:76.6%; aspect-ratio:1; }
+.wand-orbit li {
+  --orbit-angle:calc(var(--orbit-start) + var(--orbit-turn));
+  top:calc(var(--wand-orbit-center) + sin(var(--orbit-angle)) * 34.47%);
+  left:calc(50% + cos(var(--orbit-angle)) * 38.3%);
+  width:var(--constellation-size);
+  aspect-ratio:1;
+  animation:archive-constellation-orbit 23s linear infinite;
+}
+.wand-orbit li img { width:100%; animation:none; }
+.wand-orbit li span {
+  position:absolute;
+  top:calc(100% + .03rem);
+  left:50%;
+  width:max-content;
+  translate:-50% 0;
+}
+.wand-orbit__wand {
+  position:absolute;
+  top:var(--wand-orbit-center);
+  left:50%;
+  translate:-50% -50%;
+  width:calc(var(--wand-original-width) * .7);
+  height:auto;
+  filter:brightness(1.65) drop-shadow(0 0 .7rem #ffcd8b5e);
+  animation:archive-wand 4.5s ease-in-out infinite;
+}
+.wand-orbit li b { display:block; margin-block-start:.18em; color:#dfbcff; font-weight:800; }
+@keyframes archive-constellation-orbit { to { --orbit-turn:360deg; } }
+@keyframes archive-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7%)} }
+@keyframes archive-wand { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(3deg);filter:brightness(1.9) drop-shadow(0 0 .8rem #ffcd8b7d)} }
+.endnote { text-align:right; margin-block-start:clamp(.6rem,3vw,2.4rem); padding:1.2rem 0 .5rem; border-top:1px solid #c2a16d43; }
+@media (max-width: 730px) {
+  .masthead { min-height:0; }
+  .masthead-title { padding-block:.75rem 2rem; }
+  .masthead-title img { width:clamp(12.5rem,53vw,18rem); }
+  .masthead nav { gap:.5rem 1rem; }
+  .masthead nav a { font-size:.73rem; }
+  .story { max-width:34rem; padding-inline:clamp(1rem,5.5vw,2rem); }
+  .scene, .scene--reverse {
+    grid-template-columns:minmax(0, 1fr);
+    gap:clamp(.55rem, 3vw, 1rem);
+    padding-block:1rem 2rem;
+    min-height:0;
+  }
+  .scene + .scene { padding-block-start:1.4rem; }
+  .scene--reverse .scene-art, .scene--reverse .scene-copy { grid-column:auto; grid-row:auto; }
+  .scene-copy h2 { font-size:clamp(1.97rem,7.7vw,2.8rem); }
+  .scene-copy p { font-size:.98rem; }
+  .ingredient-orbit, .wand-orbit { min-height:14rem; }
+  .ingredient-orbit li img { width:clamp(3.1rem,14vw,5.3rem); }
+  .wand-orbit { --constellation-size:clamp(3.1rem,14vw,5.3rem); }
+  .ingredient-orbit li span, .wand-orbit li span { font-size:clamp(.65rem,2.3vw,.78rem); }
+  .grimoire-trail { height:4.25rem; margin:-1.2rem 0 0; }
+  .endnote { margin-block-start:.3rem; }
+}
+html[data-motion-paused="true"] { scroll-behavior:auto; }
+html[data-motion-paused="true"] *, html[data-motion-paused="true"] *::before, html[data-motion-paused="true"] *::after { animation-play-state:paused !important; }
+@media (prefers-reduced-motion:reduce) {
+  html { scroll-behavior:auto; }
+  .ingredient-orbit li img, .wand-orbit li, .wand-orbit__wand { animation:none; }
+}
+/* Animated illustrations for the standalone Arcane introduction. */
+.ap-scene {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-width: 0;
+  --ap-scene-ratio: 1.63;
+  aspect-ratio: var(--ap-scene-ratio);
+  margin: 0;
+  overflow: visible;
+  --ap-drop-cycle: 5.4s;
+  --ap-pour-cycle: 7s;
+}
+
+.ap-scene img {
+  display: block;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.ap-ambience {
+  position: absolute;
+  z-index: -1;
+  inset: 12% 2% 0;
+  background: radial-gradient(ellipse at 51% 68%, #5e30684a 0%, #38245824 39%, transparent 70%);
+}
+
+.ap-ambience::before {
+  content: "";
+  position: absolute;
+  inset: 65% 12% 12%;
+  border: 1px solid #b08b594e;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #4d245246, transparent 64%);
+  box-shadow: 0 0 2.5rem #8c5e5e24, inset 0 0 2.5rem #a16b4321;
+}
+
+.ap-ambience::after {
+  content: "";
+  position: absolute;
+  inset: 72% 4% 3%;
+  border: 1px solid #b48d5333;
+  border-radius: 50%;
+}
+
+.ap-drop {
+  --ap-drop-cycle: 4.1s;
+  --ap-pot-left: 23%;
+  --ap-pot-top: 14%;
+  --ap-pot-width: 54%;
+  --ap-mouth-x: .491;
+  --ap-mouth-y: .263;
+  --ap-impact-x: calc(var(--ap-pot-left) + var(--ap-pot-width) * var(--ap-mouth-x));
+  --ap-impact-y: calc(var(--ap-pot-top) + var(--ap-pot-width) * var(--ap-scene-ratio) * var(--ap-mouth-y));
+  --ap-splash-start: .38;
+  --ap-splash-end: .511;
+}
+
+.ap-drop-pot,
+.ap-brew-colors {
+  position: absolute;
+  top: var(--ap-pot-top);
+  left: var(--ap-pot-left);
+  width: var(--ap-pot-width);
+}
+
+.ap-drop-pot {
+  z-index: 1;
+  filter: drop-shadow(0 0.8rem 1.4rem #05030a75);
+}
+
+.ap-brew-colors {
+  z-index: 2;
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+
+.ap-drop[data-ap-brew-cycle]:not([data-fluid-ready]) :is(.ap-ingredient,.ap-splash,.ap-ingredient-count) {
+  animation-play-state: paused;
+}
+
+.ap-ingredient {
+  position: absolute;
+  z-index: 5;
+  top: 20%;
+  left: 41%;
+  width: 18%;
+  transform: translate(-50%, -50%) rotate(-7deg);
+  filter: drop-shadow(0 0 0.95rem #f1bd6668);
+  animation: ap-ingredient-drop var(--ap-drop-cycle) ease-in-out infinite both;
+}
+
+.ap-splash {
+  position: absolute;
+  z-index: 4;
+  top: var(--ap-impact-y);
+  left: var(--ap-impact-x);
+  width: 37%;
+  aspect-ratio: 360 / 210;
+  opacity: 0;
+  transform: translate(-50%, -95.24%);
+  background: url("assets/arcane-intro-crown-atlas.webp") 0 0 / 400% 200% no-repeat;
+  filter: url(#ap-splash-palette);
+  animation: ap-splash-frames calc(var(--ap-drop-cycle) * (var(--ap-splash-end) - var(--ap-splash-start)))
+    calc(var(--ap-drop-cycle) * var(--ap-splash-start)) steps(1, end) forwards;
+}
+
+.ap-splash-filter { position: absolute; }
+
+.ap-ingredient-count {
+  position: absolute;
+  z-index: 6;
+  top: 28%;
+  left: 68%;
+  color: #ffdeaa;
+  font: 600 clamp(1rem, 3vw, 1.8rem)/1 Georgia, serif;
+  text-shadow: 0 0 0.7rem #f7ac698a;
+  animation: ap-ingredient-count var(--ap-drop-cycle) ease-out infinite both;
+}
+
+@keyframes ap-ingredient-drop {
+  0%, 5% { top: 10%; left: 34%; opacity: 0; transform: translate(-50%, -50%) scale(.85) rotate(-19deg); }
+  13% { top: 14%; left: 39%; opacity: 1; transform: translate(-50%, -50%) rotate(-15deg); }
+  24% { top: 19%; left: 44%; opacity: 1; transform: translate(-50%, -50%) scale(1.04) rotate(0deg); }
+  34% { top: 33%; left: 50%; opacity: 1; transform: translate(-50%, -50%) scale(.76) rotate(20deg); }
+  39%, 100% { top: var(--ap-impact-y); left: var(--ap-impact-x); opacity: 0; transform: translate(-50%, -50%) scale(.33) rotate(31deg); }
+}
+
+@keyframes ap-splash-frames {
+  0% { opacity: 1; background-position: 0 0; }
+  10% { opacity: 1; background-position: 33.333% 0; }
+  21% { opacity: 1; background-position: 66.667% 0; }
+  31% { opacity: 1; background-position: 100% 0; }
+  44% { opacity: 1; background-position: 0 100%; }
+  56% { opacity: 1; background-position: 33.333% 100%; }
+  68% { opacity: .88; background-position: 66.667% 100%; }
+  80% { opacity: .7; background-position: 100% 100%; }
+  100% { opacity: 0; background-position: 100% 100%; }
+}
+@keyframes ap-ingredient-count {
+  0%, 42% { opacity: 0; transform: translateY(.45rem); }
+  49%, 58% { opacity: 1; }
+  70%, 100% { opacity: 0; transform: translateY(-1.1rem); }
+}
+
+.ap-bottle {
+  --ap-mandrake-spark: #eaffb0;
+  --ap-mandrake-glow: #96d24c99;
+  overflow: clip;
+}
+
+.ap-bottle .ap-ambience {
+  transform: translateX(4%) scale(.96);
+}
+
+.ap-pour-pot {
+  position: absolute;
+  z-index: 2;
+  top: 24%;
+  left: 7%;
+  width: 48%;
+  filter: drop-shadow(0 0.8rem 1.4rem #06030b6b);
+}
+
+.ap-pour-stream {
+  position: absolute;
+  z-index: 5;
+  top: 16%;
+  left: 30.5%;
+  width: 52%;
+  height: 28.9%;
+  object-fit: fill;
+  opacity: 0;
+  transform: scaleY(-1);
+  filter: hue-rotate(173deg) saturate(1.22) brightness(.91) drop-shadow(0 0 .47rem var(--ap-mandrake-glow));
+  animation: ap-mandrake-stream var(--ap-pour-cycle) linear infinite both;
+}
+
+.ap-bottle-vessel {
+  --ap-stopper-edge: 0 14.2%, 38.3% 14.2%, 40% 15.7%, 41.6% 16.5%,
+    45.3% 17.1%, 49.9% 17.4%, 54.3% 17.2%, 58.2% 16.6%, 60.4% 15.6%, 61.3% 14.2%, 100% 14.2%;
+  position: absolute;
+  z-index: 4;
+  top: 11%;
+  left: 62.5%;
+  width: 26%;
+  aspect-ratio: 1;
+  filter: drop-shadow(0 0.6rem 0.9rem #040811b5);
+  animation: ap-levitate-bottle var(--ap-pour-cycle) ease-in-out infinite both;
+}
+
+.ap-bottle-vessel img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+}
+
+.ap-bottle-glass,
+.ap-bottle-filling {
+  position: absolute;
+  inset: 0;
+}
+
+.ap-bottle-glass {
+  clip-path: inset(34% 0 0);
+}
+
+.ap-bottle-filling {
+  animation: ap-bottle-fills var(--ap-pour-cycle) linear infinite both;
+}
+
+.ap-bottle-mouth {
+  position: absolute;
+  left: 49.8%;
+  top: 16.2%;
+  width: 22%;
+  aspect-ratio: 6.8;
+  border-radius: 50%;
+  transform: translate(-50%, -45%);
+  background: radial-gradient(ellipse, #1c1218 0%, #351d22 70%, #724e35 95%);
+}
+
+/* Stationary glass and gold rim share one cut with the moving cork. */
+.ap-bottle-neck {
+  clip-path: polygon(var(--ap-stopper-edge), 100% 35.5%, 0 35.5%);
+}
+
+.ap-bottle-cork {
+  clip-path: polygon(100% 0, 0 0, var(--ap-stopper-edge));
+  animation: ap-bottle-seal var(--ap-pour-cycle) ease-in-out infinite both;
+}
+
+.ap-bottle-bloom {
+  position: absolute;
+  inset: 9% -32% -8%;
+  opacity: 0;
+  background: radial-gradient(ellipse, #d8ff7c81, #82c26737 36%, transparent 69%);
+  animation: ap-bottle-bloom var(--ap-pour-cycle) ease-in-out infinite both;
+}
+
+@keyframes ap-mandrake-stream {
+  0%, 24% { opacity: 0; clip-path: inset(0 100% 100% 0); }
+  30%, 65% { opacity: 1; clip-path: inset(0); }
+  70%, 100% { opacity: 0; clip-path: inset(100% 0 0 100%); }
+}
+
+@keyframes ap-levitate-bottle {
+  0%, 76%, 100% { transform: translateY(0); }
+  81%, 90% { transform: translateY(-.58rem); }
+}
+
+@keyframes ap-bottle-fills {
+  0%, 30% { clip-path: inset(96% 0 0); opacity: 1; }
+  42% { clip-path: inset(80% 0 0); opacity: 1; }
+  55% { clip-path: inset(65% 0 0); opacity: 1; }
+  70%, 93% { clip-path: inset(34% 0 0); opacity: 1; }
+  100% { clip-path: inset(34% 0 0); opacity: 0; }
+}
+
+@keyframes ap-bottle-seal {
+  0%, 13%, 100% { transform: translate(42%, -19%) rotate(14deg); opacity: .78; }
+  26%, 69% { transform: translate(48%, -22%) rotate(17deg); opacity: 1; }
+  80%, 91% { transform: translate(0, 0) rotate(0); opacity: 1; }
+}
+
+@keyframes ap-bottle-bloom {
+  0%, 68%, 100% { opacity: 0; transform: scale(.8); }
+  78% { opacity: 1; transform: scale(1.12); }
+  90% { opacity: .65; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ap-scene *, .ap-scene *::before, .ap-scene *::after { animation: none !important; }
+  .ap-drop .ap-ingredient { top: 22%; left: 48%; }
+  .ap-drop .ap-splash { opacity: 0; }
+  .ap-drop .ap-ingredient-count { opacity: 0; }
+  .ap-pour-stream,
+  .ap-bottle-glass { display: none; }
+  .ap-bottle-filling { clip-path: inset(34% 0 0); opacity: 1; }
+  .ap-bottle-cork { transform: none; }
+  .ap-bottle-bloom { opacity: .6; }
+}
+
+
+/* Mandrake Tonic rises from the upright cauldron. */
+.ap-siphon-pulse {
+  position: absolute;
+  z-index: 6;
+  left: 30.5%;
+  top: 44.9%;
+  width: .48rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--ap-mandrake-spark);
+  filter: blur(.7px) drop-shadow(0 0 .35rem var(--ap-mandrake-glow));
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  animation: ap-magic-siphon var(--ap-pour-cycle) linear infinite both;
+}
+
+.ap-siphon-pulse + .ap-siphon-pulse { animation-delay: 210ms; }
+
+@keyframes ap-magic-siphon {
+  0%, 27% { left: 31%; top: 44.6%; opacity: 0; }
+  31% { left: 35%; top: 42%; opacity: 1; }
+  39% { left: 45%; top: 35%; opacity: .86; }
+  47% { left: 54%; top: 31%; opacity: 1; }
+  56% { left: 66%; top: 26%; opacity: .82; }
+  62% { left: 75%; top: 20%; opacity: .9; }
+  65%, 100% { left: 76%; top: 18%; opacity: 0; }
+}
+.ap-activation {
+  margin: 0;
+}
+
+.ap-activation__screen {
+  position: relative;
+  aspect-ratio: 720 / 460;
+}
+
+.ap-activation__screen img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.ap-activation__controls {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: .55rem .75rem;
+  margin-block-start: .75rem;
+  font-family: var(--serif);
+}
+
+.ap-activation__controls label {
+  display: grid;
+  gap: .15rem;
+  min-width: 0;
+  color: var(--gold);
+}
+
+.ap-activation__controls :is(select, button) {
+  min-height: 44px;
+  max-width: 100%;
+  padding: .4rem .7rem;
+  border: 1px solid #a37b4ca3;
+  border-radius: 7px;
+  background: #201629;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ap-activation__controls :is(select, button):hover {
+  background: #33213b;
+}
+
+.ap-activation__controls select:focus-visible {
+  outline: 2px solid #ffda96;
+  outline-offset: 4px;
+}
+
+.ap-activation-preview {
+  max-width: 53rem;
+  padding-block: clamp(1rem, 4vw, 2.5rem);
+}
+
+.ap-activation-preview h1 {
+  margin: 0 0 .65rem;
+  color: #f6deaf;
+  font: 400 clamp(1.85rem, 5vw, 3rem)/1.15 var(--serif);
+  text-align: center;
+}
+.intro-grimoire-symbol {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  width: min(100%, 19.75rem);
+  margin: 0 auto;
+}
+
+.intro-grimoire-symbol::before {
+  position: absolute;
+  z-index: -1;
+  inset: 8% 3%;
+  background: radial-gradient(ellipse, #bf784064, #b66b3931 42%, transparent 72%);
+  filter: blur(0.7rem);
+  content: "";
+}
+
+.intro-grimoire-symbol img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0.6rem 0.65rem #04020a8f) drop-shadow(0 0 1.15rem #efbb635c);
+}
+
+.intro-grimoire-demo .intro-grimoire-arrow:hover {
+  border-color: #ffdc98;
+  box-shadow: 0 0 0.75rem #ffbc5c45;
+}
+
+.intro-grimoire-demo .intro-grimoire-arrow:focus-visible {
+  outline: 2px solid #ffe69f;
+  outline-offset: 0.18rem;
+}
+
+.intro-grimoire-demo--book {
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  width: 100%;
+  scroll-margin-top: 4.5rem;
+}
+
+.intro-grimoire-lectern {
+  position: relative;
+  isolation: isolate;
+  container-type: inline-size;
+  width: min(100%, 30rem);
+  aspect-ratio: 1;
+}
+
+.intro-grimoire-lectern::after {
+  position: absolute;
+  z-index: -1;
+  inset: 1% 8% 49%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #ffe0a0b5, #e2aa5526 60%, transparent 74%);
+  filter: blur(0.9rem);
+  content: "";
+  opacity: 0;
+  transition: opacity 260ms;
+}
+
+.intro-grimoire-book-art {
+  position: absolute;
+  inset: 0 auto auto 0;
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  pointer-events: none;
+  transition: filter 320ms;
+}
+
+.intro-grimoire-demo--book.is-illuminated .intro-grimoire-lectern::after {
+  opacity: 0.92;
+  animation: intro-grimoire-shine 2.7s ease-in-out infinite alternate;
+}
+
+.intro-grimoire-demo--book.is-illuminated .intro-grimoire-book-art {
+  filter: drop-shadow(0 0 0.45rem #ffe29778) drop-shadow(0 0 1.15rem #eba6566d);
+}
+
+@keyframes intro-grimoire-shine {
+  from { opacity: 0.62; }
+  to { opacity: 1; }
+}
+
+.intro-grimoire-spread {
+  position: absolute;
+  z-index: 1;
+  inset: 8.4% 18% auto;
+  height: 30.5%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 9.5%;
+  color: #503027;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.intro-grimoire-page {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: clamp(0.13rem, 0.8cqi, 0.38rem);
+  min-width: 0;
+  text-align: center;
+}
+
+.intro-grimoire-page--title {
+  position: relative;
+  isolation: isolate;
+}
+
+.intro-grimoire-ornament {
+  position: absolute;
+  z-index: -1;
+  inset: 18% 0 auto;
+  width: 100%;
+  opacity: 0.39;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.intro-grimoire-folio {
+  color: #784643;
+  font: 700 clamp(0.58rem, 2.4cqi, 0.8rem)/1 Georgia, serif;
+}
+
+.intro-grimoire-plate {
+  width: clamp(1.8rem, 13cqi, 4.1rem);
+  height: clamp(1.8rem, 13cqi, 4.1rem);
+  object-fit: contain;
+  filter: drop-shadow(0 0.16rem 0.22rem #642b345b);
+}
+
+.intro-grimoire-page h3 {
+  margin: 0;
+  color: #5e2929;
+  font: 700 clamp(0.82rem, 4.35cqi, 1.52rem)/1.04 Georgia, serif;
+}
+
+.intro-grimoire-page--recipe {
+  position: relative;
+  grid-column: 2;
+}
+
+.intro-grimoire-doubling {
+  color: #6c3933;
+  font: 700 clamp(0.65rem, 2.85cqi, 0.88rem)/1.12 Georgia, serif;
+}
+
+.intro-grimoire-ingredients {
+  display: grid;
+  gap: 0.17rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.intro-grimoire-ingredients li {
+  display: grid;
+  align-items: center;
+  grid-template-columns: clamp(0.75rem, 4.3cqi, 1.3rem) minmax(0, 1fr);
+  gap: clamp(0.12rem, 0.65cqi, 0.35rem);
+  min-width: 0;
+  font: 650 clamp(0.63rem, 2.75cqi, 0.92rem)/1.13 Georgia, serif;
+  overflow-wrap: anywhere;
+}
+
+.intro-grimoire-ingredients img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.intro-grimoire-duration {
+  font: 700 clamp(0.58rem, 2.2cqi, 0.76rem)/1.1 Georgia, serif;
+}
+
+.intro-grimoire-turn {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.intro-grimoire-turn::before {
+  position: absolute;
+  top: 0;
+  left: 9.569%;
+  width: 82.935%;
+  aspect-ratio: 520 / 288;
+  background-image: url("assets/arcane-tome-page-flip-overlay-v1.png");
+  background-repeat: no-repeat;
+  background-size: 800% 600%;
+  background-position: var(--grimoire-atlas-position, 0% 0%);
+  content: "";
+}
+
+.intro-grimoire-lectern.is-turning .intro-grimoire-turn {
+  visibility: visible;
+}
+
+.intro-grimoire-ink {
+  position: absolute;
+  inset: 0;
+  transform-origin: 49.92% 50%;
+  transform: matrix(var(--grimoire-ink-width, 1), var(--grimoire-ink-lean, 0), 0, 1, 0, 0);
+}
+
+.intro-grimoire-ink--recipe { visibility: var(--grimoire-recipe-ink, hidden); }
+.intro-grimoire-ink--title { visibility: var(--grimoire-title-ink, hidden); }
+
+.intro-grimoire-arrows {
+  position: absolute;
+  z-index: 3;
+  inset: 20% 3% auto;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.intro-grimoire-demo .intro-grimoire-arrow {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  min-width: 0;
+  padding: 0 0 0.16rem;
+  border: 1px solid #d6a75d;
+  border-radius: 50%;
+  background: #312136;
+  color: #ffe8b1;
+  cursor: pointer;
+  pointer-events: auto;
+  font: 500 1.62rem/1 Georgia, serif;
+  box-shadow: 0 0.13rem 0.4rem #20142995;
+}
+
+@media (max-width: 420px) {
+  .intro-grimoire-demo .intro-grimoire-arrow {
+    width: 2.15rem;
+    height: 2.15rem;
+  }
+
+  .intro-grimoire-arrows {
+    inset-inline: 2%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-grimoire-demo *,
+  .intro-grimoire-demo *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+/* Potion entries for the standalone introduction. */
+.potion-chapter {
+  position: relative;
+  padding-block: clamp(1rem, 3vw, 2.5rem) clamp(2.8rem, 7vw, 6rem);
+  scroll-margin-block: 1.25rem;
+}
+
+.potion-chapter__intro {
+  max-inline-size: 42rem;
+  margin: 0 auto clamp(.7rem, 2.6vw, 1.8rem);
+  text-align: center;
+}
+
+.potion-chapter__intro h2 {
+  margin: 0 0 .4rem;
+  color: var(--ink);
+  font: 500 clamp(2rem, 4.4vw, 3.75rem)/1 var(--serif);
+  letter-spacing: -.045em;
+}
+
+.potion-chapter__intro p {
+  margin: 0;
+  color: var(--soft);
+  font-size: .93rem;
+  text-wrap: balance;
+}
+
+.potion-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1.7rem, 6.8vw, 7rem);
+  min-height: clamp(12rem, 22vw, 17rem);
+  padding-block: clamp(.55rem, 1.45vw, 1.15rem);
+}
+
+.potion-entry:nth-child(even) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+}
+
+.potion-entry:nth-child(even) .potion-glimpse { grid-column: 2; grid-row: 1; }
+.potion-entry:nth-child(even) .potion-entry__header { grid-column: 1; grid-row: 1; }
+
+.potion-entry__header {
+  min-width: 0;
+}
+
+.potion-entry__header h3 {
+  margin: 0 0 .55rem;
+  color: var(--ink);
+  font: 500 clamp(1.68rem, 3.1vw, 2.9rem)/1.08 var(--serif);
+  letter-spacing: -.036em;
+  text-wrap: balance;
+}
+
+.potion-entry__header p {
+  max-inline-size: 31em;
+  margin: 0;
+  color: var(--soft);
+  font-size: clamp(.98rem, 1.25vw, 1.14rem);
+  line-height: 1.65;
+}
+
+.potion-entry__header .potion-entry__secondary { margin-block-start: .38rem; }
+.potion-entry__secondary strong { color: var(--potion-light); }
+
+.potion-glimpse {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, .43fr) minmax(0, .57fr);
+  align-items: center;
+  justify-items: center;
+  gap: clamp(.65rem, 2.3vw, 1.65rem);
+  min-width: 0;
+  min-height: clamp(8.35rem, 15vw, 12.5rem);
+  width: min(100%, 33rem);
+  margin: 0 auto;
+  color: var(--potion-light);
+}
+
+.potion-glimpse::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0 2%;
+  background: radial-gradient(ellipse at 49% 50%, color-mix(in srgb, var(--potion-light) 16%, transparent), transparent 69%);
+  content: "";
+}
+
+.potion-glimpse__pair {
+  grid-column: 1;
+  display: grid;
+  grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr);
+  align-items: center;
+  justify-items: center;
+  gap: .14rem;
+  width: 100%;
+}
+
+.potion-glimpse__ingredient {
+  width: min(100%, 7.1rem);
+  aspect-ratio: 1;
+  object-fit: contain;
+  filter: drop-shadow(0 .15rem .45rem #100a1cbb);
+}
+
+.potion-glimpse__bottle {
+  width: min(100%, 8.9rem);
+  filter: drop-shadow(0 .18rem .7rem #120b21d1) drop-shadow(0 0 1rem color-mix(in srgb, var(--potion-light) 36%, transparent));
+}
+
+.potion-glimpse__result {
+  container-type: inline-size;
+  grid-column: 2;
+  display: grid;
+  justify-items: center;
+  inline-size: 100%;
+  min-width: 0;
+  padding-inline: 8%;
+}
+
+.potion-glimpse__cabinet {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: center;
+  width: 100%;
+  aspect-ratio: 1.67;
+  margin-block: .68rem max(.82rem, 13cqw);
+}
+
+.potion-glimpse__cabinet::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: .5rem;
+  background:
+    linear-gradient(120deg, #131123ba, #1c1536a9),
+    url("assets/arcane-archives-library-v2.webp") center 56% / cover;
+  box-shadow: 0 .45rem 1.25rem #09061270;
+  content: "";
+}
+
+.potion-glimpse__rim {
+  position: absolute;
+  z-index: 2;
+  inset: -25% -14.5% -26%;
+  width: 129%;
+  height: 151%;
+  max-width: none;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+.potion-glimpse__rim--motion { opacity: 0; }
+
+.potion-glimpse__cabinet[data-potion-playing="true"] .potion-glimpse__rim--still { opacity: 0; }
+.potion-glimpse__cabinet[data-potion-playing="true"] .potion-glimpse__rim--motion { opacity: 1; }
+
+.potion-glimpse__glyphs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(.23rem, .78vw, .66rem);
+  min-width: 0;
+  padding-inline: 9%;
+}
+
+.potion-glimpse__glyphs img {
+  width: clamp(1.5rem, 4.05vw, 3.35rem);
+  min-width: 0;
+  aspect-ratio: 1;
+  object-fit: contain;
+  filter: drop-shadow(0 0 .3rem color-mix(in srgb, var(--potion-light) 47%, transparent));
+}
+
+.potion-glimpse__glyphs img.potion-glimpse__wand {
+  scale: 1.13;
+  filter: brightness(1.65) drop-shadow(0 0 .24rem #ffe6b498);
+}
+
+.potion-glimpse__glyphs span {
+  flex: none;
+  color: var(--potion-light);
+  font-weight: 750;
+}
+
+.potion-glimpse__amounts {
+  align-self: start;
+  justify-self: center;
+  display: flex;
+  align-items: baseline;
+  gap: .43rem;
+  color: #e5d2b3;
+  font: 600 clamp(.91rem, 1.65vw, 1.36rem)/1.15 var(--serif);
+  white-space: nowrap;
+  margin: .12rem 0 0;
+}
+
+.potion-glimpse__amounts strong {
+  color: var(--potion-light);
+  animation: potion-rise 3.4s ease-in-out infinite;
+}
+
+.potion-glimpse--frequency .potion-glimpse__glyphs img {
+  animation: potion-land 3.4s ease-out infinite;
+}
+
+.potion-glimpse--frequency .potion-glimpse__glyphs img:nth-child(2) { animation-delay: .14s; }
+.potion-glimpse--frequency .potion-glimpse__glyphs img:nth-child(3) { animation-delay: .28s; }
+.potion-glimpse--wand .potion-glimpse__glyphs img:not(:nth-child(2)) { animation: none; opacity: .58; }
+
+@keyframes potion-land {
+  0%, 13% { transform: translateY(-19%); opacity: .5; }
+  25% { transform: translateY(5%); opacity: 1; }
+  35%, 79% { transform: none; opacity: 1; }
+  100% { opacity: .5; }
+}
+
+@keyframes potion-rise {
+  0%, 100% { opacity: .58; text-shadow: none; }
+  40%, 78% { opacity: 1; text-shadow: 0 0 .7rem var(--potion-light); }
+}
+
+@media (max-width: 730px) {
+  .potion-chapter__intro {
+    text-align: left;
+    max-inline-size: none;
+    margin-block-end: 1rem;
+  }
+
+  .potion-entry,
+  .potion-entry:nth-child(even) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: .3rem;
+    min-height: 0;
+    padding-block: .6rem 1.55rem;
+  }
+
+  .potion-entry:nth-child(even) .potion-glimpse,
+  .potion-entry:nth-child(even) .potion-entry__header { grid-column: auto; grid-row: auto; }
+
+  .potion-glimpse {
+    min-height: 7.2rem;
+    grid-template-columns: minmax(0, .41fr) minmax(0, .59fr);
+    gap: clamp(.55rem, 3vw, 1rem);
+  }
+
+  .potion-glimpse__cabinet { margin-block-start: .62rem; }
+  .potion-glimpse__bottle { width: min(100%, 5.8rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .potion-glimpse__cabinet[data-potion-playing="true"] .potion-glimpse__rim--still { opacity: 1; }
+  .potion-glimpse__rim--motion { display: none; }
+  .potion-glimpse__glyphs img, .potion-glimpse__amounts strong { animation: none !important; }
+}
+.intro-payline-demo {
+  inline-size: 100%;
+  max-inline-size: 38rem;
+  margin: 0 auto;
+  container-type: inline-size;
+}
+
+.intro-payline-stage {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  block-size: clamp(11.5rem, 49cqi, 17rem);
+}
+
+.intro-payline-symbol {
+  position: absolute;
+  inset-inline-start: calc(10% + var(--payline-column) * 20%);
+  inset-block-start: calc(50% + (var(--payline-row) - 1.5) * 18%);
+  inline-size: min(18cqi, 6.5rem);
+  aspect-ratio: 1;
+  object-fit: contain;
+  translate: -50% -50%;
+  filter: drop-shadow(0 0 .45rem #dca45a53) drop-shadow(0 .18rem .45rem #0b0616d9);
+  pointer-events: none;
+  user-select: none;
+}
+
+.payline-gallery-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: .65rem;
+  min-block-size: 2.75rem;
+  margin-block-start: 1.15rem;
+  padding: .48rem .95rem;
+  border: 1px solid #d3a96b78;
+  border-radius: .35rem;
+  background: #241a31;
+  color: #f6d8a5;
+  font: 1rem/1.2 var(--serif);
+  cursor: pointer;
+}
+
+.payline-gallery-toggle:hover,
+.payline-gallery-toggle[aria-expanded="true"] {
+  border-color: var(--gold);
+  background: #32223c;
+}
+
+.payline-gallery-toggle::after {
+  content: "";
+  inline-size: .48rem;
+  block-size: .48rem;
+  border: solid currentColor;
+  border-width: 0 1px 1px 0;
+  transform: translateY(-.12rem) rotate(45deg);
+}
+
+.payline-gallery-toggle[aria-expanded="true"]::after {
+  transform: translateY(.1rem) rotate(225deg);
+}
+
+.payline-gallery {
+  grid-column: 1 / -1;
+  container: payline-gallery / inline-size;
+  padding-block-start: 1rem;
+  border-block-start: 1px solid #c2a16d43;
+}
+
+#paylines:has(.payline-gallery:not([hidden])) {
+  row-gap: clamp(1.25rem, 3vw, 2.2rem);
+}
+
+.payline-gallery section + section {
+  margin-block-start: 1.6rem;
+}
+
+.payline-gallery h3 {
+  margin: 0 0 .55rem;
+  color: var(--ink);
+  font: 500 clamp(1.18rem, 2vw, 1.55rem)/1.2 var(--serif);
+}
+
+.payline-shapes {
+  --path-color: #eac186;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.payline-shapes--three {
+  --path-color: #d8adf6;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-inline-size: 26rem;
+}
+
+.payline-shapes li {
+  display: grid;
+  align-content: start;
+  gap: .1rem;
+  min-inline-size: 0;
+  padding: .2rem .38rem .45rem;
+  border: 1px solid #b89f7836;
+  border-radius: .36rem;
+  background: #1b1429;
+  color: var(--soft);
+  font-size: .78rem;
+  text-align: center;
+}
+
+.payline-shape {
+  position: relative;
+  aspect-ratio: var(--shape-ratio);
+}
+
+.payline-shape__dot,
+.payline-shape__segment {
+  position: absolute;
+  display: block;
+  translate: -50% -50%;
+}
+
+.payline-shape__dot {
+  inline-size: .29rem;
+  block-size: .29rem;
+  border-radius: 50%;
+  background: #ad92b863;
+}
+
+.payline-shape__segment {
+  block-size: 2px;
+  translate: 0 -50%;
+  transform-origin: left center;
+  background: var(--path-color);
+}
+
+.payline-shape__dot--active {
+  inline-size: .43rem;
+  block-size: .43rem;
+  background: var(--path-color);
+  box-shadow: 0 0 .46rem var(--path-color);
+}
+
+@container payline-gallery (min-width: 27rem) {
+  .payline-shapes:not(.payline-shapes--three) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container payline-gallery (min-width: 53rem) {
+  .payline-shapes:not(.payline-shapes--three) {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+@font-face {
+  font-family:"IM Fell English";
+  src:url("assets/im-fell-english-latin.woff2") format("woff2");
+  font-style:normal;
+  font-weight:400;
+  font-display:swap;
+}
+
+:root { --serif:"IM Fell English", "Palatino Linotype", Georgia, serif; }
+
+.masthead nav a, .guide-link {
+  font:400 clamp(.93rem,1.64vw,1.08rem)/1.18 var(--serif);
+}
+
+.story { font-family:var(--serif); }
+
+.story .scene-copy h2, .story .potion-chapter__intro h2 {
+  color:#f6deaf;
+  letter-spacing:-.012em;
+}
+
+.story .scene-copy p {
+  font-size:clamp(1.08rem,1.59vw,1.27rem);
+  line-height:1.54;
+}
+
+.story .boost-list dt { font-weight:400; }
+.story .boost-list dd { font-size:.99rem; }
+.story :is(.ingredient-orbit,.wand-orbit) li span {
+  color:#f0d7af;
+  font:400 clamp(.87rem,1.42vw,1.04rem)/1.2 var(--serif);
+}
+
+.story .wand-orbit li b {
+  color:#dfbcff;
+  font-size:.91em;
+  font-weight:400;
+  white-space:nowrap;
+}
+
+.story .intro-grimoire-page, .story .intro-grimoire-page h3 {
+  font-family:var(--serif);
+}
+
+.story .potion-glimpse__amounts {
+  font-family:var(--serif);
+}
+
+.story .potion-entry__header p, .story .potion-chapter__intro p {
+  font-size:clamp(1rem,1.5vw,1.13rem);
+}
+
+@media (max-width:730px) {
+  .story .scene-copy p { font-size:1.1rem; }
+  .story :is(.ingredient-orbit,.wand-orbit) li span { font-size:clamp(.78rem,2.6vw,.91rem); }
+  .masthead nav a, .guide-link { font-size:.88rem; }
+}
+  </style>
+<script type="text/plain" id="font-license">
+Copyright (c) 2010, Igino Marini (mail@iginomarini.com)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded,
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION & CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+</script>
+</head>
+<body>
+  <a class="skip" href="#ingredients">Skip to the guide</a>
+  <header class="masthead" id="top">
+    <div class="masthead-bar">
+      <nav aria-label="Introduction chapters">
+        <a href="#ingredients">Ingredients</a>
+        <a href="#grimoire">Grimoire</a>
+        <a href="#potions">Potions</a>
+        <a href="#rare-potions">Rare potions</a>
+        <a href="#wand">Wand</a>
+        <a href="#paylines">Paylines</a>
+      </nav>
+    </div>
+    <div class="masthead-title">
+      <h1><img src="assets/arcane-archives-wordmark-v1.webp" alt="Arcane Archives" width="768" height="512"></h1>
+      <a class="guide-link" href="#ingredients">Explore the guide <span aria-hidden="true">↓</span></a>
+    </div>
+  </header>
+  <main class="story">
+    <section class="scene" id="ingredients" aria-labelledby="ingredients-title">
+      <div class="scene-art">
+        <figure class="ingredient-orbit" aria-label="Six ingredients arranged in a circle">
+          <div class="astral-rings" aria-hidden="true"></div>
+          <ul>
+            <li style="--x:50%;--y:14%;--offset:-.6s"><img src="assets/arcane-archives-mandrake-root-v1.webp" alt=""><span>Mandrake Root</span></li>
+            <li style="--x:79%;--y:29%;--offset:-2.3s"><img src="assets/arcane-archives-nightshade-berries-v1.webp" alt=""><span>Nightshade Berries</span></li>
+            <li style="--x:79%;--y:70%;--offset:-1.3s"><img src="assets/arcane-archives-mooncap-mushroom-v1.webp" alt=""><span>Mooncap Mushroom</span></li>
+            <li style="--x:50%;--y:85%;--offset:-3.5s"><img src="assets/arcane-archives-phoenix-feather-v1.webp" alt=""><span>Phoenix Feather</span></li>
+            <li style="--x:21%;--y:70%;--offset:-2.1s"><img src="assets/arcane-archives-wolfsbane-wine-v2.webp" alt=""><span>Wolfsbane Wine</span></li>
+            <li style="--x:21%;--y:29%;--offset:-1.8s"><img src="assets/arcane-archives-quicksilver-v2.webp" alt=""><span>Quicksilver</span></li>
+          </ul>
+        </figure>
+      </div>
+      <div class="scene-copy">
+        <h2 id="ingredients-title">Gather ingredients</h2>
+        <p>Six ingredients can land anywhere on the reels. Each one is a different way to brew a potion.</p>
+      </div>
+    </section>
+    <section class="scene scene--reverse" id="cauldron" aria-labelledby="cauldron-title">
+      <div class="scene-art"><figure class="ap-scene ap-drop" data-ap-brew-cycle aria-label="The cauldron changes color as each of the six leading ingredients lands.">
+  <div class="ap-ambience" aria-hidden="true"></div>
+  <img class="ap-drop-pot" src="assets/arcane-intro-brim-cauldron.webp" alt="">
+  <canvas class="ap-brew-colors" width="512" height="512" aria-hidden="true"></canvas>
+  <img class="ap-ingredient" src="assets/arcane-archives-mandrake-root-v1.webp" alt="">
+  <span class="ap-splash" aria-hidden="true"></span>
+  <svg class="ap-splash-filter" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="ap-splash-palette" color-interpolation-filters="sRGB">
+        <feColorMatrix type="saturate" values="0"/>
+        <feComponentTransfer>
+          <feFuncR type="table" tableValues="0 0.5 1"/>
+          <feFuncG type="table" tableValues="0 0.5 1"/>
+          <feFuncB type="table" tableValues="0 0.5 1"/>
+        </feComponentTransfer>
+      </filter>
+    </defs>
+  </svg>
+  <span class="ap-ingredient-count" aria-hidden="true">+1</span>
+</figure></div>
+      <div class="scene-copy">
+        <h2 id="cauldron-title">Feed the cauldron</h2>
+        <p>Landed ingredients stay in the cauldron until you brew. The leading ingredient gives the potion its color.</p>
+      </div>
+    </section>
+    <section class="scene scene--grimoire" id="grimoire" aria-labelledby="grimoire-title">
+      <div class="scene-art"><figure class="intro-grimoire-symbol">
+  <img alt="Grand Grimoire symbol" src="assets/arcane-archives-grand-grimoire-v2.webp" width="320" height="320">
+</figure></div>
+      <div class="scene-copy">
+        <h2 id="grimoire-title">Land the Grand Grimoire</h2>
+        <p>Land this symbol to light the Grimoire on its lectern. <strong>Open the Tome and activate a page before you spin again.</strong></p>
+      </div>
+    </section>
+    <canvas class="grimoire-trail" aria-hidden="true"></canvas>
+    <section class="scene scene--reverse scene--book" id="grimoire-boosts" aria-labelledby="grimoire-boosts-title">
+      <div class="scene-art"><div class="intro-grimoire-demo intro-grimoire-demo--book" id="grimoire-demo-book" data-grimoire-book>
+  <div class="intro-grimoire-lectern" data-grimoire-lectern>
+    <img class="intro-grimoire-book-art" alt="" src="assets/arcane-archives-lectern-blank-tome-layer-v1.webp">
+    <div class="intro-grimoire-spread" id="grimoire-demo-spread">
+      <div class="intro-grimoire-page intro-grimoire-page--title">
+        <img class="intro-grimoire-ornament" alt="" src="assets/arcane-intro-page-mark.webp">
+        <small class="intro-grimoire-folio" data-grimoire-folio>I</small>
+        <img class="intro-grimoire-plate" data-grimoire-plate alt="" src="assets/arcane-archives-mandrake-root-v1.webp">
+        <h3 data-grimoire-title aria-live="off">Herbalism</h3>
+      </div>
+      <div class="intro-grimoire-page intro-grimoire-page--recipe">
+        <strong class="intro-grimoire-doubling">Boosted pair</strong>
+        <ul class="intro-grimoire-ingredients" data-grimoire-ingredients>
+          <li><img alt="" src="assets/arcane-archives-mandrake-root-v1.webp">Mandrake Root</li>
+          <li><img alt="" src="assets/arcane-archives-nightshade-berries-v1.webp">Nightshade Berries</li>
+        </ul>
+        <small class="intro-grimoire-duration">&times;2 &middot; 5 paid spins</small>
+      </div>
+    </div>
+    <div class="intro-grimoire-turn" data-grimoire-turn aria-hidden="true"></div>
+    <nav class="intro-grimoire-arrows" aria-label="Grimoire pages">
+      <button class="intro-grimoire-arrow" type="button" aria-label="Previous Grimoire page" aria-controls="grimoire-demo-spread" data-grimoire-prev>&#8249;</button>
+      <button class="intro-grimoire-arrow" type="button" aria-label="Next Grimoire page" aria-controls="grimoire-demo-spread" data-grimoire-next>&#8250;</button>
+    </nav>
+  </div>
+</div></div>
+      <div class="scene-copy">
+        <h2 id="grimoire-boosts-title">Choose a Grimoire boost</h2>
+        <p>Turn the pages to pick a pair. Each featured ingredient gives <strong>two units per landing</strong> for your next <strong>five paid spins</strong>. The Grand Grimoire stays off the reels until the boost ends.</p>
+        <dl class="boost-list" data-grimoire-boost-list></dl>
+      </div>
+    </section>
+    <section class="scene" id="potions" aria-labelledby="potions-title">
+      <div class="scene-art"><figure class="ap-scene ap-bottle" aria-label="Green Mandrake Tonic rises from the upright cauldron and fills an empty bottle from the bottom up. The cork then seals it.">
+  <div class="ap-ambience" aria-hidden="true"></div>
+  <img class="ap-pour-pot" src="assets/arcane-intro-green-cauldron.webp" alt="">
+  <img class="ap-pour-stream" src="assets/arcane-intro-pour.webp" alt="">
+  <i class="ap-siphon-pulse" aria-hidden="true"></i>
+  <i class="ap-siphon-pulse" aria-hidden="true"></i>
+  <div class="ap-bottle-vessel" aria-hidden="true">
+    <div class="ap-bottle-bloom"></div>
+    <div class="ap-bottle-glass">
+      <img src="assets/arcane-intro-empty-mandrake.webp" alt="">
+    </div>
+    <div class="ap-bottle-filling">
+      <img src="assets/rootwake-potion-v1.webp" alt="">
+    </div>
+    <i class="ap-bottle-mouth"></i>
+    <img class="ap-bottle-neck" src="assets/rootwake-potion-v1.webp" alt="">
+    <img class="ap-bottle-cork" src="assets/rootwake-potion-v1.webp" alt="">
+  </div>
+</figure></div>
+      <div class="scene-copy">
+        <h2 id="potions-title">Bottle a potion</h2>
+        <p>Brew at <strong>8 units total</strong> or <strong>5 of one ingredient</strong>. For most potions, the most common ingredient sets the effect and the others add potency. A rare brew uses <strong>two units each of four different ingredients</strong>, including Mandrake Root. Each bottle’s <strong>locked wager</strong> is the average of the paid wagers that produced its ingredients, rounded down to an available wager.</p>
+      </div>
+    </section>
+    <section class="scene scene--reverse" id="potion-effect" aria-labelledby="potion-effect-title">
+      <div class="scene-art"><figure class="ap-activation" data-potion-activation>
+  <div class="ap-activation__screen">
+    <img data-activation-display src="assets/guide-activation-mandrake-still.webp" width="720" height="460"
+      alt="Mandrake Tonic activates from the right and turns the cabinet frame green.">
+  </div>
+  <div class="ap-activation__controls">
+    <label>
+      <span>Potion</span>
+      <select data-activation-potion>
+        <option value="wolfsbane" data-motion="assets/guide-activation-wolfsbane.webp" data-still="assets/guide-activation-wolfsbane-still.webp">Wolfsbane Cordial</option>
+        <option value="mandrake" data-motion="assets/guide-activation-mandrake.webp" data-still="assets/guide-activation-mandrake-still.webp" selected>Mandrake Tonic</option>
+        <option value="nightshade" data-motion="assets/guide-activation-nightshade.webp" data-still="assets/guide-activation-nightshade-still.webp">Nightshade Elixir</option>
+        <option value="mooncap" data-motion="assets/guide-activation-mooncap.webp" data-still="assets/guide-activation-mooncap-still.webp">Mooncap Draught</option>
+        <option value="phoenix" data-motion="assets/guide-activation-phoenix.webp" data-still="assets/guide-activation-phoenix-still.webp">Phoenix Infusion</option>
+        <option value="quicksilver" data-motion="assets/guide-activation-quicksilver.webp" data-still="assets/guide-activation-quicksilver-still.webp">Quicksilver Essence</option>
+        <optgroup label="Rare brews">
+          <option value="astral-convergence" data-motion="assets/guide-activation-astral-convergence.webp" data-still="assets/guide-activation-astral-convergence-still.webp">Astral Convergence</option>
+          <option value="runebound-elixir" data-motion="assets/guide-activation-runebound-elixir.webp" data-still="assets/guide-activation-runebound-elixir-still.webp">Runebound Elixir</option>
+        </optgroup>
+      </select>
+    </label>
+    <button type="button" data-activation-replay>Replay activation</button>
+  </div>
+</figure></div>
+      <div class="scene-copy">
+        <h2 id="potion-effect-title">Put your potion to work</h2>
+        <p>Bottles appear below the cauldron. Hover, focus, or press and hold a bottle to see its effect. Click or tap the bottle to use it. Only one potion can be active at a time. Its locked wager applies to your next <strong>three paid spins</strong>, then your previous wager selection returns.</p>
+      </div>
+    </section>
+    <section class="potion-chapter" id="potion-effects" aria-labelledby="potion-effects-title">
+  <header class="potion-chapter__intro">
+    <h2 id="potion-effects-title">The eight potions</h2>
+    <p>Ordinary potions draw their effect from the main ingredient and potency from the others. Rare potions follow their own recipes. Payout examples use an R3 locked wager and base-strength potions.</p>
+  </header>
+  <div class="potion-chapter__entries">
+    <article class="potion-entry" style="--potion-light:#ffbbe5">
+      <figure class="potion-glimpse" aria-label="Example three Roman VII symbols increase a winning payout from R2.25 to R2.50.">
+        <div class="potion-glimpse__pair" aria-hidden="true">
+          <img class="potion-glimpse__ingredient" src="assets/arcane-archives-wolfsbane-wine-v2.webp" alt="">
+          <img class="potion-glimpse__bottle" src="assets/wolfsbane-draught-potion-v1.webp" alt="">
+        </div>
+        <div class="potion-glimpse__result">
+          <div class="potion-glimpse__cabinet" data-potion-frame="wolfsbane" aria-hidden="true">
+            <div class="potion-glimpse__glyphs" aria-hidden="true">
+              <img src="assets/arcane-archives-roman-vii-barred-v4.webp" alt="">
+              <img src="assets/arcane-archives-roman-vii-barred-v4.webp" alt="">
+              <img src="assets/arcane-archives-roman-vii-barred-v4.webp" alt="">
+            </div>
+            <img class="potion-glimpse__rim potion-glimpse__rim--still" src="assets/guide-wolfsbane-still.webp" alt="">
+            <img class="potion-glimpse__rim potion-glimpse__rim--motion" data-motion-src="assets/guide-wolfsbane-idle.webp" alt="" decoding="async">
+          </div>
+          <p class="potion-glimpse__amounts" aria-hidden="true"><span>R2.25</span><span>→</span><strong>R2.50</strong></p>
+        </div>
+      </figure>
+      <header class="potion-entry__header">
+        <h3>Wolfsbane Wine &amp; Wolfsbane Cordial</h3>
+        <p>As the main ingredient, Wolfsbane Wine brews a cordial that boosts VII and pentagram payline payouts.</p>
+        <p class="potion-entry__secondary">As a secondary ingredient, it adds <strong>1 potency per unit</strong>.</p>
+      </header>
+    </article>
+    <article class="potion-entry" style="--potion-light:#baf6a0">
+      <figure class="potion-glimpse" aria-label="Example three matching Three Slashes glyphs increase a Scribe Mark payout from R2.25 to R3.50.">
+        <div class="potion-glimpse__pair" aria-hidden="true">
+          <img class="potion-glimpse__ingredient" src="assets/arcane-archives-mandrake-root-v1.webp" alt="">
+          <img class="potion-glimpse__bottle" src="assets/rootwake-potion-v1.webp" alt="">
+        </div>
+        <div class="potion-glimpse__result">
+          <div class="potion-glimpse__cabinet" data-potion-frame="mandrake" aria-hidden="true">
+            <div class="potion-glimpse__glyphs" aria-hidden="true">
+              <img src="assets/arcane-archives-ogham-three-slashes-v3.webp" alt="">
+              <img src="assets/arcane-archives-ogham-three-slashes-v3.webp" alt="">
+              <img src="assets/arcane-archives-ogham-three-slashes-v3.webp" alt="">
+            </div>
+            <img class="potion-glimpse__rim potion-glimpse__rim--still" src="assets/guide-mandrake-still.webp" alt="">
+            <img class="potion-glimpse__rim potion-glimpse__rim--motion" data-motion-src="assets/guide-mandrake-idle.webp" alt="" decoding="async">
+          </div>
+          <p class="potion-glimpse__amounts" aria-hidden="true"><span>R2.25</span><span>→</span><strong>R3.50</strong></p>
+        </div>
+      </figure>
+      <header class="potion-entry__header">
+        <h3>Mandrake Root &amp; Mandrake Tonic</h3>
+        <p>As the main ingredient, Mandrake Root brews a tonic that boosts Scribe Mark payouts by <strong>20–23%</strong> based on potency. The minimum bonus ranges from <strong>R0.25 to R1.25</strong> based on the wager.</p>
+        <p class="potion-entry__secondary">As a secondary ingredient, it adds <strong>1 potency per unit</strong>.</p>
+      </header>
+    </article>
+    <article class="potion-entry" style="--potion-light:#d5b8ff">
+      <figure class="potion-glimpse potion-glimpse--frequency" aria-label="Aether, Lightning and Fortune constellations appear more often.">
+        <div class="potion-glimpse__pair" aria-hidden="true">
+          <img class="potion-glimpse__ingredient" src="assets/arcane-archives-nightshade-berries-v1.webp" alt="">
+          <img class="potion-glimpse__bottle" src="assets/nightveil-potion-v1.webp" alt="">
+        </div>
+        <div class="potion-glimpse__result">
+          <div class="potion-glimpse__cabinet" data-potion-frame="nightshade" aria-hidden="true">
+            <div class="potion-glimpse__glyphs" aria-hidden="true">
+              <img src="assets/arcane-archives-aether-constellation-v1.webp" alt="">
+              <img src="assets/arcane-archives-living-lightning-rune-v2.webp" alt="">
+              <img src="assets/arcane-archives-fortune-constellation-rune-v7.webp" alt="">
+            </div>
+            <img class="potion-glimpse__rim potion-glimpse__rim--still" src="assets/guide-nightshade-still.webp" alt="">
+            <img class="potion-glimpse__rim potion-glimpse__rim--motion" data-motion-src="assets/guide-nightshade-idle.webp" alt="" decoding="async">
+          </div>
+        </div>
+      </figure>
+      <header class="potion-entry__header">
+        <h3>Nightshade Berries &amp; Nightshade Elixir</h3>
+        <p>As the main ingredient, Nightshade Berries brew an elixir that makes constellations land more often.</p>
+        <p class="potion-entry__secondary">As a secondary ingredient, it adds <strong>2 potency per unit</strong>.</p>
+      </header>
+    </article>
+    <article class="potion-entry" style="--potion-light:#c1ebff">
+      <figure class="potion-glimpse potion-glimpse--frequency" aria-label="VII and Pentagram symbols appear more often.">
+        <div class="potion-glimpse__pair" aria-hidden="true">
+          <img class="potion-glimpse__ingredient" src="assets/arcane-archives-mooncap-mushroom-v1.webp" alt="">
+          <img class="potion-glimpse__bottle" src="assets/moonfall-potion-v1.webp" alt="">
+        </div>
+        <div class="potion-glimpse__result">
+          <div class="potion-glimpse__cabinet" data-potion-frame="mooncap" aria-hidden="true">
+            <div class="potion-glimpse__glyphs" aria-hidden="true">
+              <img src="assets/arcane-archives-roman-vii-barred-v4.webp" alt="">
+              <img src="assets/arcane-archives-pentagram-v1.webp" alt="">
+              <img src="assets/arcane-archives-roman-vii-barred-v4.webp" alt="">
+            </div>
+            <img class="potion-glimpse__rim potion-glimpse__rim--still" src="assets/guide-mooncap-still.webp" alt="">
+            <img class="potion-glimpse__rim potion-glimpse__rim--motion" data-motion-src="assets/guide-mooncap-idle.webp" alt="" decoding="async">
+          </div>
+        </div>
+      </figure>
+      <header class="potion-entry__header">
+        <h3>Mooncap Mushroom &amp; Mooncap Draught</h3>
+        <p>As the main ingredient, Mooncap Mushroom brews a draught that makes VII and pentagrams land more often.</p>
+        <p class="potion-entry__secondary">As a secondary ingredient, it adds <strong>2 potency per unit</strong>.</p>
+      </header>
+    </article>
+    <article class="potion-entry" style="--potion-light:#ffe3a0">
+      <figure class="potion-glimpse potion-glimpse--frequency potion-glimpse--wand" aria-label="An Enchanted Wand appears more often.">
+        <div class="potion-glimpse__pair" aria-hidden="true">
+          <img class="potion-glimpse__ingredient" src="assets/arcane-archives-phoenix-feather-v1.webp" alt="">
+          <img class="potion-glimpse__bottle" src="assets/emberheart-potion-v1.webp" alt="">
+        </div>
+        <div class="potion-glimpse__result">
+          <div class="potion-glimpse__cabinet" data-potion-frame="phoenix" aria-hidden="true">
+            <div class="potion-glimpse__glyphs" aria-hidden="true">
+              <img src="assets/arcane-archives-ogham-two-right-v1.webp" alt="">
+              <img class="potion-glimpse__wand" src="assets/arcane-archives-traditional-wand-v6.webp" alt="">
+              <img src="assets/arcane-archives-pentagram-v1.webp" alt="">
+            </div>
+            <img class="potion-glimpse__rim potion-glimpse__rim--still" src="assets/guide-phoenix-still.webp" alt="">
+            <img class="potion-glimpse__rim potion-glimpse__rim--motion" data-motion-src="assets/guide-phoenix-idle.webp" alt="" decoding="async">
+          </div>
+        </div>
+      </figure>
+      <header class="potion-entry__header">
+        <h3>Phoenix Feather &amp; Phoenix Infusion</h3>
+        <p>As the main ingredient, Phoenix Feather brews an infusion that makes Enchanted Wands land more often.</p>
+        <p class="potion-entry__secondary">As a secondary ingredient, it adds <strong>3 potency per unit</strong>.</p>
+      </header>
+    </article>
+    <article class="potion-entry" style="--potion-light:#e9ffff">
+      <figure class="potion-glimpse" aria-label="Example Lightning constellation and Wand increase a winning payout from R12 to R12.25.">
+        <div class="potion-glimpse__pair" aria-hidden="true">
+          <img class="potion-glimpse__ingredient" src="assets/arcane-archives-quicksilver-v2.webp" alt="">
+          <img class="potion-glimpse__bottle" src="assets/silverflux-potion-v1.webp" alt="">
+        </div>
+        <div class="potion-glimpse__result">
+          <div class="potion-glimpse__cabinet" data-potion-frame="quicksilver" aria-hidden="true">
+            <div class="potion-glimpse__glyphs" aria-hidden="true">
+              <img src="assets/arcane-archives-living-lightning-rune-v2.webp" alt="">
+              <span>+</span>
+              <img class="potion-glimpse__wand" src="assets/arcane-archives-traditional-wand-v6.webp" alt="">
+            </div>
+            <img class="potion-glimpse__rim potion-glimpse__rim--still" src="assets/guide-quicksilver-still.webp" alt="">
+            <img class="potion-glimpse__rim potion-glimpse__rim--motion" data-motion-src="assets/guide-quicksilver-idle.webp" alt="" decoding="async">
+          </div>
+          <p class="potion-glimpse__amounts" aria-hidden="true"><span>R12</span><span>→</span><strong>R12.25</strong></p>
+        </div>
+      </figure>
+      <header class="potion-entry__header">
+        <h3>Quicksilver &amp; Quicksilver Essence</h3>
+        <p>As the main ingredient, Quicksilver brews an essence that makes wand-collected constellations pay more.</p>
+        <p class="potion-entry__secondary">As a secondary ingredient, it adds <strong>3 potency per unit</strong>.</p>
+      </header>
+    </article>
+    <article class="potion-entry" id="rare-potions" style="--potion-light:#b8ddff">
+      <figure class="potion-glimpse potion-glimpse--frequency" aria-label="Wands and constellations land more often, and wand-collected constellations pay more.">
+        <div class="potion-glimpse__pair" aria-hidden="true">
+          <img class="potion-glimpse__ingredient" src="assets/arcane-archives-quicksilver-v2.webp" alt="">
+          <img class="potion-glimpse__bottle" src="assets/rare-astral-convergence.webp" alt="">
+        </div>
+        <div class="potion-glimpse__result">
+          <div class="potion-glimpse__cabinet" aria-hidden="true">
+            <div class="potion-glimpse__glyphs">
+              <img src="assets/arcane-archives-aether-constellation-v1.webp" alt="">
+              <img class="potion-glimpse__wand" src="assets/arcane-archives-traditional-wand-v6.webp" alt="">
+              <img src="assets/arcane-archives-living-lightning-rune-v2.webp" alt="">
+            </div>
+            <img class="potion-glimpse__rim potion-glimpse__rim--still" src="assets/guide-astral-convergence-still.webp" alt="">
+          </div>
+        </div>
+      </figure>
+      <header class="potion-entry__header">
+        <h3>Astral Convergence</h3>
+        <p>Wands and constellations land more often. Constellations collected by a wand pay more.</p>
+        <p class="potion-entry__secondary"><strong>Rare brew.</strong> Use two units each of Mandrake Root, Quicksilver, and two other ingredients.</p>
+      </header>
+    </article>
+    <article class="potion-entry" style="--potion-light:#ffe0a7">
+      <figure class="potion-glimpse potion-glimpse--frequency" aria-label="VII and pentagrams land more often, and every winning payline pays more.">
+        <div class="potion-glimpse__pair" aria-hidden="true">
+          <img class="potion-glimpse__ingredient" src="assets/arcane-archives-mandrake-root-v1.webp" alt="">
+          <img class="potion-glimpse__bottle" src="assets/rare-runebound-elixir.webp" alt="">
+        </div>
+        <div class="potion-glimpse__result">
+          <div class="potion-glimpse__cabinet" aria-hidden="true">
+            <div class="potion-glimpse__glyphs">
+              <img src="assets/arcane-archives-roman-vii-barred-v4.webp" alt="">
+              <img src="assets/arcane-archives-pentagram-v1.webp" alt="">
+              <img src="assets/arcane-archives-roman-vii-barred-v4.webp" alt="">
+            </div>
+            <img class="potion-glimpse__rim potion-glimpse__rim--still" src="assets/guide-runebound-elixir-still.webp" alt="">
+          </div>
+        </div>
+      </figure>
+      <header class="potion-entry__header">
+        <h3>Runebound Elixir</h3>
+        <p>VII and pentagrams land more often. Every winning payline pays more.</p>
+        <p class="potion-entry__secondary"><strong>Rare brew.</strong> Use two units of Mandrake Root and two units each of three other ingredients from Nightshade Berries, Mooncap Mushroom, Phoenix Feather, and Wolfsbane Wine.</p>
+      </header>
+    </article>
+  </div>
+</section>
+    <section class="scene" id="wand" aria-labelledby="wand-title">
+      <div class="scene-art">
+        <figure class="wand-orbit" aria-label="A wand surrounded by the Aether, Lightning and Fortune constellations">
+          <div class="astral-rings" aria-hidden="true"></div>
+          <img class="wand-orbit__wand" src="assets/arcane-archives-traditional-wand-v6.webp" alt="">
+          <ul>
+            <li style="--orbit-start:-90deg"><img src="assets/arcane-archives-aether-constellation-v1.webp" alt=""><span>Aether <b>2× spin wager</b></span></li>
+            <li style="--orbit-start:150deg"><img src="assets/arcane-archives-living-lightning-rune-v2.webp" alt=""><span>Lightning <b>4× spin wager</b></span></li>
+            <li style="--orbit-start:30deg"><img src="assets/arcane-archives-fortune-constellation-rune-v7.webp" alt=""><span>Fortune <b>10× spin wager</b></span></li>
+          </ul>
+        </figure>
+      </div>
+      <div class="scene-copy">
+        <h2 id="wand-title">Cast with a constellation</h2>
+        <p>Land a wand and a constellation anywhere on the same spin. One wand pays out every visible constellation.</p>
+      </div>
+    </section>
+    <section class="scene scene--reverse" id="paylines" aria-labelledby="paylines-title">
+      <div class="scene-art"><figure class="intro-payline-demo" data-payline-demo aria-label="Payline illustrations. Matching Scribe Marks, VIIs and pentagrams form straight, diagonal and stepped patterns.">
+  <div class="intro-payline-stage" data-payline-stage data-payline-pattern="straight-five" data-payline-phase="hold" aria-hidden="true">
+    <img class="intro-payline-symbol" src="assets/arcane-archives-ogham-two-right-v1.webp" alt="" draggable="false" style="--payline-column:0;--payline-row:1">
+    <img class="intro-payline-symbol" src="assets/arcane-archives-ogham-two-right-v1.webp" alt="" draggable="false" style="--payline-column:1;--payline-row:1">
+    <img class="intro-payline-symbol" src="assets/arcane-archives-ogham-two-right-v1.webp" alt="" draggable="false" style="--payline-column:2;--payline-row:1">
+    <img class="intro-payline-symbol" src="assets/arcane-archives-ogham-two-right-v1.webp" alt="" draggable="false" style="--payline-column:3;--payline-row:1">
+    <img class="intro-payline-symbol" src="assets/arcane-archives-ogham-two-right-v1.webp" alt="" draggable="false" style="--payline-column:4;--payline-row:1">
+  </div>
+</figure></div>
+      <div class="scene-copy">
+        <h2 id="paylines-title">Payline wins</h2>
+        <p>Match exactly three or five identical Scribe Marks, VIIs or pentagrams in one of the shapes shown. A straight or diagonal three-symbol match can start on reels 1, 2 or 3.</p>
+        <button type="button" class="payline-gallery-toggle" aria-expanded="false" aria-controls="payline-gallery" data-payline-toggle>
+          <span>Show all payline shapes</span>
+        </button>
+      </div>
+      <div class="payline-gallery" id="payline-gallery" hidden>
+        <section aria-labelledby="three-symbol-shapes">
+          <h3 id="three-symbol-shapes">Three matching symbols</h3>
+          <ul class="payline-shapes payline-shapes--three" data-three-symbol-shapes></ul>
+        </section>
+        <section aria-labelledby="five-symbol-shapes">
+          <h3 id="five-symbol-shapes">Five matching symbols</h3>
+          <ol class="payline-shapes" data-five-symbol-shapes></ol>
+        </section>
+      </div>
+    </section>
+    <footer class="endnote"><a href="#top" class="guide-link">Back to top <span aria-hidden="true">↑</span></a></footer>
+  </main>
+  <script>
+(() => {
+  if (window.parent === window) return;
+
+  document.addEventListener('click', event => {
+    const link = event.target.closest?.('a[href^="#"]');
+    const target = link && document.getElementById(link.hash.slice(1));
+    if (!target) return;
+
+    event.preventDefault();
+    target.tabIndex = -1;
+    target.scrollIntoView();
+    target.focus({ preventScroll: true });
+  });
+
+  window.addEventListener('keydown', event => {
+    if (event.defaultPrevented || !['Escape', 'm', 'M'].includes(event.key)) return;
+
+    const forwarded = new KeyboardEvent('keydown', {
+      key: event.key, altKey: event.altKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey,
+      repeat: event.repeat, bubbles: true, cancelable: true,
+    });
+    if (!window.parent.document.dispatchEvent(forwarded)) event.preventDefault();
+  });
+})();
+
+(() => {
+  const preference = matchMedia('(prefers-reduced-motion: reduce)');
+
+  function syncMotionPreference() {
+    const paused = preference.matches;
+    document.documentElement.dataset.motionPaused = String(paused);
+    document.dispatchEvent(new CustomEvent('arcane:motionchange', { detail: { paused } }));
+  }
+
+  preference.addEventListener('change', syncMotionPreference);
+  syncMotionPreference();
+})();
+(() => {
+  const scene = document.querySelector('[data-potion-activation]');
+  if (!scene) return;
+
+  let display = scene.querySelector('[data-activation-display]');
+  const picker = scene.querySelector('[data-activation-potion]');
+  const replay = scene.querySelector('[data-activation-replay]');
+  const embeddedClips = new Map();
+  let request = 0;
+
+  function selectedPotion() {
+    return picker.selectedOptions[0];
+  }
+
+  function describe(potion) {
+    return potion.label + ' pours from the right, revealing its cabinet frame.';
+  }
+
+  function showStill() {
+    request += 1;
+    const potion = selectedPotion();
+    display.alt = describe(potion);
+    display.src = potion.dataset.still;
+  }
+
+  async function play() {
+    const queued = ++request;
+    const potion = selectedPotion();
+    const source = potion.dataset.motion;
+    let objectUrl;
+    try {
+      let playbackUrl;
+      if (source.startsWith('data:')) {
+        if (!embeddedClips.has(potion.value)) {
+          const response = await fetch(source);
+          embeddedClips.set(potion.value, await response.blob());
+        }
+        if (queued !== request) return;
+        objectUrl = URL.createObjectURL(embeddedClips.get(potion.value));
+        playbackUrl = objectUrl;
+      } else {
+        const url = new URL(source, document.baseURI);
+        url.searchParams.set('play', queued);
+        playbackUrl = url.href;
+      }
+
+      const clip = display.cloneNode(false);
+      clip.src = playbackUrl;
+      await clip.decode();
+      if (queued !== request) return;
+      clip.alt = describe(potion);
+      display.replaceWith(clip);
+      display = clip;
+    } catch {
+      if (queued === request) showStill();
+    } finally {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    }
+  }
+
+  function syncPreference() {
+    if (document.documentElement.dataset.motionPaused === 'true') showStill();
+    else play();
+  }
+
+  picker.addEventListener('change', syncPreference);
+  replay.addEventListener('click', play);
+  document.addEventListener('arcane:motionchange', syncPreference);
+
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+      if (request === 0) syncPreference();
+    }, { threshold: .22 });
+    observer.observe(scene);
+  } else {
+    syncPreference();
+  }
+})();
+(() => {
+  const entries = new Map(Array.from(document.querySelectorAll('[data-potion-frame]'), cabinet => [
+    cabinet, { image: cabinet.querySelector('[data-motion-src]'), visible: false },
+  ]));
+  if (!entries.size || !('IntersectionObserver' in window)) return;
+
+  function shouldPlay(entry) {
+    return entry.visible && !document.hidden && document.documentElement.dataset.motionPaused !== 'true';
+  }
+
+  function sync(cabinet, entry) {
+    if (shouldPlay(entry)) {
+      if (!entry.image.hasAttribute('src')) entry.image.src = entry.image.dataset.motionSrc;
+    } else {
+      cabinet.removeAttribute('data-potion-playing');
+      entry.image.removeAttribute('src');
+    }
+  }
+
+  const observer = new IntersectionObserver(items => {
+    for (const { target, isIntersecting } of items) {
+      const entry = entries.get(target);
+      entry.visible = isIntersecting;
+      sync(target, entry);
+    }
+  }, { threshold: .16 });
+
+  for (const [cabinet, entry] of entries) {
+    entry.image.addEventListener('load', () => {
+      if (entry.image.hasAttribute('src') && shouldPlay(entry)) cabinet.dataset.potionPlaying = 'true';
+    });
+    entry.image.addEventListener('error', () => cabinet.removeAttribute('data-potion-playing'));
+    observer.observe(cabinet);
+  }
+
+  function syncAll() {
+    for (const [cabinet, entry] of entries) sync(cabinet, entry);
+  }
+
+  document.addEventListener('arcane:motionchange', syncAll);
+  document.addEventListener('visibilitychange', syncAll);
+})();
+(() => {
+  const scene = document.querySelector('[data-ap-brew-cycle]');
+  if (!scene) return;
+  const pot = scene.querySelector('.ap-drop-pot');
+  const canvas = scene.querySelector('.ap-brew-colors');
+  const display = canvas.getContext('2d');
+  if (!display) return;
+  const ingredient = scene.querySelector('.ap-ingredient');
+  const splashChannels = scene.querySelector('#ap-splash-palette feComponentTransfer').children;
+  const reduced = matchMedia('(prefers-reduced-motion:reduce)');
+
+  const brews = [
+    { ingredient:'Mandrake Root', icon:'assets/arcane-archives-mandrake-root-v1.webp',
+      shadow:[15,23,8], mid:[85,126,35], light:[221,240,131] },
+    { ingredient:'Nightshade Berries', icon:'assets/arcane-archives-nightshade-berries-v1.webp',
+      shadow:[18,7,34], mid:[99,29,152], light:[228,165,255] },
+    { ingredient:'Mooncap Mushroom', icon:'assets/arcane-archives-mooncap-mushroom-v1.webp',
+      shadow:[5,24,42], mid:[28,146,179], light:[169,249,255] },
+    { ingredient:'Phoenix Feather', icon:'assets/arcane-archives-phoenix-feather-v1.webp',
+      shadow:[47,10,4], mid:[207,69,17], light:[255,218,112] },
+    { ingredient:'Wolfsbane Wine', icon:'assets/arcane-archives-wolfsbane-wine-v2.webp',
+      shadow:[29,4,18], mid:[121,21,63], light:[243,142,193] },
+    { ingredient:'Quicksilver', icon:'assets/arcane-archives-quicksilver-v2.webp',
+      shadow:[15,20,27], mid:[101,114,130], light:[243,248,252] },
+  ];
+
+  const basePalette = {shadow:[37,12,54], mid:[132,66,172], light:[251,219,255]};
+  const style = getComputedStyle(scene);
+  const readNumber = property => Number.parseFloat(style.getPropertyValue(property));
+  const unit = readNumber('--ap-drop-cycle') * 1000;
+  const splashEnd = readNumber('--ap-splash-end');
+  const colorSettled = .63;
+  const size = canvas.width;
+  const aperture = { x:readNumber('--ap-mouth-x'), y:readNumber('--ap-mouth-y'), rx:.319, ry:.084 };
+  const crop = { left:Math.floor(size*.164), top:Math.floor(size*.174), width:Math.ceil(size*.659), height:Math.ceil(size*.18) };
+  const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
+  const blend = (a,b,t) => a+(b-a)*t;
+  const smooth = value => { const t=clamp(value); return t*t*(3-2*t); };
+
+  let tiles = [];
+  let anims = [];
+  let live = false;
+  let elapsed = 0;
+  let lastTime = null;
+  let queued = 0;
+  let iconIndex = -1;
+  let leadingIndex = -2;
+  let paintKey = '';
+  const canMove = () => live && !document.hidden && !reduced.matches && document.documentElement.dataset.motionPaused !== 'true';
+
+  function renderPalettes() {
+    const stage = document.createElement('canvas');
+    stage.width = stage.height = size;
+    const stageContext = stage.getContext('2d',{willReadFrequently:true});
+    stageContext.drawImage(pot,0,0,size,size);
+    const original = stageContext.getImageData(crop.left,crop.top,crop.width,crop.height).data;
+    return brews.map(brew => {
+      const tile = document.createElement('canvas');
+      tile.width=crop.width;
+      tile.height=crop.height;
+      const renderer=tile.getContext('2d');
+      const pixels=renderer.createImageData(tile.width,tile.height);
+      for(let y=0;y<tile.height;y++) for(let x=0;x<tile.width;x++) {
+        const i=(y*tile.width+x)*4;
+        const r=original[i], g=original[i+1], b=original[i+2];
+        const u=((x+crop.left)/size-aperture.x)/aperture.rx;
+        const v=((y+crop.top)/size-aperture.y)/aperture.ry;
+        const edge=smooth((1.034-Math.hypot(u,v))/.137);
+        const colored=smooth((b-Math.min(r,g)-9)/29);
+        const energy=.23*r+.55*g+.22*b;
+        const t=clamp((energy-13)/175);
+        const stops=t < .55 ? [brew.shadow,brew.mid,t/.55] : [brew.mid,brew.light,(t-.55)/.45];
+        const intensity=edge*colored;
+        pixels.data[i] = blend(stops[0][0],stops[1][0],stops[2]);
+        pixels.data[i+1] = blend(stops[0][1],stops[1][1],stops[2]);
+        pixels.data[i+2] = blend(stops[0][2],stops[1][2],stops[2]);
+        pixels.data[i+3] = original[i+3]*intensity;
+      }
+      renderer.putImageData(pixels,0,0);
+      return tile;
+    });
+  }
+
+  function setLeadingIngredient(number) {
+    if(number === leadingIndex) return;
+    leadingIndex=number;
+    const current=brews[number];
+    scene.dataset.leadingIngredient=current?.ingredient ?? '';
+  }
+
+  function draw(from, to, amount) {
+    const key=from+':'+to+':'+Math.round(amount*255);
+    if(key===paintKey) return;
+    paintKey=key;
+    display.clearRect(0,0,size,size);
+    display.globalCompositeOperation='lighter';
+    if(tiles[from]&&amount<1) {
+      display.globalAlpha=1-amount;
+      display.drawImage(tiles[from],crop.left,crop.top);
+    }
+    if(tiles[to]&&amount>0) {
+      display.globalAlpha=amount;
+      display.drawImage(tiles[to],crop.left,crop.top);
+    }
+    display.globalAlpha=1;
+    display.globalCompositeOperation='source-over';
+  }
+
+  function tintSplash(fill) {
+    const {shadow, mid, light} = fill;
+    for (const [index, channel] of Array.from(splashChannels).entries()) {
+      channel.setAttribute('tableValues', [shadow[index], mid[index], light[index]]
+        .map(value => value / 255).join(' '));
+    }
+  }
+
+  function frame(time) {
+    queued=0;
+    if(!canMove()) return;
+    if(lastTime!==null) elapsed += Math.min(time-lastTime,100);
+    lastTime=time;
+    const cycle = unit*brews.length;
+    if(elapsed>=cycle+480) elapsed=0;
+    const index = Math.min(Math.floor(elapsed/unit),brews.length-1);
+    const local = elapsed-index*unit;
+    const phase = local/unit;
+    if(index!==iconIndex) {
+      iconIndex=index;
+      ingredient.src=brews[index].icon;
+      tintSplash(brews[index-1] ?? basePalette);
+    }
+    const animationTime = Math.min(local,unit-.1);
+    for(const animation of anims) animation.currentTime=animationTime;
+    const amount=smooth((phase-splashEnd)/(colorSettled-splashEnd));
+    if(elapsed>=cycle) draw(index,-1,smooth((elapsed-cycle)/480));
+    else draw(index-1,index,amount);
+    setLeadingIngredient(elapsed>=cycle+240 ? -1 : phase>=splashEnd ? index : index-1);
+    queued=requestAnimationFrame(frame);
+  }
+
+  function sync() {
+    lastTime=null;
+    if(queued) cancelAnimationFrame(queued);
+    queued=0;
+    if(reduced.matches) {
+      draw(-1,-1,0);
+      setLeadingIngredient(-1);
+      return;
+    }
+    if(!anims.length) {
+      anims=scene.getAnimations({subtree:true});
+      for(const animation of anims){animation.pause();animation.currentTime=0;}
+    }
+    if(canMove()) queued=requestAnimationFrame(frame);
+  }
+
+  async function start() {
+    await Promise.all([pot.decode(), ...brews.map(async ({icon}) => {
+      const preload=new Image();
+      preload.src=icon;
+      await preload.decode();
+    })]);
+    tiles=renderPalettes();
+    scene.setAttribute('data-fluid-ready','');
+    sync();
+    if('IntersectionObserver' in window) {
+      new IntersectionObserver(([entry])=>{live=entry.isIntersecting;sync();},{threshold:.32}).observe(scene);
+    } else { live=true; sync(); }
+    document.addEventListener('arcane:motionchange',sync);
+    document.addEventListener('visibilitychange',sync);
+    reduced.addEventListener('change',()=>{anims=[];sync();});
+  }
+
+  start().catch(()=>scene.removeAttribute('data-ap-brew-cycle'));
+})();
+(() => {
+  const book = document.querySelector('[data-grimoire-book]');
+  if (!book) return;
+
+  const pages = [
+  {
+    "title": "Herbalism",
+    "folio": "I",
+    "ingredients": [
+      [
+        "assets/arcane-archives-mandrake-root-v1.webp",
+        "Mandrake Root"
+      ],
+      [
+        "assets/arcane-archives-nightshade-berries-v1.webp",
+        "Nightshade Berries"
+      ]
+    ]
+  },
+  {
+    "title": "Transmutation",
+    "folio": "II",
+    "ingredients": [
+      [
+        "assets/arcane-archives-quicksilver-v2.webp",
+        "Quicksilver"
+      ],
+      [
+        "assets/arcane-archives-phoenix-feather-v1.webp",
+        "Phoenix Feather"
+      ]
+    ]
+  },
+  {
+    "title": "Tinctures",
+    "folio": "III",
+    "ingredients": [
+      [
+        "assets/arcane-archives-mooncap-mushroom-v1.webp",
+        "Mooncap Mushroom"
+      ],
+      [
+        "assets/arcane-archives-wolfsbane-wine-v2.webp",
+        "Wolfsbane Wine"
+      ]
+    ]
+  }
+];
+
+  const boostList = document.querySelector('[data-grimoire-boost-list]');
+  for (const page of pages) {
+    const entry = document.createElement('div');
+    const title = document.createElement('dt');
+    const recipe = document.createElement('dd');
+    title.textContent = page.title;
+    recipe.textContent = page.ingredients.map(([, label]) => label).join(' + ');
+    entry.append(title, recipe);
+    boostList.append(entry);
+  }
+
+  // Printable width from the spine and vertical edge lift, measured in atlas pixels.
+  const recipePoses = [
+    [202, 0], [202, -1], [202, -2], [202, -3], [202, -4], [201, -5],
+    [198, -8], [195, -8], [189, -10], [182, -13], [172, -15], [159, -18],
+    [143, -20], [124, -23], [103, -25], [78, -27], [54, -24], [28, -18],
+  ];
+  const titlePoses = [
+    [38, -8], [59, -10], [80, -11], [100, -12], [119, -13], [137, -12],
+    [154, -11], [166, -11], [174, -10], [181, -9], [187, -8], [192, -8],
+    [195, -7], [198, -6], [200, -5], [201, -4], [202, -3], [203, -3],
+    [204, -2], [204, -3], [204, -2], [204, -1], [204, -1], [204, 0], [204, 0], [203, 0],
+  ];
+
+  const lectern = book.querySelector('[data-grimoire-lectern]');
+  const sheet = book.querySelector('[data-grimoire-turn]');
+  const titlePage = book.querySelector('.intro-grimoire-page--title');
+  const recipePage = book.querySelector('.intro-grimoire-page--recipe');
+  const title = titlePage.querySelector('[data-grimoire-title]');
+  const previous = book.querySelector('[data-grimoire-prev]');
+  const next = book.querySelector('[data-grimoire-next]');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  let pageIndex = 0;
+  let titlePageIndex = 0;
+  let recipePageIndex = 0;
+  let bookVisible = false;
+  let manualHoldUntil = 0;
+  let turn = null;
+  let pendingPage = null;
+  let revealFrame = 0;
+
+  const motionEnabled = () => !reducedMotion.matches && document.documentElement.dataset.motionPaused !== 'true';
+
+  function fillTitle(pageNode, page) {
+    pageNode.querySelector('[data-grimoire-title]').textContent = page.title;
+    pageNode.querySelector('[data-grimoire-folio]').textContent = page.folio;
+    pageNode.querySelector('[data-grimoire-plate]').src = page.ingredients[0][0];
+  }
+
+  function fillRecipe(pageNode, page) {
+    const ingredients = pageNode.querySelector('[data-grimoire-ingredients]');
+    ingredients.replaceChildren(...page.ingredients.map(([src, label]) => {
+      const row = document.createElement('li');
+      const image = document.createElement('img');
+      image.src = src;
+      image.alt = '';
+      row.append(image, document.createTextNode(label));
+      return row;
+    }));
+  }
+
+  function renderTitle(index) {
+    if (titlePageIndex === index) return;
+    titlePageIndex = index;
+    fillTitle(titlePage, pages[index]);
+  }
+
+  function renderRecipe(index) {
+    if (recipePageIndex === index) return;
+    recipePageIndex = index;
+    fillRecipe(recipePage, pages[index]);
+  }
+
+  function printFace(template, fill, index, side) {
+    const pageNode = template.cloneNode(true);
+    fill(pageNode, pages[index]);
+    pageNode.querySelector('[aria-live]')?.removeAttribute('aria-live');
+    const spread = document.createElement('div');
+    spread.className = 'intro-grimoire-spread';
+    spread.append(pageNode);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'intro-grimoire-ink intro-grimoire-ink--' + side;
+    wrapper.append(spread);
+    return wrapper;
+  }
+
+  function renderPage(index) {
+    pageIndex = index;
+    renderTitle(index);
+    renderRecipe(index);
+  }
+
+  function settlePageTurn() {
+    if (pendingPage === null) return;
+    const index = pendingPage;
+    pendingPage = null;
+    window.cancelAnimationFrame(revealFrame);
+    if (turn) turn.cancel();
+    turn = null;
+    lectern.classList.remove('is-turning');
+    sheet.replaceChildren();
+    renderPage(index);
+  }
+
+  function changePage(direction, manual = false) {
+    if (manual) manualHoldUntil = Date.now() + 9000;
+    if (turn) return;
+    const target = (pageIndex + direction + pages.length) % pages.length;
+    title.setAttribute('aria-live', manual ? 'polite' : 'off');
+    if (!motionEnabled() || typeof sheet.animate !== 'function') {
+      renderPage(target);
+      return;
+    }
+
+    const columns = 8;
+    const rows = 6;
+    const frameCount = columns * rows;
+    const forward = direction > 0;
+    sheet.replaceChildren(
+      printFace(recipePage, fillRecipe, forward ? pageIndex : target, 'recipe'),
+      printFace(titlePage, fillTitle, forward ? target : pageIndex, 'title'),
+    );
+    const frames = Array.from({ length: frameCount + 1 }, (_, offset) => {
+      const index = Math.min(offset, frameCount - 1);
+      const frame = forward ? index : frameCount - index - 1;
+      const x = (frame % columns) * 100 / (columns - 1);
+      const y = Math.floor(frame / columns) * 100 / (rows - 1);
+      const recipePose = recipePoses[frame - 1];
+      const titlePose = titlePoses[frame - 21];
+      const [width, lean] = recipePose ?? titlePose ?? [0, 0];
+      const restWidth = recipePose ? recipePoses[0][0] : titlePoses.at(-1)[0];
+      return {
+        '--grimoire-atlas-position': x + '% ' + y + '%',
+        '--grimoire-ink-width': width / restWidth,
+        '--grimoire-ink-lean': lean / (recipePose ? restWidth : -restWidth),
+        '--grimoire-recipe-ink': recipePose ? 'visible' : 'hidden',
+        '--grimoire-title-ink': titlePose ? 'visible' : 'hidden',
+        offset: offset / frameCount,
+        easing: 'steps(1, end)',
+      };
+    });
+
+    lectern.classList.add('is-turning');
+    pendingPage = target;
+    const motion = sheet.animate(frames, { duration: 910 });
+    turn = motion;
+    // Change only the covered side when the illustrated sheet fully masks it.
+    const reveals = forward
+      ? [{ frame: 3, render: renderRecipe }, { frame: 34, render: renderTitle }]
+      : [{ frame: 3, render: renderTitle }, { frame: 39, render: renderRecipe }];
+    let revealIndex = 0;
+    function syncSpread() {
+      if (turn !== motion) return;
+      const progress = motion.effect.getComputedTiming().progress ?? 0;
+      const frame = Math.floor(progress * frameCount);
+      while (revealIndex < reveals.length && frame >= reveals[revealIndex].frame) {
+        reveals[revealIndex].render(target);
+        revealIndex += 1;
+      }
+      if (revealIndex < reveals.length) revealFrame = window.requestAnimationFrame(syncSpread);
+    }
+    revealFrame = window.requestAnimationFrame(syncSpread);
+    motion.finished.then(settlePageTurn, () => {});
+  }
+
+  previous.addEventListener('click', () => changePage(-1, true));
+  next.addEventListener('click', () => changePage(1, true));
+  book.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    changePage(event.key === 'ArrowLeft' ? -1 : 1, true);
+  });
+
+  function updateMotion() {
+    if (!motionEnabled()) settlePageTurn();
+  }
+
+  document.addEventListener('arcane:motionchange', updateMotion);
+  reducedMotion.addEventListener('change', updateMotion);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) settlePageTurn();
+  });
+
+  if ('IntersectionObserver' in window) {
+    const visibility = new IntersectionObserver(([entry]) => {
+      bookVisible = entry.isIntersecting;
+      if (entry.isIntersecting) book.classList.add('is-illuminated');
+    }, { threshold: 0.35 });
+    visibility.observe(book);
+  } else {
+    bookVisible = true;
+    book.classList.add('is-illuminated');
+  }
+
+  window.setInterval(() => {
+    if (!bookVisible || Date.now() < manualHoldUntil || !motionEnabled() || document.hidden) return;
+    if (!book.matches(':hover, :focus-within')) changePage(1);
+  }, 4200);
+
+  const atlas = new Image();
+  atlas.src = 'assets/arcane-tome-page-flip-overlay-v1.png';
+  for (const page of pages.slice(1)) {
+    for (const [src] of page.ingredients) {
+      const icon = new Image();
+      icon.src = src;
+    }
+  }
+})();
+(() => {
+  'use strict';
+
+  const figure = document.querySelector('[data-payline-demo]');
+  const stage = figure?.querySelector('[data-payline-stage]');
+  if (!stage) return;
+
+  const art = {
+    rightMark: 'assets/arcane-archives-ogham-two-right-v1.webp',
+    leftMark: 'assets/arcane-archives-ogham-three-left-v1.webp',
+    slashMark: 'assets/arcane-archives-ogham-three-slashes-v3.webp',
+    seven: 'assets/arcane-archives-roman-vii-barred-v4.webp',
+    star: 'assets/arcane-archives-pentagram-v1.webp',
+  };
+
+  // Snapshot of the 16 active five-reel paylines in Arcane's engine guide contract.
+  const fiveSymbolShapes = [
+    [0, 0, 0, 0, 0], [1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3],
+    [0, 1, 2, 1, 0], [1, 2, 3, 2, 1], [3, 2, 1, 2, 3], [2, 1, 0, 1, 2],
+    [0, 1, 1, 1, 0], [1, 2, 2, 2, 1], [0, 1, 0, 1, 0], [1, 2, 1, 2, 1],
+    [2, 3, 2, 3, 2], [1, 0, 1, 0, 1], [2, 1, 2, 1, 2], [3, 2, 3, 2, 3],
+  ];
+  const threeSymbolShapes = {
+    straight: { label: 'Straight', rows: [1, 1, 1] },
+    rising: { label: 'Rising diagonal', rows: [2, 1, 0] },
+    falling: { label: 'Falling diagonal', rows: [0, 1, 2] },
+  };
+  const examples = [
+    { name: 'straight-five', art: art.rightMark, rows: fiveSymbolShapes[1] },
+    { name: 'falling-three', art: art.star, rows: threeSymbolShapes.falling.rows },
+    { name: 'valley-five', art: art.seven, rows: fiveSymbolShapes[4] },
+    { name: 'straight-three', art: art.slashMark, rows: threeSymbolShapes.straight.rows, firstColumn: 1 },
+    { name: 'peak-five', art: art.star, rows: fiveSymbolShapes[7] },
+    { name: 'rising-three', art: art.seven, rows: threeSymbolShapes.rising.rows.map(row => row + 1), firstColumn: 2 },
+    { name: 'step-five', art: art.leftMark, rows: fiveSymbolShapes[8] },
+    { name: 'zigzag-five', art: art.slashMark, rows: fiveSymbolShapes[11] },
+  ];
+
+  function drawShape(label, rows, rowCount, describeRows = false) {
+    const item = document.createElement('li');
+    const diagram = document.createElement('div');
+    const caption = document.createElement('span');
+    const ratio = 1.8;
+    caption.textContent = label;
+    diagram.className = 'payline-shape';
+    diagram.style.setProperty('--shape-ratio', ratio);
+    if (describeRows) {
+      diagram.setAttribute('role', 'img');
+      diagram.setAttribute('aria-label', 'Rows ' + rows.map(row => row + 1).join(', '));
+    } else {
+      diagram.setAttribute('aria-hidden', 'true');
+    }
+
+    const point = (column, row) => [100 * (column + .5) / rows.length, 100 * (row + .5) / rowCount];
+    const mark = (name, [x, y]) => {
+      const element = document.createElement('span');
+      element.className = name;
+      element.style.left = x + '%';
+      element.style.top = y + '%';
+      diagram.append(element);
+      return element;
+    };
+    rows.forEach((row, column) => {
+      for (let r = 0; r < rowCount; r++) mark('payline-shape__dot', point(column, r));
+    });
+    rows.slice(1).forEach((row, index) => {
+      const from = point(index, rows[index]);
+      const to = point(index + 1, row);
+      const dx = to[0] - from[0];
+      const dy = (to[1] - from[1]) / ratio;
+      const line = mark('payline-shape__segment', from);
+      line.style.width = Math.hypot(dx, dy) + '%';
+      line.style.rotate = Math.atan2(dy, dx) + 'rad';
+    });
+    rows.forEach((row, column) => mark('payline-shape__dot payline-shape__dot--active', point(column, row)));
+
+    item.append(diagram, caption);
+    return item;
+  }
+
+  const toggle = document.querySelector('[data-payline-toggle]');
+  const gallery = document.getElementById(toggle.getAttribute('aria-controls'));
+  gallery.querySelector('[data-three-symbol-shapes]').append(...Object.values(threeSymbolShapes).map(
+    ({ label, rows }) => drawShape(label, rows, 3),
+  ));
+  gallery.querySelector('[data-five-symbol-shapes]').append(...fiveSymbolShapes.map(
+    (rows, index) => drawShape('Line ' + (index + 1), rows, 4, true),
+  ));
+  toggle.addEventListener('click', () => {
+    const open = gallery.hidden;
+    gallery.hidden = !open;
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.firstElementChild.textContent = open ? 'Hide payline shapes' : 'Show all payline shapes';
+  });
+
+  if (typeof stage.animate !== 'function') return;
+
+  const holdMilliseconds = 1500;
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let activeAnimations = [];
+  let exampleIndex = 0;
+  let inView = !('IntersectionObserver' in window);
+
+  function updatePlayback() {
+    const preference = document.documentElement.dataset.motionPaused;
+    const paused = preference ? preference === 'true' : reducedMotion.matches;
+    const shouldPlay = inView && !document.hidden && !paused;
+    for (const animation of activeAnimations) {
+      if (animation.playState === 'finished') continue;
+      if (shouldPlay) animation.play();
+      else animation.pause();
+    }
+  }
+
+  function runPhase(phase, animations, next) {
+    activeAnimations.forEach(animation => animation.cancel());
+    activeAnimations = animations;
+    stage.dataset.paylinePhase = phase;
+    updatePlayback();
+    void Promise.all(animations.map(animation => animation.finished)).then(next, () => {});
+  }
+
+  function hold() {
+    runPhase('hold', [stage.animate([{ opacity: 1 }], holdMilliseconds)], dropOut);
+  }
+
+  function dropOut() {
+    const falling = Array.from(stage.children, (symbol, index) => symbol.animate(
+      [
+        { transform: 'translateY(0)', opacity: 1 },
+        { transform: 'translateY(.7rem)', opacity: .96, offset: .28 },
+        { transform: 'translateY(6.5rem)', opacity: 0 },
+      ],
+      { duration: 345, delay: index * 27, fill: 'both', easing: 'cubic-bezier(.38, .04, .9, .73)' },
+    ));
+    runPhase('drop-out', falling, dropIn);
+  }
+
+  function dropIn() {
+    exampleIndex = (exampleIndex + 1) % examples.length;
+    const { name, art: image, rows, firstColumn = 0 } = examples[exampleIndex];
+    const symbols = rows.map((row, index) => {
+      const symbol = new Image();
+      symbol.className = 'intro-payline-symbol';
+      symbol.src = image;
+      symbol.alt = '';
+      symbol.draggable = false;
+      symbol.style.setProperty('--payline-column', index + firstColumn);
+      symbol.style.setProperty('--payline-row', row);
+      return symbol;
+    });
+    stage.dataset.paylinePattern = name;
+    stage.replaceChildren(...symbols);
+    const landing = symbols.map((symbol, index) => symbol.animate(
+      [
+        { transform: 'translateY(-5rem) scale(.96)', opacity: 0 },
+        { transform: 'translateY(.2rem) scale(1)', opacity: 1, offset: .8 },
+        { transform: 'translateY(0) scale(1)', opacity: 1 },
+      ],
+      { duration: 410, delay: index * 33, fill: 'both', easing: 'cubic-bezier(.22, .62, .35, 1)' },
+    ));
+    runPhase('drop-in', landing, hold);
+  }
+
+  if ('IntersectionObserver' in window) {
+    const visibility = new IntersectionObserver(entries => {
+      inView = entries[0].intersectionRatio >= .4;
+      updatePlayback();
+    }, { threshold: .4 });
+    visibility.observe(figure);
+  }
+
+  for (const source of Object.values(art)) {
+    const preload = new Image();
+    preload.src = source;
+  }
+  document.addEventListener('arcane:motionchange', updatePlayback);
+  document.addEventListener('visibilitychange', updatePlayback);
+  reducedMotion.addEventListener('change', updatePlayback);
+  hold();
+})();
+(() => {
+  const canvas = document.querySelector('.grimoire-trail');
+  const context = canvas?.getContext('2d');
+  if (!context) return;
+  let width = 0;
+  let height = 0;
+  let mobile = false;
+  let visible = false;
+  let frame = 0;
+  let elapsed = 0;
+  let last = 0;
+  const motionAllowed = () => document.documentElement.dataset.motionPaused !== 'true';
+
+  function route() {
+    return mobile
+      ? [[width*.31,6],[width*.53,7],[width*.69,height*.52],[width*.56,height-9]]
+      : [[width*.245,8],[width*.387,5],[width*.555,height*.81],[width*.746,height-11]];
+  }
+
+  function paint() {
+    const points = route();
+    const [start, bendA, bendB, end] = points;
+    context.clearRect(0, 0, width, height);
+    const ink = context.createLinearGradient(...start, ...end);
+    ink.addColorStop(0, '#cb9e6577');
+    ink.addColorStop(.55, '#d2a566');
+    ink.addColorStop(1, '#f6d391');
+    context.strokeStyle = ink;
+    context.lineWidth = 2.3;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.shadowColor = '#d99e5aa0';
+    context.shadowBlur = 8;
+    context.beginPath();
+    context.moveTo(...start);
+    context.bezierCurveTo(...bendA, ...bendB, ...end);
+    context.stroke();
+
+    const angle = Math.atan2(end[1] - bendB[1], end[0] - bendB[0]);
+    const wing = mobile ? 10 : 14;
+    context.beginPath();
+    context.moveTo(end[0] - Math.cos(angle - .52) * wing, end[1] - Math.sin(angle - .52) * wing);
+    context.lineTo(...end);
+    context.lineTo(end[0] - Math.cos(angle + .52) * wing, end[1] - Math.sin(angle + .52) * wing);
+    context.stroke();
+
+    if (!motionAllowed()) return;
+    const fraction = (elapsed % 4400) / 3000;
+    if (fraction > 1) return;
+    context.shadowBlur = 10;
+    context.shadowColor = '#fff0ad';
+    for (let index = 0; index < 3; index++) {
+      const amount = fraction - index * .042;
+      if (amount < 0) continue;
+      const remaining = 1 - amount;
+      const weights = [remaining ** 3, 3 * remaining ** 2 * amount, 3 * remaining * amount ** 2, amount ** 3];
+      const point = axis => points.reduce((sum, control, i) => sum + control[axis] * weights[i], 0);
+      context.fillStyle = ['#ffffe3', '#ffe0a4', '#cc8b43'][index];
+      context.beginPath();
+      context.arc(point(0), point(1), 3.2 - index * .8, 0, 2 * Math.PI);
+      context.fill();
+    }
+  }
+
+  function tick(time) {
+    frame = 0;
+    if (!visible || !motionAllowed()) return;
+    if (last) elapsed += time - last;
+    last = time;
+    paint();
+    frame = requestAnimationFrame(tick);
+  }
+
+  function update() {
+    if (frame) cancelAnimationFrame(frame);
+    frame = 0;
+    last = 0;
+    if (!width || !height) return;
+    paint();
+    if (visible && motionAllowed()) frame = requestAnimationFrame(tick);
+  }
+  new ResizeObserver(() => {
+    width = canvas.clientWidth;
+    height = canvas.clientHeight;
+    mobile = matchMedia('(max-width: 730px)').matches;
+    const density = Math.min(2, devicePixelRatio || 1);
+    canvas.width = Math.round(width * density);
+    canvas.height = Math.round(height * density);
+    context.setTransform(density, 0, 0, density, 0, 0);
+    update();
+  }).observe(canvas);
+  new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; update(); }).observe(canvas);
+  document.addEventListener('arcane:motionchange', update);
+})();
+  </script>
+</body>
+</html>

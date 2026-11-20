@@ -301,6 +301,20 @@ public sealed class SlotRoundAuditTests
         var paid = SavedEvidence(result, potions);
         Assert.Empty(SlotEvidenceReplayAudit.Inspect(paid.Summary, paid.PayloadJson));
 
+        var locked = potions with { Active = new(bottle with { LockedWagerPoints = result.WagerPoints }, ArcanePotions.Duration) };
+        var tracked = JsonNode.Parse(paid.PayloadJson)!;
+        var json = FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture.Json;
+        var trackedPotions = tracked["data"]!["arcanePotions"]!;
+        trackedPotions["before"] = JsonSerializer.SerializeToNode(locked, json);
+        trackedPotions["after"] = JsonSerializer.SerializeToNode(ArcanePotions.CompleteSpin(locked,
+            ArcaneTome.OrderedIngredientUnits(ArcaneTome.Empty, result.Reels, false), false, result.WagerPoints), json);
+        trackedPotions["wagerTracked"] = true;
+        Assert.Empty(SlotEvidenceReplayAudit.Inspect(paid.Summary, tracked.ToJsonString()));
+
+        trackedPotions["before"]!["active"]!["bottle"]!["lockedWagerPoints"] = result.WagerPoints - 2;
+        Assert.Contains(SlotEvidenceReplayAudit.Inspect(paid.Summary, tracked.ToJsonString()),
+            finding => finding.Code == "slot-arcane-potion-wager-mismatch");
+
         var changed = JsonNode.Parse(paid.PayloadJson)!;
         changed["data"]!["arcanePotions"]!["after"]!["active"]!["spinsRemaining"] = ArcanePotions.Duration;
         Assert.Contains(SlotEvidenceReplayAudit.Inspect(paid.Summary, changed.ToJsonString()),

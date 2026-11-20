@@ -31,6 +31,8 @@ export type SlotSymbolGuideEntry<TSymbol extends string = SlotSymbolId> = {
   secondLabel?: string
   secondValue?: string
   artworkValueLabel?: string
+  companionSymbol?: TSymbol
+  details?: readonly { label: string; text: string }[]
 }
 
 export type SlotSymbolSet<TSymbol extends string = SlotSymbolId> = {

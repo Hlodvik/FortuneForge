@@ -4,6 +4,8 @@ import type { SlotSymbolGuideEntry } from '@fortuneforge/slot-client-core'
 import type { SlotExperienceSet } from './experience.js'
 import contracts from './engineGuideContracts.js'
 
+type PaylinePayoutMap = Record<string, { three: number; five: number }>
+
 export type SlotEngineGuideContract = {
   gameId: string
   payoutMultiplier: number
@@ -18,6 +20,7 @@ export type SlotEngineGuideContract = {
   usesDirectValueTokens: boolean
   scatterFeatureMode: string | null
   collectionFeatureMode: string | null
+  paylinePayouts?: PaylinePayoutMap
 }
 
 export type SlotEngineGuidePolicy = Readonly<{
@@ -32,7 +35,7 @@ export const SLOT_ENGINE_GUIDE_CONTRACTS = contracts.games as SlotEngineGuideCon
 
 const collectionModes = ['sync', 'rows', 'paw', 'rand'] as const
 const sealSymbols = ['SEAL_SYNC', 'SEAL_ROWS', 'SEAL_PAW', 'SEAL_RAND'] as const
-const basePayouts = contracts.basePayouts as Record<string, { three: number; five: number }>
+const basePayouts = contracts.basePayouts as PaylinePayoutMap
 
 export function getSlotEngineGuideContract(gameId: string): SlotEngineGuideContract {
   const contract = SLOT_ENGINE_GUIDE_CONTRACTS.find((candidate) => candidate.gameId === gameId)
@@ -44,9 +47,11 @@ export function formatCalibratedMultiplier(base: number, calibration: number): s
   return `${Number((base * calibration).toFixed(6))}×`
 }
 
-function getClassicPaylineGuideEntry(symbol: string, calibration: number, firstLabel: string): SlotSymbolGuideEntry {
-  const payouts = basePayouts[symbol]
-  if (!payouts || !Object.hasOwn(basePayouts, symbol)) throw new Error("Unknown classic payline symbol " + symbol)
+function getClassicPaylineGuideEntry(
+  symbol: string, calibration: number, firstLabel: string, paylinePayouts = basePayouts,
+): SlotSymbolGuideEntry {
+  const payouts = paylinePayouts[symbol]
+  if (!payouts || !Object.hasOwn(paylinePayouts, symbol)) throw new Error("Unknown payline symbol " + symbol)
   return {
     symbol,
     firstLabel,
@@ -57,8 +62,8 @@ function getClassicPaylineGuideEntry(symbol: string, calibration: number, firstL
 }
 
 export function createClassicPaylineGuide(gameId: string, symbolIds: readonly string[]): SlotSymbolGuideEntry[] {
-  const { payoutMultiplier } = getSlotEngineGuideContract(gameId)
-  return symbolIds.map(symbol => getClassicPaylineGuideEntry(symbol, payoutMultiplier, '3–4'))
+  const { payoutMultiplier, paylinePayouts } = getSlotEngineGuideContract(gameId)
+  return symbolIds.map(symbol => getClassicPaylineGuideEntry(symbol, payoutMultiplier, '3–4', paylinePayouts))
 }
 
 function modeDescription(mode: string, usesDirectValueTokens: boolean): string {

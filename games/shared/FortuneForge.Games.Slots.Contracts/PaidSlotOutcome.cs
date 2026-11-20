@@ -25,7 +25,11 @@ public sealed record PaidSlotOutcomeRequest(
 }
 
 public sealed record PaidArcaneSpinOptions(string EngineVersion, bool TomeActive, PaidArcanePotion? Potion);
-public sealed record PaidArcanePotion(long Id, string IngredientId, int Potency);
+public sealed record PaidArcanePotion(long Id, string IngredientId, int Potency)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? VariantId { get; init; }
+}
 
 /// <summary>A package's outcome and replay evidence, bound to the original admission.</summary>
 public sealed record PaidSlotOutcomeResponse(Guid AdmissionId, string GameId, string OutcomeKind, JsonElement Outcome)

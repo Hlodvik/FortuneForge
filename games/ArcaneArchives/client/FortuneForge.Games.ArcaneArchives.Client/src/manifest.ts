@@ -15,6 +15,7 @@ import { ARCANE_ARCHIVES_GAME_ID, ARCANE_ARCHIVES_SYMBOLS } from './symbols'
 import { ARCANE_ARCHIVES_WORDMARK } from './presentation'
 import { ArcaneIntroduction } from './ArcaneIntroduction'
 import { ArcaneLightningCollection } from './ArcaneLightningCollection'
+import { ArcanePotionWager } from './ArcanePotionWager'
 import { ArcaneTomePanel } from './ArcaneTomePanel'
 
 const FEATURES: SlotFeatureSet = {}
@@ -25,7 +26,7 @@ const HELP: SlotHelpDefinition = {
   paylinePatternIds,
   fiveMatchPayoutNote: 'Every full payline uses the same symbol values.',
   wildSubstitution: false,
-  fourMatchPayoutNote: 'Four matching symbols at either edge pay the three-symbol rate.',
+  fourMatchPayoutNote: 'Only runs of exactly three or five matching symbols pay.',
 }
 
 export const ARCANE_ARCHIVES_EXPERIENCE_SET: SlotExperienceSet = {
@@ -69,6 +70,7 @@ export const ARCANE_ARCHIVES_EXPERIENCE_SET: SlotExperienceSet = {
     winPresentation: 'payline-popups',
     LightningCollectionOverlay: ArcaneLightningCollection,
     TomePanel: ArcaneTomePanel,
+    PotionWagerReadout: ArcanePotionWager,
     tomeTriggerSymbol: 'ACE',
     stageWordmark: {
       src: ARCANE_ARCHIVES_WORDMARK,

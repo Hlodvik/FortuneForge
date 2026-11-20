@@ -2,6 +2,7 @@
 import { act, useRef, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ARCANE_ARCHIVES_EXPERIENCE_SET } from '@fortuneforge/games-arcane-archives/manifest'
 import { MidnightVaultGame } from '@fortuneforge/games-midnight-vault'
 import { WinHelpDialog } from '../WinHelpDialog'
 import { InsufficientBalanceDialog } from '../InsufficientBalanceDialog'
@@ -84,4 +85,29 @@ it('keeps the Midnight Vault info trigger visually to a circle-i with an accessi
   expect(trigger.getAttribute('aria-label')).toBe('Symbol values')
   expect(trigger.querySelector('svg circle[cx="12"][cy="12"][r="9"]')).not.toBeNull()
   expect(trigger.textContent).toBe('')
+})
+
+it('prices Arcane wand combinations at the current wager and lets players expand an ingredient', () => {
+  const guideSymbols = ARCANE_ARCHIVES_EXPERIENCE_SET.symbols
+  const renderGuide = (wager: number) => act(() => root.render(
+    <SymbolValueGuide symbolSet={guideSymbols} showValueTokens={false} isOpen wager={wager} pointValueInCents={25} />,
+  ))
+  const comboValues = () => Array.from(document.querySelectorAll('.symbol-value-guide__match strong'), value => value.textContent)
+
+  renderGuide(3)
+  expect(comboValues()).toEqual(['R6', 'R12', 'R30'])
+  const toggle = document.querySelector<HTMLButtonElement>('[aria-label="Ingredient details for Mandrake Root"]')!
+  const details = document.getElementById(toggle.getAttribute('aria-controls')!)!
+  expect(details.hidden).toBe(true)
+  act(() => toggle.click())
+  expect(toggle.getAttribute('aria-expanded')).toBe('true')
+  expect(details.hidden).toBe(false)
+  expect(details.textContent).toContain('Mandrake Tonic · Scribe Mark payline value')
+  expect(details.textContent).toContain('+1 potency per unit')
+
+  renderGuide(5)
+  expect(comboValues()).toEqual(['R10', 'R20', 'R50'])
+  expect(details.hidden).toBe(false)
+  act(() => toggle.click())
+  expect(details.hidden).toBe(true)
 })

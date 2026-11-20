@@ -46,8 +46,7 @@ if (args.Contains("--olympus-demo", StringComparer.OrdinalIgnoreCase))
 
 if (args.Contains("--arcane-potions", StringComparer.OrdinalIgnoreCase))
 {
-    ArcanePotionSimulation.Run(paidSpinCount, seed, releaseRtpCeiling,
-        switchWagers: args.Contains("--wager-switch", StringComparer.OrdinalIgnoreCase));
+    ArcanePotionSimulation.Run(paidSpinCount, seed, releaseRtpCeiling, args);
     return;
 }
 

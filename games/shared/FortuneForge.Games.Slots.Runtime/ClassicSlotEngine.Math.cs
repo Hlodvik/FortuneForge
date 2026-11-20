@@ -71,6 +71,8 @@ public sealed partial class ClassicSlotEngine
         if (reels.Count != game.Layout.ReelCount ||
             reels.Any(reel => reel.Count != game.Layout.VisibleRows))
             throw new ArgumentException("The visible slot grid has the wrong shape.", nameof(reels));
+        if (game.Matching.PaylineMatchMode == SlotPaylineMatchMode.ExactStraightThreeAndFullPayline)
+            return ExactStraightThreePaylines.Evaluate(reels, game);
         var wild = game.Symbols.WildSymbolId;
         var free = game.FreeGames?.SymbolId;
         var explicitPaying = game.Symbols.PaylineSymbolIds?.ToHashSet(StringComparer.Ordinal);
@@ -177,7 +179,9 @@ public sealed partial class ClassicSlotEngine
         var priced = new List<PaylinePayout>();
         foreach (var evaluation in evaluations)
         {
-            var step = game.Math.PaylinePayoutSteps[evaluation.PaylineId - 1];
+            var isShortPayline = game.Matching.PaylineMatchMode == SlotPaylineMatchMode.ExactStraightThreeAndFullPayline &&
+                evaluation.PaylineId > game.Layout.PaylineCount;
+            var step = isShortPayline ? 0 : game.Math.PaylinePayoutSteps[evaluation.PaylineId - 1];
             var best = evaluation.Candidates.Select(candidate => PriceCandidate(
                     evaluation.PaylineId, candidate, rules, wagerPoints,
                     game.Layout.ReelCount, step, game.Math.PayoutMultiplier))

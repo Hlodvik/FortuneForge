@@ -38,7 +38,7 @@ internal static class PaidSlotWorker
             IsNeonDiscoPlay = admission.IsNeonDiscoPlay,
             NeonDiscoMultiplier = admission.IsNeonDiscoPlay ? admission.NeonDiscoMultiplier : null,
             Arcane = isArcane ? new(ArcaneEngine.EngineVersion, admission.ArcaneTomeBefore!.ActivePage is not null,
-                potion is null ? null : new(potion.Id, potion.IngredientId, potion.Potency)) : null
+                potion is null ? null : new(potion.Id, potion.IngredientId, potion.Potency) { VariantId = potion.VariantId }) : null
         };
         var response = await worker.InvokeAsync<PaidSlotOutcomeRequest, PaidSlotOutcomeResponse>(gameId, playerId,
             PaidSlotOutcomeProtocol.Route, request, cancellationToken);
@@ -83,7 +83,7 @@ internal static class PaidSlotWorker
                 throw new JsonException("The worker outcome differs from the admitted play.");
 
             if (isArcane &&
-                (!ArcaneEngine.SupportsPotionEngineVersion(audit.EngineVersion) ||
+                (audit.EngineVersion != request.Arcane!.EngineVersion ||
                  !ArcaneEngine.MatchesTomeState(result.ReelSetId, admission.ArcaneTomeBefore!)))
                 throw new JsonException("The Arcane worker outcome differs from the admitted engine or Tome state.");
 

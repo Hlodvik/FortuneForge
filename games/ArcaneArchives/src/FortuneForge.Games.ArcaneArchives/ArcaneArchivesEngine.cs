@@ -12,12 +12,26 @@ namespace FortuneForge.Games.ArcaneArchives;
 public sealed class ArcaneArchivesEngine
 {
     public const string GameId = "arcane-archives-v1";
-    public const string EngineVersion = "arcane-archives-paylines-v5";
+    public const string EngineVersion = "arcane-archives-paylines-v8";
+    public const string PreviousBalancedPotionEngineVersion = "arcane-archives-paylines-v7";
+    public const string PreviousExactPaylineEngineVersion = "arcane-archives-paylines-v6";
+    public const string PreviousPotionEngineVersion = "arcane-archives-paylines-v5";
     public const string PreviousWandEngineVersion = "arcane-archives-paylines-v2";
-    public const string ReelSetId = "arcane-archives-payline-reels-v5";
-    public const string TomeReelSetId = "arcane-archives-tome-reels-v5";
+    public const string ReelSetId = "arcane-archives-payline-reels-v8";
+    public const string TomeReelSetId = "arcane-archives-tome-reels-v8";
     public const string SymbolSetId = "arcane-archives-payline-symbols-v2";
-    public const string PaytableId = "arcane-archives-paytable-v2";
+    public const string PaytableId = "arcane-archives-paytable-v3";
+    private const string PreviousPaytableId = "arcane-archives-paytable-v2";
+    private const string PreviousBalancedPotionReelSetId = "arcane-archives-payline-reels-v7";
+    private const string PreviousBalancedPotionTomeReelSetId = "arcane-archives-tome-reels-v7";
+    private const string PreviousExactPaylineReelSetId = "arcane-archives-payline-reels-v6";
+    private const string PreviousExactPaylineTomeReelSetId = "arcane-archives-tome-reels-v6";
+    private const string PreviousPotionReelSetId = "arcane-archives-payline-reels-v5";
+    private const string PreviousPotionTomeReelSetId = "arcane-archives-tome-reels-v5";
+    private const decimal CurrentPayoutMultiplier = 0.357m;
+    private const decimal PreviousBalancedPotionPayoutMultiplier = 0.357m;
+    private const decimal PreviousExactPaylinePayoutMultiplier = 0.459m;
+    private const decimal PreviousPotionPayoutMultiplier = 0.716m;
     private const string RotatingWandEngineVersion = "arcane-archives-paylines-v4";
     private const string RotatingReelSetId = "arcane-archives-payline-reels-v4";
     private const string RotatingTomeReelSetId = "arcane-archives-tome-reels-v4";
@@ -35,18 +49,24 @@ public sealed class ArcaneArchivesEngine
         UsesCollections: false, UsesEnergy: false, UsesDirectValueTokens: false,
         BaseReelSetId: ReelSetId,
         PaylinePatternIds: [1,2,3,4,5,6,7,8,9,10,18,19,20,21,22,23],
-        PayoutMultiplier: 0.716m, PreserveEnergySymbolsWithoutMeter: true);
+        PayoutMultiplier: CurrentPayoutMultiplier, PreserveEnergySymbolsWithoutMeter: true);
 
-    private static readonly SlotProfile TomeProfile = Profile with { BaseReelSetId = TomeReelSetId };
-    private static readonly FrozenSlotDefinitions Definitions = CreateDefinitions(Profile, false);
-    private static readonly FrozenSlotDefinitions TomeDefinitions = CreateDefinitions(TomeProfile, true);
-    private static readonly ReelSetDefinition[] AlternateReelSets = CreateAlternateReelSets(Definitions);
-    private static readonly ReelSetDefinition[] AlternateTomeReelSets = CreateAlternateReelSets(TomeDefinitions);
-    private static readonly IReadOnlyDictionary<string, ReelSetDefinition> CurrentReelSets =
-        new[] { Definitions.ReelSet, TomeDefinitions.ReelSet }.Concat(AlternateReelSets).Concat(AlternateTomeReelSets)
-            .ToDictionary(set => set.Id, StringComparer.Ordinal);
-    private static readonly IReadOnlySet<string> CurrentTomeReelSetIds =
-        AlternateTomeReelSets.Select(set => set.Id).Append(TomeReelSetId).ToHashSet(StringComparer.Ordinal);
+    private static readonly ArcaneSpinModel CurrentModel = CreateModel(
+        EngineVersion, Profile, TomeReelSetId, SlotPaylineMatchMode.ExactStraightThreeAndFullPayline, PaytableId,
+        supportsRarePotions: true);
+    private static readonly ArcaneSpinModel[] PotionModels =
+    [
+        CurrentModel,
+        CreateModel(PreviousBalancedPotionEngineVersion,
+            Profile with { BaseReelSetId = PreviousBalancedPotionReelSetId, PayoutMultiplier = PreviousBalancedPotionPayoutMultiplier },
+            PreviousBalancedPotionTomeReelSetId, SlotPaylineMatchMode.ExactStraightThreeAndFullPayline, PaytableId),
+        CreateModel(PreviousExactPaylineEngineVersion,
+            Profile with { BaseReelSetId = PreviousExactPaylineReelSetId, PayoutMultiplier = PreviousExactPaylinePayoutMultiplier },
+            PreviousExactPaylineTomeReelSetId, SlotPaylineMatchMode.ExactStraightThreeAndFullPayline, PreviousPaytableId),
+        CreateModel(PreviousPotionEngineVersion,
+            Profile with { BaseReelSetId = PreviousPotionReelSetId, PayoutMultiplier = PreviousPotionPayoutMultiplier },
+            PreviousPotionTomeReelSetId, SlotPaylineMatchMode.Classic, PreviousPaytableId)
+    ];
     private static readonly ClassicSlotEngineOptions EngineOptions = new()
     {
         AllowFreeSpinCarryWager = true,
@@ -60,11 +80,17 @@ public sealed class ArcaneArchivesEngine
 
     private readonly ClassicSlotEngine engine;
     private readonly ClassicSlotEngine tomeEngine;
+    private readonly string engineVersion;
 
-    public ArcaneArchivesEngine(IGameRandomSource random)
+    public ArcaneArchivesEngine(IGameRandomSource random) : this(random, EngineVersion) { }
+
+    internal ArcaneArchivesEngine(IGameRandomSource random, string engineVersion)
     {
-        engine = new(Definitions, Profile, random, EngineVersion, EngineOptions, AlternateReelSets);
-        tomeEngine = new(TomeDefinitions, TomeProfile, random, EngineVersion, EngineOptions, AlternateTomeReelSets);
+        var model = FindPotionModel(engineVersion)
+            ?? throw new ArgumentException("Unknown Arcane potion engine version.", nameof(engineVersion));
+        this.engineVersion = engineVersion;
+        engine = new(model.Definitions, model.Profile, random, engineVersion, EngineOptions, model.AlternateReelSets);
+        tomeEngine = new(model.TomeDefinitions, model.TomeProfile, random, engineVersion, EngineOptions, model.AlternateTomeReelSets);
     }
 
     // Existing free spins remain redeemable with the base reels and their carried wager.
@@ -79,13 +105,16 @@ public sealed class ArcaneArchivesEngine
         long currentEnergyBalance, int? persistedPityMisses, bool isFreeSpin, bool tomeActive, ArcanePotionBottle? potion = null)
     {
         var paidPotion = isFreeSpin ? null : potion;
+        if (paidPotion?.VariantId is not null && !SupportsRarePotions(engineVersion))
+            throw new ArgumentException("Rare potions require the current Arcane engine.", nameof(potion));
         var outcome = (tomeActive ? tomeEngine : engine).Spin(wagerPoints, playerId,
             currentEnergyBalance: currentEnergyBalance,
             persistedPityMisses: persistedPityMisses, isFreeSpin: isFreeSpin,
             prepareReels: paidPotion is null ? null : reels => ArcanePotions.BoostReelSet(reels, paidPotion));
         if (paidPotion is null) return outcome;
 
-        var payout = ArcanePotions.BoostPaylines(outcome.Payout, paidPotion);
+        var payout = ArcanePotions.BoostPaylines(outcome.Payout, paidPotion, wagerPoints,
+            useLegacyMandrake: UsesLegacyMandrake(engineVersion));
         var collection = Calculate(outcome.Reels, wagerPoints, paidPotion);
         if (collection is not null && collection.Cells.Any(cell => cell.PotionBonusPoints > 0))
         {
@@ -95,34 +124,58 @@ public sealed class ArcaneArchivesEngine
         return outcome with { Payout = payout };
     }
 
-    internal static int VisibleRows => Definitions.Game.Layout.VisibleRows;
-    internal static int BaseStripStops => Definitions.ReelSet.Reels[0].Count;
+    internal static int VisibleRows => CurrentModel.Definitions.Game.Layout.VisibleRows;
+    internal static int BaseStripStops => CurrentModel.Definitions.ReelSet.Reels[0].Count;
 
-    public static bool SupportsPotionEngineVersion(string? version) => version == EngineVersion;
+    public static bool SupportsPotionEngineVersion(string? version) => FindPotionModel(version) is not null;
+
+    public static bool SupportsRarePotions(string? version) => FindPotionModel(version)?.SupportsRarePotions == true;
+
+    public static bool UsesLegacyMandrake(string? version) => version == PreviousPotionEngineVersion;
 
     public static bool PotionReelsMatch(ReelSetDefinition effective, ArcanePotionBottle? potion)
     {
         ArgumentNullException.ThrowIfNull(effective);
-        if (!CurrentReelSets.TryGetValue(effective.Id, out var baseline)) return false;
-        var expected = ArcanePotions.BoostReelSet(baseline, potion);
+        if (FindPotionModelByReelSet(effective.Id) is not { } model ||
+            potion?.VariantId is not null && !model.SupportsRarePotions)
+            return false;
+        var expected = ArcanePotions.BoostReelSet(model.ReelSets[effective.Id], potion);
         return expected.SymbolSetId == effective.SymbolSetId && expected.Reels.Count == effective.Reels.Count &&
             expected.Reels.Zip(effective.Reels).All(pair => pair.First.SequenceEqual(pair.Second));
     }
 
     public static bool MatchesTomeState(string reelSetId, ArcaneTomeState state) =>
-        (CurrentReelSets.ContainsKey(reelSetId) || IsPreviousRotatingLayout(reelSetId, RotatingReelSetId) ||
+        (GetPotionReelSet(reelSetId) is not null || IsPreviousRotatingLayout(reelSetId, RotatingReelSetId) ||
             IsPreviousRotatingLayout(reelSetId, RotatingTomeReelSetId) || reelSetId is SparseReelSetId or SparseTomeReelSetId
             or PreviousWandReelSetId or PreviousTomeReelSetId) &&
         IsBoostedReelSet(reelSetId) == (state.ActivePage is not null);
 
     public static bool IsBoostedReelSet(string reelSetId) =>
         reelSetId is SparseTomeReelSetId or PreviousTomeReelSetId ||
-        IsPreviousRotatingLayout(reelSetId, RotatingTomeReelSetId) || CurrentTomeReelSetIds.Contains(reelSetId);
+        IsPreviousRotatingLayout(reelSetId, RotatingTomeReelSetId) ||
+        FindPotionModelByReelSet(reelSetId)?.TomeReelSetIds.Contains(reelSetId) == true;
 
     public static bool IsPaylineModel(GameDefinition game) =>
         IsWandModel(game) || game.Id == GameId && game.Math.ReelSetId == PreviousReelSetId;
 
-    public static bool IsWandEngineVersion(string? version) => version is EngineVersion or RotatingWandEngineVersion or SparseWandEngineVersion or PreviousWandEngineVersion;
+    public static bool IsWandEngineVersion(string? version) => SupportsPotionEngineVersion(version) ||
+        version is RotatingWandEngineVersion or SparseWandEngineVersion or PreviousWandEngineVersion;
+
+    public static bool HasExpectedPaylineMath(string? version, GameDefinition game)
+    {
+        var model = FindPotionModel(version);
+        return model is null
+            ? game.Matching.PaylineMatchMode == SlotPaylineMatchMode.Classic
+            : game.Matching.PaylineMatchMode == model.Definitions.Game.Matching.PaylineMatchMode &&
+              game.Math.PaytableId == model.Definitions.Paytable.Id &&
+              game.Math.PayoutMultiplier == model.Profile.PayoutMultiplier;
+    }
+
+    public static bool HasExpectedPotionPaytable(string version, PaytableDefinition paytable) =>
+        FindPotionModel(version)?.Definitions.Paytable is { } expected &&
+        expected.Id == paytable.Id && expected.SymbolSetId == paytable.SymbolSetId &&
+        expected.Rules.Select(rule => (rule.SymbolId, rule.MatchLength, rule.Multiplier))
+            .SequenceEqual(paytable.Rules.Select(rule => (rule.SymbolId, rule.MatchLength, rule.Multiplier)));
 
     public static bool IsWandModel(GameDefinition game) => WandEngineVersion(game) is not null;
 
@@ -133,21 +186,55 @@ public sealed class ArcaneArchivesEngine
             SparseReelSetId or SparseTomeReelSetId => SparseWandEngineVersion,
             var id when IsPreviousRotatingLayout(id, RotatingReelSetId) ||
                 IsPreviousRotatingLayout(id, RotatingTomeReelSetId) => RotatingWandEngineVersion,
-            var id when CurrentReelSets.ContainsKey(id) => EngineVersion,
-            _ => null
+            var id => FindPotionModelByReelSet(id)?.EngineVersion
         };
 
     private static bool IsPreviousRotatingLayout(string id, string prefix) =>
         id == prefix || (id.StartsWith(prefix + "-shift-", StringComparison.Ordinal) &&
             id.Length == prefix.Length + "-shift-".Length + 1 && id[^1] is >= '1' and <= '4');
 
-    public static GameDefinition CreateGame() => Definitions.CreateGame();
-    public static SymbolSetDefinition CreateSymbolSet() => Definitions.CreateSymbolSet();
-    public static ReelSetDefinition CreateReelSet() => Definitions.CreateReelSet();
-    public static ReelSetDefinition CreateTomeReelSet() => TomeDefinitions.CreateReelSet();
-    public static PaytableDefinition CreatePaytable() => Definitions.CreatePaytable();
+    public static GameDefinition CreateGame() => CurrentModel.Definitions.CreateGame();
+    public static SymbolSetDefinition CreateSymbolSet() => CurrentModel.Definitions.CreateSymbolSet();
+    public static ReelSetDefinition CreateReelSet() => CurrentModel.Definitions.CreateReelSet();
+    public static ReelSetDefinition CreateTomeReelSet() => CurrentModel.TomeDefinitions.CreateReelSet();
+    public static PaytableDefinition CreatePaytable() => CurrentModel.Definitions.CreatePaytable();
+
+    public static PaytableDefinition? FindPaytable(string id) =>
+        PotionModels.FirstOrDefault(model => model.Definitions.Paytable.Id == id)?.Definitions.CreatePaytable();
     public static ReelSetDefinition? FindReelSet(string id) =>
-        CurrentReelSets.TryGetValue(id, out var reelSet) ? SlotDefinitionCloner.Clone(reelSet) : null;
+        GetPotionReelSet(id) is { } reelSet ? SlotDefinitionCloner.Clone(reelSet) : null;
+
+    private static ArcaneSpinModel? FindPotionModel(string? version) =>
+        PotionModels.FirstOrDefault(model => model.EngineVersion == version);
+
+    private static ArcaneSpinModel? FindPotionModelByReelSet(string id) =>
+        PotionModels.FirstOrDefault(model => model.ReelSets.ContainsKey(id));
+
+    private static ReelSetDefinition? GetPotionReelSet(string id) =>
+        FindPotionModelByReelSet(id)?.ReelSets[id];
+
+    private sealed record ArcaneSpinModel(
+        string EngineVersion, SlotProfile Profile, FrozenSlotDefinitions Definitions, ReelSetDefinition[] AlternateReelSets,
+        SlotProfile TomeProfile, FrozenSlotDefinitions TomeDefinitions, ReelSetDefinition[] AlternateTomeReelSets,
+        IReadOnlyDictionary<string, ReelSetDefinition> ReelSets, IReadOnlySet<string> TomeReelSetIds, bool SupportsRarePotions);
+
+    private static ArcaneSpinModel CreateModel(
+        string engineVersion, SlotProfile profile, string tomeReelSetId, SlotPaylineMatchMode matchMode, string paytableId,
+        bool supportsRarePotions = false)
+    {
+        var tomeProfile = profile with { BaseReelSetId = tomeReelSetId };
+        var definitions = CreateDefinitions(profile, false, matchMode, paytableId);
+        var tomeDefinitions = CreateDefinitions(tomeProfile, true, matchMode, paytableId);
+        var alternateReelSets = CreateAlternateReelSets(definitions);
+        var alternateTomeReelSets = CreateAlternateReelSets(tomeDefinitions);
+        var reelSets = new[] { definitions.ReelSet, tomeDefinitions.ReelSet }
+            .Concat(alternateReelSets).Concat(alternateTomeReelSets)
+            .ToDictionary(set => set.Id, StringComparer.Ordinal);
+        var tomeReelSetIds = alternateTomeReelSets.Select(set => set.Id)
+            .Append(tomeReelSetId).ToHashSet(StringComparer.Ordinal);
+        return new(engineVersion, profile, definitions, alternateReelSets, tomeProfile, tomeDefinitions, alternateTomeReelSets,
+            reelSets, tomeReelSetIds, supportsRarePotions);
+    }
 
     private static ReelSetDefinition[] CreateAlternateReelSets(FrozenSlotDefinitions definitions)
     {
@@ -208,7 +295,8 @@ public sealed class ArcaneArchivesEngine
         _ => index is 3 or 8 or 13
     };
 
-    private static FrozenSlotDefinitions CreateDefinitions(SlotProfile profile, bool suppressGrimoire)
+    private static FrozenSlotDefinitions CreateDefinitions(
+        SlotProfile profile, bool suppressGrimoire, SlotPaylineMatchMode matchMode, string paytableId)
     {
         var source = ClassicSlotDefinitionFactory.Create(profile);
         var game = source.CreateGame();
@@ -222,9 +310,13 @@ public sealed class ArcaneArchivesEngine
         var reels = source.CreateReelSet();
         var paytable = new PaytableDefinition
         {
-            Id = PaytableId,
+            Id = paytableId,
             SymbolSetId = symbols.Id,
-            Rules = source.CreatePaytable().Rules.Where(rule => PaylineSymbols.Contains(rule.SymbolId)).ToList()
+            Rules = source.CreatePaytable().Rules.Where(rule => PaylineSymbols.Contains(rule.SymbolId))
+                .Select(rule => paytableId == PaytableId && rule.SymbolId == "4" && rule.MatchLength == 3
+                    ? new PayoutRule { SymbolId = rule.SymbolId, MatchLength = rule.MatchLength, Multiplier = 2 }
+                    : rule)
+                .ToList()
         };
         return new(new GameDefinition
         {
@@ -236,7 +328,12 @@ public sealed class ArcaneArchivesEngine
                 WildSymbolId = string.Empty,
                 PaylineSymbolIds = [.. PaylineSymbols]
             },
-            Matching = game.Matching,
+            Matching = new GameMatchingRules
+            {
+                MinimumRunLength = game.Matching.MinimumRunLength,
+                AllowMultipleRunsPerPayline = game.Matching.AllowMultipleRunsPerPayline,
+                PaylineMatchMode = matchMode
+            },
             Math = new GameMathDefinition
             {
                 ReelSetId = reels.Id,

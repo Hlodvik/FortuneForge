@@ -2,6 +2,12 @@ namespace FortuneForge.Games.NeonNights;
 
 public sealed record NeonAwardedPlayState(long Remaining, long? LockedWagerPoints, string? FeatureMode);
 
+public sealed class NeonDiscoWagerLockedException(long lockedWagerPoints)
+    : ArgumentException("Disco Plays use the wager from the triggering spin.")
+{
+    public long LockedWagerPoints { get; } = lockedWagerPoints;
+}
+
 // These transitions describe Neon entitlements. Wallet debits and atomic
 // persistence are performed by the host through its existing ledger service.
 public static class NeonPlayPolicy
@@ -29,6 +35,33 @@ public static class NeonPlayPolicy
 
     public static bool ChargesWager(bool usesAwardedPlay, string? featureMode) =>
         !usesAwardedPlay || NeonArcadeBonus.IsPaidArcadeMode(featureMode);
+
+    public static long? DiscoLockedWager(int spinsRemaining, long? lockedWagerPoints)
+    {
+        if (spinsRemaining < 0 || spinsRemaining > NeonArcadeSlotDefinitions.DiscoPlaySpins)
+            throw new ArgumentOutOfRangeException(nameof(spinsRemaining));
+        if (spinsRemaining == 0) return null;
+        if (lockedWagerPoints is { } wager) NeonArcadeSlotDefinitions.ValidateCarryWager(wager);
+        return lockedWagerPoints;
+    }
+
+    public static void ValidateDiscoWager(int spinsRemaining, long? lockedWagerPoints, long wagerPoints)
+    {
+        if (DiscoLockedWager(spinsRemaining, lockedWagerPoints) is { } locked && locked != wagerPoints)
+            throw new NeonDiscoWagerLockedException(locked);
+    }
+
+    public static long? NextDiscoWager(int currentSpins, long? lockedWagerPoints,
+        bool consumedDiscoPlay, long wagerPoints, NeonArcadeEvidence? evidence)
+    {
+        if (NextDiscoSpins(currentSpins, consumedDiscoPlay, evidence) == 0) return null;
+        if (DiscoLockedWager(currentSpins, lockedWagerPoints) is { } locked) return locked;
+        // Old pending rounds have no saved lock. Adopt their first Disco wager,
+        // leaving it unset while a queued Car round is still being played.
+        if (currentSpins > 0 && !consumedDiscoPlay) return null;
+        NeonArcadeSlotDefinitions.ValidateCarryWager(wagerPoints);
+        return wagerPoints;
+    }
 
     public static int NextDiscoMultiplier(int current, int spinsRemaining, NeonDiscoCascadeOutcome? cascade,
         NeonArcadeEvidence? evidence)

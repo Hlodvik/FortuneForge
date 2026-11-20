@@ -1,3 +1,4 @@
+using FortuneForge.Games.Slots.Runtime;
 using FortuneForge.Server.Slots.Models;
 
 namespace FortuneForge.Server.Slots.Payouts;
@@ -10,6 +11,8 @@ public sealed class PayoutCalculator : IPayoutCalculator
         PaytableDefinition paytable,
         long wagerPoints)
     {
+        if (game.Matching.PaylineMatchMode == SlotPaylineMatchMode.ExactStraightThreeAndFullPayline)
+            return ClassicSlotEngine.CalculatePayout(evaluations, game, paytable, wagerPoints);
         if (wagerPoints <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(wagerPoints), "Wager points must be positive.");

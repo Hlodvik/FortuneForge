@@ -1,3 +1,4 @@
+using System.Globalization;
 using FortuneForge.Games.SicBo;
 using FortuneForge.Server.Dice.SicBo;
 using Microsoft.AspNetCore.Http;
@@ -77,6 +78,27 @@ public sealed class SicBoContractTests
         await Assert.ThrowsAsync<SicBoRoundConflictException>(() => service.StartAsync("player-1", new CreateSicBoRoundRequest([Bet("big", 1m)]), "sic-bo-start-0004", CancellationToken.None));
     }
 
+    [Theory]
+    [InlineData("79228162514264337593543950335")]
+    [InlineData("-79228162514264337593543950335")]
+    [InlineData("1000000000000000000")]
+    [InlineData("-1000000000000000000")]
+    public async Task Service_RejectsExtremeStakesBeforeStoreAccess(string rawStake)
+    {
+        var stake = decimal.Parse(rawStake, CultureInfo.InvariantCulture);
+        var store = new InMemorySicBoStore();
+        var service = new SicBoService(store, TimeProvider.System, () => new SicBoRoll(1, 2, 3));
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.StartAsync(
+            "player-1", new CreateSicBoRoundRequest([Bet("small", stake)]),
+            "sic-bo-bounds-0001", CancellationToken.None));
+
+        Assert.Equal(0, store.StartCallCount);
+        Assert.Equal(100_000, store.BalanceCents);
+        Assert.Equal(0, store.LedgerEntryCount);
+        Assert.Equal(0, store.EventCount);
+    }
+
     [Fact]
     public void BetLimit_CapsEachSpotAtTenRandIncludingRepeatedChips()
     {
@@ -124,11 +146,13 @@ public sealed class SicBoContractTests
         private string? idempotencyKey;
 
         public long BalanceCents { get; private set; } = 100_000;
+        public int StartCallCount { get; private set; }
         public int LedgerEntryCount { get; private set; }
         public int EventCount { get; private set; }
 
         public Task<SicBoStoreResult> StartAsync(string userId, string key, IReadOnlyList<SicBoStoredBet> bets, SicBoRoll roll, DateTimeOffset nowUtc, CancellationToken cancellationToken)
         {
+            StartCallCount++;
             if (round is not null)
             {
                 if (round.UserId != userId || idempotencyKey != key || !round.Bets.SequenceEqual(bets)) throw new SicBoRoundConflictException("slip conflict");

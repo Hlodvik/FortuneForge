@@ -75,6 +75,7 @@ public sealed record SlotSpinAdmission(
     public ArcaneTomeState? ArcaneTomeBefore { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ArcanePotionState? ArcanePotionsBefore { get; init; }
+    internal bool ArcanePotionWagerTracked { get; init; }
     internal SpinResult? ResolvedOutcome { get; init; }
     internal NeonNitroChoiceOffer? PendingNeonNitroChoice { get; init; }
 }
@@ -111,6 +112,8 @@ public sealed record SlotSpinSettlement(
     public IReadOnlyDictionary<string, long>? ArcaneIngredientsAwarded { get; init; }
     public int NeonDiscoSpinsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? NeonDiscoWagerPoints { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? NeonDiscoMultiplier { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public long? NeonDiscoRoundWinPoints { get; init; }
@@ -139,6 +142,8 @@ public sealed record SlotStateResponse(
     public MidnightVaultBonusRound? BonusRound { get; init; }
     public IReadOnlyList<MidnightVaultBonusRound> QueuedBonusRounds { get; init; } = [];
     public int NeonDiscoSpinsRemaining { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? NeonDiscoWagerPoints { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? NeonDiscoMultiplier { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

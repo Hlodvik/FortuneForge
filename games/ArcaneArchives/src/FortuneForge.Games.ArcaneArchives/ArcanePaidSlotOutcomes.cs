@@ -21,8 +21,9 @@ public sealed class ArcanePaidSlotOutcomes(IGameRandomSource random)
             arcane.Potion is not null && (request.IsFreeSpin || arcane.Potion.Id <= 0))
             throw new ArgumentException("A valid versioned Arcane admission is required.", nameof(request));
 
-        var potion = arcane.Potion is { } active ? new ArcanePotionBottle(active.Id, active.IngredientId, active.Potency) : null;
-        var outcome = new ArcaneArchivesEngine(random).SpinTome(request.WagerPoints, request.PlayerId,
+        var potion = arcane.Potion is { } active
+            ? new ArcanePotionBottle(active.Id, active.IngredientId, active.Potency) { VariantId = active.VariantId } : null;
+        var outcome = new ArcaneArchivesEngine(random, arcane.EngineVersion).SpinTome(request.WagerPoints, request.PlayerId,
             request.EnergyBalance, request.PityMissesBefore, request.IsFreeSpin, arcane.TomeActive, potion);
         return PaidSlotOutcomeResponse.Create(request, PaidSlotOutcomeProtocol.ArcaneSlotKind, outcome);
     }

@@ -3,6 +3,24 @@
   width: min(100%, 37rem);
 }
 
+.arcane-workbench__tome[data-grimoire-ready] > img {
+  filter: brightness(1.14) drop-shadow(0 0 0.5rem #ffcb6da6);
+  animation: arcane-tome-ready 1.5s ease-in-out infinite alternate;
+}
+
+.arcane-workbench__tome[data-grimoire-ready] .arcane-workbench__tome-label {
+  color: #ffe3a6;
+  text-shadow: 0 0 0.5rem #eaa133;
+}
+
+@keyframes arcane-tome-ready {
+  to { filter: brightness(1.36) drop-shadow(0 0 1rem #ffc266e0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcane-workbench__tome[data-grimoire-ready] > img { animation: none; }
+}
+
 .arcane-tome-book {
   display: grid;
   gap: 0.45rem;

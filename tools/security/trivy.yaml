@@ -1,0 +1,36 @@
+severity:
+  - HIGH
+  - CRITICAL
+pkg:
+  include-dev-deps: true
+scan:
+  scanners:
+    - vuln
+    - secret
+    - misconfig
+  skip-dirs:
+    - .git
+    - .vs
+    - .idea
+    - .codex
+    - .firebase
+    - artifacts
+    - output
+    - tmp
+    - .tmp
+    - '**/node_modules'
+    - '**/bin'
+    - '**/obj'
+    - '**/dist'
+    - '**/dist-site'
+    - '**/dist-ssr'
+    - '**/TestResults'
+    - '**/coverage'
+    - '**/playwright-report'
+    - '**/test-results'
+    - '**/.artifacts'
+    - '**/.venv'
+    - '**/.hypothesis'
+    - '**/.schemathesis'
+  skip-files:
+    - '**/*.log'

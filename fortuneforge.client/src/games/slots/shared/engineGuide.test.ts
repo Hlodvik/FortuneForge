@@ -82,11 +82,14 @@ describe.each(audited)('$catalog.title audited guide', game => {
       expect(engine.symbols.nativeWildMatchLengths).toEqual([])
       expect(engine.symbols.wildSubstitutionMatchLengths).toEqual([])
       expect(experience.help.wildSubstitution).toBe(false)
-      expect(experience.symbols.guideEntries.map(candidate => candidate.symbol)).toEqual(
+      expect(experience.symbols.guideEntries.filter(candidate => candidate.secondValue).map(candidate => candidate.symbol)).toEqual(
         [...new Set(engine.paytable.map(rule => rule.symbolId))],
       )
       expect(experience.symbols.guideNote).toBeUndefined()
       expect(experience.help.fiveMatchPayoutNote).toContain('same symbol values')
+      expect(experience.help.fourMatchPayoutNote).toBe('Only runs of exactly three or five matching symbols pay.')
+      expect(experience.symbols.guideEntries.filter(candidate => candidate.secondValue)
+        .map(candidate => candidate.firstLabel)).toEqual(['3', '3', '3', '3', '3'])
     } else {
       expect(engine.symbols.nativeWildMatchLengths).toEqual([3, 5])
       expect(engine.symbols.wildSubstitutionMatchLengths).toEqual([5])
@@ -94,15 +97,19 @@ describe.each(audited)('$catalog.title audited guide', game => {
       expect(entry('POWER')?.firstValue).not.toContain('+1')
       expect(experience.symbols.guideNote).toContain('Four-symbol wins award no special points.')
       expect(experience.help.fiveMatchPayoutNote).toContain('use the same symbol multipliers')
+      expect(experience.help.fourMatchPayoutNote).toContain('pay the three-symbol rate')
     }
-    expect(experience.help.fourMatchPayoutNote).toContain('pay the three-symbol rate')
     expect(engine.math.paylinePayoutSteps.every(step => step === 0)).toBe(true)
   })
 
   it('omits rewards for disabled features without changing the playable rules or artwork', () => {
     if (!profile.usesEnergy) {
       expect(experience.features.energy).toBeUndefined()
-      expect(Boolean(entry('BOLT'))).toBe(experience.features.lightningCollection?.collectorSymbol === 'BOLT')
+      if (game.id === 'arcane-archives') {
+        expect(entry('BOLT')?.companionSymbol).toBe('WAND')
+      } else {
+        expect(Boolean(entry('BOLT'))).toBe(experience.features.lightningCollection?.collectorSymbol === 'BOLT')
+      }
     }
     if (!profile.usesDirectValueTokens) {
       expect(experience.features.moneyGrab).toBeUndefined()

@@ -1,6 +1,6 @@
 /* Edited: 2026-11-18T14:45:02-06:00 | Computer: Vinnabok */
 .slots-page[data-slot-theme='arcane-archives-cabinet-v1'],
-.in-game-shell__body--slots:has(> [data-slot-theme='arcane-archives-cabinet-v1']) > .game-support-controls {
+.in-game-shell__body--slots:has(> [data-slot-theme='arcane-archives-cabinet-v1']) {
   --arcane-corner-inset: 0.9rem;
   --arcane-corner-size: 2.75rem;
   --arcane-corner-gap: 0.45rem;
@@ -60,8 +60,28 @@
   background: linear-gradient(155deg, #513766, #211433 78%);
 }
 
+@media (max-width: 600px) and (orientation: portrait) {
+  .in-game-shell__body--slots:has(> [data-slot-theme='arcane-archives-cabinet-v1']) {
+    box-sizing: border-box;
+    padding-block-end: calc(var(--arcane-corner-size) + max(var(--arcane-corner-inset), env(safe-area-inset-bottom)) + 0.35rem);
+    overflow: hidden;
+  }
+
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__main {
+    padding-block-end: 0.6rem;
+  }
+}
+
 @media (max-width: 360px) {
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'],
+  .in-game-shell__body--slots:has(> [data-slot-theme='arcane-archives-cabinet-v1']) {
+    --arcane-corner-inset: 0.55rem;
+    --arcane-corner-gap: 0.25rem;
+  }
+
   .slots-page[data-slot-theme='arcane-archives-cabinet-v1'][data-slot-controls='sidecar'] > .symbol-value-guide__trigger {
+    left: max(var(--arcane-corner-inset), env(safe-area-inset-left));
+    bottom: max(var(--arcane-corner-inset), env(safe-area-inset-bottom));
     padding-inline: 0.6rem;
     font-size: 0.7rem;
   }

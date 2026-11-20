@@ -1,0 +1,26 @@
+# Paths relative to the repository root. Application sources and tests stay indexed.
+/output/
+/artifacts/
+/.artifacts/
+/tmp/
+/.tmp/
+/.tmp-local-preview/
+/.baccarat-test-temp/
+/.agents/
+/.codex/
+**/node_modules/
+**/bin/
+**/obj/
+**/dist/
+**/dist-site/
+**/dist-ssr/
+**/test-results/
+**/playwright-report/
+**/coverage/
+**/archive/
+**/archives/
+**/assets/
+**/public/
+/tools/artwork/
+/tools/audio-suites/
+/tools/qa-history/

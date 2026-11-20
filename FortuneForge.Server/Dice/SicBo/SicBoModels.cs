@@ -78,11 +78,14 @@ internal static class SicBoMoney
     public static long StakeCents(decimal? stake)
     {
         if (stake is null) throw new ArgumentException("A Sic Bo stake is required.", nameof(stake));
+        const string invalidStakeMessage = "Choose a whole-rand Sic Bo stake from R1.00 through R10.00.";
+        if (stake.Value < ToRand(MinimumStakeCents) || stake.Value > ToRand(MaximumStakeCents))
+            throw new ArgumentOutOfRangeException(nameof(stake), invalidStakeMessage);
         var cents = checked(stake.Value * RandMoney.CentsPerRand);
         if (cents != decimal.Truncate(cents)) throw new ArgumentOutOfRangeException(nameof(stake), "A Sic Bo stake cannot include a fraction of a cent.");
         var value = checked((long)cents);
-        if (value < MinimumStakeCents || value > MaximumStakeCents || value % StakeIncrementCents != 0)
-            throw new ArgumentOutOfRangeException(nameof(stake), "Choose a whole-rand Sic Bo stake from R1.00 through R10.00.");
+        if (value % StakeIncrementCents != 0)
+            throw new ArgumentOutOfRangeException(nameof(stake), invalidStakeMessage);
         return value;
     }
 

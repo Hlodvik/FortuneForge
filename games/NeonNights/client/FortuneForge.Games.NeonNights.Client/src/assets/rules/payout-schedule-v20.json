@@ -1,0 +1,14 @@
+{
+  "base": 0.929,
+  "car": 0.7,
+  "combinedRtpTarget": { "minimum": 0.93, "maximum": 0.95 },
+  "discoFourSymbolAwards": {
+    "2": 137,
+    "4": 140,
+    "5": 143,
+    "7": 145,
+    "DISCO_MARTINI": 151,
+    "DISCO_SEVEN": 156,
+    "DISCO_BALL": 162
+  }
+}

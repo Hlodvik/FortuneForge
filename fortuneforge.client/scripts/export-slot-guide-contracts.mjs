@@ -9,6 +9,14 @@ const { directory: source, index, provenance } = await verifySlotContracts(proce
 const games = []
 const engineFixtures = []
 let basePaytable
+function createPaylinePayoutMap(paytable) {
+  const payouts = {}
+  for (const rule of paytable) {
+    payouts[rule.symbolId] ??= {}
+    payouts[rule.symbolId][rule.matchLength === 3 ? 'three' : 'five'] = rule.multiplier
+  }
+  return payouts
+}
 for (const item of index.games) {
   const contract = JSON.parse(await readFile(resolve(source, item.route.id, 'contract.json'), 'utf8'))
   // Keep independently maintained paytables in the evidence without using
@@ -37,14 +45,11 @@ for (const item of index.games) {
     collectionTarget: p.collectionTarget, collectionAwardedSpins: p.collectionAwardedSpins,
     usesCollections: p.usesCollections, usesEnergy: p.usesEnergy, usesDirectValueTokens: p.usesDirectValueTokens,
     scatterFeatureMode: p.scatterFeatureMode, collectionFeatureMode: p.collectionFeatureMode,
+    ...(isArcane && { paylinePayouts: createPaylinePayoutMap(contract.paytable) }),
   })
 }
 if (games.length !== 19) throw new Error('The engine export must contain all nineteen playable slots')
-const basePayouts = {}
-for (const rule of basePaytable) {
-  basePayouts[rule.symbolId] ??= {}
-  basePayouts[rule.symbolId][rule.matchLength === 3 ? 'three' : 'five'] = rule.multiplier
-}
+const basePayouts = createPaylinePayoutMap(basePaytable)
 const output = fileURLToPath(new URL('../../packages/slot-game-runtime/src/contracts/engine-guide-contracts.json', import.meta.url))
 const inlineObject = object => `{ ${Object.entries(object).map(([key, value]) =>
   `${JSON.stringify(key)}: ${JSON.stringify(value)}`).join(', ')} }`

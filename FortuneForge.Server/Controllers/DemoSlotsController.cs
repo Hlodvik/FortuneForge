@@ -24,7 +24,8 @@ public sealed record DemoSpinRequest(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] long CrucibleWageredCents = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? OlympusTumbleShowcase = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int NeonDiscoSpinsRemaining = 0,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? NeonDiscoMultiplier = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? NeonDiscoMultiplier = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? NeonDiscoWagerPoints = null);
 
 [NonController]
 public sealed class DemoSlotsController(
@@ -58,6 +59,8 @@ public sealed class DemoSlotsController(
             var isNeon = request.GameId == SlotSpecialRoundProfiles.NeonNightsGameId;
             if (!isNeon && request.NeonDiscoMultiplier is not null)
                 throw new ArgumentException("Only Neon Nights supports a Disco multiplier.", nameof(request.NeonDiscoMultiplier));
+            if (!isNeon && request.NeonDiscoWagerPoints is not null)
+                throw new ArgumentException("Only Neon Nights supports a Disco wager lock.", nameof(request.NeonDiscoWagerPoints));
             var isGoldFoundry = request.GameId == GoldFoundrySlotDefinitions.GameId;
             if (isGoldFoundry)
                 GoldFoundryDemoBoundary.Validate(request);
@@ -91,6 +94,9 @@ public sealed class DemoSlotsController(
                 throw new ArgumentException("Special Plays use the wager from the triggering spin.", nameof(request));
             var isNeonDiscoPlay = isNeon && !request.UseFreeSpin &&
                 request.NeonDiscoSpinsRemaining > 0;
+            if (isNeonDiscoPlay)
+                NeonPlayPolicy.ValidateDiscoWager(request.NeonDiscoSpinsRemaining,
+                    request.NeonDiscoWagerPoints, request.WagerPoints);
             var neonDiscoMultiplierBefore = request.NeonDiscoMultiplier ?? NeonDiscoCascade.InitialMultiplier;
             if (!NeonDiscoCascade.IsValidMultiplier(neonDiscoMultiplierBefore) ||
                 request.NeonDiscoSpinsRemaining == 0 && neonDiscoMultiplierBefore != NeonDiscoCascade.InitialMultiplier)
@@ -172,6 +178,9 @@ public sealed class DemoSlotsController(
                     : 0,
                 FreeSpinsRemaining = freeSpinsRemaining,
                 NeonDiscoSpinsRemaining = neonDiscoSpinsRemaining,
+                NeonDiscoWagerPoints = isNeon
+                    ? NeonPlayPolicy.NextDiscoWager(request.NeonDiscoSpinsRemaining,
+                        request.NeonDiscoWagerPoints, isNeonDiscoPlay, engineResult.WagerPoints, engineResult.NeonArcade) : null,
                 NeonDiscoMultiplier = isNeon ? NeonPlayPolicy.NextDiscoMultiplier(neonDiscoMultiplierBefore,
                     neonDiscoSpinsRemaining, engineResult.NeonDiscoCascade, engineResult.NeonArcade) : null,
                 FreeSpinWagerPoints = freeSpinWagerPoints,

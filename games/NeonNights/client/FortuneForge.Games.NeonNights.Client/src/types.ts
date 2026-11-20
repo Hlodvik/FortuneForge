@@ -31,6 +31,7 @@ export type NeonState = {
   freeSpinWagerPoints: number | null
   freeSpinFeatureMode: string | null
   neonDiscoSpinsRemaining: number
+  neonDiscoWagerPoints?: number | null
   neonDiscoMultiplier: NeonDiscoMultiplier
   neonDiscoRoundWinPoints?: number | null
   neonCarRespinOffer?: NeonCarRespinOffer | null

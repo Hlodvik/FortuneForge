@@ -1,3 +1,4 @@
+using System.Globalization;
 using FortuneForge.Games.Baccarat;
 using FortuneForge.Games.Cards;
 using FortuneForge.Server.Cards.Baccarat;
@@ -92,6 +93,35 @@ public sealed class BaccaratContractTests
             "player-1", new CreateBaccaratRoundRequest("tie", 1m), "baccarat_start_0004", CancellationToken.None));
         await Assert.ThrowsAsync<BaccaratRoundConflictException>(() => service.StartAsync(
             "player-1", new CreateBaccaratRoundRequest("player", 1m, 0.25m), "baccarat_start_0004", CancellationToken.None));
+    }
+
+    [Theory]
+    [InlineData("79228162514264337593543950335")]
+    [InlineData("-79228162514264337593543950335")]
+    [InlineData("1000000000000000000")]
+    [InlineData("-1000000000000000000")]
+    public async Task Service_RejectsExtremeStakesBeforeStoreAccess(string rawStake)
+    {
+        var stake = decimal.Parse(rawStake, CultureInfo.InvariantCulture);
+        var store = new InMemoryBaccaratStore();
+        var service = new BaccaratService(store, TimeProvider.System, BankerNaturalShoe);
+        var requests = new[]
+        {
+            new CreateBaccaratRoundRequest("player", stake),
+            new CreateBaccaratRoundRequest("player", 1m, stake),
+            new CreateBaccaratRoundRequest("player", 1m, 0m, stake),
+        };
+
+        foreach (var request in requests)
+        {
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.StartAsync(
+                "player-1", request, "baccarat_bounds_0001", CancellationToken.None));
+        }
+
+        Assert.Equal(0, store.StartCallCount);
+        Assert.Equal(100_000, store.BalanceCents);
+        Assert.Equal(0, store.LedgerEntryCount);
+        Assert.Equal(0, store.EventCount);
     }
 
     [Fact]
@@ -259,6 +289,7 @@ public sealed class BaccaratContractTests
         private string? startIdempotencyKey;
 
         public long BalanceCents { get; set; } = 100_000;
+        public int StartCallCount { get; private set; }
         public int LedgerEntryCount { get; private set; }
         public int EventCount { get; private set; }
 
@@ -273,6 +304,7 @@ public sealed class BaccaratContractTests
             DateTimeOffset nowUtc,
             CancellationToken cancellationToken)
         {
+            StartCallCount++;
             if (round is not null)
             {
                 if (round.UserId != userId || startIdempotencyKey != idempotencyKey || round.BetSide != betSide ||

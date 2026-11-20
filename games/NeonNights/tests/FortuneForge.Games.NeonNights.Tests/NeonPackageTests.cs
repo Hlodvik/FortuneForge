@@ -17,7 +17,7 @@ public sealed class NeonPackageTests
         Assert.Equal(23, game.Paylines.Count);
         Assert.Null(game.Energy);
         Assert.Null(game.FreeGames);
-        Assert.Equal(0.765m, game.Math.PayoutMultiplier);
+        Assert.Equal(0.929m, game.Math.PayoutMultiplier);
         Assert.All(definitions.GetReelSet(game.Math.ReelSetId)!.Reels,
             reel => Assert.Equal(4096, reel.Count));
         Assert.DoesNotContain(typeof(NeonNightsEngine).Assembly.GetReferencedAssemblies(),
@@ -55,12 +55,12 @@ public sealed class NeonPackageTests
 
         var three = Assert.Single(Assert.Single(Pay("ACE", "ACE", "7", "FREE", "FREE").Paylines).Matches);
         Assert.Equal("7", three.Match.SymbolId);
-        Assert.Equal(230, three.AmountPoints);
+        Assert.Equal(279, three.AmountPoints);
         Assert.Equal(2, three.Match.WildPositions.Count);
 
         var five = Assert.Single(Assert.Single(Pay("2", "ACE", "ACE", "ACE", "ACE").Paylines).Matches);
         Assert.Equal("2", five.Match.SymbolId);
-        Assert.Equal(306, five.AmountPoints);
+        Assert.Equal(372, five.AmountPoints);
         Assert.Equal(4, five.Match.WildPositions.Count);
     }
 
@@ -167,6 +167,8 @@ public sealed class NeonPackageTests
             finding => finding.Code == "slot-neon-car-paylines-mismatch");
 
         var historicalVersion = NeonArcadeSlotDefinitions.PreviousNitroChoiceEngineVersion;
+        oldLayout["Math"]!["PayoutMultiplier"] = 1.23m;
+        var historicalGame = oldLayout.Deserialize<GameDefinition>()!;
         var historicalBonus = NeonArcadeBonus.Apply(new(0, []), audit.RawGeneratedReels,
             isFreeSpin: true, engineVersion: historicalVersion);
         var historical = result with
@@ -174,7 +176,7 @@ public sealed class NeonPackageTests
             EngineAudit = audit with
             {
                 EngineVersion = historicalVersion,
-                EffectiveGame = oldGame,
+                EffectiveGame = historicalGame,
                 NeonArcade = historicalBonus.Evidence
             },
             Payout = historicalBonus.Payout,
@@ -220,7 +222,9 @@ public sealed class NeonPackageTests
         var calculator = new NeonPayoutCalculator();
 
         var previous = evaluator.Evaluate(reels, game, symbols, "neon-arcade-special-plays-v17");
-        var historical = calculator.Calculate(previous, game, paytable, 300);
+        var capturedGame = JsonSerializer.SerializeToNode(game)!;
+        capturedGame["Math"]!["PayoutMultiplier"] = 0.765m;
+        var historical = calculator.Calculate(previous, capturedGame.Deserialize<GameDefinition>()!, paytable, 300);
         var match = Assert.Single(Assert.Single(historical.Paylines).Matches);
         Assert.Equal(4, match.Match.MatchLength);
         Assert.Equal(230, match.AmountPoints);
@@ -315,7 +319,7 @@ public sealed class NeonPackageTests
         Assert.Equal(2, resolved.NeonNitroWild?.ExpandedReel);
         Assert.All(resolved.Reels[2], symbol => Assert.Equal("ACE", symbol));
         Assert.Equal("NITRO", resolved.Reels[4][0]);
-        Assert.Equal(369, resolved.ImprovementPoints);
+        Assert.Equal(210, resolved.ImprovementPoints);
         Assert.Empty(NeonCarRespin.Check(original, resolved));
     }
 
@@ -339,7 +343,7 @@ public sealed class NeonPackageTests
     }
 
     [Theory]
-    [InlineData(false, 369)]
+    [InlineData(false, 210)]
     [InlineData(true, 246)]
     public void CarRespinChangesOnlyTheSelectedReelAndPaysTheImprovement(bool historical, long improvement)
     {

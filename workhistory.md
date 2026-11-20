@@ -876,3 +876,12 @@ Edited: 2026-11-20T16:16:05-06:00 | Computer: VINNABOK | File: fortuneforge.clie
 
 Edited: 2026-11-20T16:17:30-06:00 | Computer: VINNABOK | File: games/ArcaneArchives/client/FortuneForge.Games.ArcaneArchives.Client/src/assets/guide/illustrated-guide.html
   Summary: Normalize trailing whitespace in the embedded font license for the release.
+
+Edited: 2026-11-20T16:20:10-06:00 | Computer: VINNABOK | File: games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.cs
+  Summary: Preserve boosted reel model identity during preparation and audit recording.
+
+Edited: 2026-11-20T16:20:10-06:00 | Computer: VINNABOK | File: FortuneForge.Server.Tests/Slots/SlotFeatureSpinTests.cs
+  Summary: Verify Wukong boosted spins replay and preparation cannot replace the effective reel model.
+
+Edited: 2026-11-20T16:22:51-06:00 | Computer: VINNABOK | File: fortuneforge.client/src/games/slots/shared/__fixtures__/engineGuide-contracts.json
+  Summary: Regenerate release guide evidence from the corrected classic slot runtime.

@@ -89,8 +89,9 @@ public sealed partial class ClassicSlotEngine
         var effectiveGame = CreateEffectiveGame(game, featureMode);
         var effectiveReels = specialBoostApplied
             ? CreateBoostedReels(game, reelSet) : reelSet;
+        var effectiveReelSetId = effectiveReels.Id;
         effectiveReels = prepareReels?.Invoke(effectiveReels) ?? effectiveReels;
-        if (effectiveReels.Id != reelSet.Id)
+        if (effectiveReels.Id != effectiveReelSetId)
             throw new InvalidOperationException("Preparing reel strips cannot change their model ID.");
         var pityBefore = pity.ConsecutiveFiveMisses;
         var pityTriggered = string.IsNullOrWhiteSpace(featureMode) &&
@@ -137,7 +138,7 @@ public sealed partial class ClassicSlotEngine
             SlotDefinitionCloner.Clone(paytable), auditProfile, pityBefore, currentEnergyBalance,
             featureMode, attempts, Freeze(raw.VisibleReels), Freeze(frequency.VisibleReels));
 
-        return new ClassicSlotSpinOutcome(Guid.NewGuid(), game.Id, reelSet.Id, symbolSet.Id,
+        return new ClassicSlotSpinOutcome(Guid.NewGuid(), game.Id, effectiveReelSetId, symbolSet.Id,
             paytable.Id, wagerPoints, game.Wagering.PointValueInCents,
             outcome.StopIndexes.ToArray(), Freeze(outcome.VisibleReels), payout,
             pity.ConsecutiveFiveMisses, pityTriggered, freeSpins, specialPoints, energy,

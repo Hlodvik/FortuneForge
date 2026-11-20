@@ -1,7 +1,7 @@
 {
   "source": "Actual in-process OptionsSlotsDefinitionProvider, not client manifests",
-  "exportedUtc": "2026-11-20T22:07:32.2722245Z",
-  "assemblySha256": "ae08e1718f01dbd236ac67415a75592bc6e86939bfaaf4515c5af2509cc6eb07",
+  "exportedUtc": "2026-11-20T22:22:50.3810393Z",
+  "assemblySha256": "f00ca2f1965c7b68832ae8e3b3b01fac66c4497e0e94855fba158f2a1582f15d",
   "sourceSha256": {
     "FortuneForge.Server/Accounts/Security/AntiAbuseRateLimiting.cs": "f93e9f420ff6d774eee34d53326fc386d6a68f2ffb89f46c7c364652e00795ce",
     "FortuneForge.Server/Controllers/DemoSlotsController.cs": "16faecb0da2fdcbfd856aba8975b740135d6ae2bfe0be766821ae6f90a0029b5",
@@ -145,7 +145,7 @@
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotDefinitionFactory.cs": "5fd9306653be3b77f37b2c6c42c09bf167f3476d624079ac5c520282add286a4",
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.Features.cs": "1a90144de4eaebe547793cacb56ae2ef1aec6a3eaec20def710f4aada5fead2d",
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.Math.cs": "22b45f317ca0af2c297d73d58667894e4a953e5904abfc6debfc173274bfc957",
-    "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.cs": "ec704a46ceb973638eac3103f0cf826350d098eefecc7b8c1793215b5cff0cc1",
+    "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.cs": "89252745fa86a15ad1e89df95f8a7995885ab21ba10c975dbb8494a225f17ebc",
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotModels.cs": "abef0260b493c997942c889918aa00b359b4a86c72358d20b7ee7f873ac9b7a7",
     "games/shared/FortuneForge.Games.Slots.Runtime/CryptographicSlotRandom.cs": "29577cd422bb20bd436c763a8e7397a6249c5940a85202e0c75845d407e03c8f",
     "games/shared/FortuneForge.Games.Slots.Runtime/ExactStraightThreePaylines.cs": "3ab89f1658a36059e2861395ace956325409e3a040da85ada5332033afa1586b",

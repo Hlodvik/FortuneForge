@@ -1,6 +1,10 @@
+using FortuneForge.Games.Slots.Runtime;
+using FortuneForge.Games.Wukong;
+using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Evaluation;
+using FortuneForge.Server.Slots.Games;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
@@ -12,6 +16,43 @@ namespace FortuneForge.Server.Tests.Slots;
 
 public sealed class SlotFeatureSpinTests
 {
+    [Fact]
+    public void PackagedWukongPowerBoostUsesItsBoostedStripsForPlayAndReplay()
+    {
+        var registry = new StandaloneSlotPackageRegistry(new QueuedRandomIndexSource(0, 0, 0, 0, 0));
+        Assert.True(registry.TrySpin(WukongEngine.GameId, 100, "player", specialBoostApplied: true,
+            currentEnergyBalance: 0, featureMode: null, persistedPityMisses: 0, isFreeSpin: false, out var result));
+
+        var audit = Assert.IsType<SlotSpinEngineAudit>(result.EngineAudit);
+        Assert.True(result.SpecialBoostApplied);
+        Assert.Equal(WukongEngine.ReelSetId + "-power-boost", result.ReelSetId);
+        Assert.Equal(result.ReelSetId, audit.ReelSet.Id);
+        Assert.Equal(WukongEngine.ReelSetId, audit.BaseGame.Math.ReelSetId);
+        Assert.All(audit.ReelSet.Reels.Zip(WukongEngine.CreateReelSet().Reels),
+            pair => Assert.True(pair.First.Count < pair.Second.Count));
+        Assert.Empty(SlotRoundAudit.Check(result, result.Payout, isPaid: true));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PreparedReelsCannotChangeTheSelectedModelId(bool specialBoostApplied)
+    {
+        var definitions = new FrozenSlotDefinitions(WukongEngine.CreateGame(), WukongEngine.CreateSymbolSet(),
+            WukongEngine.CreateReelSet(), WukongEngine.CreatePaytable());
+        var engine = new ClassicSlotEngine(definitions, WukongEngine.Profile,
+            new QueuedRandomIndexSource(), WukongEngine.EngineVersion);
+
+        var error = Assert.Throws<InvalidOperationException>(() => engine.Spin(100, "player",
+            specialBoostApplied: specialBoostApplied, prepareReels: reels => new()
+            {
+                Id = reels.Id + "-unexpected",
+                SymbolSetId = reels.SymbolSetId,
+                Reels = reels.Reels
+            }));
+        Assert.Equal("Preparing reel strips cannot change their model ID.", error.Message);
+    }
+
     [Fact]
     public void PaidEngineSnapshot_CapturesExactRulesInputsAndStaysPrivateFromClientResponse()
     {

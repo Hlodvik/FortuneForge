@@ -885,3 +885,6 @@ Edited: 2026-11-20T16:20:10-06:00 | Computer: VINNABOK | File: FortuneForge.Serv
 
 Edited: 2026-11-20T16:22:51-06:00 | Computer: VINNABOK | File: fortuneforge.client/src/games/slots/shared/__fixtures__/engineGuide-contracts.json
   Summary: Regenerate release guide evidence from the corrected classic slot runtime.
+
+Edited: 2026-11-20T17:01:26-06:00 | Computer: VINNABOK | File: fortuneforge.client/src/app/routes/GameNavbar.contract.test.tsx
+  Summary: Allow the real-route navbar integration tests enough time to load cold workspace bundles.

@@ -63,6 +63,7 @@ describe('all registered production games share canonical navigation', () => {
   })
 
   describe.each(['ready', 'loading', 'error'] as const)('%s account boundary', phase => {
+    // A cold route import also loads its workspace bundle during the full suite.
     it.each(productionRoutes)('$path renders the real route with one shared navbar', async route => {
       window.history.replaceState(null, '', route.path)
       if (phase !== 'ready') { state.account = null; state.loading = phase === 'loading'; state.error = phase === 'error' ? 'Please sign in again.' : null }
@@ -80,6 +81,6 @@ describe('all registered production games share canonical navigation', () => {
       expect(navbar.querySelector('.player-shell-header__games')?.getAttribute('href')).toBe('/home')
       expect(navbar.querySelectorAll('.site-header-balance')).toHaveLength(phase === 'ready' ? 1 : 0)
       expect(navbar.querySelector('[aria-label="Account menu"]') !== null).toBe(phase === 'ready')
-    })
+    }, 15_000)
   })
 })

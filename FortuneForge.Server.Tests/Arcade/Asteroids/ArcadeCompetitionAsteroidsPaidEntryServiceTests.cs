@@ -1,3 +1,5 @@
+global using FortuneForge.Games.Asteroids;
+global using FortuneForge.Games.Asteroids.Server;
 using FortuneForge.Server.Arcade.Asteroids;
 using FortuneForge.Server.Arcade.Competition;
 using Xunit;

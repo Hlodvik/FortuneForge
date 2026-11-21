@@ -4,9 +4,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Google.Cloud.Firestore" Version="4.3.0" />
     <ProjectReference Include="../../src/FortuneForge.Games.Craps/FortuneForge.Games.Craps.csproj" />
     <InternalsVisibleTo Include="FortuneForge.Server" />
     <InternalsVisibleTo Include="FortuneForge.Server.Tests" />
+    <InternalsVisibleTo Include="FortuneForge.Games.Craps.Tests" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Firestore/FortuneForge.Games.Firestore.csproj" />
   </ItemGroup>
 </Project>

@@ -6,6 +6,6 @@
     "manifestExport": "DESERT_TREASURES_SLOT_GAME"
   },
   "backend": {
-    "kind": "classic-slot"
+    "kind": "packaged-game"
   }
 }

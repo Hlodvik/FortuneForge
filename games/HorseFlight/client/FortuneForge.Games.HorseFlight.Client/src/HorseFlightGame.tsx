@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { HorseFlightGatewayError, type HorseFlightGateway, type HorseFlightResult, type HorseFlightStatus } from './contracts'
+import { HorseFlightGatewayError, type HorseFlightGateway, type HorseFlightRecoveryMode, type HorseFlightResult, type HorseFlightStatus } from './contracts'
 import { HttpHorseFlightGateway } from './httpHorseFlightGateway'
 import { biomeSectionForTick, horseScreenX, startHorse, stepHorse, type HorseBiome, type HorseState, type ObstacleKind } from './horseFlightSimulation'
 import { HorseBiomeScenery } from './HorseBiomeScenery'
@@ -225,11 +225,12 @@ export type HorseFlightGameProps = Readonly<{
   gateway?: HorseFlightGateway
   onResult?: (result: HorseFlightResult) => void
   playerId?: string
+  recoveryMode?: HorseFlightRecoveryMode
   renderEndScreen?: (state: HorseFlightEndScreenState) => ReactNode
   renderLaunchScreen?: (state: HorseFlightLaunchScreenState) => ReactNode
 }>
 
-export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gateway = defaultGateway, onResult, playerId, renderEndScreen, renderLaunchScreen }: HorseFlightGameProps) {
+export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gateway = defaultGateway, onResult, playerId, recoveryMode, renderEndScreen, renderLaunchScreen }: HorseFlightGameProps) {
   const [status, setStatus] = useState<HorseFlightStatus | null>(null)
   const [game, setGame] = useState<HorseState | null>(null)
   const [result, setResult] = useState<HorseFlightResult | null>(null)
@@ -322,15 +323,19 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
   }, [gateway, statusLoadAttempt])
 
   useEffect(() => {
-    if (!playerId || !status?.recoveryMode || !validRecoveryScope(status.recoveryScope, status.recoveryMode)) return
-    const identity = JSON.stringify([playerId, status.recoveryMode])
+    const mode = status?.recoveryMode ?? recoveryMode
+    if (!playerId || !mode) return
+    if (recoveryMode && status?.recoveryMode && recoveryMode !== status.recoveryMode) {
+      holdRecovery('The selected flight mode does not match its recovery scope.'); return
+    }
+    const identity = JSON.stringify([playerId, mode])
     if (recoveryLoaded.current === identity) return
     recoveryLoaded.current = identity
-    const restored = readHorseFlightRecovery(playerId, status.recoveryMode, status.recoveryScope)
+    const restored = readHorseFlightRecovery(playerId, mode, status?.recoveryScope)
     recovery.current = restored.record
     if (restored.error) { holdRecovery(restored.error); return }
     const record = restored.record
-    if (!record || record.state === 'debug' || record.scope !== status.recoveryScope) return
+    if (!record || record.state === 'debug') return
     startRequestKey.current = record.startKey; completionRequestKey.current = record.finishKey
     if (!record.run) {
       setPendingStart(true); setError('The previous flight start is unconfirmed. Retry the same request when ready.'); return
@@ -341,15 +346,18 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
       accept(restored.game); setOpeningPose(false); setPaused(restored.game.phase === 'running')
       if (restored.game.phase !== 'running' && record.state !== 'saved') setError('The previous score save is unconfirmed. Retry the same flight when ready.')
     }
-  }, [accept, holdRecovery, playerId, status])
+  }, [accept, holdRecovery, playerId, recoveryMode, status])
 
   const start = useCallback(async () => {
-    if (!status?.available || requestBusy.current || recoveryBlocked.current) return
+    if ((!status?.available && recovery.current?.state !== 'starting') || requestBusy.current || recoveryBlocked.current) return
     if (recovery.current?.run && !['saved', 'debug'].includes(recovery.current.state)) return
+    if (recovery.current?.state !== 'starting' && playerId && (recoveryMode || status?.recoveryMode) &&
+      (!status?.recoveryMode || !validRecoveryScope(status.recoveryScope, status.recoveryMode) ||
+        recoveryMode !== undefined && status.recoveryMode !== recoveryMode)) return
     requestBusy.current = true; setStarting(true)
     const epoch = lifetime.current, abort = new AbortController(); request.current = abort
     try {
-      if (playerId && status.recoveryMode && validRecoveryScope(status.recoveryScope, status.recoveryMode)) {
+      if (playerId && status?.recoveryMode && validRecoveryScope(status.recoveryScope, status.recoveryMode)) {
         if (recovery.current?.state !== 'starting') recovery.current = newHorseFlightRecovery(playerId,
           status.recoveryMode, status.recoveryScope, key('start'), key('complete'))
         if (!persistRecovery()) { requestBusy.current = false; setStarting(false); return }
@@ -375,12 +383,14 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
     setPaused(false)
     const idempotencyKey = startRequestKey.current ??= key('start')
     try {
-      const run = await gateway.start({ idempotencyKey, signal: abort.signal, recoveryScope: recovery.current?.scope })
+      const run = await gateway.start({ idempotencyKey, signal: abort.signal, recoveryScope: recovery.current?.scope,
+        ...(recovery.current?.admission ? { admission: recovery.current.admission }
+          : recovery.current?.mode.startsWith('paid:') ? { recoverOnly: true } : {}) })
       if (lifetime.current !== epoch) return
       if (recovery.current) {
         if (!validIssuedFlight(run) || (run.recoveryScope !== undefined && !validRecoveryScope(run.recoveryScope, recovery.current.mode))) throw new Error('The issued flight could not be verified.')
         recovery.current.run = run; recovery.current.scope = run.recoveryScope ?? recovery.current.scope
-        recovery.current.state = 'active'; recovery.current.rulesVersion = startHorse(run.seed).rulesVersion
+        recovery.current.state = 'active'; recovery.current.rulesVersion = run.rulesVersion ?? startHorse(run.seed).rulesVersion
         if (!persistRecovery()) return
       }
       startRequestKey.current = null
@@ -388,14 +398,14 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
       runId.current = run.runId
       setPendingStart(false)
       setOpeningPose(true)
-      accept(startHorse(run.seed))
+      accept(startHorse(run.seed, run.rulesVersion))
       requestAnimationFrame(() => field.current?.focus())
     } catch (reason) {
       if (lifetime.current === epoch) setError(messageForError(reason, 'Horse Flight could not start. Retry the same flight request.'))
     } finally {
       if (lifetime.current === epoch) { requestBusy.current = false; setStarting(false); request.current = null }
     }
-  }, [accept, gateway, holdRecovery, persistRecovery, playerId, status])
+  }, [accept, gateway, holdRecovery, persistRecovery, playerId, recoveryMode, status])
 
   useEffect(() => {
     if (!autoStart || autoStartRequested.current || !status?.available || game !== null || pendingStart || recovery.current?.state === 'starting' || recoveryBlocked.current) return

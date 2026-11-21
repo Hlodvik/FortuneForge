@@ -10,8 +10,42 @@ using ArcaneTomeState = FortuneForge.Games.ArcaneArchives.ArcaneTomeState;
 using ArcaneTomeProgress = FortuneForge.Games.ArcaneArchives.ArcaneTomeProgress;
 using ArcaneArchivesEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
 using ArcaneWandCollector = FortuneForge.Games.ArcaneArchives.ArcaneWandCollector;
+using FortuneForge.Games.GodsOfOlympus;
+using FortuneForge.Games.GodsOfOlympus.Server;
+using FortuneForge.Games.HighNoonFortune;
+using FortuneForge.Games.HighNoonFortune.Server;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.JadeDragon;
+using FortuneForge.Games.JadeDragon.Server;
+using FortuneForge.Games.GoldFoundry.Server;
+using FortuneForge.Games.MidnightVault.Server;
+using FortuneForge.Games.RainbowRealm;
+using FortuneForge.Games.RainbowRealm.Server;
+using FortuneForge.Games.ReelRiches;
+using FortuneForge.Games.ReelRiches.Server;
+using FortuneForge.Games.RoyalDraw;
+using FortuneForge.Games.RoyalDraw.Server;
+using FortuneForge.Games.CosmicFortune;
+using FortuneForge.Games.CosmicFortune.Server;
+using FortuneForge.Games.OceanOdyssey;
+using FortuneForge.Games.OceanOdyssey.Server;
+using FortuneForge.Games.SamuraiFortune;
+using FortuneForge.Games.SamuraiFortune.Server;
+using FortuneForge.Games.CandyCarnival;
+using FortuneForge.Games.CandyCarnival.Server;
+using FortuneForge.Games.PhantomManor;
+using FortuneForge.Games.PhantomManor.Server;
+using FortuneForge.Games.NordicLegends;
+using FortuneForge.Games.NordicLegends.Server;
+using FortuneForge.Games.DesertTreasures;
+using FortuneForge.Games.DesertTreasures.Server;
+using FortuneForge.Games.RobotRevolution;
+using FortuneForge.Games.RobotRevolution.Server;
+using FortuneForge.Games.PiratesFortune.Server;
+using PiratesFortuneEngine = FortuneForge.Games.PiratesFortune.PiratesFortuneEngine;
+using PiratesGemRules = FortuneForge.Games.PiratesFortune.PiratesGemBonus;
+using FortuneForge.Games.Wukong;
+using FortuneForge.Games.Wukong.Server;
 using FortuneForge.Server.Activity;
 using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
@@ -45,6 +79,51 @@ internal static class SlotEvidenceReplayAudit
             // the settlement receipt stores a separate frozen copy beside the result.
             var engineAudit = data.GetProperty("engineAudit").Deserialize<SlotSpinEngineAudit>(RoundAuditCapture.Json)
                 ?? throw new JsonException("Missing slot engine audit.");
+            if (!demo && result.GameId == WukongEngine.GameId && summary.GameId == WukongPaidRouteContract.AuditGameId &&
+                WukongSpinEvidence.IsNative(data))
+                return WukongSpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == RainbowRealmEngine.GameId && summary.GameId == RainbowPaidRouteContract.AuditGameId &&
+                RainbowSpinEvidence.IsNative(data))
+                return RainbowSpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == PiratesFortuneEngine.GameId && summary.GameId == PiratesPaidRouteContract.AuditGameId &&
+                PiratesSpinEvidence.IsNative(data))
+                return PiratesSpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == GodsOfOlympusEngine.GameId && summary.GameId == OlympusPaidRouteContract.AuditGameId &&
+                OlympusSpinEvidence.IsNative(data))
+                return OlympusSpinEvidence.InspectNative(summary, root, data);
+            if (!demo && result.GameId == ReelRichesEngine.GameId && summary.GameId == ReelRichesPaidRouteContract.AuditGameId &&
+                ReelRichesSpinEvidence.IsNative(data))
+                return ReelRichesSpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == HighNoonFortuneEngine.GameId && summary.GameId == HighNoonPaidRouteContract.AuditGameId &&
+                HighNoonSpinEvidence.IsNative(data))
+                return HighNoonSpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == RoyalDrawEngine.GameId && summary.GameId == RoyalDrawPaidRouteContract.AuditGameId &&
+                RoyalDrawSpinEvidence.IsNative(data))
+                return RoyalDrawSpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == CosmicFortuneEngine.GameId && summary.GameId == CosmicFortunePaidRouteContract.AuditGameId &&
+                CosmicFortuneSpinEvidence.IsNative(data))
+                return CosmicFortuneSpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == OceanOdysseyEngine.GameId && summary.GameId == OceanOdysseyPaidRouteContract.AuditGameId &&
+                OceanOdysseySpinEvidence.IsNative(data))
+                return OceanOdysseySpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == SamuraiFortuneEngine.GameId && summary.GameId == SamuraiFortunePaidRouteContract.AuditGameId &&
+                SamuraiFortuneSpinEvidence.IsNative(data))
+                return SamuraiFortuneSpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == CandyCarnivalEngine.GameId && summary.GameId == CandyCarnivalPaidRouteContract.AuditGameId &&
+                CandyCarnivalSpinEvidence.IsNative(data))
+                return CandyCarnivalSpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == PhantomManorEngine.GameId && summary.GameId == PhantomManorPaidRouteContract.AuditGameId &&
+                PhantomManorSpinEvidence.IsNative(data))
+                return PhantomManorSpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == NordicLegendsEngine.GameId && summary.GameId == NordicLegendsPaidRouteContract.AuditGameId &&
+                NordicLegendsSpinEvidence.IsNative(data))
+                return NordicLegendsSpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == DesertTreasuresEngine.GameId && summary.GameId == DesertTreasuresPaidRouteContract.AuditGameId &&
+                DesertTreasuresSpinEvidence.IsNative(data))
+                return DesertTreasuresSpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == RobotRevolutionEngine.GameId && summary.GameId == RobotRevolutionPaidRouteContract.AuditGameId &&
+                RobotRevolutionSpinEvidence.IsNative(data))
+                return RobotRevolutionSpinEvidence.InspectNative(summary, data);
             var response = demo ? data.GetProperty("responseResult").Deserialize<SpinResult>(RoundAuditCapture.Json)
                 ?? throw new JsonException("Missing demo response.") : null;
             var settledPayout = demo ? response!.Payout :
@@ -88,6 +167,8 @@ internal static class SlotEvidenceReplayAudit
                     findings.Add(new("slot-jade-cascade-ledger-mismatch", "error",
                         "The Jade Dragon cascade does not match the admitted wager and cent settlement."));
             }
+            else if (!demo && result.GameId == JadeDragonEngine.GameId && engineAudit.EngineVersion == JadeDragonEngine.Version)
+                findings.AddRange(JadeSpinEvidence.InspectNativeLegacy(summary, data));
             else if (NeonArcadeSlotDefinitions.SupportsPackageReplay(engineAudit.EngineVersion))
                 findings.AddRange(InspectCurrentNeon(root, data, result, response, engineAudit,
                     settledPayout, summary, demo));
@@ -99,7 +180,10 @@ internal static class SlotEvidenceReplayAudit
                             ?? throw new JsonException("Missing Midnight Vault demo request."),
                         result, response!, engineAudit));
                 else if (data.TryGetProperty("outcomeSchemaVersion", out var midnightSchema) && midnightSchema.GetInt64() >= 7)
+                {
                     findings.AddRange(InspectMidnightAdmission(data, result, engineAudit, settledPayout, summary));
+                    findings.AddRange(MidnightVaultSpinEvidence.InspectNative(summary, data));
+                }
                 else
                     findings.Add(new("slot-midnight-schema-mismatch", "error",
                         "The owned Midnight Vault outcome requires its versioned settlement evidence."));
@@ -112,7 +196,10 @@ internal static class SlotEvidenceReplayAudit
                 ArcaneArchivesEngine.IsWandEngineVersion(engineAudit.EngineVersion))
                 findings.AddRange(InspectArcaneSettlement(data, result, engineAudit, settledPayout, summary));
             else if (GoldFoundrySlotDefinitions.IsModel(engineAudit.BaseGame))
+            {
                 findings.AddRange(GoldFoundryAudit.InspectPaidSettlement(data, result, engineAudit, settledPayout, summary));
+                findings.AddRange(GoldFoundrySpinEvidence.InspectNative(summary, data));
+            }
             else if (result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId &&
                 data.TryGetProperty("outcomeSchemaVersion", out var schema) && schema.GetInt64() >= 7)
                 findings.AddRange(InspectMidnightAdmission(data, result, engineAudit, settledPayout, summary));
@@ -381,44 +468,23 @@ internal static class SlotEvidenceReplayAudit
                 !evidence.WagerCentsAfter.ContainsKey(mode)))
             throw new JsonException("Incomplete Pirates gem collection state.");
 
-        var awardedByMode = PiratesGemBonus.Modes.ToDictionary(
-            mode => mode, _ => 0, StringComparer.Ordinal);
-        foreach (var (symbolId, amount) in result.SealsAwarded)
-        {
-            if (amount > 0 && PiratesGemBonus.ModesBySymbol.TryGetValue(symbolId, out var mode))
-                awardedByMode[mode] = checked(awardedByMode[mode] + amount);
-        }
-
-        var freeSpinsAwarded = 0;
-        string? featureMode = result.FreeSpinsAwarded > 0 ? profile.ScatterFeatureMode : null;
-        var freeSpinWagerPoints = 0L;
+        if (PiratesGemBonus.Modes.Any(mode => counts[mode] is < 0 or >= PiratesGemBonus.MaximumGems || wagerCents[mode] < 0))
+            throw new JsonException("Invalid Pirates gem collection state.");
         var spinWagerCents = RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
+        var progress = PiratesGemRules.AdvancePaid(result.SpinId, counts, wagerCents, result.SealsAwarded,
+            spinWagerCents, result.PointValueInCents, profile.CollectionAwardedSpins,
+            result.FreeSpinsAwarded > 0 ? profile.ScatterFeatureMode : null);
         var findings = new List<RoundAuditFinding>();
         foreach (var mode in PiratesGemBonus.Modes)
         {
-            var progress = PiratesGemBonus.Advance(result.SpinId, mode,
-                checked((int)counts[mode]), wagerCents[mode], awardedByMode[mode], spinWagerCents);
-            if (evidence.CountsAfter[mode] != progress.Count ||
-                evidence.WagerCentsAfter[mode] != progress.WagerTotal)
+            var expectedCents = progress.Counts[mode] == 0 ? 0 : progress.WagerCents[mode];
+            if (evidence.CountsAfter[mode] != progress.Counts[mode] || evidence.WagerCentsAfter[mode] != expectedCents)
                 findings.Add(new("slot-pirates-gem-state-mismatch", "error",
                     "The saved Pirates gem pile differs from replayed spin progression."));
-
-            foreach (var award in progress.Awards)
-            {
-                freeSpinsAwarded = checked(freeSpinsAwarded + profile.CollectionAwardedSpins);
-                featureMode = PiratesGemBonus.AddFeatureMode(featureMode, mode);
-                if (freeSpinWagerPoints > 0) continue;
-                var totalWagerPoints = RandMoney.CentsToPoints(
-                    award.WagerTotal, result.PointValueInCents);
-                freeSpinWagerPoints = Math.Max(1, checked((long)Math.Round(
-                    totalWagerPoints / (decimal)award.GemCount,
-                    MidpointRounding.AwayFromZero)));
-            }
         }
 
-        if (evidence.FreeSpinsAwarded != freeSpinsAwarded ||
-            evidence.FeatureMode != featureMode ||
-            evidence.FreeSpinWagerPoints != freeSpinWagerPoints)
+        if (evidence.FreeSpinsAwarded != progress.FreeSpinsAwarded || evidence.FeatureMode != progress.FeatureMode ||
+            evidence.FreeSpinWagerPoints != progress.FreeSpinWagerPoints)
             findings.Add(new("slot-pirates-gem-award-mismatch", "error",
                 "The saved Pirates free-spin award differs from replayed gem triggers."));
         return findings;
@@ -542,9 +608,8 @@ internal static class SlotEvidenceReplayAudit
         var state = DemoSlotsController.CreateMidnightState(request, engine.PaytableId);
         MidnightVaultBonusRounds.Validate(state.Rounds);
         var head = state.Rounds.FirstOrDefault();
-        var consumed = request.UseFreeSpin ? MidnightVaultBonusRounds.Consume(state.Rounds) : state.Rounds;
-        var progress = MidnightVaultBonusRounds.Advance(consumed, state.CollectionCounts, state.CollectionWagerPoints,
-            engine.SealsAwarded, engine.WagerPoints, engine.FreeSpinsAwarded,
+        var progress = MidnightVaultDemoPolicy.Advance(state.Rounds, state.CollectionCounts, state.CollectionWagerPoints,
+            request.UseFreeSpin, engine.SealsAwarded, engine.WagerPoints, engine.FreeSpinsAwarded,
             audit.FeatureProfile?.ScatterFeatureMode, engine.PaytableId, engine.SpinId);
         var next = progress.Rounds.FirstOrDefault();
         var recorded = response.MidnightBonusState!;
@@ -561,7 +626,7 @@ internal static class SlotEvidenceReplayAudit
             response.EnergyBalance != 0 || response.EnergyMultiplierApplied || response.PayoutMultiplier != 1m ||
             response.SpecialPointsBalance != 0 ||
             response.FreeSpinsAwarded != engine.FreeSpinsAwarded ||
-            response.CollectionFreeSpinsAwarded != progress.AwardedRounds.Where(round => round.FeatureMode == "rows-paw").Sum(round => round.TotalSpins) ||
+            response.CollectionFreeSpinsAwarded != MidnightVaultDemoPolicy.CollectionSpinsAwarded(progress) ||
             !response.SealCollections.SequenceEqual(DemoSlotsController.CreateMidnightCollections(progress.CollectionCounts, progress.CollectionWagerPoints)))
             return [new("slot-midnight-demo-progression-mismatch", "error", "The demo's locked rounds or weighted gem totals do not replay.")];
         return [];

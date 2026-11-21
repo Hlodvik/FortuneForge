@@ -2,6 +2,7 @@ using FortuneForge.Server.Arcade.Competition;
 using FortuneForge.Server.Arcade;
 using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Arcade.Asteroids;
+using FortuneForge.Games.Asteroids;
 using FortuneForge.Server.Arcade.Flappy;
 using FortuneForge.Server.Arcade.HorseFlight;
 using FortuneForge.Games.Flappy;

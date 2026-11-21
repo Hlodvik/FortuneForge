@@ -31,7 +31,7 @@ export function TwentyFortyEightGame({ gateway, embedded = false }: TwentyFortyE
   useEffect(() => {
     const controller = new AbortController()
     void gateway.getStatus(controller.signal)
-      .then(status => status.available ? gateway.startGame(undefined, controller.signal) : Promise.reject(new Error('The 2048 service is unavailable.')))
+      .then(status => status.available ? gateway.recoverGame?.(controller.signal) ?? gateway.startGame(undefined, controller.signal) : Promise.reject(new Error('The 2048 service is unavailable.')))
       .then(setGame)
       .catch((reason: unknown) => { if (!(reason instanceof DOMException && reason.name === 'AbortError')) setError(messageForError(reason)) })
     return () => controller.abort()
@@ -83,6 +83,7 @@ export function TwentyFortyEightGame({ gateway, embedded = false }: TwentyFortyE
   const newGame = () => { void run(() => game ? gateway.reset(game.gameId) : gateway.startGame()) }
   const undo = () => { if (game) void run(() => gateway.undo(game.gameId)) }
   const continueGame = () => { if (game) void run(() => gateway.continueGame(game.gameId)) }
+  const recoverGame = () => { void run(() => gateway.recoverGame?.() ?? (game && gateway.getGame ? gateway.getGame(game.gameId) : gateway.startGame())) }
   const beginSwipe = (event: ReactPointerEvent<HTMLElement>) => {
     swipeStart.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId }
     event.currentTarget.setPointerCapture?.(event.pointerId)
@@ -107,13 +108,13 @@ export function TwentyFortyEightGame({ gateway, embedded = false }: TwentyFortyE
         <section className="ff-2048-controls" aria-label="Move controls">{directions.map(direction => <button type="button" key={direction} onClick={() => move(direction)} disabled={busy || game.phase !== 'playing'} aria-label={`Move ${directionLabel(direction)}`}>{direction === 'up' ? '↑' : direction === 'right' ? '→' : direction === 'down' ? '↓' : '←'}<span>{directionLabel(direction)}</span></button>)}</section>
         <p className="ff-2048-help">Swipe the board, use keyboard arrows, or tap the controls. Undo restores exactly your previous legal move.</p>
       </div> : <div className="ff-2048-loading">{error ?? 'Building your board…'}</div>}
-      {error && <div className="ff-2048-error" role="alert"><strong>{error}</strong><button type="button" onClick={newGame} disabled={busy}>Try again</button></div>}
+      {error && <div className="ff-2048-error" role="alert"><strong>{error}</strong><button type="button" onClick={recoverGame} disabled={busy}>Try again</button></div>}
     </main>
   </div>
 }
 
 function directionForKey(key: string): TwentyFortyEightDirection | null { return key === 'ArrowUp' ? 'up' : key === 'ArrowRight' ? 'right' : key === 'ArrowDown' ? 'down' : key === 'ArrowLeft' ? 'left' : null }
-function messageForError(reason: unknown): string { return reason instanceof TwentyFortyEightGatewayError ? reason.message : 'The 2048 table is unavailable. Start a new local game.' }
+function messageForError(reason: unknown): string { return reason instanceof TwentyFortyEightGatewayError ? reason.message : 'The 2048 table is unavailable. Try again to recover your board.' }
 function wait(milliseconds: number): Promise<void> { return new Promise(resolve => window.setTimeout(resolve, milliseconds)) }
 function readBestScore(): number {
   if (typeof window === 'undefined') return 0

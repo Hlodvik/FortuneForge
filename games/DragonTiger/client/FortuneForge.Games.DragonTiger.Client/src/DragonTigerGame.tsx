@@ -69,6 +69,7 @@ export function DragonTigerGame({ gateway = defaultGateway, playerId = 'standalo
   const [previousRound, setPreviousRound] = useState<DragonTigerRound | null>(null)
   const resultBox = useRef<HTMLDivElement>(null)
   const pending = useRef<Pending | null>(null)
+  const restoredWallet = useRef<{ roundId: string; balance: number; scope: number } | null>(null)
   const locked = useRef(false)
   const mounted = useRef(true)
   const requestScope = useRef(0)
@@ -106,7 +107,8 @@ export function DragonTigerGame({ gateway = defaultGateway, playerId = 'standalo
 
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   useEffect(() => {
-    requestScope.current++
+    const loadScope = ++requestScope.current
+    restoredWallet.current = null
     const abort = new AbortController(); locked.current = true
     setPhase('loading'); setStatus(null); setRound(null); setPreviousRound(null); setResultOpen(false); setPickerOpen(false); setStage(0); setPlacements([]); setError(null)
     pending.current = readPending(storageKey)
@@ -121,21 +123,29 @@ export function DragonTigerGame({ gateway = defaultGateway, playerId = 'standalo
           setNotice('Restoring your previous deal…')
           const restored = await gateway.createRound(pending.current.stakes, { idempotencyKey: pending.current.key, signal: abort.signal })
           if (abort.signal.aborted) return
-          setRound(restored); setStage(0); setPhase('dealing')
+          const liveStatus = await recoveredStatus(abort.signal)
+          if (abort.signal.aborted || requestScope.current !== loadScope) return
+          restoredWallet.current = { roundId: restored.roundId, balance: liveStatus.balance, scope: loadScope }
+          setStatus(liveStatus); setRound(restored); setStage(0); setPhase('dealing')
         } else {
           const latest = await gateway.getLatestRound?.(abort.signal)
           if (abort.signal.aborted) return
           const showResult = latest && readStorage(dismissedKey) !== latest.roundId
-          if (latest) { setStatus({ ...nextStatus, balance: latest.balance }); setPreviousRound(latest); recordHistory(latest) }
+          if (latest) {
+            const liveStatus = await recoveredStatus(abort.signal)
+            if (abort.signal.aborted || requestScope.current !== loadScope) return
+            setStatus(liveStatus); setPreviousRound(latest); recordHistory(latest)
+          }
           if (showResult) { setRound(latest); setPlacements(reconstruct(latest)); setStage(3); setResultOpen(true); setNotice('Your last result · click outside the result to reset the board') }
           else setNotice('Choose a chip, then place your bets')
           setPhase(showResult ? 'result' : 'betting'); locked.current = false
         }
       } catch (e) {
         if (abort.signal.aborted || isAbort(e)) return
+        if (e instanceof DragonTigerGatewayError && e.code === 'dragon-tiger-balance-unavailable') setStatus(current => current ? { ...current, available: false } : current)
         if (pending.current && !rejected(e)) { setPhase('recover'); setError(message(e)); setNotice('Pending deal · restore before playing again') }
         else {
-          pending.current = null; removeStorage(storageKey)
+          clearPending(storageKey, pending.current?.key); pending.current = null
           setPhase('betting'); locked.current = false
           setError(e instanceof DragonTigerGatewayError ? e.message : 'Could not connect to the table. Reconnect to load your balance and table limits.')
           setNotice('Connect to the table before placing a wager')
@@ -145,6 +155,13 @@ export function DragonTigerGame({ gateway = defaultGateway, playerId = 'standalo
     return () => abort.abort()
   }, [gateway, playerId, loadAttempt])
 
+  async function recoveredStatus(signal?: AbortSignal) {
+    try { return await gateway.getStatus(signal) }
+    catch (error) {
+      if (signal?.aborted) throw error
+      throw new DragonTigerGatewayError('Your deal is confirmed. Reconnect to refresh this account balance before playing again.', 'dragon-tiger-balance-unavailable', 503)
+    }
+  }
   function recordHistory(next: DragonTigerRound) {
     setHistory(current => {
       if (current.some(item => item.id === next.roundId)) return current
@@ -155,12 +172,16 @@ export function DragonTigerGame({ gateway = defaultGateway, playerId = 'standalo
   useEffect(() => {
     if (phase !== 'dealing' || !round) return
     setStage(0)
+    const activeScope = requestScope.current, requestKey = pending.current?.key
+    const isCurrent = () => mounted.current && requestScope.current === activeScope && pending.current?.key === requestKey
+    const confirmedBalance = restoredWallet.current?.roundId === round.roundId && restoredWallet.current.scope === activeScope ? restoredWallet.current.balance : round.balance
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    const reveal = (next: number) => { setStage(next); playDragonTigerAudio(next === 3 ? round.profit > 0 ? 'win' : 'result' : 'deal', soundMuted.current) }
+    const reveal = (next: number) => { if (!isCurrent()) return; setStage(next); playDragonTigerAudio(next === 3 ? round.profit > 0 ? 'win' : 'result' : 'deal', soundMuted.current) }
     const timers = [window.setTimeout(() => reveal(1), reduced ? 0 : 300), window.setTimeout(() => reveal(2), reduced ? 0 : 1050), window.setTimeout(() => {
-      reveal(3); pending.current = null; removeStorage(storageKey); locked.current = false
-      setStatus(current => current ? { ...current, balance: round.balance } : current)
-      onBalance.current?.(round.balance); recordHistory(round); setPreviousRound(round); setPickerOpen(false); setPhase('result'); setResultOpen(true)
+      if (!isCurrent()) return
+      reveal(3); clearPending(storageKey, requestKey); if (pending.current?.key === requestKey) pending.current = null; locked.current = false
+      setStatus(current => current ? { ...current, balance: confirmedBalance } : current)
+      onBalance.current?.(confirmedBalance); recordHistory(round); setPreviousRound(round); setPickerOpen(false); setPhase('result'); setResultOpen(true)
       setNotice(round.outcome === 'tie' ? 'Tie · half of each Dragon / Tiger bet returned' : `${title(round.outcome)} wins · ${round.dragonValue} ${round.outcome === 'dragon' ? '>' : '<'} ${round.tigerValue}`)
     }, reduced ? 0 : 1700)]
     return () => timers.forEach(window.clearTimeout)
@@ -204,20 +225,26 @@ export function DragonTigerGame({ gateway = defaultGateway, playerId = 'standalo
     playDragonTigerAudio('chip', muted)
   }
   async function submit(restoring = false) {
-    if (locked.current && !restoring || !status?.available) return
+    if (!status || !restoring && (locked.current || !status.available)) return
     const request = restoring ? pending.current : { key: `dragon-tiger-${crypto.randomUUID()}`, stakes, placements }
     if (!request || sum(request.stakes) <= 0) return
-    locked.current = true; pending.current = request; writeStorage(storageKey, JSON.stringify(request))
+    locked.current = true; pending.current = request; restoredWallet.current = null; writeStorage(storageKey, JSON.stringify(request))
     const scope = requestScope.current
     setError(null); setRound(null); setStage(0); setPhase('dealing'); setNotice(restoring ? 'Restoring your deal…' : 'Bets accepted · dealing the cards…')
     try {
       const next = await gateway.createRound(request.stakes, { idempotencyKey: request.key })
       if (!mounted.current || requestScope.current !== scope) return
+      if (restoring) {
+        const liveStatus = await recoveredStatus()
+        if (!mounted.current || requestScope.current !== scope) return
+        restoredWallet.current = { roundId: next.roundId, balance: liveStatus.balance, scope }; setStatus(liveStatus)
+      }
       setRound(next)
     } catch (e) {
       if (!mounted.current || requestScope.current !== scope) return
+      if (e instanceof DragonTigerGatewayError && e.code === 'dragon-tiger-balance-unavailable') setStatus(current => current ? { ...current, available: false } : current)
       if (rejected(e)) {
-        pending.current = null; removeStorage(storageKey); locked.current = false; setPhase('betting')
+        clearPending(storageKey, request.key); pending.current = null; locked.current = false; setPhase('betting')
         void gateway.getStatus().then(next => { if (mounted.current && requestScope.current === scope) setStatus(next) }).catch(() => undefined)
       } else { setPhase('recover'); setNotice('Pending deal · restore before playing again') }
       setError(message(e))
@@ -270,8 +297,8 @@ export function DragonTigerGame({ gateway = defaultGateway, playerId = 'standalo
         <button type="button" className="ff-dt__selected-chip" ref={selectedChipButton} aria-label={`Choose chip value, currently ${currencySymbol}${selectedChip.toFixed(2)}`} aria-expanded={pickerOpen} aria-controls="ff-dt-chip-options" disabled={!editable} onClick={() => setPickerOpen(open => !open)}><img src={chips[selectedChipIndex]?.image} alt="" draggable={false}/></button>
         <button type="button" className="ff-dt__chip-step is-down" aria-label="Decrease chip value" disabled={!editable || selectedChipIndex <= 0} onClick={() => stepChip(-1)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg></button>
         {pickerOpen && <div className="ff-dt__chip-options" id="ff-dt-chip-options" role="group" aria-label="Choose chip value">{chips.map(chip => <button type="button" key={chip.value} className={'ff-dt__chip' + (selectedChip === chip.value ? ' is-selected' : '')} aria-label={`${currencySymbol}${chip.value.toFixed(2)} chip`} aria-pressed={selectedChip === chip.value} disabled={!editable} onClick={() => selectChip(chip.value)}><img src={chip.image} alt="" draggable={false}/></button>)}</div>}
-      </div><div className="ff-dt__actions"><button type="button" className="ff-dt__utility ff-dt__reset-chips" aria-label="Reset chips on board" disabled={!editable || phase !== 'betting' || total === 0} onClick={resetChips}>↺ <span>Reset chips</span></button>{(round || previousRound) && phase !== 'dealing' && <button type="button" className="ff-dt__utility ff-dt__rebet" disabled={!editable} onClick={rebet}>↻ <span>Rebet</span></button>}<button type="button" className="ff-dt__deal" aria-label={phase === 'recover' ? 'Restore deal' : phase === 'dealing' ? 'Dealing…' : 'Deal cards'} disabled={!status?.available || phase === 'loading' || phase === 'dealing' || phase === 'result' || phase === 'betting' && total === 0} onClick={() => { void submit(phase === 'recover') }}>{phase === 'recover' ? 'RESTORE' : phase === 'dealing' ? 'DEALING' : 'DEAL'}</button></div></div>
-      <div className="ff-dt__feedback" aria-live="polite">{error && <span role="alert">{error} {!status && <button type="button" onClick={() => setLoadAttempt(n => n + 1)}>Reconnect</button>}</span>}{status && !status.available && <span role="alert">This table is temporarily unavailable.</span>}</div>
+      </div><div className="ff-dt__actions"><button type="button" className="ff-dt__utility ff-dt__reset-chips" aria-label="Reset chips on board" disabled={!editable || phase !== 'betting' || total === 0} onClick={resetChips}>↺ <span>Reset chips</span></button>{(round || previousRound) && phase !== 'dealing' && <button type="button" className="ff-dt__utility ff-dt__rebet" disabled={!editable} onClick={rebet}>↻ <span>Rebet</span></button>}<button type="button" className="ff-dt__deal" aria-label={phase === 'recover' ? 'Restore deal' : phase === 'dealing' ? 'Dealing…' : 'Deal cards'} disabled={!status || phase !== 'recover' && !status.available || phase === 'loading' || phase === 'dealing' || phase === 'result' || phase === 'betting' && total === 0} onClick={() => { void submit(phase === 'recover') }}>{phase === 'recover' ? 'RESTORE' : phase === 'dealing' ? 'DEALING' : 'DEAL'}</button></div></div>
+      <div className="ff-dt__feedback" aria-live="polite">{error && <span role="alert">{error} {!status && <button type="button" onClick={() => setLoadAttempt(n => n + 1)}>Reconnect</button>}</span>}{status && !status.available && <span role="alert">This table is temporarily unavailable. <button type="button" onClick={() => setLoadAttempt(n => n + 1)}>Reconnect</button></span>}</div>
       <footer className="ff-dt__wallet"><div><span>BET</span><strong data-testid="dragon-tiger-total-bet">{money(total, currencySymbol)}</strong></div><div><span>BALANCE</span><strong data-testid="dragon-tiger-balance">{money(balance, currencySymbol)}</strong></div><div className={win > 0 ? 'has-win' : ''}><span>WIN</span><strong data-testid="dragon-tiger-win">{money(win, currencySymbol)}</strong></div></footer>
     </div>
     {rulesOpen && <Rules currencySymbol={currencySymbol} status={status} onClose={() => setRulesOpen(false)}/>} 
@@ -323,6 +350,9 @@ function reconstruct(round: DragonTigerRound): Placement[] {
 function readStorage(key: string) { try { return localStorage.getItem(key) } catch { return null } }
 function writeStorage(key: string, value: string) { try { localStorage.setItem(key, value) } catch { /* Memory recovery remains available when storage is restricted. */ } }
 function removeStorage(key: string) { try { localStorage.removeItem(key) } catch { /* optional browser storage */ } }
+function clearPending(key: string, requestKey?: string) {
+  if (requestKey && readPending(key)?.key === requestKey) removeStorage(key)
+}
 function readPending(key: string): Pending | null {
   try {
     const v = JSON.parse(readStorage(key) ?? 'null') as Pending | null

@@ -71,7 +71,7 @@ public sealed class ArcadeCompetitionPaidEntryServiceTests
 
         public Task<ArcadeCompetitionAsteroidsPaidEntryResult> StartAsteroidsPaidAttemptAsync(
             ArcadeCompetitionPaidEntryRequest request,
-            FortuneForge.Server.Arcade.Asteroids.AsteroidsRunIdentity proposedRun,
+            FortuneForge.Games.Asteroids.AsteroidsRunIdentity proposedRun,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task<AsteroidsReplayCompletionResult> CompleteAsteroidsReplayAsync(AsteroidsReplayCompletionRequest request, CancellationToken cancellationToken) => throw new NotSupportedException();
@@ -85,7 +85,7 @@ public sealed class ArcadeCompetitionPaidEntryServiceTests
 
         public Task<ArcadeCompetitionAsteroidsPaidEntryResult> StartAsteroidsPaidAttemptAsync(
             ArcadeCompetitionPaidEntryRequest request,
-            FortuneForge.Server.Arcade.Asteroids.AsteroidsRunIdentity proposedRun,
+            FortuneForge.Games.Asteroids.AsteroidsRunIdentity proposedRun,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task<AsteroidsReplayCompletionResult> CompleteAsteroidsReplayAsync(AsteroidsReplayCompletionRequest request, CancellationToken cancellationToken) => throw new NotSupportedException();

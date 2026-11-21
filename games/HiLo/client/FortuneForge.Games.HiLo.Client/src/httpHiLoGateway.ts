@@ -2,7 +2,7 @@ import { HiLoGatewayError, hiLoRanks, type HiLoActionOptions, type HiLoCard, typ
 
 /** Cookie-bound adapter; the browser never draws cards or calculates paid outcomes. */
 export class HttpHiLoGateway implements HiLoGateway {
-  constructor(readonly basePath = '/api/games/hi-lo', private readonly requestFn: typeof fetch = fetch) {}
+  constructor(readonly basePath = '/api/games/hi-lo', private readonly requestFn: typeof fetch = fetch, private readonly expectedAccountId?: string) {}
 
   getSession(signal?: AbortSignal) { return this.request('/session', { signal }) }
 
@@ -19,6 +19,11 @@ export class HttpHiLoGateway implements HiLoGateway {
   }
 
   private async request(path: string, init: RequestInit): Promise<HiLoSession> {
+    if (this.expectedAccountId) {
+      const headers = new Headers(init.headers)
+      headers.set('X-FortuneForge-Expected-Account', this.expectedAccountId)
+      init = { ...init, headers }
+    }
     // Avoid invoking native fetch with this gateway as its receiver.
     const request = this.requestFn
     const response = await request(`${this.basePath.replace(/\/$/, '')}${path}`, { ...init, credentials: 'include', cache: 'no-store' })
@@ -26,7 +31,7 @@ export class HttpHiLoGateway implements HiLoGateway {
     if (!response.ok) {
       const error = record(payload) ? payload : {}
       throw new HiLoGatewayError(
-        typeof error.message === 'string' ? error.message : `Hi-Lo could not complete the request (${response.status}).`,
+        typeof error.message === 'string' ? error.message : typeof error.error === 'string' ? error.error : `Hi-Lo could not complete the request (${response.status}).`,
         typeof error.code === 'string' ? error.code : 'hi-lo-request-failed',
         response.status,
       )

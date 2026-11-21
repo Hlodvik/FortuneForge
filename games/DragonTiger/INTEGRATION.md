@@ -1,8 +1,17 @@
 # Dragon Tiger host integration
 
+## Backend ownership update — 21 November 2026
+
+New paid rounds run in the packaged game worker. `DragonTigerWalletStore` saves an immutable deal intent before calling the signed `IGameWalletClient`; after the wallet confirms, the package finalizes its outcome, audit, activity and recovery pointer in one transaction. The package never updates account balances or wallet ledger documents for a new round. Schema-v1 rounds retain their saved wagers and outcomes through the read-only compatibility store. Pending rounds recover through the original POST key or the existing GET/latest routes, including while new wagers are paused.
+
+The worker module registers `AddGameWalletClient` for `dragon-tiger`. It requires `GameWallet:Url` and `GameWallet:SigningKey`; the generic account service requires the matching per-game signing key and `AllowAccountBalanceRead=true`. These tables use the standard wallet ledger, so `LegacySlotLedger` must remain false. The shared authenticated gateway must route paid requests to the configured worker and preserve the existing public URLs. The standalone sample remains forced practice.
+
+This is a local migration. Package verification and shared gateway cutover are tracked in `artifacts/backend-completion/table-card-subhandoff.json`; no production deployment has been performed. The older host wiring notes below describe the prior architecture.
+
+
 The shared-host wiring below was implemented locally on 23 October 2026 after the Baccarat release gate opened. Dragon Tiger now uses the authenticated main app, the actual shared black-themed navbar, account/practice-isolated recovery, and the shared PlayingCard faces. The game-specific Asian backs remain in the game package. The API uses the normal account resolver and existing rate-limit policies.
 
-The reviewed release enables `Features:DragonTigerEnabled` in Production and Development and makes the runtime catalogue entry visible. The user authorized publishing the completed Craps and Dragon Tiger work on 23 October 2026. Publication still uses the normal guarded release flow; no runtime configuration or wallet settings need migration.
+The reviewed release enables `Features:DragonTigerEnabled` in Production and Development and makes the runtime catalogue entry visible. The user authorized publishing the completed Craps and Dragon Tiger work on 23 October 2026. Publication still uses the normal guarded release flow; the November signed-worker migration now requires the wallet configuration described above.
 
 The release-owned runtime allowlist (`AdminManagementCatalog.cs`) and 41-game smoke inventory include Dragon Tiger. Release verification also runs the separate Dragon Tiger C# test project; registering it in a solution alone would not run those tests. The numbered list below describes the integration recipe, not outstanding work.
 

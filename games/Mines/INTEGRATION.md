@@ -3,7 +3,7 @@
 The original batch integration plan has been implemented and superseded by
 [HOST_INTEGRATION.md](HOST_INTEGRATION.md).
 
-Use that document for current account-credit routing, atomic wallet/history behavior,
+Use that document and its linked authoritative server-package README for current account-credit routing, signed wallet lifecycle and history behavior,
 server-only Firestore rules, verification and release gates. The public website has no practice
 mode. New wagers use R1–R5, payout policy 2, a 50× gross-return ceiling and full-board play;
 see [RULES.md](RULES.md) for the exact 90% nominal-RTP schedule and accepted-round compatibility.

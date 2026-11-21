@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   HorseFlightGame,
   type HorseFlightEndScreenState,
@@ -6,7 +6,7 @@ import {
   type HorseFlightResult,
 } from '@fortuneforge/games-horse-flight'
 import { InGameShell } from '../../components/InGameShell'
-import { fetchWithAccountSession } from '../../features/account/services/accountsApi'
+import { AccountRequestError, createAccountBoundGameFetch, fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { ArcadeCompetitionLeaderboard } from '../../games/arcade/ArcadeCompetitionLeaderboard'
 import { HttpArcadeCompetitionGateway, type ArcadeCompetitionPaidPeriod } from '../../games/arcade/arcadeCompetitionApi'
@@ -29,13 +29,40 @@ type HorseFlightLaunchView = 'menu' | 'ranked' | 'leaderboard' | 'instructions'
 
 export function AuthenticatedHorseFlightRoute() {
   const { account, error, isLoading, reload } = useAuthenticatedAccount('/games/horse-flight')
-  const competitionGateway = useMemo(() => new HttpArcadeCompetitionGateway(fetchWithAccountSession), [])
+  if (isLoading || account === null) {
+    return <AuthenticatedRouteState error={error} loadingLabel="Opening Horse Flight…" errorTitle="Horse Flight could not be opened." onRetry={reload} />
+  }
+  return <HorseFlightAccountSession key={account.userId} initialAccount={account} reload={reload} />
+}
+
+function HorseFlightAccountSession({ initialAccount, reload }: Readonly<{ initialAccount: AccountSummary; reload: () => void }>) {
+  const [account, setAccount] = useState(initialAccount)
+  const active = useRef(true)
+  const refreshGeneration = useRef(0)
+  const balance = useRef(account.balances.slotsCredits)
+  balance.current = account.balances.slotsCredits
+  useEffect(() => { refreshGeneration.current++; setAccount(initialAccount) }, [initialAccount])
+  useEffect(() => { active.current = true; return () => { active.current = false; refreshGeneration.current++ } }, [])
+  const refreshPaidAccount = useCallback(async () => {
+    const generation = ++refreshGeneration.current
+    try {
+      const next = await getCurrentAccount()
+      if (!active.current || generation !== refreshGeneration.current) return
+      if (next.userId !== initialAccount.userId) reload()
+      else setAccount(next)
+    } catch (reason) {
+      if (active.current && generation === refreshGeneration.current && reason instanceof AccountRequestError && reason.status === 401) reload()
+    }
+  }, [initialAccount.userId, reload])
+  const readBalance = useCallback(() => balance.current, [])
+  const competitionGateway = useMemo(() => new HttpArcadeCompetitionGateway(
+    createAccountBoundGameFetch(initialAccount.userId, fetchWithAccountSession),
+  ), [initialAccount.userId])
   const [session, setSession] = useState<HorseFlightSession>({ autoStart: false, id: 0, mode: { kind: 'free' } })
   const [launchView, setLaunchView] = useState<HorseFlightLaunchView>('menu')
   const [showRankedChoices, setShowRankedChoices] = useState(false)
   const [leaderboardVersion, setLeaderboardVersion] = useState(0)
 
-  const refreshPaidAccount = useCallback(() => { void reload() }, [reload])
   const onResult = useCallback((result: HorseFlightResult) => {
     if (result.runId.startsWith('horse_flight_') && !result.runId.startsWith('horse_flight_free_')) {
       setLeaderboardVersion((version) => version + 1)
@@ -51,13 +78,9 @@ export function AuthenticatedHorseFlightRoute() {
   const horseGateway = useMemo(() => new HorseFlightCompetitionGatewayAdapter(
     competitionGateway,
     session.mode,
-    account?.balances.slotsCredits ?? 0,
+    readBalance,
     refreshPaidAccount,
-  ), [account?.balances.slotsCredits, competitionGateway, refreshPaidAccount, session.mode])
-
-  if (isLoading || account === null) {
-    return <AuthenticatedRouteState error={error} loadingLabel="Opening Horse Flight…" errorTitle="Horse Flight could not be opened." onRetry={reload} />
-  }
+  ), [competitionGateway, readBalance, refreshPaidAccount, session.mode])
 
   const renderLaunchScreen = ({ available, connecting, error: launchError, retryConnection }: HorseFlightLaunchScreenState) => (
     <div className="horse-flight-launch" data-view={launchView}>
@@ -134,9 +157,10 @@ export function AuthenticatedHorseFlightRoute() {
       autoStart={session.autoStart}
       debugFreePlay={import.meta.env.DEV && session.mode.kind === 'free'}
       gateway={horseGateway}
-      key={session.id}
+      key={`${account.userId}:${session.id}`}
       onResult={onResult}
       playerId={account.userId}
+      recoveryMode={session.mode.kind === 'free' ? 'free' : `paid:${session.mode.period}`}
       renderEndScreen={renderEndScreen}
       renderLaunchScreen={renderLaunchScreen}
     />

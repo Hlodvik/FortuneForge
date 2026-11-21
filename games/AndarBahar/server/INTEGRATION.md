@@ -1,8 +1,14 @@
 # Andar Bahar server integration
 
-The package is integrated into the central host in local source as of October 24, 2026; these audit fixes have not been deployed. The package implements the documented **single deck, Andar first, Joker revealed when the deal begins** variant. Andar wins return stake plus 0.9 times stake; Bahar wins return stake plus equal stake. There is no tie, surrender, or separate cash-out: every accepted wager settles completely in one server transaction before its response. The paced card presentation is a replay of that immutable settlement.
+The package is integrated into the central host in local source as of October 24, 2026; these audit fixes have not been deployed. The package implements the documented **single deck, Andar first, Joker revealed when the deal begins** variant. Andar wins return stake plus 0.9 times stake; Bahar wins return stake plus equal stake. There is no tie, surrender, or separate cash-out: every accepted wager settles completely before its response. The November migration uses a durable package intent, signed wallet settlement, then an atomic game finalization. The paced card presentation is a replay of that immutable settlement.
 
-## Central host integration
+## Current paid worker integration — 21 November 2026
+
+The packaged worker owns paid admission, immutable deal intent, signed settlement requests, outcomes, history, audit and interrupted-round recovery. It registers `AddAndarBaharServer` and `AddGameWalletClient("andar-bahar")`. Worker `GameWallet:Url` and `GameWallet:SigningKey` must match the generic account service's per-game signing key. Enable `GameWallet:Games:andar-bahar:AllowAccountBalanceRead`; use the standard wallet ledger with no `LegacySlotLedger`, reservations or free-game allowance.
+
+The shared host authenticates and forwards paid routes to the configured worker. It must retain exact-key and GET/latest forwarding while new starts are paused and fail unavailable when the worker cannot be reached. Authorized host practice remains separate. The browser binds paid requests to the account that opened the table using `X-FortuneForge-Expected-Account` and preserves pending commands on session expiry or account mismatch. The historical registration recipe below remains relevant to the local practice surface.
+
+## Historical central host wiring
 
 1. `FortuneForge.Server/FortuneForge.Server.csproj` references:
 
@@ -45,18 +51,11 @@ The resolver owns authentication. No request parameter can select another player
 
 ## Paid storage and privacy
 
-The paid adapter uses existing `userBalances/{userId}_slotsCredits` and `balanceTransactions`. A single Firestore transaction atomically writes:
+`AndarBaharWalletStore` freezes a schema-3 `andarBaharRounds` intent with its original request observation and only the Joker/revealed card prefix. `andarBaharAccounts` holds the pending pointer. The generic signed wallet owns the debit, credit and durable wallet receipt. The game package never writes `userBalances` or `balanceTransactions`.
 
-- `andarBaharRounds/{sha256}`: validated settled result, money snapshots, and **only Joker plus revealed prefix** in `recordJson`.
-- `andarBaharRoundEvents/{sha256}-settled`: immutable settlement event.
-- `andarBaharAccounts/{sha256(userId)}`: the current recovery pointer.
-- `balanceTransactions/andar-bahar-{sha256}-wager` and, on a win, `...-payout`.
-- `cardGameResults/andar-bahar-{sha256}`: a shared player/admin history summary with exact wager, payout and net cents, side, winner, settled timestamps and the round reference. It contains no cards, deck, balance or idempotency key. Shared history marks it unseen until acknowledged; replay preserves `seenAt`.
-- Wallet `available` whole rand, `availableFractionalCents` in 0–99, version increment, and update timestamp.
+After confirmation, one game transaction stores the normalized wallet receipt, clears the pending pointer, advances the latest round, writes `cardGameResults/andar-bahar-{roundId}`, and invokes the shared audit/participation writers. History contains exact wager, payout and net cents with side, winner and timestamps; it contains no cards, deck, balance or idempotency key. Replays preserve acknowledged history and do not move the latest pointer backwards. A declined key remains declined after a top-up.
 
-Ledger amounts retain host-compatible `amount`/`balanceAfter` decimal values and add exact integer `amountCents`/`balanceAfterCents`, `gameId` and `roundId`. The transaction reads the wallet and all round ledger/event/history records before writing. Concurrency retries cannot overdraw or settle the same key twice. No hidden deck tail is stored or returned. These collections are server-managed private account data; direct browser reads/writes must remain denied by the host's Firestore access rules/IAM policy. No composite index is required.
-
-Every recovered record is revalidated through the engine: unique standard cards, first matching rank, alternating sides, side outcome, payout, balance snapshots, ledger identities and round links, settlement event, and shared history. Missing/corrupt records fail closed; they are never automatically reset or charged again. New round documents use outer schema 2 to require linked history; earlier schema 1 rounds remain recoverable without fabricating retrospective history or debiting again.
+`AndarBaharFirestoreStore` is read-only compatibility for schemas 1 and 2. It validates saved wagers (including the former R100 cap), revealed cards, ledger identities, settlement events and schema-2 linked history. Schema 1 does not fabricate retrospective history. Neither historical recovery nor a new signed round can charge twice. Corrupt persisted proof fails closed. These private server-managed collections retain the existing access policy; no hidden deck tail is stored or returned.
 
 ## HTTP contract
 
@@ -87,7 +86,7 @@ Paid mode is `andar-first`. `POST /rounds` requires `Content-Type: application/j
 
 Ranks and suits are lowercase shared-card enum names (`ace`, `two` … `king`; `clubs`, `diamonds`, `hearts`, `spades`). `deals.number` is 1-based, with at most 49 deals. `profit` is net change: −stake on a loss. `totalReturn` includes the winning stake and is zero on a loss. The response has no user identity, raw idempotency key, undealt deck, or RNG state.
 
-`GET /rounds/latest` returns 204 if none exists. Reading another player's round returns 404. Repeating the same key and wager returns the same round plus the **current** wallet balance; reusing the key with a different side/stake returns 409. Replaying an old key does not move the latest pointer backwards.
+`GET /rounds/latest` returns 204 if none exists. Reading another player's round returns 404. Repeating a new schema-3 key and wager returns the same round and its original wallet receipt balance; historical schemas 1 and 2 preserve their current-wallet-balance convention. Reusing the key with a different side/stake returns 409. Replaying an old key does not move the latest pointer backwards.
 
 Errors use `{ "code": "...", "message": "..." }`: 400 `andar-bahar-invalid-request`, 401 `andar-bahar-authentication-required`, 403 `andar-bahar-practice-disabled`, 404 `andar-bahar-round-not-found`, 409 `andar-bahar-round-conflict` or `insufficient-slot-credits`, 503 `andar-bahar-disabled` or `andar-bahar-retry-required`, and 500 `andar-bahar-unavailable`. A transient 503 includes `Retry-After: 1`. After a lost/ambiguous response, retry the original key and wager; never create a replacement key to recover it.
 

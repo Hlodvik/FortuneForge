@@ -1,13 +1,17 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Abstractions.Wallet;
+using FortuneForge.Games.Blackjack;
 using FortuneForge.Games.Mines;
 using FortuneForge.Games.Mines.Server;
-using FortuneForge.Server.Cards.Blackjack;
 using FortuneForge.Server.Cards.Solitaire;
 using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.SecurityAudit;
+using FortuneForge.Server.Tests.Accounts;
+using FortuneForge.Server.Tests.Blackjack;
 using FortuneForge.Server.Tests.Blackjack.Table;
+using FortuneForge.Server.Tests.Solitaire;
 using Google.Cloud.Firestore;
 using Xunit;
 
@@ -112,7 +116,8 @@ public sealed class RequestEngineJournalFirestoreTests(BlackjackTableFirestoreEm
     public async Task Mines_preserves_private_initial_and_each_intermediate_version_and_retry_does_not_duplicate()
     {
         var db = Database(); await Seed(db, "alice");
-        var service = new MinesService(new FirestoreMinesStore(db), new MinesEngine(new FixedBoard()));
+        var wallet = new GameWalletFirestoreTestClient(db, "mines");
+        var service = new MinesService(new FirestoreMinesStore(db, wallet, wallet), new MinesEngine(new FixedBoard()));
         using var scope = GameSecurityContext.Push(Observation("alice", "mines"));
         var started = await service.StartAsync("alice", new(Guid.NewGuid().ToString("N"), 123, 3));
         var id = started.Round!.RoundId;
@@ -136,7 +141,8 @@ public sealed class RequestEngineJournalFirestoreTests(BlackjackTableFirestoreEm
     public async Task Mines_database_financial_pass_reconciles_source_result_and_wallet_entries()
     {
         var db = Database(); await Seed(db, "alice");
-        var service = new MinesService(new FirestoreMinesStore(db), new MinesEngine(new FixedBoard()));
+        var wallet = new GameWalletFirestoreTestClient(db, "mines");
+        var service = new MinesService(new FirestoreMinesStore(db, wallet, wallet), new MinesEngine(new FixedBoard()));
         var started = await service.StartAsync("alice", new(Guid.NewGuid().ToString("N"), 100, 3));
         var id = started.Round!.RoundId;
         await service.RevealAsync("alice", id, new(Guid.NewGuid().ToString("N"), 3));
@@ -148,8 +154,9 @@ public sealed class RequestEngineJournalFirestoreTests(BlackjackTableFirestoreEm
         var payload = evidence.GetValue<string>("payloadJson");
 
         Assert.Empty(await MinesSequenceReplayAudit.InspectFinancialAsync(db, summary, payload, default));
-        var entries = await db.Collection("balanceTransactions").WhereEqualTo("roundId", id).GetSnapshotAsync();
-        var payout = Assert.Single(entries.Documents, item => item.GetValue<string>("type") == "mines-payout");
+        var ledgerId = GameWalletSettlementIdentity.CreateId("mines", "alice", id) + "-payout";
+        var payout = await db.Collection("balanceTransactions").Document(ledgerId).GetSnapshotAsync();
+        Assert.Equal("game-payout", payout.GetValue<string>("type"));
         await payout.Reference.UpdateAsync("amountCents", payout.GetValue<long>("amountCents") + 1);
         Assert.Contains(await MinesSequenceReplayAudit.InspectFinancialAsync(db, summary, payload, default),
             finding => finding.Code == "mines-ledger-mismatch");
@@ -163,7 +170,7 @@ public sealed class RequestEngineJournalFirestoreTests(BlackjackTableFirestoreEm
     public async Task Blackjack_keeps_deal_and_nonterminal_hit_after_later_settlement()
     {
         var db = Database(); await Seed(db, "alice");
-        var store = new FirestoreBlackjackStore(db);
+        var store = BlackjackPlatformTests.Solo(db);
         string[] prefix = ["2|clubs", "9|clubs", "3|hearts", "8|diamonds", "4|spades"];
         var deck = prefix.Concat(BlackjackRules.CreateShuffledDeck().Where(card => !prefix.Contains(card))).ToArray();
         var dealt = await store.StartAsync("alice", Guid.NewGuid().ToString("N"), 100, deck, Now, default);
@@ -184,7 +191,7 @@ public sealed class RequestEngineJournalFirestoreTests(BlackjackTableFirestoreEm
     public async Task Competitive_solitaire_keeps_both_seats_and_each_board_between_commands()
     {
         var db = Database(); await Seed(db, "alice"); await Seed(db, "bob");
-        var store = new FirestoreCompetitiveSolitaireStore(db, new CompetitiveSolitaireOptions { AllowSingleHumanBotFill = false });
+        var store = CompetitiveSolitaireTestStore.Create(db);
         var alice = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync("alice", "Alice", 4, 500, 3,
             Guid.NewGuid().ToString("N"), 1001, Now, default)).Session);
         var bob = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync("bob", "Bob", 4, 500, 3,
@@ -223,7 +230,11 @@ public sealed class RequestEngineJournalFirestoreTests(BlackjackTableFirestoreEm
         EmulatorDetection = Google.Api.Gax.EmulatorDetection.None
     }.Build();
     private static Task Seed(FirestoreDb db, string user) => db.Collection("userBalances").Document(user + "_slotsCredits")
-        .SetAsync(new Dictionary<string, object> { ["available"] = 100L, ["availableFractionalCents"] = 0L });
+        .SetAsync(new Dictionary<string, object>
+        {
+            ["userId"] = user, ["currencyId"] = "slotsCredits", ["available"] = 100L,
+            ["availableFractionalCents"] = 0L, ["reserved"] = 0L, ["version"] = 1L,
+        });
     private static async Task<DocumentSnapshot[]> Events(FirestoreDb db, string game, string instance) =>
         (await db.Collection(GameSecurityEventDocuments.CollectionName).WhereEqualTo("gameId", game).WhereEqualTo("instanceId", instance).GetSnapshotAsync()).Documents.ToArray();
     private static GameRequestObservation Observation(string user, string game) => new(Guid.NewGuid().ToString("N"), user,

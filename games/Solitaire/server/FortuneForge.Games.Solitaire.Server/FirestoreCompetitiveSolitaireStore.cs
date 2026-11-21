@@ -1,0 +1,460 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using FortuneForge.Games.Abstractions.ManagedPlayers;
+using FortuneForge.Games.Abstractions.Wallet;
+using Microsoft.Extensions.Logging;
+using FortuneForge.Games.Abstractions.Matchmaking;
+using Google.Cloud.Firestore;
+using Grpc.Core;
+
+namespace FortuneForge.Server.Cards.Solitaire;
+
+internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveSolitaireStore
+{
+    private const string SlotsCreditsCurrencyId = "slotsCredits";
+    private const string QueueStatus = "queued";
+    private const string MatchedStatus = "matched";
+    private const string CancelledStatus = "cancelled";
+    private const string PlayingMatchStatus = "playing";
+    private const string SettledMatchStatus = "settled";
+    private const string HouseFundedPoolModel = "house-funded-bot-pool-v1";
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly string ComputeGameId = SolitaireModule.Descriptor.Id;
+    private readonly FirestoreDb database;
+    private readonly CompetitiveSolitaireOptions options;
+    private readonly IManagedPlayerRosterClient roster;
+    private readonly IGameWalletBatchClient wallet;
+    private readonly IGameWalletAccountReader accounts;
+    private readonly ILogger<FirestoreCompetitiveSolitaireStore>? logger;
+
+    public FirestoreCompetitiveSolitaireStore(FirestoreDb database, IGameWalletBatchClient wallet,
+        IGameWalletAccountReader accounts, IManagedPlayerRosterClient roster,
+        CompetitiveSolitaireOptions? options = null, ILogger<FirestoreCompetitiveSolitaireStore>? logger = null)
+    {
+        this.database = database;
+        this.wallet = wallet;
+        this.accounts = accounts;
+        this.roster = roster;
+        this.options = options ?? new CompetitiveSolitaireOptions();
+        this.logger = logger;
+    }
+
+    private static Task<SolitaireGameState> CreateBoardAsync(
+        string userId, uint seed, int drawCount, CancellationToken cancellationToken) =>
+        Task.FromResult(SolitaireEngine.CreateGame(seed, drawCount));
+
+    private async Task<T> RunTransactionAsync<T>(
+        Func<Transaction, Task<T>> callback,
+        CancellationToken cancellationToken)
+    {
+        const int maximumAttempts = 12;
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await RecoverFinancialOperationAsync(cancellationToken);
+                return await database.RunTransactionAsync(async transaction =>
+                {
+                    var gate = await transaction.GetSnapshotAsync(FinancialGate(), cancellationToken);
+                    if (ReadString(gate, "operationId").Length > 0) throw new SolitaireFinancialPendingException();
+                    return await callback(transaction);
+                }, cancellationToken: cancellationToken);
+            }
+            catch (RpcException exception) when (
+                exception.StatusCode == StatusCode.Aborted && attempt < maximumAttempts)
+            {
+                var exponential = Math.Min(500, 20 * (1 << Math.Min(attempt - 1, 5)));
+                var backoffMilliseconds = exponential + Random.Shared.Next(25, 126);
+                await Task.Delay(backoffMilliseconds, cancellationToken);
+            }
+            catch (SolitaireFinancialPendingException) when (attempt < maximumAttempts)
+            {
+                await Task.Delay(20, cancellationToken);
+            }
+        }
+    }
+
+    internal static string CreateLookupKey(string value)
+    {
+        var digest = SHA256.HashData(Encoding.UTF8.GetBytes(value));
+        return Convert.ToHexStringLower(digest);
+    }
+
+    private DocumentReference SessionDocument(string userId) =>
+        database.Collection("solitairePlayerSessions").Document(CreateLookupKey(userId));
+
+    private DocumentReference TicketDocument(string ticketId) =>
+        database.Collection("solitaireTickets").Document(ticketId);
+
+    private DocumentReference PartitionDocument(string partitionKey) =>
+        database.Collection("solitaireQueuePartitions").Document(partitionKey);
+
+    private DocumentReference MatchDocument(string matchId) =>
+        database.Collection("solitaireMatches").Document(matchId);
+
+    private DocumentReference PlayerDocument(string matchId, string userId) =>
+        database.Collection("solitaireMatchPlayers")
+            .Document(CreateLookupKey($"{matchId}\n{userId}"));
+
+    private DocumentReference ActionDocument(string userId, string idempotencyKey) =>
+        database.Collection("solitaireCommandGuards")
+            .Document(CreateLookupKey($"{userId}\n{idempotencyKey}"));
+
+    private DocumentReference RevenueDocument(string matchId) =>
+        database.Collection("solitaireMatchRevenue").Document(matchId);
+
+    private DocumentReference HouseFundingDocument(string matchId) =>
+        database.Collection("solitaireHouseFunding").Document(matchId);
+
+    private DocumentReference TestTraceDocument(string matchId) =>
+        database.Collection("solitaireTestMatchTrace").Document(matchId);
+
+    // Shared history can aggregate this game-owned collection and invoke the
+    // Solitaire claim endpoint with matchId. IDs are deterministic per run.
+    private DocumentReference CardGameResultDocument(string matchId, string userId) =>
+        database.Collection("cardGameResults")
+            .Document(CreateLookupKey($"solitaire\n{matchId}\n{userId}"));
+
+    private static string PartitionKey(int playerCount, long buyInCents, int drawCount) =>
+        $"players-{playerCount}-buyin-{buyInCents}-draw-{drawCount}";
+
+    private static Dictionary<string, object> SessionData(
+        string userId,
+        string kind,
+        string? ticketId,
+        string? matchId,
+        DateTime nowUtc) => new()
+    {
+        ["userId"] = userId,
+        ["kind"] = kind,
+        ["ticketId"] = ticketId ?? string.Empty,
+        ["matchId"] = matchId ?? string.Empty,
+        ["updatedAt"] = Timestamp.FromDateTime(nowUtc)
+    };
+
+    private static Dictionary<string, object> TicketData(SolitaireTicket ticket) => new()
+    {
+        ["ticketId"] = ticket.TicketId,
+        ["userId"] = ticket.UserId,
+        ["displayName"] = ticket.DisplayName,
+        ["playerCount"] = ticket.PlayerCount,
+        ["buyInCents"] = ticket.BuyInCents,
+        ["partitionKey"] = ticket.PartitionKey,
+        ["status"] = ticket.Status,
+        ["joinedAt"] = Timestamp.FromDateTime(ticket.JoinedAtUtc),
+        ["matchId"] = ticket.MatchId ?? string.Empty,
+        ["drawCount"] = ticket.DrawCount,
+        ["schemaVersion"] = 2L
+    };
+
+    private static Dictionary<string, object> MatchData(SolitaireMatch match) => new()
+    {
+        ["matchId"] = match.MatchId,
+        ["playerCount"] = match.PlayerCount,
+        ["buyInCents"] = match.BuyInCents,
+        ["prizePoolCents"] = match.PrizePoolCents,
+        ["winnerPayoutCents"] = match.WinnerPayoutCents,
+        ["platformFeeCents"] = match.PlatformFeeCents,
+        ["dealSeed"] = (long)match.DealSeed,
+        ["startedAt"] = Timestamp.FromDateTime(match.StartedAtUtc),
+        ["deadlineAt"] = Timestamp.FromDateTime(match.DeadlineAtUtc),
+        ["status"] = match.Status,
+        ["playerIds"] = match.PlayerIds.ToArray(),
+        ["displayNames"] = match.DisplayNames.ToArray(),
+        ["ticketIds"] = match.TicketIds.ToArray(),
+        ["joinedAt"] = match.JoinedAtUtc.Select(Timestamp.FromDateTime).ToArray(),
+        ["completedAt"] = match.CompletedAtUtc is null
+            ? string.Empty
+            : Timestamp.FromDateTime(match.CompletedAtUtc.Value),
+        ["winnerUserId"] = match.WinnerUserId ?? string.Empty,
+        ["partitionKey"] = match.PartitionKey,
+        ["financialModel"] = match.FinancialModel,
+        ["humanEntryCents"] = match.HumanEntryCents,
+        ["houseFundedEntryCents"] = match.HouseFundedEntryCents,
+        ["admissionClosesAt"] = match.AdmissionClosesAtUtc is null
+            ? string.Empty
+            : Timestamp.FromDateTime(match.AdmissionClosesAtUtc.Value),
+        ["botFillEligibleAt"] = match.SeatFillEligibleAtUtc is null
+            ? string.Empty
+            : Timestamp.FromDateTime(match.SeatFillEligibleAtUtc.Value),
+        ["botsFilled"] = match.SeatsFilled,
+        ["drawCount"] = match.DrawCount,
+        ["schemaVersion"] = 4L
+    };
+
+    private static Dictionary<string, object> PlayerData(SolitairePlayerState player) => new()
+    {
+        ["matchId"] = player.MatchId,
+        ["userId"] = player.UserId,
+        ["displayName"] = player.DisplayName,
+        ["seat"] = player.Seat,
+        ["status"] = player.Status,
+        ["gameStateJson"] = JsonSerializer.Serialize(player.Game, JsonOptions),
+        ["undoStateJson"] = JsonSerializer.Serialize(player.UndoHistory, JsonOptions),
+        ["integrityWarningsJson"] = JsonSerializer.Serialize(player.IntegrityWarnings, JsonOptions),
+        ["version"] = player.Version,
+        ["elapsedMilliseconds"] = player.ElapsedMilliseconds ?? -1L,
+        ["completedAt"] = player.CompletedAtUtc is null
+            ? string.Empty
+            : Timestamp.FromDateTime(player.CompletedAtUtc.Value),
+        ["payoutCents"] = player.PayoutCents,
+        ["acknowledged"] = player.Acknowledged,
+        ["startedAt"] = Timestamp.FromDateTime(player.StartedAtUtc),
+        ["deadlineAt"] = Timestamp.FromDateTime(player.DeadlineAtUtc),
+        ["isSynthetic"] = !player.IsAccountBacked,
+        ["syntheticSkill"] = FortuneForge.Server.Bots.Solitaire.SolitaireManagedPlayerPolicy.Skill(player),
+        ["managedMetadataJson"] = JsonSerializer.Serialize(player.HostMetadata, JsonOptions),
+        ["pauseUsedMilliseconds"] = player.PauseUsedMilliseconds,
+        ["pausedAt"] = player.PausedAtUtc is null
+            ? string.Empty
+            : Timestamp.FromDateTime(player.PausedAtUtc.Value),
+        ["schemaVersion"] = 6L
+    };
+
+    private static Dictionary<string, object> ActionData(
+        string userId,
+        string operation,
+        string targetId,
+        string detail,
+        DateTime nowUtc) => new()
+    {
+        ["userId"] = userId,
+        ["operation"] = operation,
+        ["targetId"] = targetId,
+        ["detail"] = detail,
+        ["createdAt"] = Timestamp.FromDateTime(nowUtc)
+    };
+
+    private static Dictionary<string, object> UnclaimedResultData(
+        SolitaireMatch match,
+        SolitairePlayerState player,
+        DateTime completedAtUtc) => new()
+    {
+        ["resultId"] = CreateLookupKey($"solitaire\n{match.MatchId}\n{player.UserId}"),
+        ["game"] = "solitaire",
+        ["mode"] = "competitive",
+        ["matchId"] = match.MatchId,
+        ["userId"] = player.UserId,
+        ["currencyId"] = SlotsCreditsCurrencyId,
+        ["claimStatus"] = SolitaireClaimStatuses.Unclaimed,
+        ["settlementStatus"] = "pending",
+        ["playerStatus"] = player.Status,
+        ["score"] = (long)player.Game.Score,
+        ["moves"] = (long)player.Game.Moves,
+        ["elapsedMilliseconds"] = player.ElapsedMilliseconds ?? 0L,
+        ["buyInCents"] = match.BuyInCents,
+        ["payoutCents"] = 0L,
+        ["completedAt"] = Timestamp.FromDateTime(completedAtUtc),
+        ["schemaVersion"] = 1L
+    };
+
+    private static Dictionary<string, object> ClaimableResultData(
+        SolitaireMatch match,
+        SolitairePlayerState player,
+        long payoutCents,
+        DateTime completedAtUtc)
+    {
+        var data = UnclaimedResultData(match, player, player.CompletedAtUtc ?? completedAtUtc);
+        data["settlementStatus"] = "claimable";
+        data["payoutCents"] = payoutCents;
+        data["claimableAt"] = Timestamp.FromDateTime(completedAtUtc);
+        data["backendOwner"] = BackendOwner;
+        data["completionEvidenceId"] = CreateLookupKey($"solitaire\n{match.MatchId}");
+        return data;
+    }
+
+    private static Dictionary<string, object> ManagedResultData(
+        SolitaireMatch match,
+        SolitairePlayerState player,
+        DateTime completedAtUtc) => new()
+    {
+        ["resultId"] = CreateLookupKey($"solitaire\n{match.MatchId}\n{player.UserId}"),
+        ["game"] = "solitaire",
+        ["mode"] = "competitive",
+        ["matchId"] = match.MatchId,
+        ["userId"] = player.UserId,
+        ["currencyId"] = SlotsCreditsCurrencyId,
+        ["claimStatus"] = "completed",
+        ["settlementStatus"] = "recorded",
+        ["playerStatus"] = player.Status,
+        ["score"] = (long)player.Game.Score,
+        ["moves"] = (long)player.Game.Moves,
+        ["elapsedMilliseconds"] = player.ElapsedMilliseconds ?? 0L,
+        ["buyInCents"] = 0L,
+        ["payoutCents"] = player.PayoutCents,
+        ["completedAt"] = Timestamp.FromDateTime(completedAtUtc),
+        ["financialClassification"] = match.FinancialModel == HouseFundedPoolModel
+            ? "house-funded-managed-player-v1"
+            : "managed-player-virtual-v1",
+        ["payoutDisposition"] = player.PayoutCents > 0 ? "house-revenue" : "none",
+        ["schemaVersion"] = 1L
+    };
+
+    private static SolitaireTicket ReadTicket(DocumentSnapshot snapshot) => new(
+        ReadString(snapshot, "ticketId"),
+        ReadString(snapshot, "userId"),
+        ReadString(snapshot, "displayName"),
+        checked((int)ReadLong(snapshot, "playerCount")),
+        ReadLong(snapshot, "buyInCents"),
+        ReadString(snapshot, "partitionKey"),
+        ReadString(snapshot, "status"),
+        ReadTimestamp(snapshot, "joinedAt"),
+        EmptyToNull(ReadString(snapshot, "matchId")))
+    {
+        DrawCount = checked((int)ReadLong(snapshot, "drawCount", 3))
+    };
+
+    private static SolitaireMatch ReadMatch(DocumentSnapshot snapshot)
+    {
+        var completed = ReadOptionalTimestamp(snapshot, "completedAt");
+        var playerCount = checked((int)ReadLong(snapshot, "playerCount"));
+        var playerIds = ReadStringArray(snapshot, "playerIds");
+        var seatsFilled = snapshot.Exists && snapshot.TryGetValue<bool>("botsFilled", out var storedBotsFilled)
+            ? storedBotsFilled
+            : playerIds.Count >= playerCount;
+        return new SolitaireMatch(
+            ReadString(snapshot, "matchId"),
+            playerCount,
+            ReadLong(snapshot, "buyInCents"),
+            ReadLong(snapshot, "prizePoolCents"),
+            ReadLong(snapshot, "winnerPayoutCents"),
+            ReadLong(snapshot, "platformFeeCents"),
+            checked((uint)ReadLong(snapshot, "dealSeed")),
+            ReadTimestamp(snapshot, "startedAt"),
+            ReadTimestamp(snapshot, "deadlineAt"),
+            ReadString(snapshot, "status"),
+            playerIds,
+            ReadStringArray(snapshot, "displayNames"),
+            ReadStringArray(snapshot, "ticketIds"),
+            ReadTimestampArray(snapshot, "joinedAt"),
+            completed,
+            EmptyToNull(ReadString(snapshot, "winnerUserId")))
+        {
+            PartitionKey = ReadString(snapshot, "partitionKey"),
+            FinancialModel = ReadString(snapshot, "financialModel"),
+            HumanEntryCents = ReadLong(snapshot, "humanEntryCents"),
+            HouseFundedEntryCents = ReadLong(snapshot, "houseFundedEntryCents"),
+            AdmissionClosesAtUtc = ReadOptionalTimestamp(snapshot, "admissionClosesAt"),
+            SeatFillEligibleAtUtc = ReadOptionalTimestamp(snapshot, "botFillEligibleAt"),
+            SeatsFilled = seatsFilled,
+            DrawCount = checked((int)ReadLong(snapshot, "drawCount", 3))
+        };
+    }
+
+    private static SolitairePlayerState ReadPlayer(DocumentSnapshot snapshot, SolitaireMatch match)
+    {
+        var gameJson = ReadString(snapshot, "gameStateJson");
+        var game = JsonSerializer.Deserialize<SolitaireGameState>(gameJson, JsonOptions)
+            ?? throw new InvalidOperationException("A stored Solitaire game state is invalid.");
+        var undoJson = ReadString(snapshot, "undoStateJson");
+        var undoHistory = string.IsNullOrWhiteSpace(undoJson)
+            ? Array.Empty<SolitaireGameState>()
+            : JsonSerializer.Deserialize<SolitaireGameState[]>(undoJson, JsonOptions)
+                ?? Array.Empty<SolitaireGameState>();
+        var warningJson = ReadString(snapshot, "integrityWarningsJson");
+        var integrityWarnings = string.IsNullOrWhiteSpace(warningJson)
+            ? Array.Empty<SolitaireIntegrityWarning>()
+            : JsonSerializer.Deserialize<SolitaireIntegrityWarning[]>(warningJson, JsonOptions)
+                ?? Array.Empty<SolitaireIntegrityWarning>();
+        var elapsed = ReadLong(snapshot, "elapsedMilliseconds", -1);
+        var startedAt = ReadOptionalTimestamp(snapshot, "startedAt") ?? match.StartedAtUtc;
+        var deadlineAt = ReadOptionalTimestamp(snapshot, "deadlineAt") ?? match.DeadlineAtUtc;
+        var metadataJson = ReadString(snapshot, "managedMetadataJson");
+        var metadata = string.IsNullOrWhiteSpace(metadataJson)
+            ? new Dictionary<string, string>(StringComparer.Ordinal)
+            : JsonSerializer.Deserialize<Dictionary<string, string>>(metadataJson, JsonOptions)
+                ?? new Dictionary<string, string>(StringComparer.Ordinal);
+        if (!metadata.ContainsKey("managed-skill") && ReadBool(snapshot, "isSynthetic"))
+            metadata["managed-skill"] = ReadLong(snapshot, "syntheticSkill", ManagedPlayerSkillLevels.Average)
+                .ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return new SolitairePlayerState(
+            ReadString(snapshot, "matchId"),
+            ReadString(snapshot, "userId"),
+            ReadString(snapshot, "displayName"),
+            checked((int)ReadLong(snapshot, "seat")),
+            ReadString(snapshot, "status"),
+            game,
+            checked((int)ReadLong(snapshot, "version")),
+            elapsed < 0 ? null : elapsed,
+            ReadOptionalTimestamp(snapshot, "completedAt"),
+            ReadLong(snapshot, "payoutCents"),
+            ReadBool(snapshot, "acknowledged"))
+        {
+            StartedAtUtc = startedAt,
+            DeadlineAtUtc = deadlineAt,
+            IsAccountBacked = !ReadBool(snapshot, "isSynthetic"),
+            PauseUsedMilliseconds = ReadLong(snapshot, "pauseUsedMilliseconds"),
+            PausedAtUtc = ReadOptionalTimestamp(snapshot, "pausedAt"),
+            UndoHistory = undoHistory,
+            IntegrityWarnings = integrityWarnings,
+            HostMetadata = metadata
+        };
+    }
+
+    private static long ReadLong(DocumentSnapshot snapshot, string field, long fallback = 0) =>
+        snapshot.Exists && snapshot.TryGetValue<long>(field, out var value) ? value : fallback;
+
+    private static bool ReadBool(DocumentSnapshot snapshot, string field) =>
+        snapshot.Exists && snapshot.TryGetValue<bool>(field, out var value) && value;
+
+    private static string ReadString(DocumentSnapshot snapshot, string field) =>
+        snapshot.Exists && snapshot.TryGetValue<string>(field, out var value)
+            ? value
+            : string.Empty;
+
+    private static IReadOnlyList<string> ReadStringArray(DocumentSnapshot snapshot, string field)
+    {
+        if (!snapshot.Exists) return [];
+        var values = snapshot.ToDictionary();
+        if (!values.TryGetValue(field, out var raw) || raw is not IEnumerable<object> items)
+        {
+            return [];
+        }
+        return items.Select(item => item as string ?? string.Empty).ToArray();
+    }
+
+    private static IReadOnlyList<DateTime> ReadTimestampArray(DocumentSnapshot snapshot, string field)
+    {
+        if (!snapshot.Exists) return [];
+        var values = snapshot.ToDictionary();
+        if (!values.TryGetValue(field, out var raw) || raw is not IEnumerable<object> items)
+        {
+            return [];
+        }
+        return items.Select(item => item is Timestamp timestamp
+            ? timestamp.ToDateTime()
+            : DateTime.UnixEpoch).ToArray();
+    }
+
+    private static DateTime ReadTimestamp(DocumentSnapshot snapshot, string field) =>
+        snapshot.Exists && snapshot.TryGetValue<Timestamp>(field, out var value)
+            ? value.ToDateTime()
+            : DateTime.UnixEpoch;
+
+    private static DateTime? ReadOptionalTimestamp(DocumentSnapshot snapshot, string field)
+    {
+        if (!snapshot.Exists) return null;
+        return snapshot.ToDictionary().TryGetValue(field, out var raw) && raw is Timestamp value
+            ? value.ToDateTime()
+            : null;
+    }
+
+    private static string? EmptyToNull(string value) =>
+        string.IsNullOrEmpty(value) ? null : value;
+
+    private static void VerifyAction(
+        DocumentSnapshot actionSnapshot,
+        string operation,
+        string targetId,
+        string detail)
+    {
+        if (!string.Equals(ReadString(actionSnapshot, "operation"), operation, StringComparison.Ordinal) ||
+            !string.Equals(ReadString(actionSnapshot, "targetId"), targetId, StringComparison.Ordinal) ||
+            !string.Equals(ReadString(actionSnapshot, "detail"), detail, StringComparison.Ordinal))
+        {
+            throw new SolitaireConflictException(
+                "This idempotency key was already used for a different Solitaire request.");
+        }
+    }
+}

@@ -45,6 +45,19 @@ describe('HttpHiLoGateway', () => {
     expect(fetcher).toHaveBeenCalledOnce()
   })
 
+  it('binds reads and unchanged retry bodies to the account that opened the table', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => json(session))
+    const gateway = new HttpHiLoGateway('/api/games/hi-lo', fetcher, 'original-account')
+    await gateway.getSession()
+    const request = { operationId: 'original-start-operation' }
+    await gateway.startRound(100, request)
+    await gateway.startRound(100, request)
+    expect(fetcher.mock.calls.every(([, init]) => new Headers(init?.headers).get('X-FortuneForge-Expected-Account') === 'original-account')).toBe(true)
+    expect(new Headers(fetcher.mock.calls[1][1]?.headers).get('X-FortuneForge-Game')).toBe('hi-lo')
+    expect(fetcher.mock.calls[1][1]?.body).toBe(JSON.stringify({ operationId: request.operationId, wagerCents: 100 }))
+    expect(fetcher.mock.calls[2][1]?.body).toBe(fetcher.mock.calls[1][1]?.body)
+  })
+
   it.each([
     ['fractional money', { ...session, walletBalanceCents: .1 }],
     ['unsafe money', { ...session, walletBalanceCents: Number.MAX_SAFE_INTEGER + 1 }],

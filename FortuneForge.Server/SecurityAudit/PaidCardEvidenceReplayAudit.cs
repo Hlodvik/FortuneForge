@@ -84,7 +84,7 @@ internal static class PaidCardEvidenceReplayAudit
             round.History.IsDefaultOrEmpty || round.History.Length > 153 ||
             round.History[0].Kind != HiLoHistoryKind.Initial ||
             round.Wager * 100 != wager || round.CurrentReturn * 100 != payout) return false;
-        var rebuilt = HiLoEngine.Start(round.Id, round.Wager, round.History[0].Card);
+        var rebuilt = HiLoEngine.RebuildInitial(round.Id, round.Wager, round.History[0].Card);
         foreach (var entry in round.History.Skip(1))
             rebuilt = entry.Kind switch
             {

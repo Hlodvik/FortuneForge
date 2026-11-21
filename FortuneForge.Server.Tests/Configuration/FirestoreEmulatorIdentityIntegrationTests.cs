@@ -6,6 +6,7 @@ using System.Text.Json;
 using FortuneForge.Games.Mines;
 using FortuneForge.Games.Mines.Server;
 using FortuneForge.Server.Configuration;
+using FortuneForge.Server.Tests.Accounts;
 using FortuneForge.Server.Tests.Solitaire;
 using Microsoft.Extensions.Configuration;
 using Xunit;
@@ -37,8 +38,10 @@ public sealed class FirestoreEmulatorIdentityIntegrationTests
         // Covers transaction begin, batch read, commit, normal document reads and query RPCs.
         // No production project, credentials or funds are reachable through this test.
         await database.Collection("userBalances").Document("player_slotsCredits").SetAsync(new Dictionary<string, object>
-            { ["available"] = 100L, ["availableFractionalCents"] = 0L });
-        var service = new MinesService(new FirestoreMinesStore(database), new MinesEngine(new FixedBoard()));
+            { ["userId"] = "player", ["currencyId"] = "slotsCredits", ["available"] = 100L,
+                ["availableFractionalCents"] = 0L, ["reserved"] = 0L, ["version"] = 1L });
+        var wallet = new GameWalletFirestoreTestClient(database, "mines");
+        var service = new MinesService(new FirestoreMinesStore(database, wallet, wallet), new MinesEngine(new FixedBoard()));
         var round = (await service.StartAsync("player", new(Guid.NewGuid().ToString("N"), 100, 3))).Round!;
         await service.RevealAsync("player", round.RoundId, new(Guid.NewGuid().ToString("N"), 24));
         var paid = await service.CashOutAsync("player", round.RoundId, new(Guid.NewGuid().ToString("N")));

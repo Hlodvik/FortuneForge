@@ -1,4 +1,5 @@
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Firestore;
 using FortuneForge.Games.TexasHoldem;
 using Google.Cloud.Firestore;
 
@@ -12,25 +13,17 @@ internal static class GameSecurityJournal
     {
         var observation = GameSecurityEventDocuments.Capture(gameId, instanceId, version, nowUtc,
             state, participantIds, eventKind, tableId);
-        // Content addressing makes a transaction retry write identical bytes. A different state,
-        // time or authenticated request gets a different document, preserving the earlier observation.
-        transaction.Set(database.Collection(GameSecurityEventDocuments.CollectionName).Document(observation.Id), observation.Fields);
-        WriteManifest(transaction, database, gameId, instanceId, observation.Id);
+        FirestoreGameAudit.WriteObservation(transaction, database, observation);
         Activity.AcceptedGameTransactionWitness.Write(database, observation,
             (reference, fields) => transaction.Set(reference, fields, SetOptions.MergeAll));
     }
 
     internal static void WriteManifest(Transaction transaction, FirestoreDb database,
-        string gameId, string instanceId, string eventId) => transaction.Set(
-        database.Collection(GameSecurityEventDocuments.ManifestCollectionName)
-            .Document(GameSecurityEventDocuments.ManifestId(gameId, instanceId)),
-        ManifestFields(gameId, instanceId, eventId), SetOptions.MergeAll);
+        string gameId, string instanceId, string eventId) =>
+        FirestoreGameAudit.WriteManifest(transaction, database, gameId, instanceId, eventId);
 
-    internal static Dictionary<string, object> ManifestFields(string gameId, string instanceId, string eventId) => new()
-    {
-        ["gameId"] = gameId, ["instanceId"] = instanceId,
-        ["eventIds"] = FieldValue.ArrayUnion(eventId), ["schemaVersion"] = 1L
-    };
+    internal static Dictionary<string, object> ManifestFields(string gameId, string instanceId, string eventId) =>
+        FirestoreGameAudit.ManifestFields(gameId, instanceId, eventId);
 
     internal static void Holdem(Transaction transaction, FirestoreDb database, CreditHoldemMatch match,
         DateTime nowUtc, string eventKind = "engine-state") =>

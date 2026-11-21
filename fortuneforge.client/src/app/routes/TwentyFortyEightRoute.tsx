@@ -1,3 +1,4 @@
+import { createGameCommandRecovery } from '@fortuneforge/client-presentation/game-command-recovery'
 import { HttpTwentyFortyEightGateway, TwentyFortyEightGame as BundledTwentyFortyEightGame } from '@fortuneforge/games-2048'
 import bundledStyles from '@fortuneforge/games-2048/styles.css?inline'
 import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
@@ -17,7 +18,7 @@ export function AuthenticatedTwentyFortyEightRoute() {
 }
 
 function TwentyFortyEightSession({ account }: { account: AccountSummary }) {
-  const gateway = useMemo(() => new HttpTwentyFortyEightGateway('/api/games/2048', fetchWithAccountSession), [])
+  const gateway = useMemo(() => new HttpTwentyFortyEightGateway('/api/games/2048', fetchWithAccountSession, createGameCommandRecovery({ accountId: account.userId, gameId: '2048', routePrefix: '/api/games/2048' }), account.userId), [account.userId])
   const { Game: TwentyFortyEightGame, pending } = useReleasedGame('2048', '2048', BundledTwentyFortyEightGame, bundledStyles)
   if (TwentyFortyEightGame === null) return pending
 

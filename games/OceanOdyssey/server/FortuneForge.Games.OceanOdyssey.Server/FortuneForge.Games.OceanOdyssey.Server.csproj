@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Cloud.Firestore" Version="4.3.0" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Hosting/FortuneForge.Games.Hosting.csproj" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Slots.Runtime/FortuneForge.Games.Slots.Runtime.csproj" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Slots.Persistence/FortuneForge.Games.Slots.Persistence.csproj" />
+    <ProjectReference Include="../../src/FortuneForge.Games.OceanOdyssey/FortuneForge.Games.OceanOdyssey.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="FortuneForge.Games.OceanOdyssey.Tests" />
+  </ItemGroup>
+</Project>

@@ -1,41 +1,27 @@
 using System.Text.Json;
 using FortuneForge.Games.NeonNights;
+using FortuneForge.Games.NeonNights.Server;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
-using FortuneForge.Server.Slots.Games.NeonNights;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Accounts.Storage;
 
 public sealed partial class FirestoreAccountStore
 {
-    private static NeonNitroChoiceOffer CreateNeonNitroChoiceOffer(Guid spinId, string sourceKind,
-        long wagerPoints, int freeSpinsRemaining, NeonNitroWildOutcome nitro)
-    {
-        if (!nitro.RequiresChoice || nitro.SecondNitro is null || nitro.ExpandedReel is not null)
-            throw new InvalidOperationException("The Nitro outcome has no unresolved reel choice.");
-        return new(spinId, sourceKind, wagerPoints, freeSpinsRemaining,
-            nitro.InitialReels, [0, 1, 2, 3, 4], nitro);
-    }
-
-    private static NeonNitroChoiceOffer? ReadPendingNeonNitroChoice(DocumentSnapshot guard)
-    {
-        if (ReadString(guard, "pendingNeonNitroChoiceJson") is not { } json) return null;
-        var offer = JsonSerializer.Deserialize<NeonNitroChoiceOffer>(json);
-        if (offer?.NeonNitroWild.RequiresChoice != true || offer.EligibleReels.Count != 5)
-            throw new InvalidOperationException("The saved Nitro reel choice is invalid.");
-        return offer;
-    }
+    private static NeonNitroChoiceOffer? ReadPendingNeonNitroChoice(DocumentSnapshot guard) =>
+        NeonNitroChoice.ReadOffer(ReadString(guard, "pendingNeonNitroChoiceJson"));
 
     public async Task<NeonNitroChoiceFinalization> FinalizeNeonNitroChoiceAsync(
         string userId, Guid spinId, int reelIndex, CancellationToken cancellationToken)
     {
-        if (spinId == Guid.Empty || reelIndex is < 0 or >= 5)
+        if (spinId == Guid.Empty || !NeonNitroChoice.IsChoiceReel(reelIndex))
             throw new NeonNitroChoiceConflictException("Choose one of the five reels for Nitro Wild.");
 
         var resultSnapshot = await SlotSpinResultDocument(spinId).GetSnapshotAsync(cancellationToken);
         DocumentSnapshot admissionSnapshot;
+        NeonNitroChoiceOffer? offer = null;
         if (resultSnapshot.Exists)
         {
             if (ReadString(resultSnapshot, "userId") != userId ||
@@ -50,8 +36,10 @@ public sealed partial class FirestoreAccountStore
         {
             var guard = await SlotSpinGuardDocument(userId, SlotSpecialRoundProfiles.NeonNightsGameId)
                 .GetSnapshotAsync(cancellationToken);
-            if (ReadPendingNeonNitroChoice(guard) is not { SourceKind: "spin" } offer ||
-                offer.SpinId != spinId || !offer.EligibleReels.Contains(reelIndex) ||
+            if (ReadString(guard, NeonCarRespinStore.WorkerOwnerField) is not null)
+                throw new NeonNitroChoiceConflictException("Resume the current Nitro choice through the Neon Nights worker.");
+            offer = ReadPendingNeonNitroChoice(guard);
+            if (offer?.Allows(spinId, NeonNitroChoice.SpinSource, reelIndex) != true ||
                 !Guid.TryParseExact(ReadString(guard, "pendingNeonNitroAdmissionId"), "N", out var pendingAdmissionId) ||
                 ReadString(guard, "activeAdmissionId") != pendingAdmissionId.ToString("N"))
                 throw new NeonNitroChoiceConflictException("The pending Nitro choice is no longer available.");
@@ -66,14 +54,11 @@ public sealed partial class FirestoreAccountStore
             throw new NeonNitroChoiceConflictException("The pending Nitro spin cannot be restored.");
         var admission = JsonSerializer.Deserialize<SlotSpinAdmission>(admissionJson)
             ?? throw new InvalidOperationException("The saved Nitro admission is invalid.");
-        var pending = JsonSerializer.Deserialize<NeonSpinOutcome>(pendingJson)
-            ?? throw new InvalidOperationException("The saved Nitro outcome is invalid.");
         if (admission.AdmissionId != Guid.ParseExact(admissionSnapshot.Id, "N") ||
-            pending.SpinId != spinId || pending.NeonNitroWild?.RequiresChoice != true ||
-            admission.FreeSpinFeatureMode != NeonArcadeBonus.PaidCarFeatureMode)
+            !NeonCarRoundState.IsCarPlay(admission.IsFreeSpin, admission.FreeSpinFeatureMode))
             throw new InvalidOperationException("The saved Nitro spin differs from its admission.");
 
-        var finalOutcome = FortuneForge.Games.NeonNights.NeonNightsEngine.ResolveNitroChoice(pending, reelIndex);
+        var finalOutcome = NeonNitroChoice.ResolveSavedSpin(pendingJson, spinId, admission.WagerPoints, reelIndex, offer);
         var result = FortuneForge.Server.Slots.Games.NeonNights.NeonNightsEngine.MapOutcome(finalOutcome) with
         { ChargedWagerCents = admission.ChargedWagerCents };
         SlotSpinSettlement settlement;
@@ -89,7 +74,7 @@ public sealed partial class FirestoreAccountStore
         var currentWallet = await BalanceDocument(userId, SlotsCreditsCurrencyId)
             .GetSnapshotAsync(cancellationToken);
         var currentState = await GetSlotStateAsync(userId, SlotSpecialRoundProfiles.NeonNightsGameId,
-            pending.PointValueInCents, cancellationToken);
+            finalOutcome.PointValueInCents, cancellationToken);
         return new(result, settlement with
         {
             SlotsCreditsBalance = ReadRandBalance(currentWallet),

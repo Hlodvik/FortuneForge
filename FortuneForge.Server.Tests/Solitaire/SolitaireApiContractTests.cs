@@ -28,11 +28,12 @@ public sealed class SolitaireApiContractTests
             .Where(value => value.Http is not null)
             .ToArray();
 
-        Assert.Equal(13, actions.Length);
+        Assert.Equal(14, actions.Length);
         AssertRoute(actions, "StartFreeRun", "free/runs", "POST");
         AssertRoute(actions, "CompleteFreeRun", "free/runs/{runId}/replay", "POST");
         AssertRoute(actions, "PauseFreeRun", "free/runs/{runId}/pause", "POST");
         AssertRoute(actions, "ResumeFreeRun", "free/runs/{runId}/resume", "POST");
+        AssertRoute(actions, "GetFreeRun", "free/runs/{runId}", "GET");
         AssertRoute(actions, "Session", "session", "GET");
         AssertRoute(actions, "Join", "queue", "POST");
         AssertRoute(actions, "Cancel", "queue/{ticketId}", "DELETE");

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -11,6 +12,9 @@ public static class GameSecurityEventDocuments
 {
     public const string CollectionName = "gameSecurityEvents";
     public const string ManifestCollectionName = "gameSecurityEventManifests";
+    public const long PagedManifestVersion = 2;
+    public const int ManifestPageSize = 128;
+    public const string ManifestPageCollectionName = "pages";
     public const string ContractVersion = "engine-observation-v1";
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -49,4 +53,8 @@ public static class GameSecurityEventDocuments
 
     public static string Hash(string value) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
     public static string ManifestId(string gameId, string instanceId) => Hash($"{gameId}\n{instanceId}");
+    public static string ManifestPageId(long index) => index.ToString("D19", CultureInfo.InvariantCulture);
+
+    public static bool IsEventId(string? id) => id is { Length: 64 } &&
+        id.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f');
 }

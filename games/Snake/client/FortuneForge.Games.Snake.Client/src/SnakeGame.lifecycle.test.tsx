@@ -7,7 +7,7 @@ import { LocalSnakeGateway } from './localSnakeGateway'
 import { SnakeGame } from './SnakeGame'
 
 let root: Root | null, host: HTMLDivElement, local: LocalSnakeGateway
-let gateway: { [K in keyof SnakeGateway]: Mock<SnakeGateway[K]> }
+let gateway: { [K in keyof SnakeGateway]: Mock<NonNullable<SnakeGateway[K]>> }
 function deferred() { let resolve!: () => void; const promise = new Promise<void>(accept => { resolve = accept }); return { promise, resolve } }
 async function flush() { await act(async () => { for (let index = 0; index < 12; index++) await Promise.resolve() }) }
 async function mount() { root = createRoot(host); await act(async () => root!.render(<StrictMode><SnakeGame gateway={gateway} /></StrictMode>)); await flush() }

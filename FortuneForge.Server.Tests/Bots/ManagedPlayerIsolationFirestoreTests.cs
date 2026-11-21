@@ -13,6 +13,32 @@ public sealed class ManagedPlayerIsolationFirestoreTests(
         new(2026, 9, 28, 18, 0, 0, DateTimeKind.Utc);
 
     [Fact]
+    public async Task ScopedLeaseOperationsCannotChangeAnotherGameEvenWithTheSameAssignmentId()
+    {
+        var database = Database("scoped-managed-lease");
+        var profiles = new FirestoreManagedPlayerProfileRepository(database);
+        var assignments = new FirestoreManagedPlayerAssignmentStore(database);
+        var queuer = new ManagedPlayerQueuer(new ManagedPlayerProfileGenerator(profiles), profiles, assignments);
+        const string assignmentId = "liars-dice:scoped-lease";
+        var player = Assert.Single(await queuer.ReserveAsync(ManagedPlayerGames.LiarsDice, assignmentId, 1, [], Now, default));
+        var assignment = database.Collection("managedPlayerAssignments").Document(player.UserId);
+        var original = await assignment.GetSnapshotAsync();
+
+        await queuer.HeartbeatAsync(ManagedPlayerGames.Blackjack, assignmentId, [player.UserId], Now.AddMinutes(1), default);
+        await queuer.ReleaseForGameAsync(ManagedPlayerGames.Blackjack, assignmentId, [player.UserId], Now.AddMinutes(2), default);
+        Assert.Equal(original.UpdateTime, (await assignment.GetSnapshotAsync()).UpdateTime);
+
+        await queuer.HeartbeatAsync(ManagedPlayerGames.LiarsDice, assignmentId, [player.UserId], Now.AddMinutes(1), default);
+        var renewed = await assignment.GetSnapshotAsync();
+        Assert.Equal(ManagedPlayerGames.LiarsDice, renewed.GetValue<string>("gameId"));
+        Assert.Equal(Now.AddMinutes(31), renewed.GetValue<Timestamp>("leaseUntil").ToDateTime());
+        await queuer.ReleaseForGameAsync(ManagedPlayerGames.LiarsDice, assignmentId, [player.UserId], Now.AddMinutes(2), default);
+        Assert.False((await assignment.GetSnapshotAsync()).Exists);
+        var profile = await database.Collection("users").Document(player.UserId).GetSnapshotAsync();
+        Assert.Equal(Now.AddMinutes(2), profile.GetValue<Timestamp>("lastActiveAt").ToDateTime());
+    }
+
+    [Fact]
     public async Task QueuerAndAssignmentStoreRejectARealUserEvenWhenItHasABotTag()
     {
         var database = Database("real-user-boundary");

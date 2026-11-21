@@ -19,4 +19,4 @@ npm test
 npm run build
 ```
 
-The local host is developer-only; the production Fortune Forge application remains the public API host.
+The local sample is developer-only. The production account API authenticates and forwards the existing URLs to the package-owned Roulette backend. See `games/Roulette/INTEGRATION.md` for persisted table and command recovery.

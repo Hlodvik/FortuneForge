@@ -36,13 +36,25 @@ describe('owner and competition-scoped Horse Flight recovery', () => {
     writeHorseFlightRecovery(value)
     expect(readHorseFlightRecovery('alex', 'free', freeScope)).toEqual({ record: value, game: null, error: null })
   })
-  it('separates daily and weekly records and holds an unresolved old window', () => {
+  it('separates daily and weekly records and retains the old immutable admission window', () => {
     const value = newHorseFlightRecovery('alex', 'paid:weekly', weeklyScope, 'horse-flight-start-0123456789', 'horse-flight-complete-0123456789')
     writeHorseFlightRecovery(value)
     const next = JSON.stringify(['paid:weekly', '2026-11-09T00:00:00.000Z', '2026-11-16T00:00:00.000Z'])
-    expect(readHorseFlightRecovery('alex', 'paid:weekly', next).error).toContain('previous competition window')
+    expect(readHorseFlightRecovery('alex', 'paid:weekly', next)).toMatchObject({ error: null, record: { scope: weeklyScope, admission: value.admission, state: 'starting' } })
     expect(readHorseFlightRecovery('alex', 'paid:daily', JSON.stringify(['paid:daily', '2026-11-02T00:00:00.000Z', '2026-11-03T00:00:00.000Z'])).record).toBeNull()
   })
+  it('reconstructs an accepted original-window flight after rollover and preserves its frozen identity', () => {
+    const value = newHorseFlightRecovery('alex', 'paid:weekly', weeklyScope, 'horse-flight-start-0123456789', 'horse-flight-complete-0123456789')
+    value.run = { runId: 'horse_flight_' + 'a'.repeat(64), seed: 42, tickMilliseconds: 20, recoveryScope: weeklyScope }
+    value.state = 'active'; value.ticks = 10
+    writeHorseFlightRecovery(value)
+    const next = JSON.stringify(['paid:weekly', '2026-11-09T00:00:00.000Z', '2026-11-16T00:00:00.000Z'])
+    const restored = readHorseFlightRecovery('alex', 'paid:weekly', next)
+    expect(restored.error).toBeNull(); expect(restored.game?.tick).toBe(10)
+    expect(restored.record?.scope).toBe(weeklyScope)
+    expect(restored.record?.run?.runId).toBe(value.run.runId)
+  })
+
   it.each([
     { ticks: 30_001 }, { ticks: -1 }, { ticks: 4, jumps: [1, 1] }, { ticks: 4, jumps: [2, 1] },
     { ticks: 4, jumps: [4] }, { ticks: 4, jumps: [1], rights: [1] }, { rulesVersion: 999 },

@@ -1,4 +1,7 @@
 using FortuneForge.Server.GameWorkers;
+using FortuneForge.Games.Abstractions.Wallet;
+using FortuneForge.Games.Abstractions.ManagedPlayers;
+using FortuneForge.Games.ThreeCardPoker.Server;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
@@ -188,18 +191,7 @@ public sealed class ThreeCardPokerTableController(
     internal static bool IsEnabled(IConfiguration source) =>
         source.GetValue("Features:ThreeCardPokerTableEnabled", false);
 
-    internal static ThreeCardPokerTableStatusResponse StatusContract() => new(
-        true,
-        ThreeCardPokerMoney.ToRand(ThreeCardPokerMoney.MinimumWagerCents),
-        ThreeCardPokerMoney.ToRand(ThreeCardPokerMoney.MaximumWagerCents),
-        ThreeCardPokerMoney.ToRand(ThreeCardPokerMoney.WagerIncrementCents),
-        1,
-        1,
-        0,
-        0,
-        "Dealer qualifies with queen high or better; Play equals Ante", true,
-        "Straight 1:1; Three of a kind 4:1; Straight flush 5:1",
-        "Pair 1:1; Flush 3:1; Straight 6:1; Three of a kind 30:1; Straight flush 40:1", true);
+    internal static ThreeCardPokerTableStatusResponse StatusContract() => ThreeCardPokerBackend.StatusContract();
 
     private ActionResult? Disabled() => IsEnabled(configuration) ? null : StatusCode(
         StatusCodes.Status503ServiceUnavailable,
@@ -212,7 +204,10 @@ public sealed class ThreeCardPokerTableController(
     private async Task<AccountSummary?> AccountAsync(CancellationToken cancellationToken) =>
         (await accountService.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken)).Value;
 
-    private ThreeCardPokerTableService Service => services.GetRequiredService<ThreeCardPokerTableService>();
+    private ThreeCardPokerTableService Service
+    {
+        get { _ = services; throw new GameWalletUnavailableException(); }
+    }
 
     private static ThreeCardPokerTableMutationResponse ToMutation(ThreeCardPokerTableStoreResult value) =>
         new(value.Session, ThreeCardPokerMoney.ToRand(value.BalanceCents));
@@ -239,6 +234,8 @@ internal static class ThreeCardPokerTableHttp
             case ThreeCardPokerTableIllegalActionException:
                 return controller.BadRequest(new { code = "illegal-three-card-poker-action", error = exception.Message });
             case GameWorkerUnavailableException:
+            case GameWalletUnavailableException:
+            case ManagedPlayerRosterUnavailableException:
                 return controller.StatusCode(StatusCodes.Status503ServiceUnavailable, new
                 {
                     code = "game-worker-unavailable",

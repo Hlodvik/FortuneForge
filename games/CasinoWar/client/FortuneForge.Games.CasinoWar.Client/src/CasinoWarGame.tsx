@@ -112,6 +112,16 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
         setError(null)
       }).catch(reason => {
         if (reason instanceof DOMException && reason.name === 'AbortError') return
+        if (isCreditDecline(reason)) {
+          clearPendingAction(playerId)
+          setRecovery('ready')
+          setError(messageForError(reason))
+          if (pendingAction.operation === 'decision') {
+            storeRoundId(playerId, pendingAction.roundId)
+            setRecoveryAttempt(attempt => attempt + 1)
+          }
+          return
+        }
         setRecovery('failed')
         setError('Your pending Casino War request could not be restored. Retry restoration before starting another round.')
       })
@@ -119,6 +129,24 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
     }
     const storedRoundId = playerId ? readStoredRoundId(playerId) : null
     if (!storedRoundId) {
+      if (playerId && gateway.recoverPending) {
+        const controller = new AbortController()
+        setRecovery('recovering')
+        void gateway.recoverPending(controller.signal).then(saved => {
+          const nextRound = saved.recoveredRound ?? saved.openRounds[0] ?? null
+          if (nextRound) {
+            setRound(nextRound)
+            if (nextRound.phase === 'awaiting-tie-decision') storeRoundId(playerId, nextRound.roundId)
+          }
+          setRecovery('ready')
+          setError(null)
+        }).catch(reason => {
+          if (reason instanceof DOMException && reason.name === 'AbortError') return
+          setRecovery('failed')
+          setError('Your pending Casino War request could not be restored. Retry restoration before starting another round.')
+        })
+        return () => controller.abort()
+      }
       setRecovery('ready')
       return undefined
     }
@@ -215,7 +243,25 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
   const act = async (operation: () => Promise<void>) => {
     setBusy(true)
     setError(null)
-    try { await operation() } catch (reason) { setError(messageForError(reason)) } finally { setBusy(false) }
+    try { await operation() } catch (reason) {
+      if (isCreditDecline(reason)) {
+        openingRequestKey.current = null
+        decisionRequestKey.current = null
+        pendingOpeningStakes.current = null
+        pendingDecision.current = null
+        clearPendingAction(playerId)
+        if (round) {
+          try { setRound(await gateway.getRound(round.roundId)) } catch { /* Preserve the last confirmed round until recovery succeeds. */ }
+        } else {
+          try {
+            const latest = await gateway.getStatus()
+            setStatus(latest)
+            setLastBalance(latest.balance)
+          } catch { /* The declined action remains final even if the balance refresh is unavailable. */ }
+        }
+      }
+      setError(messageForError(reason))
+    } finally { setBusy(false) }
   }
 
   const deal = () => {
@@ -235,7 +281,7 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
   }
 
   const decide = (decision: CasinoWarDecision) => {
-    if (!round || round.phase !== 'awaiting-tie-decision' || busy) return
+    if (!round || round.phase !== 'awaiting-tie-decision' || busy || recovery !== 'ready') return
     if (decision === 'go-to-war' && pendingDecision.current === null && round.primaryStake > round.balance) return
     if (pendingDecision.current && pendingDecision.current !== decision) {
       setError(`Your ${humanize(pendingDecision.current)} decision is still pending. Retry that decision so the table can return the original result.`)
@@ -448,6 +494,7 @@ function formatSignedMoney(value: number, currencySymbol: string) { return `${va
 function roundStake(value: number) { return Math.round((value + Number.EPSILON) * 100) / 100 }
 function messageForError(reason: unknown) { return reason instanceof CasinoWarGatewayError ? reason.message : 'The Casino War table is unavailable.' }
 function isTableUnavailable(reason: unknown) { return reason instanceof CasinoWarGatewayError && reason.code === 'casino-war-disabled' }
+function isCreditDecline(reason: unknown) { return reason instanceof CasinoWarGatewayError && reason.code === 'insufficient-slot-credits' && reason.status === 409 }
 function createRequestKey(action: 'opening' | 'decision') { const random = typeof crypto?.randomUUID === 'function' ? crypto.randomUUID().replaceAll('-', '') : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`; return `casino-war-${action}-${random}` }
 function storedRoundKey(playerId: string) { return `fortuneforge:casino-war:round:${playerId}` }
 function pendingActionKey(playerId: string) { return `fortuneforge:casino-war:pending:${playerId}` }

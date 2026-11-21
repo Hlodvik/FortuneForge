@@ -132,19 +132,25 @@ public sealed class NeonArcadeTests
         {
             ControllerContext = new() { HttpContext = new DefaultHttpContext() }
         };
-        var request = new DemoSpinRequest(game.Id, 50, false, 0, null, 0);
+        var request = new DemoSpinRequest(game.Id, 50, false, 0, null, EnergyBonus.MeterCapacityPoints);
         var trigger = Assert.IsType<SpinResult>(Assert.IsType<OkObjectResult>(
             await controller.Spin(request, CancellationToken.None)).Value);
         Assert.Equal(NeonArcadeSlotDefinitions.DiscoPlaySpins, trigger.NeonDiscoSpinsRemaining);
         Assert.Null(trigger.NeonDiscoCascade);
+        Assert.Equal(0, trigger.EngineAudit!.EnergyBalanceBefore);
+        Assert.Equal(0, trigger.EnergyBalance);
+        Assert.Equal(50, trigger.ChargedWagerCents);
+        Assert.Null(trigger.SlotsCreditsBalance);
         Assert.Empty(SlotEvidenceReplayAudit.Inspect(store.Capture!.Summary, store.Capture.PayloadJson));
 
         var play = Assert.IsType<SpinResult>(Assert.IsType<OkObjectResult>(
             await controller.Spin(request with
             {
-                NeonDiscoSpinsRemaining = trigger.NeonDiscoSpinsRemaining
+                NeonDiscoSpinsRemaining = trigger.NeonDiscoSpinsRemaining,
+                NeonDiscoWagerPoints = trigger.NeonDiscoWagerPoints
             }, CancellationToken.None)).Value);
         Assert.NotNull(play.NeonDiscoCascade);
+        Assert.Equal(trigger.ConsecutiveFiveMisses, play.EngineAudit!.PityMissesBefore);
         Assert.Empty(SlotEvidenceReplayAudit.Inspect(store.Capture!.Summary, store.Capture.PayloadJson));
     }
 

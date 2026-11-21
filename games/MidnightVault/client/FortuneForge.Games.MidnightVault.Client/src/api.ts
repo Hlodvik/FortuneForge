@@ -1,3 +1,4 @@
+import { createPreparedSlotSpinStore, isPreparedSlotSpin, preparedSlotSpinHeaders, preparedSlotSpinPath, type PreparedSlotSpin } from '@fortuneforge/slot-client-core/preparedSpin'
 import {
   MIDNIGHT_GAME_ID,
   MIDNIGHT_SYMBOL_SET_ID,
@@ -13,7 +14,8 @@ import {
   type MidnightState,
 } from './types.js'
 
-type Problem = { error?: string; detail?: string; code?: string; available?: number; required?: number; freeSpinsRemaining?: number; retryAfterMilliseconds?: number }
+type Problem = { error?: string; detail?: string; code?: string; available?: number; required?: number; freeSpinsRemaining?: number; retryAfterMilliseconds?: number; pendingOperation?: unknown; preparedOperationPending?: boolean }
+const preparedSpins = createPreparedSlotSpinStore('midnight-vault')
 
 export class MidnightRequestError extends Error {
   readonly status: number
@@ -22,6 +24,7 @@ export class MidnightRequestError extends Error {
   readonly required?: number
   readonly freeSpinsRemaining?: number
   readonly retryAfterMilliseconds?: number
+  readonly problem: Problem | null
   constructor(message: string, status: number, problem: Problem | null) {
     super(message)
     this.name = 'MidnightRequestError'
@@ -31,6 +34,7 @@ export class MidnightRequestError extends Error {
     this.required = problem?.required
     this.freeSpinsRemaining = problem?.freeSpinsRemaining
     this.retryAfterMilliseconds = problem?.retryAfterMilliseconds
+    this.problem = problem
   }
 }
 
@@ -38,6 +42,9 @@ const record = (value: unknown): value is Record<string, unknown> => value !== n
 const natural = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 const positive = (value: unknown): value is number => natural(value) && value > 0
 const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value)
+const validWager = (value: unknown, free: boolean): value is number => natural(value) && value >= 2 && value <= 2_000 && (free || value % 2 === 0)
+const savedSpin = (value: unknown): value is PreparedSlotSpin =>
+  isPreparedSlotSpin(value) && validWager(value.wagerPoints, value.useFreeSpin)
 const symbol = (value: unknown) => typeof value === 'string' && (midnightSymbolIds as readonly string[]).includes(value)
 const mathModel = (value: unknown) => typeof value === 'string' && (midnightMathModelIds as readonly string[]).includes(value)
 const collectionId = (value: unknown): value is MidnightCollectionId =>
@@ -74,7 +81,9 @@ function state(value: unknown): value is Record<string, unknown> & Omit<Midnight
     natural(value.specialPointsBalance) && natural(value.energyBalance) &&
     Array.isArray(value.sealCollections) && value.sealCollections.every(collection) &&
     (value.bonusRound == null || round(value.bonusRound)) &&
-    (value.queuedBonusRounds === undefined || Array.isArray(value.queuedBonusRounds) && value.queuedBonusRounds.every(round))
+    (value.queuedBonusRounds === undefined || Array.isArray(value.queuedBonusRounds) && value.queuedBonusRounds.every(round)) &&
+    (value.pendingOperation == null || savedSpin(value.pendingOperation)) &&
+    (value.slotsCreditsBalance == null || finite(value.slotsCreditsBalance) && value.slotsCreditsBalance >= 0)
 }
 
 function normalizeState(value: Record<string, unknown> & Omit<MidnightState, 'bonusRound' | 'queuedBonusRounds'>): MidnightState {
@@ -87,6 +96,8 @@ function normalizeState(value: Record<string, unknown> & Omit<MidnightState, 'bo
     specialPointsBalance: value.specialPointsBalance,
     energyBalance: value.energyBalance,
     sealCollections: value.sealCollections,
+    ...(savedSpin(value.pendingOperation) && { pendingOperation: value.pendingOperation }),
+    ...(finite(value.slotsCreditsBalance) && { slotsCreditsBalance: value.slotsCreditsBalance }),
   }
 }
 
@@ -150,10 +161,45 @@ function normalizeSpin(value: MidnightSpinResult & Record<string, unknown>): Mid
   }
 }
 
-export function createMidnightApi(authenticatedFetch?: MidnightAuthenticatedFetch) {
+export function createMidnightApi(authenticatedFetch?: MidnightAuthenticatedFetch, accountId?: string) {
+  let preparedEnabled = false
   const authenticated = (path: string, init?: RequestInit) => {
     if (!authenticatedFetch) throw new Error('Midnight Vault requires an authenticated session for paid play.')
     return authenticatedFetch(path, init)
+  }
+  const pendingSpin = () => accountId ? preparedSpins.read(accountId) : undefined
+  async function loadState(): Promise<MidnightState> {
+    const response = await authenticated(`/api/slots/state?gameId=${MIDNIGHT_GAME_ID}`, { method: 'GET', headers: preparedSlotSpinHeaders(accountId) })
+    const value = await responseJson(response)
+    if (!state(value)) throw new Error('The Midnight Vault server returned an invalid bonus state.')
+    preparedEnabled = response.headers.get('X-FortuneForge-Prepared-Spin') === '1'
+    if (preparedEnabled && accountId && savedSpin(value.pendingOperation) && !pendingSpin())
+      preparedSpins.remember(accountId, value.pendingOperation)
+    return normalizeState(value)
+  }
+  async function submit(terms: Omit<PreparedSlotSpin, 'operationId'>, operation?: PreparedSlotSpin, deferAcknowledgement = false) {
+    if (operation && !preparedEnabled) throw new Error('The saved spin is waiting for the Midnight Vault server.')
+    const { wagerPoints, useFreeSpin, useSpecialBoost } = terms
+    try {
+      const response = await authenticated(operation ? preparedSlotSpinPath : '/api/slots/spins', {
+        method: 'POST',
+        headers: preparedSlotSpinHeaders(accountId, operation?.operationId),
+        body: JSON.stringify({ gameId: MIDNIGHT_GAME_ID, wagerPoints, useFreeSpin, useSpecialBoost }),
+      })
+      const value = await responseJson(response)
+      if (!isMidnightSpinResult(value) || (operation && (value.wagerPoints !== wagerPoints || value.isFreeSpin !== useFreeSpin)))
+        throw new Error('The Midnight Vault server returned an invalid reel result.')
+      if (operation && accountId && !deferAcknowledgement) preparedSpins.forget(accountId, operation.operationId)
+      return normalizeSpin(value as MidnightSpinResult & Record<string, unknown>)
+    } catch (error) {
+      if (operation && accountId && error instanceof MidnightRequestError) {
+        const replacement = error.problem?.pendingOperation
+        if (savedSpin(replacement)) preparedSpins.remember(accountId, replacement)
+        else if (error.status === 400 || error.code === 'slot-prepared-start-paused' ||
+          (error.status === 409 && error.problem?.preparedOperationPending !== true)) preparedSpins.forget(accountId, operation.operationId)
+      }
+      throw error
+    }
   }
   return {
     async availability(signal: AbortSignal) {
@@ -162,27 +208,38 @@ export function createMidnightApi(authenticatedFetch?: MidnightAuthenticatedFetc
       })
       if (response.status !== 204) throw new Error('The Midnight Vault game service is offline.')
     },
-    async state(): Promise<MidnightState> {
-      const value = await responseJson(await authenticated(`/api/slots/state?gameId=${MIDNIGHT_GAME_ID}`, { method: 'GET' }))
-      if (!state(value)) throw new Error('The Midnight Vault server returned an invalid bonus state.')
-      return normalizeState(value)
+    state: loadState,
+    pendingSpin,
+    async resumeSpin() {
+      const operation = pendingSpin()
+      if (!operation) return undefined
+      const result = await submit(operation, operation, true)
+      const latest = await loadState()
+      if (accountId) {
+        preparedSpins.forget(accountId, operation.operationId)
+        if (latest.pendingOperation) preparedSpins.remember(accountId, latest.pendingOperation)
+      }
+      return { result, state: latest }
     },
     async spin(request: MidnightSpinRequest, demo: boolean): Promise<MidnightSpinResult> {
-      if (!Number.isSafeInteger(request.wagerPoints) || request.wagerPoints < 2 || request.wagerPoints > 2_000 ||
-        (!request.useFreeSpin && request.wagerPoints % 2 !== 0)) {
+      if (!validWager(request.wagerPoints, request.useFreeSpin)) {
         throw new Error('Midnight Vault received an invalid wager for this round.')
       }
+      if (!demo) {
+        const saved = pendingSpin()
+        if (saved) return submit(saved, saved)
+        const terms = { wagerPoints: request.wagerPoints, useFreeSpin: request.useFreeSpin, useSpecialBoost: false }
+        const operation = preparedEnabled && accountId ? { ...terms, operationId: crypto.randomUUID() } : undefined
+        if (operation && accountId) preparedSpins.remember(accountId, operation)
+        return submit(terms, operation)
+      }
       const common = { gameId: MIDNIGHT_GAME_ID, wagerPoints: request.wagerPoints, useFreeSpin: request.useFreeSpin }
-      const response = demo
-        ? await fetch('/api/slots/demo/spins', {
+      const response = await fetch('/api/slots/demo/spins', {
             method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...common, freeSpinsRemaining: request.state.freeSpinsRemaining,
               freeSpinWagerPoints: request.state.freeSpinWagerPoints, energyBalance: 0,
               sealCollections: request.state.sealCollections, freeSpinFeatureMode: request.state.freeSpinFeatureMode,
               midnightBonusState: request.demoState }),
-          })
-        : await authenticated('/api/slots/spins', {
-            method: 'POST', body: JSON.stringify({ ...common, useSpecialBoost: false }),
           })
       const value = await responseJson(response)
       if (!isMidnightSpinResult(value)) throw new Error('The Midnight Vault server returned an invalid reel result.')

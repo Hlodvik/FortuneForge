@@ -3,12 +3,9 @@ using System.Text;
 using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.GodsOfOlympus;
-using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
-using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Accounts.Storage;
 using FortuneForge.Server.Admin.Operations;
-using FortuneForge.Server.Controllers;
 using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.SecurityAudit;
 using FortuneForge.Server.Slots.Bonuses;
@@ -19,9 +16,6 @@ using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
 using FortuneForge.Server.Slots.Spins;
 using Google.Cloud.Firestore;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
 
@@ -126,30 +120,18 @@ public sealed class OlympusPaidFirestoreTests(MidnightVaultPaidEmulatorFixture e
         });
         var bank = player.Database.Collection("userBalances").Document(UserId + "_freeGames:" + GameId);
         await bank.SetAsync(new Dictionary<string, object> { ["available"] = 2L, ["version"] = 0L });
-        var accessor = new HttpContextAccessor();
-        var accountService = new AccountService(player.Store, null!, null!, accessor);
-        var controller = new SlotsController(Engine(new QuietDraws()), accountService, NullLogger<SlotsController>.Instance);
-        Task<ActionResult> Spin(long wagerPoints, bool useFreeSpin)
-        {
-            var context = new DefaultHttpContext();
-            context.Request.Headers.Cookie = AccountSessionCookie.Name + "=" + player.Token;
-            accessor.HttpContext = context;
-            controller.ControllerContext = new ControllerContext { HttpContext = context };
-            return controller.Spin(new(GameId, wagerPoints, useFreeSpin, false), default);
-        }
+        var legacy = new LegacySlotSettlementHarness(player.Store, Engine(new QuietDraws()), UserId, GameId);
 
-        var cash = Assert.IsAssignableFrom<ObjectResult>(await Spin(2, false));
-        Assert.Equal(StatusCodes.Status409Conflict, cash.StatusCode);
-        var error = JsonSerializer.SerializeToElement(cash.Value, Json);
-        Assert.Equal("free-spins-required", error.GetProperty("code").GetString());
+        await Assert.ThrowsAsync<SlotFreeSpinsRequiredException>(() => legacy.SpinAsync(2, false, false));
         Assert.Equal(2L, (await bank.GetSnapshotAsync()).GetValue<long>("available"));
         Assert.Empty((await player.Database.Collection("slotSpinAdmissions").GetSnapshotAsync()).Documents);
         Assert.Empty((await player.Database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
 
-        var result = Assert.IsType<SpinResult>(Assert.IsType<OkObjectResult>(await Spin(3, true)).Value);
+        var (result, settlement) = await legacy.SpinAsync(3, true, false);
         Assert.True(result.IsFreeSpin);
         Assert.Null(result.OlympusTumble);
         Assert.Equal(3L, result.WagerPoints);
+        Assert.Equal(1, settlement.FreeSpinsRemaining);
         Assert.Equal(1L, (await bank.GetSnapshotAsync()).GetValue<long>("available"));
         var guard = await player.Guard.GetSnapshotAsync();
         Assert.Equal(75L, guard.GetValue<long>("freeSpinWagerCents"));
@@ -170,9 +152,8 @@ public sealed class OlympusPaidFirestoreTests(MidnightVaultPaidEmulatorFixture e
         var store = new FirestoreAccountStore(database);
         Assert.NotNull((await store.CreateAsync(UserId, UserId, UserId.ToUpperInvariant(), UserId + "@example.test",
             "unused-local-test", "active", default)).Value);
-        var player = new PaidPlayer(database, store, Hash(UserId));
+        var player = new PaidPlayer(database, store);
         await player.Wallet.UpdateAsync(new Dictionary<string, object> { ["available"] = 1000L, ["availableFractionalCents"] = 0L });
-        await store.CreateSessionAsync(Hash(player.Token), UserId, DateTime.UtcNow, DateTime.UtcNow.AddHours(1), null, default);
         return player;
     }
 
@@ -204,7 +185,7 @@ public sealed class OlympusPaidFirestoreTests(MidnightVaultPaidEmulatorFixture e
 
     private static string Hash(string value) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
-    private sealed record PaidPlayer(FirestoreDb Database, FirestoreAccountStore Store, string Token)
+    private sealed record PaidPlayer(FirestoreDb Database, FirestoreAccountStore Store)
     {
         public DocumentReference Guard => Database.Collection("slotSpinGuards").Document(UserId + "_" + Hash(GameId));
         public DocumentReference Wallet => Database.Collection("userBalances").Document(UserId + "_slotsCredits");

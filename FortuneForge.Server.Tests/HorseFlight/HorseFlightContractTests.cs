@@ -1,8 +1,8 @@
+using FortuneForge.Games.HorseFlight;
 using FortuneForge.Server.Arcade.HorseFlight;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.HorseFlight;
@@ -22,14 +22,14 @@ public sealed class HorseFlightContractTests
     }
 
     [Fact]
-    public async Task DisabledFeature_ReturnsServiceUnavailableBeforeAccountOrStoreAccess()
+    public void DisabledFeature_ReturnsServiceUnavailableBeforeAccountOrStoreAccess()
     {
-        var controller = new HorseFlightController(null!, null!, new ConfigurationBuilder().Build(), NullLogger<HorseFlightController>.Instance);
+        var controller = new HorseFlightController(new ConfigurationBuilder().Build());
         var responses = new ActionResult[]
         {
-            await controller.Status(CancellationToken.None),
-            await controller.Start("horse-flight-start-0001", CancellationToken.None),
-            await controller.Complete(new string('a', 64), new CompleteHorseFlightRunRequest(1, []), "horse-flight-complete-01", CancellationToken.None),
+            controller.Status(),
+            controller.Start(),
+            controller.Complete(),
         };
 
         Assert.All(responses, response =>

@@ -1,7 +1,9 @@
 import { fetchWithAccountSession, getCurrentAccount } from '../../features/account/services/accountsApi'
+import { createPreparedSlotSpinStore, isPreparedSlotSpin, preparedSlotSpinHeaders, preparedSlotSpinPath, type PreparedSlotSpin } from '@fortuneforge/slot-client-core/preparedSpin'
 
 const GAME_ID = 'empty-slots-v1'
 const CASCADE_ENGINE_VERSION = 'jade-dragon-cascade-v2'
+const preparedSpins = createPreparedSlotSpinStore('jade-dragon')
 const WAGER_POINT_VALUE_IN_CENTS = 25
 const REEL_COUNT = 5
 const CASCADE_ROWS = 4
@@ -146,32 +148,100 @@ export function validateJadeOutcome(value: unknown): Record<string, unknown> & {
   return value as Record<string, unknown> & { reels: string[][]; slotsCreditsBalance: number }
 }
 
+class JadeRequestError extends Error {
+  readonly status: number
+  readonly problem: Record<string, unknown> | null
+
+  constructor(status: number, problem: Record<string, unknown> | null) {
+    super(typeof problem?.error === 'string' ? problem.error : `Game service returned HTTP ${status}.`)
+    this.status = status
+    this.problem = problem
+  }
+}
+
 async function json(response: Response) {
-  const value: unknown = await response.json()
-  if (!response.ok) throw new Error(isRecord(value) && typeof value.error === 'string' ? value.error : `Game service returned HTTP ${response.status}.`)
+  const value: unknown = await response.json().catch(() => null)
+  if (!response.ok) throw new JadeRequestError(response.status, isRecord(value) ? value : null)
   return value
 }
 
-export async function loadJadeSession() {
-  const [account, state, rules] = await Promise.all([
-    getCurrentAccount(),
-    fetchWithAccountSession(`/api/slots/state?gameId=${GAME_ID}`, { method: 'GET' }).then(json),
-    fetch('/api/slots/jade-dragon/presentation', { cache: 'no-store' }).then(json),
-  ])
-  if (!isRecord(state) || !natural(state.freeSpinsRemaining) ||
-    !(state.freeSpinWagerPoints === null || natural(state.freeSpinWagerPoints)) ||
-    !natural(state.specialPointsBalance) || !Array.isArray(state.sealCollections) ||
-    !isRecord(rules) || rules.gameId !== GAME_ID || !Array.isArray(rules.symbols) ||
-    !Number.isFinite(account.balances.slotsCredits) || account.balances.slotsCredits < 0) throw new Error('Game state could not be loaded. Reload to retry.')
-  return { state, rules, balanceCents: Math.round(account.balances.slotsCredits * 100) }
+function validState(state: unknown): state is Record<string, unknown> {
+  return isRecord(state) && natural(state.freeSpinsRemaining) &&
+    (state.freeSpinWagerPoints === null || natural(state.freeSpinWagerPoints)) &&
+    natural(state.specialPointsBalance) && Array.isArray(state.sealCollections) &&
+    (state.pendingOperation == null || isPreparedSlotSpin(state.pendingOperation))
 }
 
-export async function spinJade(payload: unknown) {
-  const request = validateJadeSpinRequest(payload)
-  // Send once. Never retry a financial POST after a timeout or ambiguous transport error.
-  const result = validateJadeOutcome(await json(await fetchWithAccountSession('/api/slots/spins', {
-    method: 'POST', body: JSON.stringify(request),
-  })))
-  if (result.wagerPoints !== request.wagerPoints || result.isFreeSpin !== request.useFreeSpin) throw new Error('The settled response does not match the requested round. Reload to recover.')
-  return { ...result, balanceCents: Math.round(result.slotsCreditsBalance * 100) }
+export function createJadeGameApi(accountId: string) {
+  let preparedEnabled = false
+  async function loadState() {
+    const response = await fetchWithAccountSession(`/api/slots/state?gameId=${GAME_ID}`, { method: 'GET', headers: preparedSlotSpinHeaders(accountId) })
+    const state = await json(response)
+    if (!validState(state)) throw new Error('Game state could not be loaded. Reload to retry.')
+    preparedEnabled = response.headers.get('X-FortuneForge-Prepared-Spin') === '1'
+    if (preparedEnabled && isPreparedSlotSpin(state.pendingOperation) && !preparedSpins.read(accountId))
+      preparedSpins.remember(accountId, state.pendingOperation)
+    return state
+  }
+
+  async function submit(request: ReturnType<typeof validateJadeSpinRequest>, operation?: PreparedSlotSpin) {
+    if (operation && !preparedEnabled) throw new Error('The saved spin is waiting for the Jade Dragon server.')
+    try {
+      const result = validateJadeOutcome(await json(await fetchWithAccountSession(operation ? preparedSlotSpinPath : '/api/slots/spins', {
+        method: 'POST', body: JSON.stringify(request),
+        headers: preparedSlotSpinHeaders(accountId, operation?.operationId),
+      })))
+      if (result.wagerPoints !== request.wagerPoints || result.isFreeSpin !== request.useFreeSpin)
+        throw new Error('The settled response does not match the requested round. Reload to recover.')
+      if (operation) preparedSpins.forget(accountId, operation.operationId)
+      return { ...result, balanceCents: Math.round(result.slotsCreditsBalance * 100) }
+    } catch (error) {
+      if (operation && error instanceof JadeRequestError) {
+        const replacement = error.problem?.pendingOperation
+        if (isPreparedSlotSpin(replacement)) preparedSpins.remember(accountId, replacement)
+        else if (error.status === 400 || (error.status === 409 && error.problem?.preparedOperationPending !== true) ||
+          error.problem?.code === 'slot-prepared-start-paused') preparedSpins.forget(accountId, operation.operationId)
+      }
+      throw error
+    }
+  }
+
+  function submitSaved(operation: PreparedSlotSpin) {
+    const { wagerPoints, useFreeSpin, useSpecialBoost } = operation
+    return submit({ gameId: GAME_ID, wagerPoints, useFreeSpin, useSpecialBoost,
+      jadeDragonEngineVersion: CASCADE_ENGINE_VERSION }, operation)
+  }
+
+  return {
+    async loadSession() {
+      const [initialAccount, initialState, rules] = await Promise.all([
+        getCurrentAccount(), loadState(), fetch('/api/slots/jade-dragon/presentation', { cache: 'no-store' }).then(json),
+      ])
+      let account = initialAccount
+      let state = initialState
+      if (account.userId !== accountId || !isRecord(rules) || rules.gameId !== GAME_ID || !Array.isArray(rules.symbols))
+        throw new Error('Game state could not be loaded. Reload to retry.')
+      const operation = preparedSpins.read(accountId)
+      if (operation) {
+        try {
+          await submitSaved(operation)
+        } catch (error) {
+          if (preparedSpins.read(accountId)) throw error
+        }
+        [account, state] = await Promise.all([getCurrentAccount(), loadState()])
+      }
+      if (account.userId !== accountId || !nonnegative(account.balances.slotsCredits))
+        throw new Error('Game state could not be loaded. Reload to retry.')
+      return { state, rules, balanceCents: Math.round(account.balances.slotsCredits * 100) }
+    },
+    async spin(payload: unknown) {
+      const request = validateJadeSpinRequest(payload)
+      if (preparedSpins.read(accountId)) throw new Error('Reload Jade Dragon to recover the current spin first.')
+      if (!preparedEnabled) return submit(request)
+      const operation = { operationId: crypto.randomUUID(), wagerPoints: request.wagerPoints,
+        useFreeSpin: request.useFreeSpin, useSpecialBoost: request.useSpecialBoost }
+      preparedSpins.remember(accountId, operation)
+      return submitSaved(operation)
+    },
+  }
 }

@@ -105,7 +105,8 @@ internal sealed class FirestoreManagedPlayerAssignmentStore(
                 transaction.GetSnapshotAsync(User(profileId), cancellationToken));
             var snapshot = snapshots[0];
             if (!FirestoreManagedPlayerProfileRepository.IsManagedPlayer(snapshots[1])) return false;
-            if (!snapshot.Exists || ReadString(snapshot, "assignmentId") != assignmentId) return false;
+            if (!snapshot.Exists || ReadString(snapshot, "assignmentId") != assignmentId ||
+                ReadString(snapshot, "gameId") != gameId) return false;
             transaction.Set(reference, AssignmentData(
                 profileId, gameId, assignmentId, ReadTimestamp(snapshot, "reservedAt"), nowUtc), SetOptions.MergeAll);
             return true;
@@ -160,8 +161,11 @@ internal sealed class FirestoreManagedPlayerAssignmentStore(
         CancellationToken cancellationToken) =>
         ReleaseCoreAsync(profileId, assignmentId, null, nowUtc, cancellationToken);
 
+    public Task<bool> ReleaseForGameAsync(string profileId, string gameId, string assignmentId, DateTime nowUtc,
+        CancellationToken cancellationToken) => ReleaseCoreAsync(profileId, assignmentId, null, nowUtc, cancellationToken, gameId);
+
     private Task<bool> ReleaseCoreAsync(string profileId, string assignmentId, string? batchId,
-        DateTime nowUtc, CancellationToken cancellationToken) =>
+        DateTime nowUtc, CancellationToken cancellationToken, string? requiredGameId = null) =>
         database.RunTransactionAsync(async transaction =>
         {
             var reference = Assignment(profileId);
@@ -171,7 +175,8 @@ internal sealed class FirestoreManagedPlayerAssignmentStore(
             var snapshot = snapshots[0];
             var profile = snapshots[1];
             if (!FirestoreManagedPlayerProfileRepository.IsManagedPlayer(profile)) return false;
-            if (!snapshot.Exists || ReadString(snapshot, "assignmentId") != assignmentId) return false;
+            if (!snapshot.Exists || ReadString(snapshot, "assignmentId") != assignmentId ||
+                requiredGameId is not null && ReadString(snapshot, "gameId") != requiredGameId) return false;
             if (batchId is not null && (!IsPending(snapshot) || ReadString(snapshot, "reservationBatchId") != batchId))
                 return false;
             var storedWindowStart = ReadTimestamp(profile, "managedPlayWindowStartedAt");

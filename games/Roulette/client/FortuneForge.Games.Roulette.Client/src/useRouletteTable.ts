@@ -5,7 +5,7 @@ type Request = Omit<RouletteBet, 'betIndex' | 'playerId'>
 export type HistoryEntry = Readonly<{ roundId: string; pocket: number }>
 const spinTime = 1100
 
-/** Writes are never replayed: the server has no idempotency contract. */
+/** Renders authoritative tables; the gateway owns durable command replay. */
 export function useRouletteTable(gateway: RouletteGateway, playerId?: string) {
   const [status, setStatus] = useState<RouletteStatus | null>(null)
   const [round, setRound] = useState<RouletteRound | null>(null)

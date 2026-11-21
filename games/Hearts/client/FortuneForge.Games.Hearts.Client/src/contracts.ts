@@ -47,6 +47,7 @@ export interface HeartsOnboardingGateway {
 export interface HeartsGateway {
   paid?: HeartsPaidGateway
   onboarding?: HeartsOnboardingGateway
+  recoverSession?(signal?: AbortSignal): Promise<HeartsRecoveredSession | null>
   getStatus(signal?: AbortSignal): Promise<HeartsStatus>
   startTrial?(signal?: AbortSignal): Promise<HeartsMatch>
   cancelTrial?(matchId: string, signal?: AbortSignal): Promise<HeartsOnboardingState>
@@ -57,6 +58,12 @@ export interface HeartsGateway {
   advance(matchId: string, signal?: AbortSignal): Promise<HeartsMatch>
   nextRound(matchId: string, seed?: number, signal?: AbortSignal): Promise<HeartsMatch>
 }
+
+export type HeartsRecoveredSession = Readonly<
+  { kind: 'practice'; match: HeartsMatch } |
+  { kind: 'paid'; session: HeartsPaidSession } |
+  { kind: 'closed' }
+>
 
 export type HeartsPaidPlayer = Readonly<{ seat: HeartsSeat; displayName: string; isCurrentPlayer: boolean; hasLeft: boolean; entryCredits: number; payoutCredits: number }>
 export type HeartsPaidTable = Readonly<{ match: HeartsMatch; entryCredits: number; potCredits: number; payoutCredits: number; winnerSeats: readonly HeartsSeat[]; players: readonly HeartsPaidPlayer[]; actionDeadlineAtUtc: string | null; completedAtUtc: string | null }>

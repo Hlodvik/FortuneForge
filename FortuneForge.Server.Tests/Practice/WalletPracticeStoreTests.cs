@@ -1,7 +1,7 @@
+using FortuneForge.Games.SicBo.Server;
 using FortuneForge.Server.Cards.Baccarat;
 using FortuneForge.Server.Cards.CasinoWar;
 using FortuneForge.Server.Cards.VideoPoker;
-using FortuneForge.Server.Dice.SicBo;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Practice;

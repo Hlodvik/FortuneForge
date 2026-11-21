@@ -1,9 +1,13 @@
 // Edited: 2026-11-18T18:14:04-06:00 | Computer: Vinnabok
 using System.Text.Json;
+using FortuneForge.Games.ArcaneArchives;
 using ArcaneEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
 using ArcanePotions = FortuneForge.Games.ArcaneArchives.ArcanePotions;
 using FortuneForge.Games.GodsOfOlympus;
+using FortuneForge.Games.GoldFoundry.Server;
+using FortuneForge.Games.MidnightVault.Server;
 using FortuneForge.Games.JadeDragon;
+using FortuneForge.Games.JadeDragon.Server;
 using FortuneForge.Games.NeonNights;
 using FortuneForge.Games.Slots;
 using FortuneForge.Games.Slots.Runtime;
@@ -14,7 +18,6 @@ using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Games;
 using FortuneForge.Server.Slots.Models;
 using HostJadeEngine = FortuneForge.Server.Slots.Games.JadeDragon.JadeDragonEngine;
-using PackageJadeResult = FortuneForge.Games.JadeDragon.Models.SpinResult;
 
 namespace FortuneForge.Server.Slots.Spins;
 
@@ -26,20 +29,28 @@ internal static class PaidSlotWorker
         SlotSpinAdmission admission, CancellationToken cancellationToken)
     {
         var isArcane = gameId == ArcaneEngine.GameId;
+        var isNeon = gameId == NeonArcadeSlotDefinitions.GameId;
         var potion = ArcanePotions.ForSpin(admission.ArcanePotionsBefore, admission.IsFreeSpin);
-        if (isArcane && (admission.ArcaneTomeBefore is null || admission.ArcanePotionsBefore is null))
+        if (isArcane && (admission.ArcaneTomeBefore is null || admission.ArcanePotionsBefore is null) ||
+            admission.IsNeonDiscoPlay && !isNeon)
             throw new GameWorkerUnavailableException(gameId);
 
+        var arcane = isArcane
+            ? new PaidArcaneSpinOptions(ArcaneEngine.EngineVersion, admission.ArcaneTomeBefore!.ActivePage is not null,
+                potion is null ? null : new(potion.Id, potion.IngredientId, potion.Potency) { VariantId = potion.VariantId })
+            : null;
         var request = new PaidSlotOutcomeRequest(admission.AdmissionId, gameId, playerId, admission.WagerPoints,
             admission.IsFreeSpin, admission.SpecialBoostApplied, admission.EnergyBalance,
             admission.FreeSpinFeatureMode, admission.PityMissesBefore, admission.MathModelId)
         {
-            FreeSpinsRemaining = admission.FreeSpinsRemaining,
-            IsNeonDiscoPlay = admission.IsNeonDiscoPlay,
-            NeonDiscoMultiplier = admission.IsNeonDiscoPlay ? admission.NeonDiscoMultiplier : null,
-            Arcane = isArcane ? new(ArcaneEngine.EngineVersion, admission.ArcaneTomeBefore!.ActivePage is not null,
-                potion is null ? null : new(potion.Id, potion.IngredientId, potion.Potency) { VariantId = potion.VariantId }) : null
+            FreeSpinsRemaining = admission.FreeSpinsRemaining
         };
+        if (arcane is not null)
+            request = arcane.WriteTo(request);
+        else if (isNeon)
+            request = new PaidNeonSpinOptions(admission.IsNeonDiscoPlay,
+                admission.IsNeonDiscoPlay ? admission.NeonDiscoMultiplier : null).WriteTo(request);
+
         var response = await worker.InvokeAsync<PaidSlotOutcomeRequest, PaidSlotOutcomeResponse>(gameId, playerId,
             PaidSlotOutcomeProtocol.Route, request, cancellationToken);
         if (response.AdmissionId != admission.AdmissionId || response.GameId != gameId)
@@ -50,23 +61,31 @@ internal static class PaidSlotWorker
             T Read<T>() where T : class => response.Outcome.Deserialize<T>(Json)
                 ?? throw new JsonException("The game worker outcome is missing.");
 
+            SpinResult ReadJadeLegacy()
+            {
+                var frozen = Read<JadeLegacyOutcome>();
+                if (frozen.Result is null || frozen.Audit is null)
+                    throw new JsonException("The legacy Jade outcome is missing its replay audit.");
+                return HostJadeEngine.MapOutcome(frozen.Result with { EngineAudit = frozen.Audit }, admission.IsFreeSpin);
+            }
+
             var result = response.OutcomeKind switch
             {
                 JadeDragonCascadeRules.Version when gameId == JadeDragonEngine.GameId && admission.MathModelId == JadeDragonCascadeRules.Version =>
                     Games.JadeDragon.JadeDragonCascadeAdapter.MapOutcome(Read<JadeDragonCascadeSpin>(), admission),
                 JadeDragonEngine.Version when gameId == JadeDragonEngine.GameId && admission.MathModelId is null && admission.IsFreeSpin =>
-                    HostJadeEngine.MapOutcome(Read<PackageJadeResult>(), admission.IsFreeSpin),
+                    ReadJadeLegacy(),
                 "neon-nights" when gameId == SlotSpecialRoundProfiles.NeonNightsGameId && admission.MathModelId is null =>
                     Games.NeonNights.NeonNightsEngine.MapOutcome(Read<NeonSpinOutcome>()),
-                "midnight-vault" when gameId == SlotSpecialRoundProfiles.DragonHoardGameId =>
+                MidnightVaultPaidSlotOutcomes.OutcomeKind when gameId == SlotSpecialRoundProfiles.DragonHoardGameId =>
                     Games.MidnightVault.MidnightVaultEngine.MapOutcome(Read<FortuneForge.Games.MidnightVault.MidnightVaultSpinOutcome>()),
-                "gold-foundry" when gameId == FortuneForge.Games.GoldFoundry.GoldFoundryEngine.GameId && admission.MathModelId is null =>
+                GoldFoundryPaidSlotOutcomes.OutcomeKind when gameId == FortuneForge.Games.GoldFoundry.GoldFoundryEngine.GameId && admission.MathModelId is null =>
                     Games.GoldFoundry.GoldFoundryEngine.MapOutcome(Read<FortuneForge.Games.GoldFoundry.GoldFoundrySpinOutcome>()),
                 PaidSlotOutcomeProtocol.OlympusTumbleKind when gameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId &&
                     OlympusTumbleDemo.SupportsPaidEngineVersion(admission.MathModelId) =>
                     StandaloneSlotPackageRegistry.MapTumble(Read<GodsOfOlympusTumbleSpinOutcome>(), showcase: false,
                         admission.PityMissesBefore, admission.EnergyBalance),
-                PaidSlotOutcomeProtocol.ArcaneSlotKind when isArcane =>
+                ArcanePaidSlotOutcomes.OutcomeKind when isArcane =>
                     StandaloneSlotPackageRegistry.MapOutcome(Read<ClassicSlotSpinOutcome>(), potion),
                 PaidSlotOutcomeProtocol.ClassicSlotKind when !isArcane &&
                     StandaloneSlotPackageRegistry.Owns(gameId) && admission.MathModelId is null =>
@@ -82,13 +101,12 @@ internal static class PaidSlotWorker
                 admission.MathModelId is { } model && model != audit.EngineVersion && model != result.PaytableId)
                 throw new JsonException("The worker outcome differs from the admitted play.");
 
-            if (isArcane &&
-                (audit.EngineVersion != request.Arcane!.EngineVersion ||
+            if (arcane is not null &&
+                (audit.EngineVersion != arcane.EngineVersion ||
                  !ArcaneEngine.MatchesTomeState(result.ReelSetId, admission.ArcaneTomeBefore!)))
                 throw new JsonException("The Arcane worker outcome differs from the admitted engine or Tome state.");
 
-            var isNeon = gameId == SlotSpecialRoundProfiles.NeonNightsGameId;
-            var isCarPlay = isNeon && admission.IsFreeSpin && admission.FreeSpinFeatureMode == NeonArcadeBonus.PaidCarFeatureMode;
+            var isCarPlay = isNeon && NeonCarRoundState.IsCarPlay(admission.IsFreeSpin, admission.FreeSpinFeatureMode);
             if (isNeon && audit.FreeSpinFeatureMode != admission.FreeSpinFeatureMode)
                 throw new JsonException("The Neon worker outcome differs from the admitted feature mode.");
 

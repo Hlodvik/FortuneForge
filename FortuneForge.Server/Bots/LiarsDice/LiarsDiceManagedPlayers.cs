@@ -2,31 +2,16 @@ using FortuneForge.Server.Games.LiarsDice;
 
 namespace FortuneForge.Server.Bots.LiarsDice;
 
-public sealed record LiarsDiceManagedPlayer(
-    string UserId,
-    string PlayerName,
-    int SkillLevel);
+public sealed record LiarsDiceManagedPlayer(string UserId, string PlayerName, int SkillLevel)
+    : FortuneForge.Games.LiarsDice.LiarsDiceManagedPlayer(UserId, PlayerName, SkillLevel);
 
+// Existing host integrations retain their roster interface; the game adapter owns conversion.
 public interface ILiarsDiceManagedPlayerRoster
 {
-    Task<IReadOnlyList<LiarsDiceManagedPlayer>> ReserveAsync(
-        string assignmentId,
-        int count,
-        IReadOnlyCollection<string> excludedProfileIds,
-        DateTime nowUtc,
-        CancellationToken cancellationToken);
-
-    Task HeartbeatAsync(
-        string assignmentId,
-        IReadOnlyCollection<string> profileIds,
-        DateTime nowUtc,
-        CancellationToken cancellationToken);
-
-    Task ReleaseAsync(
-        string assignmentId,
-        IReadOnlyCollection<string> profileIds,
-        DateTime nowUtc,
-        CancellationToken cancellationToken);
+    Task<IReadOnlyList<LiarsDiceManagedPlayer>> ReserveAsync(string assignmentId, int count,
+        IReadOnlyCollection<string> excludedProfileIds, DateTime nowUtc, CancellationToken cancellationToken);
+    Task HeartbeatAsync(string assignmentId, IReadOnlyCollection<string> profileIds, DateTime nowUtc, CancellationToken cancellationToken);
+    Task ReleaseAsync(string assignmentId, IReadOnlyCollection<string> profileIds, DateTime nowUtc, CancellationToken cancellationToken);
 }
 
 internal sealed class LiarsDiceManagedPlayerRoster(

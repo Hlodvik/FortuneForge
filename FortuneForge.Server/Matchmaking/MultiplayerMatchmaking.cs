@@ -1,28 +1,13 @@
 using FortuneForge.Server.Bots;
+using Shared = FortuneForge.Games.Abstractions.Matchmaking;
 
 namespace FortuneForge.Server.Matchmaking;
 
-internal sealed record MultiplayerQueueRules(
-    int MinimumHumanPlayers,
-    int MaximumHumanPlayers)
-{
-    public void Validate()
-    {
-        if (MinimumHumanPlayers < 1)
-            throw new ArgumentOutOfRangeException(nameof(MinimumHumanPlayers));
-        if (MaximumHumanPlayers < MinimumHumanPlayers)
-            throw new ArgumentOutOfRangeException(nameof(MaximumHumanPlayers));
-    }
-}
+internal sealed record MultiplayerQueueRules(int MinimumHumanPlayers, int MaximumHumanPlayers)
+    : Shared.MultiplayerQueueRules(MinimumHumanPlayers, MaximumHumanPlayers);
 
-internal sealed record MultiplayerQueuePlan<TTicket>(
-    IReadOnlyList<TTicket> HumanTickets)
-{
-    public bool IsReady => HumanTickets.Count > 0;
-
-    public int ManagedSeatsRequired(int targetOccupancy) =>
-        Math.Max(0, targetOccupancy - HumanTickets.Count);
-}
+internal sealed record MultiplayerQueuePlan<TTicket>(IReadOnlyList<TTicket> HumanTickets)
+    : Shared.MultiplayerQueuePlan<TTicket>(HumanTickets);
 
 internal interface IMultiplayerMatchmaker
 {
@@ -80,11 +65,7 @@ internal sealed class MultiplayerMatchmaker(
         Func<TTable, bool> canAcceptHuman,
         Func<TTable, DateTime> createdAtUtc,
         Func<TTable, string> tableId)
-        where TTable : class =>
-        tables.Where(canAcceptHuman)
-            .OrderBy(createdAtUtc)
-            .ThenBy(tableId, StringComparer.Ordinal)
-            .FirstOrDefault();
+        where TTable : class => Shared.MultiplayerQueuePolicy.FindLiveTable(tables, canAcceptHuman, createdAtUtc, tableId);
 
     public MultiplayerQueuePlan<TTicket> PlanQueue<TTicket>(
         IEnumerable<TTicket> tickets,
@@ -94,17 +75,7 @@ internal sealed class MultiplayerMatchmaker(
         Func<TTicket, DateTime> joinedAtUtc,
         Func<TTicket, DateTime> graceEndsAtUtc,
         Func<TTicket, string> ticketId)
-    {
-        rules.Validate();
-        var eligible = tickets.Where(isEligible)
-            .OrderBy(joinedAtUtc)
-            .ThenBy(ticketId, StringComparer.Ordinal)
-            .ToArray();
-        if (eligible.Length < rules.MinimumHumanPlayers ||
-            nowUtc < graceEndsAtUtc(eligible[0]))
-            return new([]);
-        return new(eligible.Take(rules.MaximumHumanPlayers).ToArray());
-    }
+        => new(Shared.MultiplayerQueuePolicy.PlanQueue(tickets, rules, nowUtc, isEligible, joinedAtUtc, graceEndsAtUtc, ticketId).HumanTickets);
 
     private static IReadOnlyList<ManagedPlayerProfile> CreateEphemeralManagedPlayers(
         string gameId,

@@ -36,7 +36,10 @@ export function historyEntry(match: LiarsDiceMatch): LiarsDiceHistoryEntry | nul
 export function appendRoundHistory(history: readonly LiarsDiceHistoryEntry[], match: LiarsDiceMatch, limit = 8): readonly LiarsDiceHistoryEntry[] {
   if (!Number.isSafeInteger(limit) || limit <= 0) return []
   const entry = historyEntry(match)
-  const entries = entry ? [entry, ...history] : history
+  const restored = [...(match.resolvedRounds ?? [])].reverse().map(round => ({
+    matchId: match.matchId, round: round.roundNumber, text: resolvedOutcomeLabel({ ...match, outcome: round.outcome })!,
+  }))
+  const entries = [...(entry ? [entry] : []), ...restored, ...history]
   const seen = new Set<string>()
   const result: LiarsDiceHistoryEntry[] = []
   for (const item of entries) {

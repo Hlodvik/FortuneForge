@@ -22,7 +22,7 @@ export function useMinesSession(gateway:MinesGateway,playerId:string,onBalanceCh
       accept(await gateway.getSession())
       clearPending(playerId);pending.current=null;setNeedsRecovery(false)
     }catch(cause){
-      const definite=cause instanceof MinesGatewayError&&cause.status>=400&&cause.status<500&&cause.status!==408&&cause.status!==429
+      const definite=cause instanceof MinesGatewayError&&cause.status>=400&&cause.status<500&&cause.status!==401&&cause.status!==408&&cause.status!==429&&cause.code!=='game-session-changed'
       if(definite){
         try{accept(await gateway.getSession());clearPending(playerId);pending.current=null;setNeedsRecovery(false)}
         catch{setNeedsRecovery(true)}

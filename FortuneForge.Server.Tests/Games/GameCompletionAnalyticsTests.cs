@@ -4,7 +4,6 @@ using FortuneForge.Server.Games.Craps;
 using FortuneForge.Server.Games.DropMerge;
 using FortuneForge.Server.Games.Roulette;
 using FortuneForge.Server.Games.TwentyFortyEight;
-using FortuneForge.Server.Matchmaking;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Games;
@@ -91,7 +90,7 @@ public sealed class GameCompletionAnalyticsTests
     [Fact]
     public void Roulette_records_all_actual_human_bettors_excludes_removed_bets_and_uses_new_round_identity()
     {
-        var sink = new RecordingSettlementSink(); var service = new RouletteGameService(new MultiplayerMatchmaker(), analytics: sink);
+        var sink = new RecordingSettlementSink(); var service = new RouletteGameService(analytics: sink);
         var round = service.Start("alice"); service.Start("bob"); service.Start("carol");
         service.PlaceBet("alice", round.RoundId, new("red", 2, null, []));
         service.PlaceBet("bob", round.RoundId, new("black", 2, null, []));

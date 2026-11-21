@@ -35,6 +35,19 @@ export type SolitaireFreeRunPause = Readonly<{
   elapsedMilliseconds: number
 }>
 
+export type SolitaireFreeRunState = Readonly<{
+  runId: string
+  seed: number
+  drawCount: SolitaireDrawCount
+  gameId: 'solitaire' | 'free-solitaire'
+  status: 'started' | 'completed'
+  startedAtUtc: string
+  isPaused: boolean
+  elapsedMilliseconds: number
+  completion: SolitaireFreeRunCompletion | null
+  commands: readonly SolitaireFreeReplayCommand[] | null
+}>
+
 export function createSolitaireFreeRunRequestId(): string {
   return `free_${createSolitaireRequestId().replaceAll('-', '_')}`
 }
@@ -70,6 +83,13 @@ export async function completeSolitaireFreeRun(
     },
   )
   return readFreeResponse(response, isCompletionResponse, 'Solitaire free-run completion')
+}
+
+export async function getSolitaireFreeRun(runId: string): Promise<SolitaireFreeRunState> {
+  const response = await fetchWithAccountSession(`/api/solitaire/free/runs/${encodeURIComponent(runId)}`)
+  const result = await readFreeResponse(response, isStateResponse, 'Solitaire free-run recovery')
+  if (result.runId !== runId) throw new Error('The server returned a different Solitaire free run.')
+  return result
 }
 
 export async function setSolitaireFreeRunPaused(runId: string, pause: boolean): Promise<SolitaireFreeRunPause> {
@@ -136,6 +156,31 @@ function isPauseResponse(value: unknown): value is SolitaireFreeRunPause {
     && value.runId.startsWith('solitaire_free_')
     && typeof value.isPaused === 'boolean'
     && isNonNegativeInteger(value.elapsedMilliseconds)
+}
+
+function isStateResponse(value: unknown): value is SolitaireFreeRunState {
+  if (!isRecord(value)
+    || typeof value.runId !== 'string'
+    || !value.runId.startsWith('solitaire_free_')
+    || !isUint32(value.seed)
+    || !isDrawCount(value.drawCount)
+    || (value.gameId !== 'solitaire' && value.gameId !== 'free-solitaire')
+    || typeof value.startedAtUtc !== 'string'
+    || typeof value.isPaused !== 'boolean'
+    || !isNonNegativeInteger(value.elapsedMilliseconds)) return false
+
+  if (value.status === 'started') return value.completion === null && value.commands === null
+  return value.status === 'completed'
+    && value.isPaused === false
+    && isCompletionResponse(value.completion)
+    && value.completion.runId === value.runId
+    && value.completion.seed === value.seed
+    && value.completion.drawCount === value.drawCount
+    && value.completion.gameId === value.gameId
+    && value.completion.elapsedMilliseconds === value.elapsedMilliseconds
+    && Array.isArray(value.commands)
+    && value.commands.every(command => isRecord(command)
+      && (command.type === 'draw' || command.type === 'flip' || command.type === 'move'))
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

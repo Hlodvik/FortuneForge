@@ -1,59 +1,25 @@
-using System.Buffers.Binary;
-using System.Security.Cryptography;
-using System.Text;
+using SharedManagedPlayers = FortuneForge.Games.Abstractions.ManagedPlayers;
 
 namespace FortuneForge.Server.Bots;
 
 internal static class ManagedPlayerSkillLevels
 {
-    public const int Poor = 2;
-    public const int Average = 3;
-    public const int Strong = 4;
+    public const int Poor = SharedManagedPlayers.ManagedPlayerSkillLevels.Poor;
+    public const int Average = SharedManagedPlayers.ManagedPlayerSkillLevels.Average;
+    public const int Strong = SharedManagedPlayers.ManagedPlayerSkillLevels.Strong;
 
-    public static void Validate(int value)
-    {
-        if (value is not Poor and not Average and not Strong)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(value),
-                "Difficulty must be exactly 2, 3, or 4.");
-        }
-    }
+    public static void Validate(int value) => SharedManagedPlayers.ManagedPlayerSkillLevels.Validate(value);
 }
 
-internal sealed class ManagedPlayerDecisionOptions
-{
-    public double AverageErrorRate { get; init; } = 0.12;
-    public double StrongImperfectionRate { get; init; } = 0.03;
-}
+internal sealed class ManagedPlayerDecisionOptions : SharedManagedPlayers.ManagedPlayerDecisionOptions;
 
 internal sealed class DeterministicManagedPlayerRandom(ulong seed, string stream)
 {
-    private ulong counter;
+    private readonly SharedManagedPlayers.DeterministicManagedPlayerRandom random = new(seed, stream);
 
-    public int Next(int exclusiveMaximum)
-    {
-        if (exclusiveMaximum <= 0) throw new ArgumentOutOfRangeException(nameof(exclusiveMaximum));
-        return (int)(NextUInt64() % (uint)exclusiveMaximum);
-    }
+    public int Next(int exclusiveMaximum) => random.Next(exclusiveMaximum);
 
-    public double NextDouble() =>
-        (NextUInt64() >> 11) * (1.0 / (1UL << 53));
+    public double NextDouble() => random.NextDouble();
 
-    public T Choose<T>(IReadOnlyList<T> values) =>
-        values.Count == 0
-            ? throw new ArgumentException("At least one value is required.", nameof(values))
-            : values[Next(values.Count)];
-
-    private ulong NextUInt64()
-    {
-        Span<byte> input = stackalloc byte[16];
-        BinaryPrimitives.WriteUInt64LittleEndian(input, seed);
-        BinaryPrimitives.WriteUInt64LittleEndian(input[8..], counter++);
-        var streamBytes = Encoding.UTF8.GetBytes(stream);
-        var payload = new byte[input.Length + streamBytes.Length];
-        input.CopyTo(payload);
-        streamBytes.CopyTo(payload.AsSpan(input.Length));
-        return BinaryPrimitives.ReadUInt64LittleEndian(SHA256.HashData(payload));
-    }
+    public T Choose<T>(IReadOnlyList<T> values) => random.Choose(values);
 }

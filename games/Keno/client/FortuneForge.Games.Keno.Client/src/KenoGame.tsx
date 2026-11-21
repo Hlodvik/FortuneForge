@@ -38,6 +38,8 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
   const mutedRef = useRef(muted)
   mutedRef.current = muted
   const roundRequestKey = useRef<string | null>(null)
+  const statusRevision = useRef(0)
+  const pendingDrawRequest = useRef<{ owner?: string; value: StoredPendingDraw } | null>(null)
   const pickAudioContext = useRef<AudioContext | null>(null)
   const drawAudioBuffer = useRef<AudioBuffer | null>(null)
   const drawAudioLoad = useRef<Promise<AudioBuffer | null> | null>(null)
@@ -64,12 +66,15 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
 
   useEffect(() => {
     const controller = new AbortController()
+    const revision = ++statusRevision.current
     void gateway.getStatus(controller.signal).then(nextStatus => {
+      if (controller.signal.aborted || revision !== statusRevision.current) return
       setStatus(nextStatus)
       setWager(current => isSupportedWager(nextStatus, current) ? current : nextStatus.minimumWager)
       setTableUnavailable(!nextStatus.available)
       setStatusError(nextStatus.available ? null : 'This table is temporarily unavailable. Please choose another game.')
     }).catch(reason => {
+      if (controller.signal.aborted || revision !== statusRevision.current) return
       if (reason instanceof DOMException && reason.name === 'AbortError') return
       const unavailable = isTableUnavailable(reason)
       setTableUnavailable(unavailable)
@@ -79,7 +84,9 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
   }, [gateway, statusLoadAttempt])
 
   useEffect(() => {
-    const pendingDraw = playerId ? readPendingDraw(playerId) : null
+    const pendingDraw = pendingDrawRequest.current && pendingDrawRequest.current.owner === playerId
+      ? pendingDrawRequest.current.value
+      : playerId ? readPendingDraw(playerId) : null
     if (!pendingDraw) {
       setRecovery('ready')
       return undefined
@@ -89,8 +96,13 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
     void gateway.createRound({ ticket: { numbers: pendingDraw.numbers }, wager: pendingDraw.wager }, {
       signal: controller.signal,
       idempotencyKey: pendingDraw.idempotencyKey,
-    }).then(nextRound => {
+    }).then(async nextRound => {
+      ++statusRevision.current
+      const currentStatus = await gateway.getStatus(controller.signal)
+      if (controller.signal.aborted) return
       clearPendingDraw(playerId)
+      pendingDrawRequest.current = null
+      roundRequestKey.current = null
       setSelectedNumbers([...nextRound.ticket.numbers])
       setWager(nextRound.wager)
       revealStartedAt.current = nowMilliseconds()
@@ -99,8 +111,10 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
       setBoardCleared(false)
       setRound(nextRound)
       setRevealedCount(0)
-      setStatus(current => current ? { ...current, balance: nextRound.balance } : current)
-      onBalanceChange?.(nextRound.balance)
+      setStatus(currentStatus)
+      setTableUnavailable(!currentStatus.available)
+      setStatusError(currentStatus.available ? null : 'This table is temporarily unavailable. Please choose another game.')
+      onBalanceChange?.(currentStatus.balance)
       setRecovery('ready')
       setError(null)
     }).catch(reason => {
@@ -154,6 +168,7 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
 
   const resetRound = () => {
     roundRequestKey.current = null
+    pendingDrawRequest.current = null
     stopDrawAudio(drawAudioSource)
     revealStartedAt.current = null
     completedAudioRound.current = null
@@ -208,10 +223,13 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
     completedAudioRound.current = null
     if (!mutedRef.current) void prepareDrawAudio(pickAudioContext, drawAudioBuffer, drawAudioLoad)
     const idempotencyKey = roundRequestKey.current ??= createRequestKey()
-    storePendingDraw(playerId, { idempotencyKey, numbers, wager: stake })
+    const pendingDraw = { idempotencyKey, numbers: [...numbers], wager: stake }
+    pendingDrawRequest.current = { owner: playerId, value: pendingDraw }
+    storePendingDraw(playerId, pendingDraw)
     void gateway.createRound({ ticket: { numbers }, wager: stake }, { idempotencyKey })
       .then(async nextRound => {
         roundRequestKey.current = null
+        pendingDrawRequest.current = null
         clearPendingDraw(playerId)
         setSelectedNumbers([...nextRound.ticket.numbers])
         setWager(nextRound.wager)
@@ -223,7 +241,18 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
         setStatus(current => current ? { ...current, balance: nextRound.balance } : current)
         onBalanceChange?.(nextRound.balance)
       })
-      .catch(reason => setError(messageForError(reason)))
+      .catch(reason => {
+        const rejected = reason instanceof KenoGatewayError &&
+          (reason.status === 400 || (reason.status === 409 && reason.code === 'insufficient-slot-credits'))
+        if (rejected) {
+          roundRequestKey.current = null
+          pendingDrawRequest.current = null
+          clearPendingDraw(playerId)
+        } else {
+          setRecovery('failed')
+        }
+        setError(messageForError(reason))
+      })
       .finally(() => setBusy(false))
   }
 

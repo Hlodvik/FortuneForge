@@ -27,7 +27,7 @@ export function useAndarBaharTable(gateway: AndarBaharGateway, playerId: string,
   const pending = useRef<PendingWager | null>(null), locked = useRef(true), scope = useRef(0), mounted = useRef(true)
   const wagerGeneration = useRef(0)
   const inFlight = useRef<{ controller: AbortController; generation: number } | null>(null)
-  const activeDeal = useRef<{ roundId: string; requestKey: string; generation: number; scope: number } | null>(null)
+  const activeDeal = useRef<{ roundId: string; requestKey: string; generation: number; scope: number; balance: number } | null>(null)
   const onBalance = useRef(onBalanceChange); onBalance.current = onBalanceChange
   const mute = useRef(muted); mute.current = muted
   const storageKey = `fortuneforge:andar-bahar:pending:${playerId}`
@@ -43,6 +43,13 @@ export function useAndarBaharTable(gateway: AndarBaharGateway, playerId: string,
       writeStorage(historyKey, JSON.stringify(items)); return items
     })
   }
+  async function recoveredStatus(signal?: AbortSignal) {
+    try { return await withAndarBaharRequestDeadline(next => gateway.getStatus(next), signal) }
+    catch (error) {
+      if (signal?.aborted) throw error
+      throw new AndarBaharGatewayError('Your deal is confirmed. Reconnect to refresh this account balance before playing again.', 'andar-bahar-balance-unavailable', 503)
+    }
+  }
   function finish(next: AndarBaharRound) {
     const deal = activeDeal.current
     if (!deal || deal.roundId !== next.roundId || deal.scope !== scope.current || deal.generation !== wagerGeneration.current) return
@@ -54,9 +61,9 @@ export function useAndarBaharTable(gateway: AndarBaharGateway, playerId: string,
     clearPending(storageKey, deal.requestKey)
     if (pending.current?.key === deal.requestKey) pending.current = null
     locked.current = false
-    setStatus(current => current ? { ...current, balance: next.balance } : current)
+    setStatus(current => current ? { ...current, balance: deal.balance } : current)
     setNotice(`${next.winner === 'andar' ? 'Andar' : 'Bahar'} matches the Joker on card ${next.deals.length}`)
-    onBalance.current?.(next.balance); record(next); playAndarBaharAudio(next.profit > 0 ? 'win' : 'result', mute.current)
+    onBalance.current?.(deal.balance); record(next); playAndarBaharAudio(next.profit > 0 ? 'win' : 'result', mute.current)
   }
   useEffect(() => {
     const requestScope = ++scope.current, abort = new AbortController()
@@ -76,7 +83,10 @@ export function useAndarBaharTable(gateway: AndarBaharGateway, playerId: string,
           try {
             const restored = await withAndarBaharRequestDeadline(signal => gateway.createRound(request.side, request.stake, { idempotencyKey: request.key, signal }), abort.signal)
             if (abort.signal.aborted || requestScope !== scope.current || generation !== wagerGeneration.current) return
-            activeDeal.current = { roundId: restored.roundId, requestKey: request.key, generation, scope: requestScope }
+            const liveStatus = await recoveredStatus(abort.signal)
+            if (abort.signal.aborted || requestScope !== scope.current || generation !== wagerGeneration.current) return
+            setStatus(liveStatus)
+            activeDeal.current = { roundId: restored.roundId, requestKey: request.key, generation, scope: requestScope, balance: liveStatus.balance }
             setRound(restored); setVisible(0); setPhase('dealing')
           } finally {
             if (inFlight.current?.generation === generation) inFlight.current = null
@@ -85,14 +95,18 @@ export function useAndarBaharTable(gateway: AndarBaharGateway, playerId: string,
           const latest = await withAndarBaharRequestDeadline(signal => gateway.getLatestRound(signal), abort.signal)
           if (abort.signal.aborted) return
           if (latest) {
+            const liveStatus = await recoveredStatus(abort.signal)
+            if (abort.signal.aborted || requestScope !== scope.current) return
+            setStatus(liveStatus)
             setRound(latest); setVisible(latest.deals.length); setSide(latest.side); setChips(chipsFor(latest.stake)); record(latest)
             setPreviousWager({ side: latest.side, stake: latest.stake })
-            setStatus({ ...nextStatus, balance: latest.balance }); setNotice('Last result restored · place a chip for a new round')
+            setNotice('Last result restored · place a chip for a new round')
           } else setNotice('Choose a chip, then choose your side')
           setPhase(latest ? 'result' : 'betting'); locked.current = false
         }
       } catch (e) {
         if (abort.signal.aborted) return
+        if (e instanceof AndarBaharGatewayError && e.code === 'andar-bahar-balance-unavailable') setStatus(current => current ? { ...current, available: false } : current)
         if (pending.current && !rejected(e)) { setPhase('recover'); setError(failure(e)); setNotice('Your deal is pending · restore it before playing again') }
         else {
           clearPending(storageKey, pending.current?.key); pending.current = null; locked.current = false; setPhase('betting')
@@ -140,10 +154,17 @@ export function useAndarBaharTable(gateway: AndarBaharGateway, playerId: string,
     try {
       const next = await withAndarBaharRequestDeadline(signal => gateway.createRound(request.side, request.stake, { idempotencyKey: request.key, signal }), controller.signal)
       if (!mounted.current || controller.signal.aborted || requestScope !== scope.current || generation !== wagerGeneration.current) return
-      activeDeal.current = { roundId: next.roundId, requestKey: request.key, generation, scope: requestScope }
+      let confirmedBalance = next.balance
+      if (restoring) {
+        const liveStatus = await recoveredStatus(controller.signal)
+        if (!mounted.current || controller.signal.aborted || requestScope !== scope.current || generation !== wagerGeneration.current) return
+        setStatus(liveStatus); confirmedBalance = liveStatus.balance
+      }
+      activeDeal.current = { roundId: next.roundId, requestKey: request.key, generation, scope: requestScope, balance: confirmedBalance }
       setRound(next); setPhase('dealing'); setNotice('Follow the cards · first match wins')
     } catch (e) {
       if (!mounted.current || controller.signal.aborted || requestScope !== scope.current || generation !== wagerGeneration.current) return
+      if (e instanceof AndarBaharGatewayError && e.code === 'andar-bahar-balance-unavailable') setStatus(current => current ? { ...current, available: false } : current)
       if (rejected(e)) {
         clearPending(storageKey, request.key); pending.current = null; locked.current = false; setPhase('betting')
         void withAndarBaharRequestDeadline(signal => gateway.getStatus(signal), controller.signal).then(next => { if (mounted.current && requestScope === scope.current && generation === wagerGeneration.current) setStatus(next) }).catch(() => undefined)

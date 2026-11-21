@@ -7,6 +7,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Google.Cloud.Firestore" Version="4.3.0" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Firestore/FortuneForge.Games.Firestore.csproj" />
     <ProjectReference Include="../../src/FortuneForge.Games.DragonTiger/FortuneForge.Games.DragonTiger.csproj" />
   </ItemGroup>
 </Project>

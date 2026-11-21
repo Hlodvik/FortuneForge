@@ -14,7 +14,7 @@ describe('Sic Bo route integration', () => {
     expect(pending).toContain('Loading Sic Bo…')
     expect(routesSource).toContain("import('./routes/SicBoRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/games/sic-bo')")
-    expect(routeSource).toContain("new HttpSicBoGateway('/api/games/sic-bo', fetchWithAccountSession)")
+    expect(routeSource).toContain("new HttpSicBoGateway('/api/games/sic-bo', fetchWithAccountSession, initialAccount.userId)")
   })
 })
 

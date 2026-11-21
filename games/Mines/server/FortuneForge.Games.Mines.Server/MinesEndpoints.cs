@@ -1,4 +1,5 @@
 using System.Text.Json;
+using FortuneForge.Games.Abstractions.Wallet;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 using Microsoft.AspNetCore.Builder;
@@ -79,7 +80,8 @@ public static class MinesEndpoints
         context.Response.Headers.CacheControl = "no-store, max-age=0";
         context.Response.Headers.Pragma = "no-cache";
         var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
-        if (!configuration.GetValue("Features:MinesEnabled", false))
+        if (context.RequestServices.GetRequiredService<IOptions<MinesServerOptions>>().Value.ForcePractice &&
+            !configuration.GetValue("Features:MinesEnabled", false))
             return Error(503, "mines-disabled", "Mines is not available yet.");
         try
         {
@@ -89,15 +91,21 @@ public static class MinesEndpoints
             var practice = options.ForcePractice || string.Equals(context.Request.Headers["X-FortuneForge-Practice"].ToString(), "true", StringComparison.OrdinalIgnoreCase);
             if (practice && !options.ForcePractice && !options.AllowPracticeRequests)
                 return Error(403, "mines-practice-disabled", "Mines uses your account credits. Practice play is not available.");
-            if (!practice && !configuration.GetValue("Features:MinesPaidEnabled", false))
-                return Error(503, "mines-paid-disabled", "Mines wagering is not available yet.");
+            if (practice && !configuration.GetValue("Features:MinesEnabled", false))
+                return Error(503, "mines-disabled", "Mines is not available yet.");
             if (write && !TrustedWrite(context, practice ? options.AllowedOrigins.Concat(options.PracticeOrigins) : options.AllowedOrigins))
                 return Error(403, "mines-origin-rejected", "This request must originate from the game page and use JSON.");
             IMinesStore store = practice ? context.RequestServices.GetRequiredService<FileMinesPracticeStore>()
-                : new FirestoreMinesStore(context.RequestServices.GetRequiredService<FirestoreDb>());
+                : new FirestoreMinesStore(context.RequestServices.GetService<FirestoreDb>() ?? throw new GameWalletUnavailableException(),
+                    context.RequestServices.GetService<IGameWalletClient>() ?? throw new GameWalletUnavailableException(),
+                    context.RequestServices.GetService<IGameWalletAccountReader>() ?? throw new GameWalletUnavailableException(),
+                    () => configuration.GetValue("Features:MinesEnabled", false) && configuration.GetValue("Features:MinesPaidEnabled", false));
             var result = await action(new MinesService(store), account.UserId);
             return created ? Results.Json(result, statusCode: 201) : Results.Ok(result);
         }
+        catch (MinesAdmissionClosedException exception) { return Error(503, "mines-paid-disabled", exception.Message); }
+        catch (GameWalletUnavailableException exception) { return Error(503, "mines-retry-required", exception.Message); }
+        catch (GameWalletConflictException exception) { return Error(409, "mines-conflict", exception.Message); }
         catch (MinesNotFoundException exception) { return Error(404, "mines-round-not-found", exception.Message); }
         catch (MinesConflictException exception) { return Error(409, "mines-conflict", exception.Message); }
         catch (MinesInsufficientFundsException exception) { return Error(409, "mines-insufficient-funds", exception.Message); }

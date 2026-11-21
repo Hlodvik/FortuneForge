@@ -33,6 +33,8 @@ export type SnakeGameState = Readonly<{
 
 export interface SnakeGateway {
   getStatus(signal?: AbortSignal): Promise<SnakeStatus>
+  recoverGame?(signal?: AbortSignal): Promise<SnakeGameState>
+  getGame?(gameId: string, signal?: AbortSignal): Promise<SnakeGameState>
   startGame(seed?: number, signal?: AbortSignal, options?: SnakeOptions): Promise<SnakeGameState>
   turn(gameId: string, direction: SnakeDirection, signal?: AbortSignal): Promise<SnakeGameState>
   tick(gameId: string, signal?: AbortSignal): Promise<SnakeGameState>

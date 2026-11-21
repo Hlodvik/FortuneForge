@@ -1,9 +1,11 @@
 using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Abstractions.Wallet;
 using FortuneForge.Games.Keno;
+using FortuneForge.Games.Keno.Server;
 using FortuneForge.Games.SicBo;
-using FortuneForge.Server.Dice.SicBo;
-using FortuneForge.Server.Numbers.Keno;
+using FortuneForge.Games.SicBo.Server;
+using FortuneForge.Server.Accounts.Storage;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.SecurityAudit;
@@ -12,7 +14,7 @@ namespace FortuneForge.Server.SecurityAudit;
 internal static class NumericEvidenceReplayAudit
 {
     internal static async Task<IReadOnlyList<RoundAuditFinding>> InspectFinancialAsync(
-        FirestoreDb database, RoundAuditSummary summary, CancellationToken ct)
+        FirestoreDb database, RoundAuditSummary summary, CancellationToken ct, string? payloadJson = null)
     {
         var keno = summary.GameId == "keno" && summary.AuditorVersion == KenoOutcomeAudit.Version;
         var sicBo = summary.GameId == "sic-bo" && summary.AuditorVersion == SicBoOutcomeAudit.Version;
@@ -48,6 +50,12 @@ internal static class NumericEvidenceReplayAudit
             Text(settled, "userId") != participant.ActorId || Text(settled, "event") != "settled" ||
             Text(settled, "idempotencyKey") != key)
             return Error("numeric-settlement-event-mismatch", "The draw game settlement event is missing or disagrees with its source round.");
+        if (source.ContainsField("walletProtocol"))
+        {
+            if (ledgers.Count != 0)
+                return Error("numeric-ledger-extra", "A signed draw game has a duplicate legacy wallet entry.");
+            return await InspectSignedWalletAsync(database, summary, source, participant, payloadJson, keno, ct);
+        }
         if (!WalletEntry(wager, participant.ActorId, -participant.WagerCents, name + "-wager", key) ||
             participant.PayoutCents > 0 && !WalletEntry(payout, participant.ActorId, participant.PayoutCents,
                 name + "-payout", key + "-payout") ||
@@ -64,6 +72,42 @@ internal static class NumericEvidenceReplayAudit
             !SameCents(afterPayout - afterWager, participant.PayoutCents))
             return Error("numeric-ledger-balance-mismatch", "The draw game balance sequence differs from its payout credit.");
         return [];
+    }
+
+    private static async Task<IReadOnlyList<RoundAuditFinding>> InspectSignedWalletAsync(FirestoreDb database,
+        RoundAuditSummary summary, DocumentSnapshot source, RoundAuditParticipant participant, string? payloadJson,
+        bool keno, CancellationToken ct)
+    {
+        try
+        {
+            if (Number(source, "walletProtocol") != 1 || payloadJson is null ||
+                GameSecurityEventDocuments.Hash(payloadJson) != summary.EvidenceSha256)
+                throw new InvalidOperationException();
+            using var document = JsonDocument.Parse(payloadJson);
+            var data = document.RootElement.GetProperty("data");
+            var outcomeJson = keno ? JsonSerializer.Serialize(ReadKeno(data)) : JsonSerializer.Serialize(ReadSicBo(data));
+            var outcomeHash = GameSecurityEventDocuments.Hash(outcomeJson);
+            var sourceHash = keno ? KenoWalletStore.ReadStoredOutcomeSha256(source) : SicBoWalletStore.ReadStoredOutcomeSha256(source);
+            if (Text(source, "outcomeSha256") != outcomeHash || sourceHash != outcomeHash) throw new InvalidOperationException();
+            var request = new GameWalletSettlementRequest(summary.RoundId, outcomeHash, participant.WagerCents, participant.PayoutCents);
+            var saved = JsonSerializer.Deserialize<GameWalletSettlementReceipt>(Text(source, "walletReceiptJson"));
+            if (saved is not { InsufficientFunds: false, WasAlreadySettled: false } ||
+                !GameWalletReceiptVerifier.MatchesSettlement(saved, summary.GameId, participant.ActorId, request) ||
+                Number(source, "settledBalanceCents") != saved.BalanceAfterCents ||
+                !source.TryGetValue<Timestamp>("settledAt", out var settledAt) || settledAt.ToDateTime() != saved.SettledAtUtc.UtcDateTime)
+                throw new InvalidOperationException();
+
+            var terms = WalletRoundSettlement.FromDirectRequest(summary.GameId, participant.ActorId, request);
+            var platform = await database.RunTransactionAsync(transaction => FirestoreWalletRoundSettlementStore.StageAsync(
+                database, transaction, terms, DateTimeOffset.UnixEpoch, ct, requireExisting: true), cancellationToken: ct);
+            if ((platform.ToWireReceipt() with { WasAlreadySettled = false }) == saved) return [];
+        }
+        catch (Exception exception) when (exception is JsonException or KeyNotFoundException or InvalidOperationException or
+            ArgumentException or ArithmeticException or FormatException or IndexOutOfRangeException)
+        {
+            // Report the durable evidence mismatch without exposing private snapshot contents.
+        }
+        return Error("numeric-signed-wallet-mismatch", "The frozen draw game and its signed wallet receipt could not be reconciled.");
     }
 
     internal static IReadOnlyList<RoundAuditFinding> Inspect(RoundAuditSummary summary, string payloadJson)
@@ -92,23 +136,14 @@ internal static class NumericEvidenceReplayAudit
                 return Error("numeric-replay-money-mismatch", "The saved draw-game money differs from its participant summary.");
             if (keno)
             {
-                var round = new KenoStoreRound(data.GetProperty("roundId").GetString() ?? "",
-                    data.GetProperty("userId").GetString() ?? "",
-                    new KenoTicket(Numbers(data.GetProperty("ticket").GetProperty("numbers"))),
-                    new KenoDraw(Numbers(data.GetProperty("draw").GetProperty("numbers"))),
-                    data.GetProperty("hitCount").GetInt32(), data.GetProperty("wagerCents").GetInt64(),
-                    data.GetProperty("payoutCents").GetInt64(), data.GetProperty("paytableId").GetString() ?? "");
+                var round = ReadKeno(data);
                 if (round.RoundId != summary.RoundId || round.UserId != participant.ActorId ||
                     round.WagerCents != wager || round.PayoutCents != payout || !KenoOutcomeAudit.Verify(round))
                     return Error("keno-draw-replay-mismatch", "The saved ticket, draw, paytable or payout does not independently resolve to the recorded Keno result.");
             }
             else
             {
-                var bets = JsonSerializer.Deserialize<List<SicBoStoredBet>>(
-                    data.GetProperty("bets").GetRawText(), RoundAuditCapture.Json) ?? throw new JsonException();
-                var round = new SicBoStoreRound(data.GetProperty("roundId").GetString() ?? "",
-                    data.GetProperty("userId").GetString() ?? "", bets,
-                    new SicBoRoll(Numbers(data.GetProperty("roll").GetProperty("values"))));
+                var round = ReadSicBo(data);
                 if (round.RoundId != summary.RoundId || round.UserId != participant.ActorId ||
                     !SicBoOutcomeAudit.Verify(round, wager, payout))
                     return Error("sic-bo-dice-replay-mismatch", "The saved bets, dice or gross return do not independently resolve to the recorded Sic Bo result.");
@@ -121,6 +156,16 @@ internal static class NumericEvidenceReplayAudit
             return Error("numeric-replay-evidence-invalid", "The private draw-game evidence cannot be parsed for independent replay.");
         }
     }
+
+    private static KenoStoreRound ReadKeno(JsonElement data) => new(data.GetProperty("roundId").GetString() ?? "",
+        data.GetProperty("userId").GetString() ?? "", new KenoTicket(Numbers(data.GetProperty("ticket").GetProperty("numbers"))),
+        new KenoDraw(Numbers(data.GetProperty("draw").GetProperty("numbers"))), data.GetProperty("hitCount").GetInt32(),
+        data.GetProperty("wagerCents").GetInt64(), data.GetProperty("payoutCents").GetInt64(), data.GetProperty("paytableId").GetString() ?? "");
+
+    private static SicBoStoreRound ReadSicBo(JsonElement data) => new(data.GetProperty("roundId").GetString() ?? "",
+        data.GetProperty("userId").GetString() ?? "",
+        JsonSerializer.Deserialize<SicBoStoredBet[]>(data.GetProperty("bets"), RoundAuditCapture.Json) ?? throw new JsonException(),
+        new SicBoRoll(Numbers(data.GetProperty("roll").GetProperty("values"))));
 
     private static int[] Numbers(JsonElement array) => array.EnumerateArray().Select(value => value.GetInt32()).ToArray();
 

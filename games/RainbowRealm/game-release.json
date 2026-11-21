@@ -6,6 +6,6 @@
     "manifestExport": "RAINBOW_REALM_SLOT_GAME"
   },
   "backend": {
-    "kind": "classic-slot"
+    "kind": "packaged-game"
   }
 }

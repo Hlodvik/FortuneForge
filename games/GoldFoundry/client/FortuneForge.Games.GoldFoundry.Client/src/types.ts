@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { GridPosition } from '@fortuneforge/slot-client-core'
+import type { PreparedSlotSpin } from '@fortuneforge/slot-client-core/preparedSpin'
 
 export const GOLD_FOUNDRY_GAME_ID = 'gold-foundry-v1'
 export const GOLD_FOUNDRY_SYMBOL_SET_ID = 'gold-foundry-symbols-v1'
@@ -31,6 +32,8 @@ export type GoldFoundryState = {
   freeSpinFeatureMode: null
   crucibleWageredCents: number
   cruciblePourValueCents: number
+  pendingOperation?: PreparedSlotSpin
+  slotsCreditsBalance?: number
 }
 
 export type GoldFoundryMatch = {

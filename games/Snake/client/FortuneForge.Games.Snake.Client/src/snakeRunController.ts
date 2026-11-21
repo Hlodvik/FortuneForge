@@ -58,7 +58,20 @@ export class SnakeRunController {
     if (!this.active || this.snapshot.busy) return
     this.publish({ speed, boardSize }); this.prepare(play)
   }
-  retry() { if (!this.active || this.snapshot.busy) return; this.prepare(false) }
+  retry() {
+    if (!this.active || this.snapshot.busy) return
+    const game = this.snapshot.game, getGame = this.gateway.getGame, recoverGame = this.gateway.recoverGame
+    if (!recoverGame && (!game || !getGame)) { this.prepare(false); return }
+    const lease = this.lease
+    this.publish({ busy: true, error: null })
+    const recovered = recoverGame ? recoverGame.call(this.gateway) : getGame!.call(this.gateway, game!.gameId)
+    const task = recovered.then(next => {
+      if (!this.current(lease)) return
+      this.plannedDirection = next.direction
+      this.publish({ game: next, busy: false, phase: next.phase === 'playing' ? 'paused' : next.phase, error: null })
+    }).catch(reason => { if (this.current(lease)) this.fail(reason, false) })
+    this.track(task, lease)
+  }
   configure(speed: SnakeSpeed, boardSize: number) {
     if (boardSize !== this.snapshot.boardSize) this.newGame(true, speed, boardSize)
     else { this.pause(); this.publish({ speed }) }
@@ -80,7 +93,7 @@ export class SnakeRunController {
           const status = await this.gateway.getStatus(controller.signal)
           if (!this.current(lease)) return
           if (!status.available) throw new SnakeGatewayError('Snake is unavailable right now.', 'unavailable', 503)
-          next = await this.gateway.startGame(undefined, controller.signal, options)
+          next = this.gateway.recoverGame ? await this.gateway.recoverGame(controller.signal) : await this.gateway.startGame(undefined, controller.signal, options)
         }
         if (!this.current(lease)) return
         this.plannedDirection = next.direction
@@ -127,7 +140,7 @@ export class SnakeRunController {
   }
   private fail(reason: unknown, opening: boolean) {
     this.stopTimer(); this.turns = []
-    this.publish({ phase: 'error', busy: false, pendingDirection: null, error: reason instanceof SnakeGatewayError ? reason.message : opening ? 'Snake could not be prepared. Try again.' : 'This run was interrupted. Start a new run.' })
+    this.publish({ phase: 'error', busy: false, pendingDirection: null, error: reason instanceof SnakeGatewayError ? reason.message : opening ? 'Snake could not be prepared. Try again.' : 'This run was interrupted. Check again to recover it.' })
   }
   private current(lease: number) { return this.active && this.lease === lease }
   private stopTimer() { if (this.timer !== null) clearTimeout(this.timer); this.timer = null }

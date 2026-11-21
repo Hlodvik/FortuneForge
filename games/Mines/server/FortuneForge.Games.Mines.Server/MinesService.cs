@@ -20,11 +20,12 @@ public sealed record MinesSessionResponse(long BalanceCents, bool Practice, Mine
     int PayoutPolicyVersion = MinesRules.LegacyPayoutPolicyVersion);
 public sealed record MinesErrorResponse(string Code, string Message);
 public sealed record MinesStoredRound(string RoundId, string UserId, MinesRoundState State, long Version,
-    DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt)
+    DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, string? ReservationSha256 = null)
 {
     public void Validate(string expectedUser)
     {
-        if (UserId != expectedUser || RoundId.Length != 64 || Version < 1 || UpdatedAt < CreatedAt)
+        if (UserId != expectedUser || RoundId.Length != 64 || Version < 1 || UpdatedAt < CreatedAt ||
+            ReservationSha256 is { } reservation && (reservation.Length != 64 || reservation.Any(c => !char.IsAsciiHexDigit(c))))
             throw new InvalidOperationException("The persisted Mines round identity is corrupt.");
         try { State.Validate(); }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or OverflowException)
@@ -163,3 +164,5 @@ public sealed class MinesService(IMinesStore store, MinesEngine? engine = null, 
     public static string Hash(string value) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
     internal static readonly JsonSerializerOptions StorageJson = new() { PropertyNameCaseInsensitive = true };
 }
+
+public sealed class MinesAdmissionClosedException() : Exception("Mines is not accepting new wagers.");

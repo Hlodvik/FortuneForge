@@ -13,7 +13,7 @@ export class HttpSicBoGateway implements SicBoGateway {
   readonly basePath: string
   private readonly requestFn: typeof fetch
 
-  constructor(basePath = '/api/games/sic-bo', requestFn: typeof fetch = (...args) => globalThis.fetch(...args)) {
+  constructor(basePath = '/api/games/sic-bo', requestFn: typeof fetch = (...args) => globalThis.fetch(...args), private readonly expectedAccountId?: string) {
     this.basePath = basePath.replace(/\/$/, '')
     this.requestFn = requestFn
   }
@@ -41,7 +41,9 @@ export class HttpSicBoGateway implements SicBoGateway {
 
   private async request<T>(path: string, init: RequestInit, validate: (value: unknown) => value is T): Promise<T> {
     let response: Response
-    try { response = await this.requestFn(`${this.basePath}${path}`, init) }
+    const boundInit = this.expectedAccountId ? { ...init, headers: new Headers(init.headers) } : init
+    if (this.expectedAccountId) (boundInit.headers as Headers).set('X-FortuneForge-Expected-Account', this.expectedAccountId)
+    try { response = await this.requestFn(`${this.basePath}${path}`, boundInit) }
     catch (error) {
       if (isAbortError(error)) throw error
       throw new SicBoGatewayError(error instanceof Error ? error.message : 'The Sic Bo request could not be completed.')
@@ -53,7 +55,7 @@ export class HttpSicBoGateway implements SicBoGateway {
     })
     if (!response.ok) {
       const error = isError(value) ? value : null
-      throw new SicBoGatewayError(error?.message ?? `The Sic Bo request failed (${response.status}).`, error?.code, response.status)
+      throw new SicBoGatewayError(error?.message ?? error?.error ?? `The Sic Bo request failed (${response.status}).`, error?.code, response.status)
     }
     if (!validate(value)) throw new SicBoGatewayError('The Sic Bo service returned an invalid response.')
     return value
@@ -158,7 +160,7 @@ function isNonNegativeFinite(value: unknown): value is number { return typeof va
 function isPositiveInteger(value: unknown): value is number { return typeof value === 'number' && Number.isSafeInteger(value) && value > 0 }
 function isFiniteNumber(value: unknown): value is number { return typeof value === 'number' && Number.isFinite(value) }
 function nearlyEqual(left: number, right: number): boolean { return Number.isFinite(left) && Number.isFinite(right) && Math.abs(left - right) <= Number.EPSILON * Math.max(1, Math.abs(left), Math.abs(right)) * 16 }
-function isError(value: unknown): value is { code: string; message: string } { return isRecord(value) && typeof value.code === 'string' && typeof value.message === 'string' }
+function isError(value: unknown): value is { code: string; message?: string; error?: string } { return isRecord(value) && typeof value.code === 'string' && (typeof value.message === 'string' || typeof value.error === 'string') }
 function createIdempotencyKey(): string {
   const random = typeof globalThis.crypto?.randomUUID === 'function'
     ? globalThis.crypto.randomUUID().replaceAll('-', '')

@@ -1,3 +1,4 @@
+import { createGameCommandRecovery } from '@fortuneforge/client-presentation/game-command-recovery'
 import { describe, expect, it, vi } from 'vitest'
 import { LiarsDiceGatewayError, type LiarsDiceMatch, type LiarsDicePlayer, type LiarsDiceStatus } from './contracts'
 import { HttpLiarsDiceGateway } from './httpLiarsDiceGateway'
@@ -239,4 +240,151 @@ describe('Liar’s Dice response consistency', () => {
   ])('rejects malformed or contradictory private match data', async value => {
     await expect(gatewayFor(value).getMatch(matchId)).rejects.toBeInstanceOf(LiarsDiceGatewayError)
   })
+})
+
+
+describe('durable Liar’s Dice command recovery', () => {
+  function journal(accountId = 'alice', saved = new Map<string, string>()) {
+    return createGameCommandRecovery({ accountId, gameId: 'liars-dice', routePrefix: '/api/games/liars-dice',
+      storage: { getItem: key => saved.get(key) ?? null, setItem: (key, value) => { saved.set(key, value) }, removeItem: key => { saved.delete(key) } } })
+  }
+  it('recovers a lost start response on remount before reading current state', async () => {
+    const recovery = journal()
+    const failed = vi.fn<typeof fetch>().mockRejectedValueOnce(new TypeError('response lost'))
+    await expect(new HttpLiarsDiceGateway(undefined, failed, recovery).startMatch({ dicePerPlayer: 5 })).rejects.toThrow('response lost')
+    const command = recovery.read().pending!
+    const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(response(opening)).mockResolvedValueOnce(response(bidding))
+    const recovered = await new HttpLiarsDiceGateway(undefined, transport, recovery).recoverMatch()
+    expect(recovered).toEqual(bidding)
+    expect(transport.mock.calls[0][1]?.body).toBe(command.body)
+    expect(new Headers(transport.mock.calls[0][1]?.headers).get('Idempotency-Key')).toBe(command.idempotencyKey)
+    expect(transport.mock.calls[1][0]).toBe('/api/games/liars-dice/matches/' + matchId)
+    expect(recovery.read()).toEqual({ activeBoardId: matchId, pending: null })
+  })
+  it('blocks a new command while an earlier result is unresolved and isolates accounts', async () => {
+    const saved = new Map<string, string>()
+    const recovery = journal('alice', saved)
+    const transport = vi.fn<typeof fetch>().mockRejectedValueOnce(new TypeError('offline'))
+    const gateway = new HttpLiarsDiceGateway(undefined, transport, recovery)
+    await expect(gateway.bid(matchId, { quantity: 1, face: 1 })).rejects.toThrow('offline')
+    await expect(gateway.challenge(matchId)).rejects.toThrow('Finish recovering')
+    expect(transport).toHaveBeenCalledTimes(1)
+    expect(journal('bob', saved).read()).toEqual({ activeBoardId: null, pending: null })
+  })
+  it.each(['bid', 'challenge', 'spot-on', 'next-round'])('reads a pending legacy %s without resubmitting it', async action => {
+    const recovery = journal()
+    const pending = recovery.prepare('/api/games/liars-dice/matches/' + matchId + '/' + action, action === 'bid' ? '{"quantity":1,"face":1}' : '')
+    const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(response(bidding))
+    expect(await new HttpLiarsDiceGateway(undefined, transport, recovery).recoverMatch()).toEqual(bidding)
+    expect(transport).toHaveBeenCalledExactlyOnceWith('/api/games/liars-dice/matches/' + matchId, { signal: undefined })
+    expect(recovery.read()).toEqual({ activeBoardId: matchId, pending: null })
+    expect(pending.idempotencyKey).toBeTruthy()
+  })
+  it.each([
+    { name: 'bid', invoke: (gateway: HttpLiarsDiceGateway, signal: AbortSignal) => gateway.bid(matchId, { quantity: 1, face: 1 }, signal) },
+    { name: 'challenge', invoke: (gateway: HttpLiarsDiceGateway, signal: AbortSignal) => gateway.challenge(matchId, signal) },
+    { name: 'spot-on', invoke: (gateway: HttpLiarsDiceGateway, signal: AbortSignal) => gateway.spotOn(matchId, signal) },
+    { name: 'advance', invoke: (gateway: HttpLiarsDiceGateway, signal: AbortSignal) => gateway.advance(matchId, signal) },
+    { name: 'next-round', invoke: (gateway: HttpLiarsDiceGateway, signal: AbortSignal) => gateway.nextRound(matchId, undefined, signal) },
+    { name: 'seeded next-round', invoke: (gateway: HttpLiarsDiceGateway, signal: AbortSignal) => gateway.nextRound(matchId, 91, signal) },
+  ])('recovers a matching direct legacy $name retry by GET from its pending path', async ({ invoke }) => {
+    const recovery = journal()
+    const transport = vi.fn<typeof fetch>().mockRejectedValueOnce(new TypeError('response lost'))
+      .mockResolvedValueOnce(response(nextResolved))
+    const gateway = () => new HttpLiarsDiceGateway(undefined, transport, recovery, 'alice')
+    const signal = new AbortController().signal
+    await expect(invoke(gateway(), signal)).rejects.toThrow('response lost')
+    const original = recovery.read().pending!
+    expect(recovery.read().activeBoardId).toBeNull()
+    expect(await invoke(gateway(), signal)).toEqual(nextResolved)
+    expect(transport).toHaveBeenCalledTimes(2)
+    expect(transport.mock.calls[1][0]).toBe('/api/games/liars-dice/matches/' + matchId)
+    expect(transport.mock.calls[1][1]?.method).toBeUndefined()
+    expect(transport.mock.calls[1][1]?.signal).toBe(signal)
+    expect(new Headers(transport.mock.calls[1][1]?.headers).get('Idempotency-Key')).toBeNull()
+    expect(new Headers(transport.mock.calls[1][1]?.headers).get('X-FortuneForge-Expected-Account')).toBe('alice')
+    expect(original.path).toContain('/matches/' + matchId + '/')
+    expect(recovery.read()).toEqual({ activeBoardId: matchId, pending: null })
+  })
+  it('blocks changed legacy action bodies until the original pending result is recovered', async () => {
+    const recovery = journal()
+    const transport = vi.fn<typeof fetch>().mockRejectedValueOnce(new TypeError('response lost'))
+    const gateway = new HttpLiarsDiceGateway(undefined, transport, recovery)
+    await expect(gateway.bid(matchId, { quantity: 1, face: 1 })).rejects.toThrow('response lost')
+    const pending = recovery.read().pending
+    await expect(gateway.bid(matchId, { quantity: 2, face: 1 })).rejects.toThrow('Finish recovering')
+    expect(transport).toHaveBeenCalledTimes(1)
+    expect(recovery.read().pending).toEqual(pending)
+  })
+  it('remembers only a validated explicit match read and preserves an unresolved command', async () => {
+    const recovery = journal()
+    const otherId = '00000000-0000-4000-8000-000000000002'
+    const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(response(opening))
+      .mockResolvedValueOnce(response({ ...opening, matchId: otherId }))
+      .mockResolvedValueOnce(response({ ...opening, matchId: otherId }))
+    const gateway = new HttpLiarsDiceGateway(undefined, transport, recovery)
+    await gateway.getMatch(matchId)
+    expect(recovery.read()).toEqual({ activeBoardId: matchId, pending: null })
+    await expect(gateway.getMatch(matchId)).rejects.toBeInstanceOf(LiarsDiceGatewayError)
+    expect(recovery.read()).toEqual({ activeBoardId: matchId, pending: null })
+    const pending = recovery.prepare('/api/games/liars-dice/matches/' + matchId + '/advance', '')
+    await gateway.getMatch(otherId)
+    expect(recovery.read()).toEqual({ activeBoardId: matchId, pending })
+  })
+  it('retains a direct legacy retry on an account rejection and invalid read, then clears a definite expiry', async () => {
+    const recovery = journal()
+    const transport = vi.fn<typeof fetch>().mockRejectedValueOnce(new TypeError('response lost'))
+      .mockResolvedValueOnce(response({ code: 'game-session-changed', message: 'Account changed' }, 403))
+      .mockResolvedValueOnce(response({}))
+      .mockResolvedValueOnce(response({ code: 'liars-dice-match-not-found', message: 'Expired' }, 404))
+    const gateway = new HttpLiarsDiceGateway(undefined, transport, recovery)
+    await expect(gateway.advance(matchId)).rejects.toThrow('response lost')
+    const pending = recovery.read().pending
+    await expect(gateway.advance(matchId)).rejects.toMatchObject({ status: 403 })
+    expect(recovery.read().pending).toEqual(pending)
+    await expect(gateway.advance(matchId)).rejects.toBeInstanceOf(LiarsDiceGatewayError)
+    expect(recovery.read().pending).toEqual(pending)
+    await expect(gateway.advance(matchId)).rejects.toMatchObject({ status: 404 })
+    expect(recovery.read()).toEqual({ activeBoardId: null, pending: null })
+    expect(transport.mock.calls.slice(1).every(([, init]) => init?.method === undefined)).toBe(true)
+  })
+  it('replays a matching direct durable retry with its original body and key', async () => {
+    const id = '00000000-0000-7000-8000-000000000001'
+    const recovery = journal()
+    const transport = vi.fn<typeof fetch>().mockRejectedValueOnce(new TypeError('response lost'))
+      .mockResolvedValueOnce(response({ ...bidding, matchId: id }))
+    const gateway = new HttpLiarsDiceGateway(undefined, transport, recovery)
+    await expect(gateway.bid(id, { quantity: 1, face: 1 })).rejects.toThrow('response lost')
+    const pending = recovery.read().pending!
+    await gateway.bid(id, { quantity: 1, face: 1 })
+    expect(transport.mock.calls[1][0]).toBe(pending.path)
+    expect(transport.mock.calls[1][1]?.method).toBe('POST')
+    expect(transport.mock.calls[1][1]?.body).toBe(pending.body)
+    expect(new Headers(transport.mock.calls[1][1]?.headers).get('Idempotency-Key')).toBe(pending.idempotencyKey)
+    expect(recovery.read()).toEqual({ activeBoardId: id, pending: null })
+  })
+  it('replays an uncertain durable v7 mutation before reading the latest match', async () => {
+    const id = '00000000-0000-7000-8000-000000000001'
+    const recovery = journal()
+    const pending = recovery.prepare('/api/games/liars-dice/matches/' + id + '/bid', '{"quantity":1,"face":1}')
+    const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(response({ ...bidding, matchId: id }))
+      .mockResolvedValueOnce(response({ ...bidding, matchId: id }))
+    await new HttpLiarsDiceGateway(undefined, transport, recovery).recoverMatch()
+    expect(transport.mock.calls[0][1]?.method).toBe('POST')
+    expect(transport.mock.calls[0][1]?.body).toBe(pending.body)
+    expect(new Headers(transport.mock.calls[0][1]?.headers).get('Idempotency-Key')).toBe(pending.idempotencyKey)
+    expect(transport.mock.calls[1][1]?.method).toBeUndefined()
+  })
+  it('clears an expired legacy command only after a definite 404 and retains it after invalid reads', async () => {
+    const recovery = journal()
+    const path = '/api/games/liars-dice/matches/' + matchId + '/bid'
+    recovery.prepare(path, '{"quantity":1,"face":1}')
+    const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(response({})).mockResolvedValueOnce(response({ code: 'liars-dice-match-not-found', message: 'Expired' }, 404))
+    const gateway = new HttpLiarsDiceGateway(undefined, transport, recovery)
+    await expect(gateway.recoverMatch()).rejects.toBeInstanceOf(LiarsDiceGatewayError)
+    expect(recovery.read().pending?.path).toBe(path)
+    await expect(gateway.recoverMatch()).rejects.toMatchObject({ status: 404 })
+    expect(recovery.read()).toEqual({ activeBoardId: null, pending: null })
+  })
+
 })

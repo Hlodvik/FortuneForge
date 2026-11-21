@@ -5,7 +5,7 @@ namespace FortuneForge.Games.HiLo;
 
 /// <summary>
 /// Pure transition engine. The host draws one independent standard card with CSPRNG only after
-/// validating the authenticated action. Wallet debits/credits and state must share one transaction.
+/// validating the authenticated action. The paid backend confirms admission before revealing a draw.
 /// </summary>
 public static class HiLoEngine
 {
@@ -23,6 +23,22 @@ public static class HiLoEngine
         _ = HiLoRules.RankValue(initialCard);
         return new(id, wager, initialCard, 1m, 0, 0, HiLoRoundStatus.Active, 0m, 0,
             ImmutableArray.Create(new HiLoHistoryEntry(initialCard, HiLoHistoryKind.Initial, null, 1m, 0)));
+    }
+
+    /// <summary>Replays revealed decisions using the accepted round's wager, including historical entry limits.</summary>
+    public static void ValidateRevealedHistory(HiLoRound round)
+    {
+        ArgumentNullException.ThrowIfNull(round);
+        if (round.History.IsDefaultOrEmpty || round.History.Length > 153 || round.History[0].Kind != HiLoHistoryKind.Initial)
+            throw new InvalidOperationException("The Hi-Lo revealed history is invalid.");
+        var rebuilt = RebuildInitial(round.Id, round.Wager, round.History[0].Card);
+        foreach (var entry in round.History.Skip(1))
+            rebuilt = entry.Kind == HiLoHistoryKind.Skip ? Skip(rebuilt, entry.Card)
+                : entry.Kind is HiLoHistoryKind.Win or HiLoHistoryKind.Loss && entry.Direction is { } direction
+                    ? Guess(rebuilt, direction, entry.Card) : throw new InvalidOperationException("The Hi-Lo history action is invalid.");
+        if (round.Status == HiLoRoundStatus.CashedOut) rebuilt = CashOut(rebuilt);
+        if ((rebuilt with { History = round.History }) != round || !rebuilt.History.SequenceEqual(round.History))
+            throw new InvalidOperationException("The Hi-Lo round differs from its revealed history.");
     }
 
     public static void EnsureCanGuess(HiLoRound round, HiLoDirection direction)

@@ -5,6 +5,12 @@ import type { HorseFlightReplayPayload } from '@fortuneforge/games-horse-flight'
 export type ArcadeCompetitionPeriod = 'daily' | 'weekly' | 'all-time'
 export type ArcadeCompetitionPaidPeriod = 'daily' | 'weekly'
 
+export type ArcadeCompetitionStartOptions = Readonly<{
+  expectedWindowStartsAtUtc?: string
+  expectedWindowEndsAtUtc?: string
+  recoverOnly?: boolean
+}>
+
 export type ArcadeCompetitionPlacement = Readonly<{
   position: number
   playerId: string
@@ -73,7 +79,7 @@ export type AsteroidsFreeRun = Readonly<{
 }>
 
 export type AsteroidsPaidCompetitionGateway = Readonly<{
-  startAsteroidsAttempt: (period: ArcadeCompetitionPaidPeriod, idempotencyKey: string, signal?: AbortSignal) => Promise<AsteroidsPaidAttempt>
+  startAsteroidsAttempt: (period: ArcadeCompetitionPaidPeriod, idempotencyKey: string, signal?: AbortSignal, options?: ArcadeCompetitionStartOptions) => Promise<AsteroidsPaidAttempt>
   completeAsteroidsReplay: (period: ArcadeCompetitionPaidPeriod, runId: string, replay: AsteroidsReplayPayload, signal?: AbortSignal) => Promise<AsteroidsReplayCompletion>
 }>
 
@@ -114,7 +120,7 @@ export type FlappyPaidAttempt = Readonly<{
 }>
 
 export type FlappyPaidCompetitionGateway = Readonly<{
-  startFlappyAttempt: (period: ArcadeCompetitionPaidPeriod, idempotencyKey: string, signal?: AbortSignal) => Promise<FlappyPaidAttempt>
+  startFlappyAttempt: (period: ArcadeCompetitionPaidPeriod, idempotencyKey: string, signal?: AbortSignal, options?: ArcadeCompetitionStartOptions) => Promise<FlappyPaidAttempt>
   completeFlappyReplay: (period: ArcadeCompetitionPaidPeriod, runId: string, replay: FlappyReplayPayload, signal?: AbortSignal) => Promise<FlappyReplayCompletion>
 }>
 
@@ -123,6 +129,7 @@ export type FlappyCompetitionGateway = ArcadeCompetitionGateway & FlappyFreeRunG
 export type HorseFlightFreeRun = Readonly<{
   runId: string
   seed: number
+  rulesVersion?: 1 | 2 | 3 | 4
   wasReplay: boolean
 }>
 
@@ -136,6 +143,7 @@ export type HorseFlightPaidAttempt = Readonly<{
   wasReplay: boolean
   runId: string
   seed: number
+  rulesVersion?: 1 | 2 | 3 | 4
 }>
 
 export type HorseFlightReplayCompletion = Readonly<{
@@ -148,7 +156,7 @@ export type HorseFlightReplayCompletion = Readonly<{
 export type HorseFlightCompetitionGateway = ArcadeCompetitionGateway & Readonly<{
   startFreeHorseFlightRun: (idempotencyKey: string, signal?: AbortSignal) => Promise<HorseFlightFreeRun>
   completeFreeHorseFlightReplay: (runId: string, replay: HorseFlightReplayPayload, signal?: AbortSignal) => Promise<HorseFlightReplayCompletion>
-  startHorseFlightAttempt: (period: ArcadeCompetitionPaidPeriod, idempotencyKey: string, signal?: AbortSignal) => Promise<HorseFlightPaidAttempt>
+  startHorseFlightAttempt: (period: ArcadeCompetitionPaidPeriod, idempotencyKey: string, signal?: AbortSignal, options?: ArcadeCompetitionStartOptions) => Promise<HorseFlightPaidAttempt>
   completeHorseFlightReplay: (period: ArcadeCompetitionPaidPeriod, runId: string, replay: HorseFlightReplayPayload, signal?: AbortSignal) => Promise<HorseFlightReplayCompletion>
 }>
 
@@ -203,14 +211,10 @@ export class HttpArcadeCompetitionGateway implements ArcadeCompetitionGateway, A
     period: ArcadeCompetitionPaidPeriod,
     idempotencyKey: string,
     signal?: AbortSignal,
+    options?: ArcadeCompetitionStartOptions,
   ): Promise<AsteroidsPaidAttempt> {
     if (idempotencyKey.trim().length === 0) throw new Error('An idempotency key is required.')
-    const response = await this.fetcher(`/api/arcade-competitions/asteroids/${period}/attempts`, {
-      method: 'POST',
-      headers: { 'Idempotency-Key': idempotencyKey },
-      cache: 'no-store',
-      signal,
-    })
+    const response = await this.startPaidAttempt('asteroids', period, idempotencyKey, signal, options)
     const result = await this.readResponse(response, isAsteroidsPaidAttempt)
     if (result.period !== period) throw new Error('The server returned an invalid arcade competition response.')
     return result
@@ -309,13 +313,12 @@ export class HttpArcadeCompetitionGateway implements ArcadeCompetitionGateway, A
     period: ArcadeCompetitionPaidPeriod,
     idempotencyKey: string,
     signal?: AbortSignal,
+    options?: ArcadeCompetitionStartOptions,
   ): Promise<FlappyPaidAttempt> {
     if (typeof idempotencyKey !== 'string' || !/^[A-Za-z0-9_-]{16,128}$/.test(idempotencyKey)) {
       throw new Error('The Flappy start request key is invalid.')
     }
-    const response = await this.fetcher(`/api/arcade-competitions/flappy/${period}/attempts`, {
-      method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, cache: 'no-store', signal,
-    })
+    const response = await this.startPaidAttempt('flappy', period, idempotencyKey, signal, options)
     const result = await this.readResponse(response, isFlappyPaidAttempt)
     if (result.period !== period) throw new Error('The server returned an invalid arcade competition response.')
     return result
@@ -373,14 +376,36 @@ export class HttpArcadeCompetitionGateway implements ArcadeCompetitionGateway, A
     period: ArcadeCompetitionPaidPeriod,
     idempotencyKey: string,
     signal?: AbortSignal,
+    options?: ArcadeCompetitionStartOptions,
   ): Promise<HorseFlightPaidAttempt> {
     assertHorseFlightRequestKey(idempotencyKey)
-    const response = await this.fetcher(`/api/arcade-competitions/horse-flight/${period}/attempts`, {
-      method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, cache: 'no-store', signal,
-    })
+    const response = await this.startPaidAttempt('horse-flight', period, idempotencyKey, signal, options)
     const result = await this.readResponse(response, isHorseFlightPaidAttempt)
     if (result.period !== period) throw new Error('The server returned an invalid arcade competition response.')
     return result
+  }
+
+  private startPaidAttempt(
+    gameId: 'asteroids' | 'flappy' | 'horse-flight',
+    period: ArcadeCompetitionPaidPeriod,
+    idempotencyKey: string,
+    signal: AbortSignal | undefined,
+    options: ArcadeCompetitionStartOptions | undefined,
+  ): Promise<Response> {
+    const { expectedWindowStartsAtUtc, expectedWindowEndsAtUtc, recoverOnly } = options ?? {}
+    const hasWindow = expectedWindowStartsAtUtc !== undefined || expectedWindowEndsAtUtc !== undefined
+    if (hasWindow && (expectedWindowStartsAtUtc === undefined || expectedWindowEndsAtUtc === undefined ||
+        !(Date.parse(expectedWindowStartsAtUtc) < Date.parse(expectedWindowEndsAtUtc)))) {
+      throw new Error('The saved arcade competition window is invalid.')
+    }
+    const query = recoverOnly ? '?recoverOnly=true' : ''
+    const headers: Record<string, string> = { 'Idempotency-Key': idempotencyKey }
+    const request: RequestInit = { method: 'POST', headers, cache: 'no-store', signal }
+    if (hasWindow) {
+      headers['Content-Type'] = 'application/json'
+      request.body = JSON.stringify({ expectedWindowStartsAtUtc, expectedWindowEndsAtUtc })
+    }
+    return this.fetcher(`/api/arcade-competitions/${gameId}/${period}/attempts${query}`, request)
   }
 
   async completeHorseFlightReplay(
@@ -528,6 +553,7 @@ function isHorseFlightFreeRun(value: unknown): value is HorseFlightFreeRun {
   return isRecord(value)
     && isHorseFlightFreeRunId(value.runId)
     && isHorseFlightSeed(value.seed)
+    && isOptionalHorseFlightRulesVersion(value.rulesVersion)
     && typeof value.wasReplay === 'boolean'
 }
 
@@ -542,6 +568,11 @@ function isHorseFlightPaidAttempt(value: unknown): value is HorseFlightPaidAttem
     && typeof value.wasReplay === 'boolean'
     && isHorseFlightPaidRunId(value.runId)
     && isHorseFlightSeed(value.seed)
+    && isOptionalHorseFlightRulesVersion(value.rulesVersion)
+}
+
+function isOptionalHorseFlightRulesVersion(value: unknown): boolean {
+  return value === undefined || value === 1 || value === 2 || value === 3 || value === 4
 }
 
 function isHorseFlightReplayCompletion(value: unknown): value is HorseFlightReplayCompletion {
@@ -565,7 +596,7 @@ function isHorseFlightReplayPayload(value: unknown): value is HorseFlightReplayP
     || !Number.isInteger(value.totalTicks)
     || typeof value.totalTicks !== 'number'
     || value.totalTicks < 1
-    || value.totalTicks > 20_000
+    || value.totalTicks > 30_000
     || !Array.isArray(value.jumpTicks)
     || value.jumpTicks.length > 1_500
     || !Array.isArray(value.rightClickTicks)

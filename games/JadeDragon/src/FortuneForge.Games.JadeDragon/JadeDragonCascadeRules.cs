@@ -27,6 +27,7 @@ public static class JadeDragonCascadeRules
     public const int PayoutPointValueInCents = 1;
     public const int MinimumWagerPoints = 2;
     public const int MaximumWagerPoints = 2_000;
+    public const int MaximumPaidWagerPoints = 400;
     public const int WagerIncrementPoints = 2;
     public const int MaximumWinningSteps = 30;
     public const int MaximumWinMultiplier = 5000;
@@ -69,6 +70,13 @@ public static class JadeDragonCascadeRules
             wagerPoints % WagerIncrementPoints != 0)
             throw new ArgumentOutOfRangeException(nameof(wagerPoints), wagerPoints,
                 "The Jade Dragon wager must be an even number of points from 2 to 2,000.");
+    }
+
+    public static void ValidatePaidWager(long wagerPoints)
+    {
+        ValidateWager(wagerPoints);
+        if (wagerPoints > MaximumPaidWagerPoints)
+            throw new ArgumentOutOfRangeException(nameof(wagerPoints), wagerPoints, "Jade Dragon's maximum paid bet is R100.");
     }
 
     /// <summary>

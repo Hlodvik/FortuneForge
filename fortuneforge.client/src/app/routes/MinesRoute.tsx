@@ -24,7 +24,7 @@ function MinesAccountSession({ initialAccount }: Readonly<{ initialAccount: Acco
   const identity = useRef(initialAccount.userId)
   identity.current = initialAccount.userId
   // This host route only uses real account credits. Server-side paid enablement is a separate gate.
-  const gateway = useMemo(() => new HttpMinesGateway('/api/games/mines', fetchWithAccountSession), [])
+  const gateway = useMemo(() => new HttpMinesGateway('/api/games/mines', fetchWithAccountSession, initialAccount.userId), [initialAccount.userId])
   const scope = `${initialAccount.userId}:account`
 
   useEffect(() => { refreshGeneration.current++; setAccount(initialAccount) }, [initialAccount])

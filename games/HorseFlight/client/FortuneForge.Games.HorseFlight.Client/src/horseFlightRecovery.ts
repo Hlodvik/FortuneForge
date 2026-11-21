@@ -1,4 +1,4 @@
-import type { HorseFlightRecoveryMode, HorseFlightResult, HorseFlightStart } from './contracts'
+import type { HorseFlightAdmissionWindow, HorseFlightRecoveryMode, HorseFlightResult, HorseFlightStart } from './contracts'
 import { currentRulesVersion, startHorse, stepHorse, type HorseRulesVersion, type HorseState } from './horseFlightSimulation'
 
 export const maximumRecordedTicks = 30_000
@@ -9,6 +9,7 @@ export type HorseFlightRecovery = {
   startKey: string; finishKey: string; run: HorseFlightStart | null; rulesVersion: HorseRulesVersion
   ticks: number; jumps: number[]; rights: number[]
   state: 'starting' | 'active' | 'saving' | 'saved' | 'debug'; result: HorseFlightResult | null
+  admission?: HorseFlightAdmissionWindow
 }
 export const horseFlightRecoveryKey = (owner: string, mode: HorseFlightRecoveryMode) =>
   `fortuneforge:horse-flight:recorded:v1:${encodeURIComponent(owner)}:${mode}`
@@ -27,11 +28,13 @@ export function newHorseFlightRecovery(owner: string, mode: HorseFlightRecoveryM
   startKey: string, finishKey: string): HorseFlightRecovery {
   if (!owner || owner.length > 256 || !validRecoveryScope(scope, mode)) throw new Error('The flight recovery scope is unavailable.')
   return { version: 1, owner, mode, scope, startKey, finishKey, run: null, rulesVersion: currentRulesVersion,
-    ticks: 0, jumps: [], rights: [], state: 'starting', result: null }
+    ticks: 0, jumps: [], rights: [], state: 'starting', result: null,
+    ...(mode === 'free' ? {} : { admission: { expectedWindowStartsAtUtc: (JSON.parse(scope) as string[])[1]!, expectedWindowEndsAtUtc: (JSON.parse(scope) as string[])[2]! } }) }
 }
 export function validIssuedFlight(run: HorseFlightStart): boolean {
   return typeof run?.runId === 'string' && /^[a-zA-Z0-9_-]{1,160}$/.test(run.runId) &&
-    Number.isInteger(run.seed) && run.seed > 0 && run.seed <= 0xffff_ffff && run.tickMilliseconds === 20
+    Number.isInteger(run.seed) && run.seed > 0 && run.seed <= 0xffff_ffff && run.tickMilliseconds === 20 &&
+    (run.rulesVersion === undefined || [1, 2, 3, 4].includes(run.rulesVersion))
 }
 export function reconstructHorseFlight(record: HorseFlightRecovery): HorseState | null {
   if (!record.run || record.state === 'debug') return null
@@ -54,10 +57,11 @@ export function horseFlightReceiptMatches(record: HorseFlightRecovery, state: Ho
     Number.isSafeInteger(Math.round(result.balance * 100)) && Math.abs(result.balance * 100 - Math.round(result.balance * 100)) < 1e-6 &&
     same(result.jumpTicks, record.jumps) && same(result.rightClickTicks ?? [], record.rights)
 }
-export function readHorseFlightRecovery(owner: string, mode: HorseFlightRecoveryMode, scope: string): {
+export function readHorseFlightRecovery(owner: string, mode: HorseFlightRecoveryMode, scope?: string): {
   record: HorseFlightRecovery | null; game: HorseState | null; error: string | null
 } {
   try {
+    if (scope !== undefined && !validRecoveryScope(scope, mode)) throw new Error('Invalid current flight mode.')
     const raw = localStorage.getItem(horseFlightRecoveryKey(owner, mode))
     if (!raw) return { record: null, game: null, error: null }
     if (raw.length > 300_000) throw new Error('Oversized flight record.')
@@ -65,7 +69,10 @@ export function readHorseFlightRecovery(owner: string, mode: HorseFlightRecovery
     const canonicalTicks = (ticks: unknown, maximum: number): ticks is number[] => Array.isArray(ticks) && ticks.length <= maximum &&
       ticks.every((tick, index) => Number.isInteger(tick) && tick >= 0 && tick < value.ticks && (index === 0 || tick > ticks[index - 1]))
     if (value?.version !== 1 || value.owner !== owner || value.mode !== mode || !validRecoveryScope(value.scope, mode) ||
-      !validKey(value.startKey) || !validKey(value.finishKey) || ![2, 3, 4].includes(value.rulesVersion) ||
+      (value.admission !== undefined && (mode === 'free' || !value.admission ||
+        value.admission.expectedWindowStartsAtUtc !== (JSON.parse(value.scope) as string[])[1] ||
+        value.admission.expectedWindowEndsAtUtc !== (JSON.parse(value.scope) as string[])[2])) ||
+      !validKey(value.startKey) || !validKey(value.finishKey) || ![1, 2, 3, 4].includes(value.rulesVersion) ||
       !Number.isInteger(value.ticks) || value.ticks < 0 || value.ticks > maximumRecordedTicks ||
       !canonicalTicks(value.jumps, maximumRecordedJumps) || !canonicalTicks(value.rights, maximumRecordedRightClicks) ||
       value.jumps.some(tick => value.rights.includes(tick)) || !['starting', 'active', 'saving', 'saved', 'debug'].includes(value.state) ||
@@ -76,10 +83,6 @@ export function readHorseFlightRecovery(owner: string, mode: HorseFlightRecovery
     const game = reconstructHorseFlight(value)
     if (value.state === 'saved' ? !game || !value.result || !horseFlightReceiptMatches(value, game, value.result) : value.result !== null)
       throw new Error('Invalid flight receipt.')
-    if (value.scope !== scope) return value.state === 'saved'
-      ? { record: value, game: null, error: null }
-      : { record: value, game: null,
-        error: 'A previous competition window has an unresolved flight. It cannot be replayed or charged in this window.' }
     return { record: value, game, error: null }
   } catch { return { record: null, game: null, error: 'The saved flight could not be verified. Recovery requires review before another flight in this mode.' } }
 }

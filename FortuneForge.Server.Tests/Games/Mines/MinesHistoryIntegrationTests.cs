@@ -9,6 +9,7 @@ using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Accounts.Storage;
 using FortuneForge.Server.Cards.History;
 using FortuneForge.Server.Configuration;
+using FortuneForge.Server.Tests.Accounts;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
@@ -27,8 +28,10 @@ public sealed class MinesHistoryIntegrationTests
     {
         var database = Database();
         await database.Collection("userBalances").Document("player_slotsCredits").SetAsync(new Dictionary<string, object>
-            { ["available"] = 100L, ["availableFractionalCents"] = 0L });
-        var store = new FirestoreMinesStore(database);
+            { ["userId"] = "player", ["currencyId"] = "slotsCredits", ["available"] = 100L,
+                ["availableFractionalCents"] = 0L, ["reserved"] = 0L, ["version"] = 1L });
+        var wallet = new GameWalletFirestoreTestClient(database, "mines");
+        var store = new FirestoreMinesStore(database, wallet, wallet);
         var service = new MinesService(store, new MinesEngine(new FixedBoard()));
         var start = await service.StartAsync("player", new(Guid.NewGuid().ToString("N"), 123, 3));
         await service.RevealAsync("player", start.Round!.RoundId, new(Guid.NewGuid().ToString("N"), 24));
@@ -58,8 +61,10 @@ public sealed class MinesHistoryIntegrationTests
     {
         var database = Database();
         await database.Collection("userBalances").Document("player_slotsCredits").SetAsync(new Dictionary<string, object>
-            { ["available"] = 1_000L, ["availableFractionalCents"] = 0L });
-        var service = new MinesService(new FirestoreMinesStore(database), new MinesEngine(new TwelveMineBoard()));
+            { ["userId"] = "player", ["currencyId"] = "slotsCredits", ["available"] = 1_000L,
+                ["availableFractionalCents"] = 0L, ["reserved"] = 0L, ["version"] = 1L });
+        var wallet = new GameWalletFirestoreTestClient(database, "mines");
+        var service = new MinesService(new FirestoreMinesStore(database, wallet, wallet), new MinesEngine(new TwelveMineBoard()));
         var id = (await service.StartAsync("player", new(Guid.NewGuid().ToString("N"), 500, 12))).Round!.RoundId;
         for (var tile = 12; tile <= 16; tile++)
             await service.RevealAsync("player", id, new(Guid.NewGuid().ToString("N"), tile));

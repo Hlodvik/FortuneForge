@@ -1,4 +1,5 @@
 using System.Text.Json;
+using FortuneForge.Games.Abstractions.Wallet;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 using Microsoft.AspNetCore.Builder;
@@ -68,13 +69,15 @@ public static class HiLoEndpoints
             if (account is null || string.IsNullOrWhiteSpace(account.UserId)) return Error(401, "authentication_required", "Sign in to play Hi-Lo.");
             var practice = options.ForcePractice || string.Equals(context.Request.Headers["X-FortuneForge-Practice"], "true", StringComparison.OrdinalIgnoreCase);
             IHiLoStore store = practice ? context.RequestServices.GetRequiredService<DurablePracticeHiLoStore>()
-                : new HiLoFirestoreStore(context.RequestServices.GetRequiredService<FirestoreDb>());
+                : new HiLoFirestoreStore(context.RequestServices.GetRequiredService<FirestoreDb>(),
+                    context.RequestServices.GetRequiredService<IGameWalletClient>(), context.RequestServices.GetRequiredService<IGameWalletAccountReader>());
             var response = await action(new(store, allowNewMutations: enabled), account.UserId);
             if (!enabled && !mutating && response.Round is null)
                 return Error(503, "hi_lo_disabled", "Hi-Lo is still being verified and cannot accept wagers.");
             return Results.Ok(mutating ? response : response with { Enabled = enabled });
         }
         catch (HiLoException exception) { return Error(exception.StatusCode, exception.Code, exception.Message); }
+        catch (GameWalletConflictException) { return Error(409, "operation_conflict", "The Hi-Lo wallet operation conflicts with its original request."); }
         catch (Exception exception) when (exception is JsonException or BadHttpRequestException or ArgumentException)
         { return Error(400, "invalid_request", "The Hi-Lo request is invalid. Check the wager and action fields."); }
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested) { throw; }

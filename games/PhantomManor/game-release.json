@@ -6,6 +6,6 @@
     "manifestExport": "PHANTOM_MANOR_SLOT_GAME"
   },
   "backend": {
-    "kind": "classic-slot"
+    "kind": "packaged-game"
   }
 }

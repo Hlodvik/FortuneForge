@@ -167,7 +167,9 @@ describe('KenoGame', () => {
     await screen.findByRole('combobox', { name: 'Keno wager' })
     await user.click(screen.getByRole('button', { name: 'Draw' }))
     await screen.findByRole('alert')
-    await user.click(screen.getByRole('button', { name: 'Draw' }))
+    expect((screen.getByRole('button', { name: 'Number 1' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('combobox', { name: 'Keno wager' }) as HTMLSelectElement).disabled).toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Retry restoration' }))
     await screen.findByText('Round result', {}, { timeout: 5_000 })
     expect(createRound.mock.calls[1]?.[1]?.idempotencyKey).toBe(createRound.mock.calls[0]?.[1]?.idempotencyKey)
   })
@@ -175,8 +177,13 @@ describe('KenoGame', () => {
   it('replays the exact player-scoped pending draw after a reload', async () => {
     sessionStorage.setItem('fortuneforge:keno:pending:player-7', JSON.stringify({ idempotencyKey: 'keno-recovery-0001', numbers: [3, 7, 15], wager: 1 }))
     const createRound = vi.fn().mockResolvedValue(completedRound)
-    render(<KenoGame playerId="player-7" gateway={fakeGateway({ createRound })} />)
+    const changed = vi.fn()
+    const getStatus = vi.fn().mockResolvedValue({ ...availableStatus, balance: 17 })
+    render(<KenoGame playerId="player-7" gateway={fakeGateway({ createRound, getStatus })} onBalanceChange={changed} />)
     await screen.findByText('Round result', {}, { timeout: 5_000 })
+    expect(changed).toHaveBeenCalledWith(17)
+    expect(screen.getByText('R1.00 ticket · balance R17.00')).toBeTruthy()
+    expect(screen.getByText('Wager R1.00 · Balance R1,001.00')).toBeTruthy()
     expect(createRound).toHaveBeenCalledWith({ ticket: { numbers: [3, 7, 15] }, wager: 1 }, expect.objectContaining({
       idempotencyKey: 'keno-recovery-0001', signal: expect.any(AbortSignal),
     }))

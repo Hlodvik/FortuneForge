@@ -14,8 +14,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs;DemoGameAccount.cs;GameWorkerAccountResolver.cs;GameWorkerFirestore.cs" />
-    <Compile Include="../../../FortuneForge.Server/Activity/AcceptedGameTransactionWitness.cs"
-             Link="AcceptedGameTransactionWitness.cs" Condition="'$(GamePackage)' == 'Craps'" />
     <ProjectReference Include="../FortuneForge.Games.Hosting/FortuneForge.Games.Hosting.csproj" />
     <Compile Include="$(GameWorkerModule)" Link="GameWorkerModule.cs" Condition="Exists('$(GameWorkerModule)')" />
     <ProjectReference Include="$(GameServerProject)" Condition="Exists('$(GameWorkerModule)') And Exists('$(GameServerProject)')" />

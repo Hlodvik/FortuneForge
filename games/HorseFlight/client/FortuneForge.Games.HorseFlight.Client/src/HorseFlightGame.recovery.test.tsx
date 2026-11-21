@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { HorseFlightGateway, HorseFlightStatus } from './contracts'
+import { HorseFlightGatewayError, type HorseFlightGateway, type HorseFlightStatus } from './contracts'
 import { HorseFlightGame } from './HorseFlightGame'
 import { horseFlightRecoveryKey, newHorseFlightRecovery, writeHorseFlightRecovery, type HorseFlightRecovery } from './horseFlightRecovery'
 import { startHorse, stepHorse } from './horseFlightSimulation'
@@ -81,8 +81,72 @@ describe('Horse Flight owner-scoped reload recovery in the current scene', () =>
     writeHorseFlightRecovery(newHorseFlightRecovery('alex', 'paid:weekly', oldScope, 'horse-flight-start-0123456789', 'horse-flight-complete-0123456789'))
     const api = gateway(); api.getStatus.mockResolvedValue({ ...status, mode: 'paid', recoveryMode: 'paid:weekly', recoveryScope: nextScope })
     render(<HorseFlightGame gateway={api} playerId="alex" autoStart />); await flush()
-    expect(api.start).not.toHaveBeenCalled(); expect(screen.getAllByText(/previous competition window/).length).toBeGreaterThan(0)
-    expect(screen.queryByRole('button', { name: 'Retry flight start' })).toBeNull()
+    expect(api.start).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Retry flight start' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Retry flight start' })); await flush()
+    expect(api.start).toHaveBeenCalledWith(expect.objectContaining({ recoveryScope: oldScope,
+      admission: { expectedWindowStartsAtUtc: '2026-11-02T00:00:00.000Z', expectedWindowEndsAtUtc: '2026-11-09T00:00:00.000Z' } }))
+  })
+  it('retries an accepted original-window score after rollover without starting another paid flight', async () => {
+    const oldScope = JSON.stringify(['paid:weekly', '2026-11-02T00:00:00.000Z', '2026-11-09T00:00:00.000Z'])
+    const nextScope = JSON.stringify(['paid:weekly', '2026-11-09T00:00:00.000Z', '2026-11-16T00:00:00.000Z'])
+    const paidRunId = 'horse_flight_' + 'b'.repeat(64)
+    const value = newHorseFlightRecovery('alex', 'paid:weekly', oldScope, 'horse-flight-start-0123456789', 'horse-flight-complete-0123456789')
+    value.run = { runId: paidRunId, seed: 42, tickMilliseconds: 20, recoveryScope: oldScope }; value.state = 'saving'
+    let game = startHorse(42)
+    while (game.phase === 'running') game = stepHorse(game, false, false).state
+    value.ticks = game.tick; writeHorseFlightRecovery(value)
+    const api = gateway(); api.getStatus.mockResolvedValue({ ...status, mode: 'paid', recoveryMode: 'paid:weekly', recoveryScope: nextScope })
+    render(<HorseFlightGame gateway={api} playerId="alex" autoStart />); await flush()
+    expect(api.start).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Try saving again' })); await flush()
+    expect(api.complete).toHaveBeenCalledWith(paidRunId, value.ticks, [],
+      expect.objectContaining({ idempotencyKey: value.finishKey, recoveryScope: oldScope }), [])
+    expect(api.start).not.toHaveBeenCalled()
+    const persisted = JSON.parse(localStorage.getItem(horseFlightRecoveryKey('alex', 'paid:weekly'))!) as HorseFlightRecovery
+    expect(persisted.state).toBe('saved'); expect(persisted.scope).toBe(oldScope)
+  })
+
+  it('recovers a legacy uncertain paid start while current status is unavailable without a fresh admission body', async () => {
+    const oldScope = JSON.stringify(['paid:weekly', '2026-11-02T00:00:00.000Z', '2026-11-09T00:00:00.000Z'])
+    const value = newHorseFlightRecovery('alex', 'paid:weekly', oldScope, 'horse-flight-start-0123456789', 'horse-flight-complete-0123456789')
+    delete value.admission; writeHorseFlightRecovery(value)
+    const api = gateway(); api.getStatus.mockRejectedValue(new Error('status unavailable'))
+    api.start.mockResolvedValue({ runId: 'horse_flight_' + 'b'.repeat(64), seed: 42, tickMilliseconds: 20, recoveryScope: oldScope })
+    render(<HorseFlightGame gateway={api} playerId="alex" recoveryMode="paid:weekly" autoStart />); await flush()
+    expect(api.start).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Retry flight start' })); await flush()
+    expect(api.start).toHaveBeenCalledWith(expect.objectContaining({ idempotencyKey: value.startKey, recoveryScope: oldScope, recoverOnly: true }))
+    expect(api.start.mock.calls[0]![0]).not.toHaveProperty('admission')
+  })
+
+  it('retains a paid start key and immutable window when account/session changes reject admission', async () => {
+    const scope = JSON.stringify(['paid:weekly', '2026-11-02T00:00:00.000Z', '2026-11-09T00:00:00.000Z'])
+    const api = gateway(); api.getStatus.mockResolvedValue({ ...status, mode: 'paid', recoveryMode: 'paid:weekly', recoveryScope: scope })
+    api.start.mockRejectedValue(new HorseFlightGatewayError('Session changed.', 'game-session-changed', 403))
+    render(<HorseFlightGame gateway={api} playerId="alex" recoveryMode="paid:weekly" autoStart />); await flush()
+    const pending = JSON.parse(localStorage.getItem(horseFlightRecoveryKey('alex', 'paid:weekly'))!) as HorseFlightRecovery
+    expect(pending.state).toBe('starting'); expect(pending.run).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Retry flight start' })); await flush()
+    const after = JSON.parse(localStorage.getItem(horseFlightRecoveryKey('alex', 'paid:weekly'))!) as HorseFlightRecovery
+    expect(after).toEqual(pending)
+    expect(api.start.mock.calls[1]![0]).toMatchObject({ idempotencyKey: pending.startKey, recoveryScope: scope, admission: pending.admission })
+  })
+  it('retains the accepted paid terminal replay when account/session changes reject its save', async () => {
+    const scope = JSON.stringify(['paid:weekly', '2026-11-02T00:00:00.000Z', '2026-11-09T00:00:00.000Z'])
+    const value = newHorseFlightRecovery('alex', 'paid:weekly', scope, 'horse-flight-start-0123456789', 'horse-flight-complete-0123456789')
+    value.run = { runId: 'horse_flight_' + 'b'.repeat(64), seed: 42, tickMilliseconds: 20, recoveryScope: scope }; value.state = 'saving'
+    let game = startHorse(42)
+    while (game.phase === 'running') game = stepHorse(game, false, false).state
+    value.ticks = game.tick; writeHorseFlightRecovery(value)
+    const api = gateway(); api.getStatus.mockResolvedValue({ ...status, mode: 'paid', recoveryMode: 'paid:weekly', recoveryScope: scope })
+    api.complete.mockRejectedValue(new HorseFlightGatewayError('Session changed.', 'game-session-changed', 403))
+    render(<HorseFlightGame gateway={api} playerId="alex" recoveryMode="paid:weekly" autoStart />); await flush()
+    fireEvent.click(screen.getByRole('button', { name: 'Try saving again' })); await flush()
+    expect(api.start).not.toHaveBeenCalled()
+    const after = JSON.parse(localStorage.getItem(horseFlightRecoveryKey('alex', 'paid:weekly'))!) as HorseFlightRecovery
+    expect(after).toEqual(value)
+    expect(api.complete.mock.calls[0]![0]).toBe(value.run.runId)
   })
   it('refuses admission when recovery cannot be persisted before the paid request', async () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('quota') })

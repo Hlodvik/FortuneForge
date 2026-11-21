@@ -1,8 +1,13 @@
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Abstractions.Wallet;
 using FortuneForge.Games.Solitaire;
+using FortuneForge.Server.Accounts.Storage;
+using FortuneForge.Server.Accounts.Wallet;
+using FortuneForge.Server.Bots;
 using FortuneForge.Server.Cards.Solitaire;
 using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Tests.Blackjack.Table;
+using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
 using Grpc.Core;
@@ -15,8 +20,10 @@ public sealed class SolitaireFinancialAuditFirestoreTests(BlackjackTableFirestor
 {
     private static readonly DateTime Start = new(2026, 10, 26, 18, 0, 0, DateTimeKind.Utc);
 
-    [Fact]
-    public async Task Unclaimed_award_is_coverage_warning_then_later_claim_requeues_and_reconciles()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Unclaimed_award_is_coverage_warning_then_later_claim_requeues_and_reconciles(bool legacyBuyin)
     {
         var (db, store) = CreateStore();
         await SeedBalanceAsync(db);
@@ -26,6 +33,9 @@ public sealed class SolitaireFinancialAuditFirestoreTests(BlackjackTableFirestor
             new SolitaireCommandRequest(SolitaireCommandTypes.Submit, started.Version, null, null, null, null),
             "submit-one", Start.AddMinutes(1), default);
         await store.SweepAsync(Start.AddHours(4), default);
+
+        if (legacyBuyin)
+            await RestoreLegacyBuyinAsync(db, started.MatchId);
 
         var (summary, payload) = await ReadAuditAsync(db, started.MatchId);
         var first = await SolitaireFinancialAudit.InspectAsync(db, summary, payload, default);
@@ -42,10 +52,50 @@ public sealed class SolitaireFinancialAuditFirestoreTests(BlackjackTableFirestor
         Assert.Equal(claimAt, queued.GetValue<Timestamp>("securityAuditNextAttemptAtUtc").ToDateTime());
         Assert.Empty(await SolitaireFinancialAudit.InspectAsync(db, summary, payload, default));
 
-        var claimId = $"{started.MatchId}-claim-{FirestoreCompetitiveSolitaireStore.CreateLookupKey("alice")}";
-        await db.Collection("balanceTransactions").Document(claimId).UpdateAsync("amount", 4d);
+        var claimBatch = BatchId(FirestoreCompetitiveSolitaireStore.CreateLookupKey("alice\nclaim-one"));
+        var claimId = GameWalletBatchIdentity.AccountLedgerPrefix(claimBatch, "alice") + "-payout";
+        var receipt = db.Collection(GameWalletBatchFirestoreStore.ReceiptCollection).Document(claimBatch);
+        var leg = db.Collection("balanceTransactions").Document(claimId);
+        var originalReceipt = (await receipt.GetSnapshotAsync()).ToDictionary();
+        var originalLeg = (await leg.GetSnapshotAsync()).ToDictionary();
+        var balance = await FirestoreWalletDocuments.ReadSlotsCreditCentsAsync(db, "alice", false, default);
+        await receipt.DeleteAsync();
+        await leg.DeleteAsync();
         Assert.Contains(await SolitaireFinancialAudit.InspectAsync(db, summary, payload, default),
             finding => finding.Code == "solitaire-financial-claim-ledger-mismatch" && finding.Severity == "error");
+        Assert.Equal(balance, await FirestoreWalletDocuments.ReadSlotsCreditCentsAsync(db, "alice", false, default));
+        Assert.False((await receipt.GetSnapshotAsync()).Exists);
+        Assert.False((await leg.GetSnapshotAsync()).Exists);
+        await receipt.CreateAsync(originalReceipt);
+        await leg.CreateAsync(originalLeg);
+        await leg.UpdateAsync("amount", 4d);
+        Assert.Contains(await SolitaireFinancialAudit.InspectAsync(db, summary, payload, default),
+            finding => finding.Code == "solitaire-financial-claim-ledger-mismatch" && finding.Severity == "error");
+    }
+
+    private static async Task RestoreLegacyBuyinAsync(FirestoreDb db, string matchId)
+    {
+        var match = await db.Collection("solitaireMatches").Document(matchId).GetSnapshotAsync();
+        var ticketId = Assert.Single(match.GetValue<List<string>>("ticketIds"), id => id.Length > 0);
+        var batchId = BatchId(ticketId);
+        var ledgers = db.Collection("balanceTransactions");
+        var batchLeg = ledgers.Document(GameWalletBatchIdentity.AccountLedgerPrefix(batchId, "alice") + "-wager");
+        var balanceAfter = (await batchLeg.GetSnapshotAsync()).GetValue<double>("balanceAfter");
+        var oldLeg = ledgers.Document(ticketId + "-buyin");
+        await oldLeg.CreateAsync(new Dictionary<string, object>
+        {
+            ["transactionId"] = oldLeg.Id, ["userId"] = "alice", ["currencyId"] = "slotsCredits",
+            ["type"] = "solitaire-buyin", ["amount"] = -5d, ["balanceAfter"] = balanceAfter,
+            ["idempotencyKey"] = "join-one", ["createdAt"] = Timestamp.FromDateTime(Start),
+        });
+        await db.Collection("solitaireCommandGuards").Document(ticketId).UpdateAsync(new Dictionary<string, object>
+        {
+            ["backendOwner"] = FieldValue.Delete, ["walletBatchId"] = FieldValue.Delete,
+            ["walletOperationId"] = FieldValue.Delete,
+        });
+        await db.Collection(FirestoreCompetitiveSolitaireStore.FinancialOperations).Document(ticketId).DeleteAsync();
+        await db.Collection(GameWalletBatchFirestoreStore.ReceiptCollection).Document(batchId).DeleteAsync();
+        await batchLeg.DeleteAsync();
     }
 
     [Fact]
@@ -65,7 +115,8 @@ public sealed class SolitaireFinancialAuditFirestoreTests(BlackjackTableFirestor
 
         var match = await db.Collection("solitaireMatches").Document(started.MatchId).GetSnapshotAsync();
         var ticketId = Assert.Single(match.GetValue<List<string>>("ticketIds"), id => id.Length > 0);
-        await db.Collection("balanceTransactions").Document($"{ticketId}-buyin").UpdateAsync("amount", -4d);
+        var buyInId = GameWalletBatchIdentity.AccountLedgerPrefix(BatchId(ticketId), "alice") + "-wager";
+        await db.Collection("balanceTransactions").Document(buyInId).UpdateAsync("amount", -4d);
         await db.Collection("solitaireHouseFunding").Document(started.MatchId).UpdateAsync("humanEntryCents", 1L);
         await db.Collection("solitaireMatchRevenue").Document(started.MatchId).UpdateAsync("houseNetCents", 1L);
         await db.Collection("solitaireTickets").Document(ticketId).UpdateAsync("userId", "someone-else");
@@ -86,18 +137,24 @@ public sealed class SolitaireFinancialAuditFirestoreTests(BlackjackTableFirestor
             Endpoint = fixture.Endpoint, ChannelCredentials = ChannelCredentials.Insecure,
             EmulatorDetection = EmulatorDetection.None
         }.Build();
-        return (database, new FirestoreCompetitiveSolitaireStore(database, new CompetitiveSolitaireOptions
+        var profiles = new FirestoreManagedPlayerProfileRepository(database);
+        var queuer = new ManagedPlayerQueuer(new ManagedPlayerProfileGenerator(profiles), profiles,
+            new FirestoreManagedPlayerAssignmentStore(database));
+        return (database, CompetitiveSolitaireTestStore.Create(database, queuer, TimeProvider.System, new CompetitiveSolitaireOptions
         {
-            AllowSingleHumanBotFill = false
+            AllowSingleHumanBotFill = false, AllowNewPaidRounds = true
         }));
     }
 
     private static Task SeedBalanceAsync(FirestoreDb db) => db.Collection("userBalances")
         .Document("alice_slotsCredits").SetAsync(new Dictionary<string, object>
         {
-            ["available"] = 100L, ["availableFractionalCents"] = 0L,
+            ["userId"] = "alice", ["currencyId"] = "slotsCredits", ["available"] = 100L,
+            ["availableFractionalCents"] = 0L, ["reserved"] = 0L,
             ["version"] = 1L, ["updatedAt"] = Timestamp.FromDateTime(Start)
         });
+
+    private static string BatchId(string operation) => GameWalletBatchIdentity.CreateId(CompetitiveSolitaireEndpoints.GameId, operation);
 
     private static async Task<(RoundAuditSummary Summary, string Payload)> ReadAuditAsync(FirestoreDb db, string matchId)
     {

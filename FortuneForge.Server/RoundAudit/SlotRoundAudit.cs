@@ -7,9 +7,11 @@ using ArcaneArchivesEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEng
 using ArcanePotions = FortuneForge.Games.ArcaneArchives.ArcanePotions;
 using ArcaneWandCollector = FortuneForge.Games.ArcaneArchives.ArcaneWandCollector;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Slots.Runtime;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
+using FortuneForge.Server.Slots.Games;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Games.NeonNights;
 using FortuneForge.Server.Slots.Models;
@@ -133,7 +135,8 @@ internal static class SlotRoundAudit
             audit.SymbolSet, audit.Paytable, settledPayout, audit.EnergyBalanceBefore,
             audit.PityMissesBefore, audit.FreeSpinFeatureMode, audit.RawGeneratedReels,
             audit.ReelsAfterFreeGameFrequency, audit.IsDerivedFreeSpin, audit.WukongPawPrototype, audit.NeonArcade,
-            isPaid: isPaid, neonEngineVersion: usesNeonEngine ? audit.EngineVersion : null);
+            isPaid: isPaid, neonEngineVersion: usesNeonEngine ? audit.EngineVersion : null,
+            profileUsesEnergy: audit.FeatureProfile?.UsesEnergy);
     }
 
     private static IReadOnlyList<RoundAuditFinding> CheckOlympusTumble(
@@ -240,7 +243,8 @@ internal static class SlotRoundAudit
         WukongPawPrototypeEvidence? pawPrototype = null,
         NeonArcadeEvidence? neonArcade = null,
         bool isPaid = false,
-        string? neonEngineVersion = null)
+        string? neonEngineVersion = null,
+        bool? profileUsesEnergy = null)
     {
         var findings = new List<RoundAuditFinding>();
         void Flag(string code, string message) => findings.Add(new(code, "error", message));
@@ -269,13 +273,15 @@ internal static class SlotRoundAudit
                  MidnightVaultBonusPolicy.IsValidDerivedWager(result.WagerPoints) ||
              (arcaneCollector || arcanePaylines) &&
                  ArcaneLightningCollector.IsValidCarryWager(baseGame, result.WagerPoints));
-        var legacyOlympusCarryWager = isPaid && result.IsFreeSpin &&
-            result.GameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId &&
-            OlympusTumbleDemo.IsLegacyCarryWager(baseGame.Wagering, result.WagerPoints);
+        // Classic free games may carry an average between two permitted cash wagers.
+        var legacyClassicCarryWager = isPaid && result.IsFreeSpin &&
+            result.GameId != SlotSpecialRoundProfiles.ArcaneArchivesGameId &&
+            StandaloneSlotPackageRegistry.Owns(result.GameId) &&
+            ClassicSlotEngine.IsCarryWager(baseGame.Wagering, result.WagerPoints);
         var neonCarryWager = result.IsFreeSpin && NeonArcadeSlotDefinitions.IsModel(baseGame) &&
             NeonArcadeSlotDefinitions.IsValidCarryWager(result.WagerPoints);
         if (result.PointValueInCents != baseGame.Wagering.PointValueInCents ||
-            !(trustedBonusWager || legacyOlympusCarryWager || neonCarryWager || ValidWager(result.WagerPoints, baseGame.Wagering)) ||
+            !(trustedBonusWager || legacyClassicCarryWager || neonCarryWager || ValidWager(result.WagerPoints, baseGame.Wagering)) ||
             isDerivedFreeSpin && !trustedBonusWager)
             Flag("slot-wager-invalid", "The wager or point value does not match the captured rules.");
         if (result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId &&
@@ -462,7 +468,7 @@ internal static class SlotRoundAudit
                 Flag("slot-payout-total-mismatch", "The outcome payout does not balance with its paylines and separate awards.");
 
             var fullEnergy = Math.Min(100, checked(Math.Clamp(preSpinEnergy, 0, 100) + energyAward));
-            var usesEnergy = !arcaneCollector && !NeonArcadeSlotDefinitions.IsModel(baseGame) &&
+            var usesEnergy = profileUsesEnergy != false && !arcaneCollector && !NeonArcadeSlotDefinitions.IsModel(baseGame) &&
                 !arcanePaylines &&
                 (result.GameId != SlotSpecialRoundProfiles.RainbowRealmGameId || effectiveGame.Energy is not null);
             var multiply = usesEnergy && !foundryCollector &&

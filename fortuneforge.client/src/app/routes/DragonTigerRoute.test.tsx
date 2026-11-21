@@ -9,7 +9,7 @@ import pageTitleSource from '../usePageTitle.ts?raw'
 import type { AccountSummary } from '../../features/account/services/accountsApi'
 import type { DragonTigerCard } from '@fortuneforge/games-dragon-tiger'
 
-type GameProps = { playerId: string; gateway: { requestFn: typeof fetch }; onBalanceChange?: (balance: number) => void; renderCardFace?: (card: DragonTigerCard) => ReactNode }
+type GameProps = { playerId: string; gateway: { requestFn: typeof fetch; expectedAccountId?: string }; onBalanceChange?: (balance: number) => void; renderCardFace?: (card: DragonTigerCard) => ReactNode }
 const state = vi.hoisted(() => ({
   account: null as AccountSummary | null,
   loading: false,
@@ -40,7 +40,8 @@ vi.mock('@fortuneforge/games-dragon-tiger', () => ({
   HttpDragonTigerGateway: class {
     basePath: string
     requestFn: typeof fetch
-    constructor(basePath: string, requestFn: typeof fetch) { this.basePath = basePath; this.requestFn = requestFn }
+    expectedAccountId?: string
+    constructor(basePath: string, requestFn: typeof fetch, expectedAccountId?: string) { this.basePath = basePath; this.requestFn = requestFn; this.expectedAccountId = expectedAccountId }
   },
   DragonTigerGame: (props: GameProps) => { state.games.push(props); return <div data-testid="dragon-tiger-game" data-player-id={props.playerId} /> },
 }))
@@ -122,6 +123,7 @@ describe('Dragon Tiger connected route', () => {
     render()
     expect(game().playerId).toBe('first:account')
     expect(game().gateway.requestFn).toBe(state.fetch)
+    expect(game().gateway.expectedAccountId).toBe('first')
     expect(game().onBalanceChange).toBeTypeOf('function')
     state.refresh.mockResolvedValue(account('first', 112.5))
 
@@ -164,6 +166,7 @@ describe('Dragon Tiger connected route', () => {
     await act(async () => { finish(account('first', 12)); await Promise.resolve() })
 
     expect(game().playerId).toBe('second:account')
+    expect(game().gateway.expectedAccountId).toBe('second')
     expect(shellAccount().userId).toBe('second')
     expect(shellAccount().balances.slotsCredits).toBe(700)
   })

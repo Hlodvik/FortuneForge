@@ -1,3 +1,5 @@
+using LiarsDiceAccessException = FortuneForge.Games.LiarsDice.LiarsDiceAccessException;
+using LiarsDiceBidResponse = FortuneForge.Games.LiarsDice.LiarsDiceBidResponse;
 using FortuneForge.Server.Bots.LiarsDice;
 using FortuneForge.Server.Games.LiarsDice;
 using FortuneForge.Server.SecurityAudit;

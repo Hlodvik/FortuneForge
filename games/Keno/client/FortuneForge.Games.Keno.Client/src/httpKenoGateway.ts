@@ -4,12 +4,19 @@ export class HttpKenoGateway implements KenoGateway {
   readonly basePath: string
   private readonly requestFn: typeof fetch
 
-  constructor(basePath = '/api/games/keno', requestFn: typeof fetch = fetch) {
+  constructor(basePath = '/api/games/keno', requestFn: typeof fetch = fetch, private readonly expectedAccountId?: string) {
     this.basePath = basePath.replace(/\/$/, '')
     this.requestFn = requestFn
   }
 
   getStatus(signal?: AbortSignal) { return this.request('/status', { signal }, isStatus) }
+
+  getRound(roundId: string, signal?: AbortSignal) {
+    if (!/^[0-9a-f]{64}$/i.test(roundId))
+      throw new KenoGatewayError('The Keno round identifier is invalid.', 'keno-invalid-request')
+    return this.request(`/rounds/${roundId}`, { signal }, (value): value is KenoRound =>
+      isRound(value) && value.roundId === roundId)
+  }
 
   createRound(request: KenoRoundRequest, options: KenoRequestOptions = {}) {
     if (!isTicket(request.ticket) || !isPositiveMoney(request.wager))
@@ -19,11 +26,13 @@ export class HttpKenoGateway implements KenoGateway {
   }
 
   private async request<T>(path: string, init: RequestInit, validate: (value: unknown) => value is T): Promise<T> {
-    const response = await this.requestFn(`${this.basePath}${path}`, init)
+    const boundInit = this.expectedAccountId ? { ...init, headers: new Headers(init.headers) } : init
+    if (this.expectedAccountId) (boundInit.headers as Headers).set('X-FortuneForge-Expected-Account', this.expectedAccountId)
+    const response = await this.requestFn(`${this.basePath}${path}`, boundInit)
     const value: unknown = await response.json().catch(() => null)
     if (!response.ok) {
       const error = isError(value) ? value : null
-      throw new KenoGatewayError(error?.message ?? `The Keno request failed (${response.status}).`, error?.code, response.status)
+      throw new KenoGatewayError(error?.message ?? error?.error ?? `The Keno request failed (${response.status}).`, error?.code, response.status)
     }
     if (!validate(value)) throw new KenoGatewayError('The Keno service returned an invalid response.')
     return value
@@ -41,10 +50,10 @@ function isStatus(value: unknown): value is KenoStatus {
     typeof value.mode === 'string' && value.mode.trim().length > 0 && isPaytable(value.paytable)
 }
 
-function isRound(value: unknown, request: KenoRoundRequest): value is KenoRound {
-  return isRecord(value) && isNonBlankString(value.roundId) && isNonNegativeFinite(value.balance) && value.phase === 'completed' && isTicket(value.ticket) && sameNumbers(value.ticket.numbers, request.ticket.numbers) &&
+function isRound(value: unknown, request?: KenoRoundRequest): value is KenoRound {
+  return isRecord(value) && isNonBlankString(value.roundId) && isNonNegativeFinite(value.balance) && value.phase === 'completed' && isTicket(value.ticket) && (!request || sameNumbers(value.ticket.numbers, request.ticket.numbers)) &&
     isDraw(value.draw) && isHitCount(value.hitCount, value.ticket, value.draw) &&
-    isPositiveMoney(value.wager) && value.wager === request.wager && isNonNegativeFinite(value.payout) && typeof value.net === 'number' && Number.isFinite(value.net) &&
+    isPositiveMoney(value.wager) && (!request || value.wager === request.wager) && isNonNegativeFinite(value.payout) && typeof value.net === 'number' && Number.isFinite(value.net) &&
     Math.abs(value.net - (value.payout - value.wager)) < 0.001 && typeof value.outcome === 'string'
 }
 
@@ -84,7 +93,7 @@ function isRecord(value: unknown): value is Record<string, unknown> { return typ
 function isNonBlankString(value: unknown): value is string { return typeof value === 'string' && value.trim().length > 0 }
 function isNonNegativeFinite(value: unknown): value is number { return typeof value === 'number' && Number.isFinite(value) && value >= 0 }
 function isPositiveMoney(value: unknown): value is number { return isNonNegativeFinite(value) && value > 0 }
-function isError(value: unknown): value is { code: string; message: string } { return isRecord(value) && typeof value.code === 'string' && typeof value.message === 'string' }
+function isError(value: unknown): value is { code: string; message?: string; error?: string } { return isRecord(value) && typeof value.code === 'string' && (typeof value.message === 'string' || typeof value.error === 'string') }
 function createIdempotencyKey(): string {
   const random = typeof crypto?.randomUUID === 'function'
     ? crypto.randomUUID().replaceAll('-', '')

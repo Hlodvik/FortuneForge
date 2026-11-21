@@ -1,14 +1,18 @@
 import type { GridPosition } from '@fortuneforge/slot-client-core'
+import { createPreparedSlotSpinStore, isPreparedSlotSpin, preparedSlotSpinHeaders, preparedSlotSpinPath, type PreparedSlotSpin } from '@fortuneforge/slot-client-core/preparedSpin'
 import { stepDiscoMultiplier } from './roundState.js'
 import { NEON_GAME_ID, NEON_CAR_SYMBOL_SET_ID, NEON_DISCO_SYMBOL_SET_ID, NEON_PREVIOUS_DISCO_SYMBOL_SET_ID, discoMultipliers, neonBaseSymbolIds, neonCarSymbolIds, neonDiscoPayingSymbolIds, neonDiscoSymbolIds, type NeonAuthenticatedFetch, type NeonCarRespinOffer, type NeonCarRespinResult, type NeonDiscoMultiplier, type NeonNitroChoice, type NeonPendingChoiceResponse, type NeonSpinRequest, type NeonSpinResult, type NeonState, type NeonSymbolId } from './types.js'
 
-type Problem = { error?: string; detail?: string; code?: string; available?: number; required?: number; freeSpinsRemaining?: number; retryAfterMilliseconds?: number }
+type Problem = { error?: string; detail?: string; code?: string; available?: number; required?: number; freeSpinsRemaining?: number; retryAfterMilliseconds?: number; pendingOperation?: unknown; preparedOperationPending?: boolean }
+const preparedSpins = createPreparedSlotSpinStore('neon-nights')
 export class NeonRequestError extends Error {
   readonly status: number
   readonly code?: string
   readonly available?: number
   readonly freeSpinsRemaining?: number
   readonly retryAfterMilliseconds?: number
+  readonly pendingOperation?: PreparedSlotSpin
+  readonly preparedOperationPending: boolean
   constructor(message: string, status: number, problem: Problem | null) {
     super(message)
     this.name = 'NeonRequestError'
@@ -17,6 +21,8 @@ export class NeonRequestError extends Error {
     this.available = problem?.available
     this.freeSpinsRemaining = problem?.freeSpinsRemaining
     this.retryAfterMilliseconds = problem?.retryAfterMilliseconds
+    this.pendingOperation = isPreparedSlotSpin(problem?.pendingOperation) ? problem.pendingOperation : undefined
+    this.preparedOperationPending = problem?.preparedOperationPending === true
   }
 }
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -105,7 +111,10 @@ export function isNeonState(value: unknown): value is NeonState {
     (value.neonCarRoundWinPoints == null || natural(value.neonCarRoundWinPoints)) &&
     (value.neonDiscoRoundWinPoints == null || natural(value.neonDiscoRoundWinPoints)) &&
     (value.neonCarRespinOffer == null || isCarRespinOffer(value.neonCarRespinOffer)) &&
-    (value.pendingNeonNitroChoice == null || isNitroChoice(value.pendingNeonNitroChoice))
+    (value.pendingNeonNitroChoice == null || isNitroChoice(value.pendingNeonNitroChoice)) &&
+    (value.pendingOperation == null || isPreparedSlotSpin(value.pendingOperation)) &&
+    (value.slotsCreditsBalance == null ||
+      typeof value.slotsCreditsBalance === 'number' && Number.isFinite(value.slotsCreditsBalance) && value.slotsCreditsBalance >= 0)
 }
 function validNitroWild(value: unknown, settled: NeonSpinResult['reels'], allowPending = false): boolean {
   if (value == null) return settled.slice(0, -1).every(reel => !reel.includes('NITRO'))
@@ -142,7 +151,11 @@ function isNitroChoice(value: unknown): value is NeonNitroChoice {
     !record(value.neonNitroWild) || value.neonNitroWild.requiresChoice !== true ||
     !reels(value.neonNitroWild.initialReels, 7, neonCarSymbolIds) || !sameBoard(value.neonNitroWild.initialReels, value.initialReels) ||
     !validNitroWild(value.neonNitroWild, value.initialReels, true)) return false
-  return value.sourceKind === 'spin' || (value.sourceKind === 'car-respin' && reelIndex(value.reelIndex) && natural(value.roundWinPoints))
+  if (value.sourceKind === 'spin') {
+    return (value.walletBalanceAfterWagerCents == null || natural(value.walletBalanceAfterWagerCents)) &&
+      (value.selectedReel == null || reelIndex(value.selectedReel) && value.eligibleReels.includes(value.selectedReel))
+  }
+  return value.sourceKind === 'car-respin' && reelIndex(value.reelIndex) && natural(value.roundWinPoints)
 }
 
 function readPendingChoice(value: unknown, sourceKind: NeonNitroChoice['sourceKind']): NeonPendingChoiceResponse {
@@ -215,10 +228,39 @@ async function responseJson(response: Response): Promise<unknown> {
   }
   return response.json()
 }
-export function createNeonApi(authenticatedFetch?: NeonAuthenticatedFetch) {
+export function createNeonApi(authenticatedFetch?: NeonAuthenticatedFetch, accountId?: string) {
+  let preparedSupported = false
   const authenticated = (path: string, init?: RequestInit) => {
     if (!authenticatedFetch) throw new Error('Neon Nights requires an authenticated session for paid play.')
     return authenticatedFetch(path, init)
+  }
+  const pendingSpin = () => accountId ? preparedSpins.read(accountId) : undefined
+  async function postPaidSpin(terms: Omit<PreparedSlotSpin, 'operationId'>, saved?: PreparedSlotSpin) {
+    const headers = preparedSlotSpinHeaders(accountId, saved?.operationId)
+    // The saved operation is only safe to submit to a gateway that honors its identity.
+    if (saved && !preparedSupported) throw new NeonRequestError('The saved spin is waiting for the Neon Nights server.', 503, null)
+    try {
+      const response = await authenticated(saved ? preparedSlotSpinPath : '/api/slots/spins', {
+        method: 'POST', headers,
+        body: JSON.stringify({ gameId: NEON_GAME_ID, ...terms }),
+      })
+      const result = normalizeDiscoMultiplier(await responseJson(response))
+      const spin = response.status === 202 ? readPendingChoice(result, 'spin') : result
+      if (response.status !== 202 && !isNeonSpinResult(spin)) throw new Error('The Neon Nights server returned an invalid reel result.')
+      if (accountId && saved) preparedSpins.forget(accountId, saved.operationId)
+      return spin as NeonSpinResult | NeonPendingChoiceResponse
+    } catch (error) {
+      if (accountId && saved && error instanceof NeonRequestError) {
+        if (error.pendingOperation) preparedSpins.remember(accountId, error.pendingOperation)
+        else if (error.status === 400 || error.code === 'slot-prepared-start-paused' ||
+          (error.status === 409 && !error.preparedOperationPending)) preparedSpins.forget(accountId, saved.operationId)
+      }
+      throw error
+    }
+  }
+  const submitSavedSpin = (saved: PreparedSlotSpin) => {
+    const { wagerPoints, useFreeSpin, useSpecialBoost } = saved
+    return postPaidSpin({ wagerPoints, useFreeSpin, useSpecialBoost }, saved)
   }
   return {
     async availability(signal: AbortSignal) {
@@ -226,18 +268,32 @@ export function createNeonApi(authenticatedFetch?: NeonAuthenticatedFetch) {
       if (response.status !== 204) throw new Error('The Neon Nights game service is offline.')
     },
     async state(): Promise<NeonState> {
-      const result = normalizeDiscoMultiplier(await responseJson(await authenticated(`/api/slots/state?gameId=${NEON_GAME_ID}`, { method: 'GET' })))
+      const response = await authenticated(`/api/slots/state?gameId=${NEON_GAME_ID}`, { method: 'GET', headers: preparedSlotSpinHeaders(accountId) })
+      const result = normalizeDiscoMultiplier(await responseJson(response))
       if (!isNeonState(result)) throw new Error('The Neon Nights server returned an invalid state.')
+      preparedSupported = response.headers.get('X-FortuneForge-Prepared-Spin') === '1'
+      if (preparedSupported && accountId && result.pendingOperation && !pendingSpin())
+        preparedSpins.remember(accountId, result.pendingOperation)
       return result
+    },
+    pendingSpin,
+    async resumeSpin(): Promise<NeonSpinResult | NeonPendingChoiceResponse | undefined> {
+      const saved = pendingSpin()
+      return saved ? submitSavedSpin(saved) : undefined
     },
     async spin(request: NeonSpinRequest, demo: boolean): Promise<NeonSpinResult | NeonPendingChoiceResponse> {
       const common = { gameId: NEON_GAME_ID, wagerPoints: request.wagerPoints, useFreeSpin: request.useFreeSpin }
-      const response = demo
-        ? await fetch('/api/slots/demo/spins', { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...common, ...request.state, energyBalance: 0, sealCollections: [] }) })
-        : await authenticated('/api/slots/spins', { method: 'POST', body: JSON.stringify({ ...common, useSpecialBoost: false }) })
+      if (!demo) {
+        const saved = pendingSpin()
+        if (saved) return submitSavedSpin(saved)
+        const terms = { wagerPoints: request.wagerPoints, useFreeSpin: request.useFreeSpin, useSpecialBoost: false }
+        const operation = preparedSupported && accountId ? { ...terms, operationId: crypto.randomUUID() } : undefined
+        if (operation && accountId) preparedSpins.remember(accountId, operation)
+        return postPaidSpin(terms, operation)
+      }
+      const response = await fetch('/api/slots/demo/spins', { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...common, ...request.state, energyBalance: 0, sealCollections: [] }) })
       const result = normalizeDiscoMultiplier(await responseJson(response))
-      if (!demo && response.status === 202) return readPendingChoice(result, 'spin')
       if (!isNeonSpinResult(result)) throw new Error('The Neon Nights server returned an invalid reel result.')
       return result
     },

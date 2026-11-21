@@ -6,6 +6,6 @@
     "kind": "frame"
   },
   "backend": {
-    "project": "server/FortuneForge.Games.JadeDragon.Server/FortuneForge.Games.JadeDragon.Server.csproj"
+    "kind": "packaged-game"
   }
 }

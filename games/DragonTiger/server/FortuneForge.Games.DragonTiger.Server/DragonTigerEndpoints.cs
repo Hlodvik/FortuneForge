@@ -1,4 +1,5 @@
 using System.Text.Json;
+using FortuneForge.Games.Abstractions.Wallet;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 using Microsoft.AspNetCore.Builder;
@@ -38,7 +39,7 @@ public static class DragonTigerEndpoints
         var status = api.MapGet("/status", (Func<HttpContext, Task<IResult>>)((HttpContext context) => Handle(context, resolveAccount, async (account, service, practice) =>
         {
             await Task.CompletedTask;
-            return Results.Ok(new DragonTigerStatusResponse(true, 0.50m, 100m, 0.50m, 100m,
+            return Results.Ok(new DragonTigerStatusResponse(context.RequestServices.GetRequiredService<IConfiguration>().GetValue("Features:DragonTigerEnabled", false), 0.50m, 100m, 0.50m, 100m,
                 practice ? DragonTigerMoney.ToRand(context.RequestServices.GetRequiredService<PracticeDragonTigerStore>().GetBalanceCents(account.UserId)) : account.WalletBalance,
                 practice ? "practice-eight-deck-dragon-tiger" : "eight-deck-dragon-tiger"));
         })));
@@ -70,17 +71,25 @@ public static class DragonTigerEndpoints
         Func<DragonTigerAccount, DragonTigerService, bool, Task<IResult>> action)
     {
         context.Response.Headers.CacheControl = "no-store, max-age=0";
-        if (!context.RequestServices.GetRequiredService<IConfiguration>().GetValue("Features:DragonTigerEnabled", false))
-            return Error(503, "dragon-tiger-disabled", "Dragon Tiger is still being verified and cannot accept a wager yet.");
+        var enabled = context.RequestServices.GetRequiredService<IConfiguration>().GetValue("Features:DragonTigerEnabled", false);
         try
         {
             var account = await resolveAccount(context, context.RequestAborted);
             if (account is null) return Error(401, "dragon-tiger-authentication-required", "Sign in to play Dragon Tiger.");
             var options = context.RequestServices.GetRequiredService<IOptions<DragonTigerServerOptions>>().Value;
             var practice = options.ForcePractice || string.Equals(context.Request.Headers["X-FortuneForge-Practice"].ToString(), "true", StringComparison.OrdinalIgnoreCase);
+            if (!enabled && practice) return Error(503, "dragon-tiger-disabled", "Dragon Tiger is not accepting new wagers.");
             IDragonTigerStore store = practice ? context.RequestServices.GetRequiredService<PracticeDragonTigerStore>()
-                : new DragonTigerFirestoreStore(context.RequestServices.GetRequiredService<FirestoreDb>());
+                : new DragonTigerWalletStore(context.RequestServices.GetRequiredService<FirestoreDb>(),
+                    context.RequestServices.GetRequiredService<IGameWalletClient>(), context.RequestServices.GetRequiredService<IGameWalletAccountReader>(), enabled);
             return await action(account, new DragonTigerService(store, TimeProvider.System), practice);
+        }
+        catch (DragonTigerDisabledException exception) { return Error(503, "dragon-tiger-disabled", exception.Message); }
+        catch (GameWalletConflictException exception) { return Error(409, "dragon-tiger-round-conflict", exception.Message); }
+        catch (GameWalletUnavailableException exception)
+        {
+            context.Response.Headers.RetryAfter = "1";
+            return Error(503, "dragon-tiger-retry-required", exception.Message);
         }
         catch (DragonTigerRoundNotFoundException exception) { return Error(404, "dragon-tiger-round-not-found", exception.Message); }
         catch (DragonTigerRoundConflictException exception) { return Error(409, "dragon-tiger-round-conflict", exception.Message); }

@@ -18,7 +18,7 @@ export function AuthenticatedRouletteRoute() {
 }
 
 function RouletteSession({ account }: { account: AccountSummary }) {
-  const gateway = useMemo(() => new HttpRouletteGateway('/api/games/roulette', fetchWithAccountSession), [])
+  const gateway = useMemo(() => new HttpRouletteGateway('/api/games/roulette', fetchWithAccountSession, { accountId: account.userId }), [account.userId])
   const { Game: RouletteGame, pending } = useReleasedGame('roulette', 'Roulette', BundledRouletteGame, bundledStyles)
   if (RouletteGame === null) return pending
 

@@ -20,10 +20,16 @@ public sealed class RainbowRealmEngine
         random, EngineVersion, new ClassicSlotEngineOptions
         {
             AlwaysUsesPawCollectors = true,
+            AllowFreeSpinCarryWager = true,
             SinglePawDivisor = 17,
             CollectionAppearanceChance = _ => 33,
             FeaturePayoutCalculator = RainbowRealmCharmHarvest.Calculate
         });
+
+    public static decimal WagerPointValueInCents => Definitions.Game.Wagering.PointValueInCents;
+
+    public static void ValidateWager(long wagerPoints, bool isFreeSpin) =>
+        ClassicSlotEngine.ValidateWager(Definitions.Game, wagerPoints, allowCarryWager: isFreeSpin);
 
     public ClassicSlotSpinOutcome Spin(long wagerPoints, string playerId,
         bool specialBoostApplied = false, long currentEnergyBalance = 0,

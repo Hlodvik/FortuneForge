@@ -53,7 +53,6 @@ public sealed class BlackjackContractTests
     {
         var controller = new BlackjackController(
             null!,
-            null!,
             new ConfigurationBuilder().Build(),
             NullLogger<BlackjackController>.Instance);
 
@@ -211,7 +210,7 @@ public sealed class BlackjackContractTests
             DateTime nowUtc,
             CancellationToken cancellationToken)
         {
-            var gameId = FirestoreBlackjackStore.CreateLookupKey($"{userId}\n{idempotencyKey}");
+            var gameId = BlackjackSoloStore.Hash($"{userId}\n{idempotencyKey}");
             if (game is not null)
             {
                 return Task.FromResult(new BlackjackStoreResult(game, BalanceCents));

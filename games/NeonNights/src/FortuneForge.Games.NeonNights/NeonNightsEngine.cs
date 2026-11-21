@@ -97,7 +97,7 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
         if (isNeonDiscoPlay)
             return SpinDiscoLocked(game, wagerPoints, pity, currentEnergyBalance, neonDiscoMultiplier);
 
-        var usesNitroWild = NeonNitroWild.IsCarPlay(isFreeSpin, featureMode);
+        var usesNitroWild = NeonCarRoundState.IsCarPlay(isFreeSpin, featureMode);
         var pityMissesBefore = pity.ConsecutiveFiveMisses;
         var pityTriggered = string.IsNullOrWhiteSpace(featureMode) &&
             game.Math.FiveMatchPityMissLimit is { } pityLimit &&
@@ -238,7 +238,7 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
             .Select(row => Enumerable.Repeat(row, game.Layout.ReelCount).ToList())
             .ToList();
         var extraPayoutSteps = Enumerable.Repeat(0, extraPaylines.Count).ToList();
-        var usesNitroWild = NeonNitroWild.IsCarPlay(usesAwardedPlay, featureMode);
+        var usesNitroWild = NeonCarRoundState.IsCarPlay(usesAwardedPlay, featureMode);
         if (usesNitroWild)
         {
             var knownRoutes = game.Paylines.Concat(extraPaylines).Select(rows => string.Join(',', rows)).ToHashSet();

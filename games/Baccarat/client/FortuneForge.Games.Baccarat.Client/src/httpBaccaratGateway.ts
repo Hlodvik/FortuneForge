@@ -15,7 +15,7 @@ export class HttpBaccaratGateway implements BaccaratGateway {
   private readonly requestFn: typeof fetch
   private pairBetsSupported: boolean | undefined
 
-  constructor(basePath = '/api/games/baccarat', requestFn: typeof fetch = fetch) {
+  constructor(basePath = '/api/games/baccarat', requestFn: typeof fetch = fetch, private readonly expectedAccountId?: string) {
     this.basePath = basePath.replace(/\/$/, '')
     this.requestFn = requestFn
   }
@@ -47,7 +47,10 @@ export class HttpBaccaratGateway implements BaccaratGateway {
   }
 
   private async request<T>(path: string, init: RequestInit, validate: (value: unknown) => value is T): Promise<T> {
-    const response = await this.requestFn(`${this.basePath}${path}`, init)
+    const headers = new Headers(init.headers)
+    if (this.expectedAccountId) headers.set('X-FortuneForge-Expected-Account', this.expectedAccountId)
+    const request = this.requestFn
+    const response = await request(`${this.basePath}${path}`, this.expectedAccountId ? { ...init, headers } : init)
     const value: unknown = await response.json().catch(() => null)
     if (!response.ok) {
       const error = isError(value) ? value : null

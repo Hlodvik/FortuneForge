@@ -55,12 +55,18 @@ export type CasinoWarRound = Readonly<{
   tieSettlement: CasinoWarTieSettlement | null
 }>
 export type CasinoWarRequestOptions = Readonly<{ signal?: AbortSignal; idempotencyKey?: string }>
+export type CasinoWarRecovery = Readonly<{
+  recoveredRound: CasinoWarRound | null
+  openRounds: readonly CasinoWarRound[]
+}>
 
 export interface CasinoWarGateway {
   getStatus(signal?: AbortSignal): Promise<CasinoWarStatus>
   getRound(roundId: string, signal?: AbortSignal): Promise<CasinoWarRound>
   createRound(primaryStake: number, tieStake: number, options?: CasinoWarRequestOptions): Promise<CasinoWarRound>
   decide(roundId: string, decision: CasinoWarDecision, options?: CasinoWarRequestOptions): Promise<CasinoWarRound>
+  recoverPending?(signal?: AbortSignal): Promise<CasinoWarRecovery>
+  getHistory?(limit?: number, signal?: AbortSignal): Promise<readonly CasinoWarRound[]>
 }
 
 export class CasinoWarGatewayError extends Error {

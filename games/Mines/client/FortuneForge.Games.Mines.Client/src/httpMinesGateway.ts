@@ -3,7 +3,7 @@ import { isSupportedMinesHouseEdge,isSupportedMinesPayoutPolicy,currentMinesMaxi
 import { acceptedMinesMaximumWagerCents,acceptedMinesMinimumWagerCents,currentMinesMinimumWagerCents,currentMinesMaximumWagerCents } from './minesWagerLimits'
 
 export class HttpMinesGateway implements MinesGateway {
-  constructor(readonly basePath='/api/games/mines',private readonly requestFn:typeof fetch=fetch){}
+  constructor(readonly basePath='/api/games/mines',private readonly requestFn:typeof fetch=fetch,private readonly expectedAccountId?:string){}
   getSession(signal?:AbortSignal){return this.request('/session',{signal})}
   execute(command:MinesCommand){
     const path=command.action==='start'?'/rounds':`/rounds/${encodeURIComponent(command.roundId)}/${command.action}`
@@ -13,10 +13,12 @@ export class HttpMinesGateway implements MinesGateway {
   private async request(path:string,init:RequestInit):Promise<MinesSession>{
     const request=this.requestFn
     let response:Response
-    try{response=await request(`${this.basePath.replace(/\/$/,'')}${path}`,{credentials:'same-origin',...init})}
+    const boundInit=this.expectedAccountId?{...init,headers:new Headers(init.headers)}:init
+    if(this.expectedAccountId)(boundInit.headers as Headers).set('X-FortuneForge-Expected-Account',this.expectedAccountId)
+    try{response=await request(`${this.basePath.replace(/\/$/,'')}${path}`,{credentials:'same-origin',...boundInit})}
     catch{throw new MinesGatewayError('Connection interrupted. Restore your round to continue safely.')}
     const value:unknown=await response.json().catch(()=>undefined)
-    if(!response.ok){const err=record(value)?value:{};throw new MinesGatewayError(typeof err.message==='string'?err.message:'The table could not complete your request. Please retry.',typeof err.code==='string'?err.code:undefined,response.status)}
+    if(!response.ok){const err=record(value)?value:{};throw new MinesGatewayError(typeof err.message==='string'?err.message:typeof err.error==='string'?err.error:'The table could not complete your request. Please retry.',typeof err.code==='string'?err.code:undefined,response.status)}
     if(!isMinesSession(value))throw new MinesGatewayError('The table returned an incomplete result. Restore your round to continue safely.','mines-invalid-response')
     return value
   }

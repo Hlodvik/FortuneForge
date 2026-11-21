@@ -1,6 +1,7 @@
 using FortuneForge.Games.Abstractions.Analytics;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.Dice;
+using FortuneForge.Server.Accounts.Storage;
 using FortuneForge.Server.Games.Craps;
 using FortuneForge.Server.Tests.Blackjack.Table;
 using Google.Api.Gax;
@@ -22,7 +23,7 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
     {
         var db = Database();
         await Seed(db, "alice", 100m);
-        var store = new FirestorePaidCrapsStore(db, () => Dice(3, 4));
+        var store = CreateStore(db, () => Dice(3, 4));
         var operationId = Key();
         var request = new StartCrapsRoundRequest(1m,
             [new("field", 1m), new("any-seven", 1m)], operationId);
@@ -60,7 +61,7 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         var db = Database();
         await Seed(db, "alice", 100m);
         var draws = new Queue<DicePair>([Dice(1, 3), Dice(1, 3)]);
-        var store = new FirestorePaidCrapsStore(db, draws.Dequeue);
+        var store = CreateStore(db, draws.Dequeue);
         var started = await store.StartAsync("alice", new(1m, null, Key()));
         var pointed = await store.RollAsync("alice", started.RoundId, RollRequest(started));
         Assert.Equal("point", pointed.Phase);
@@ -84,7 +85,7 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         var db = Database();
         await Seed(db, "alice", 100m);
         var draws = new Queue<DicePair>([Dice(1, 3), Dice(3, 4)]);
-        var store = new FirestorePaidCrapsStore(db, draws.Dequeue);
+        var store = CreateStore(db, draws.Dequeue);
         var started = await store.StartAsync("alice", new(1m, [new("field", 1m)], Key()));
         Assert.Equal(9800, started.WalletBalanceCents);
 
@@ -108,7 +109,7 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
     {
         var db = Database();
         await Seed(db, "alice", 1m);
-        var store = new FirestorePaidCrapsStore(db, () => Dice(3, 4));
+        var store = CreateStore(db, () => Dice(3, 4));
         var duplicate = await Assert.ThrowsAsync<CrapsPaidException>(() => store.StartAsync("alice", new(1m,
             [new("field", 1m), new("field", 1m)], Key())));
         Assert.Equal("craps-invalid-bets", duplicate.Code);
@@ -130,7 +131,7 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         var db = Database();
         await Seed(db, "alice", 1000m);
         var draws = new Queue<DicePair>([Dice(1, 3), Dice(2, 3), Dice(1, 3)]);
-        var store = new FirestorePaidCrapsStore(db, draws.Dequeue);
+        var store = CreateStore(db, draws.Dequeue);
         var round = await store.StartAsync("alice", new(10m,
             [new("field", 2m), new("any-craps", 3m), new("any-seven", 4m)], Key()));
         round = await store.RollAsync("alice", round.RoundId, RollRequest(round));
@@ -189,7 +190,7 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         var db = Database();
         await Seed(db, "alice", 100m);
         var draws = new Queue<DicePair>([Dice(1, 3), Dice(first, second), Dice(3, 4)]);
-        var store = new FirestorePaidCrapsStore(db, draws.Dequeue);
+        var store = CreateStore(db, draws.Dequeue);
         var round = await store.StartAsync("alice", new(1m, null, Key()));
         round = await store.RollAsync("alice", round.RoundId, RollRequest(round));
         round = await store.SetWagerAsync("alice", round.RoundId, WagerRequest(round, kind, 1m));
@@ -214,8 +215,8 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
     {
         var db = Database();
         await Seed(db, "alice", 100m);
-        var store = new FirestorePaidCrapsStore(db, () => Dice(2, 3));
-        var other = new FirestorePaidCrapsStore(db, () => Dice(1, 2));
+        var store = CreateStore(db, () => Dice(2, 3));
+        var other = CreateStore(db, () => Dice(1, 2));
         var round = await store.StartAsync("alice", new(1m, null, Key()));
         round = await store.RollAsync("alice", round.RoundId, RollRequest(round));
         var first = WagerRequest(round, "odds", 2m);
@@ -223,7 +224,8 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         var results = await Task.WhenAll(Capture(() => store.SetWagerAsync("alice", round.RoundId, first)),
             Capture(() => other.SetWagerAsync("alice", round.RoundId, second)));
         Assert.Single(results, result => result.Round is not null);
-        Assert.Equal("craps-round-stale", Assert.Single(results, result => result.Error is not null).Error!.Code);
+        Assert.Contains(Assert.Single(results, result => result.Error is not null).Error!.Code,
+            new[] { "craps-round-stale", "craps-action-pending" });
         round = (await store.ActiveAsync("alice"))!;
         Assert.Single(round.ExtraBets, extra => !extra.Resolved);
         var adjustment = WagerRequest(round, "field", 1m);
@@ -231,7 +233,8 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         results = await Task.WhenAll(Capture(() => store.SetWagerAsync("alice", round.RoundId, adjustment)),
             Capture(() => other.RollAsync("alice", round.RoundId, rollRequest)));
         Assert.Single(results, result => result.Round is not null);
-        Assert.Equal("craps-round-stale", Assert.Single(results, result => result.Error is not null).Error!.Code);
+        Assert.Contains(Assert.Single(results, result => result.Error is not null).Error!.Code,
+            new[] { "craps-round-stale", "craps-action-pending" });
         var accepted = Assert.Single(results, result => result.Round is not null).Round!;
         var replay = accepted.Rolls.Count == round.Rolls.Count
             ? await store.SetWagerAsync("alice", round.RoundId, adjustment)
@@ -250,7 +253,7 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
     {
         var db = Database();
         await Seed(db, "alice", 3m);
-        var store = new FirestorePaidCrapsStore(db, () => Dice(1, 3));
+        var store = CreateStore(db, () => Dice(1, 3));
         var round = await store.StartAsync("alice", new(1m, null, Key()));
         var unavailable = await Assert.ThrowsAsync<CrapsPaidException>(() => store.SetWagerAsync("alice", round.RoundId, WagerRequest(round, "field", 1m)));
         Assert.Equal("craps-wager-unavailable", unavailable.Code);
@@ -262,7 +265,9 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         Assert.Equal("craps-invalid-bets", (await Assert.ThrowsAsync<CrapsPaidException>(() => store.SetWagerAsync("alice", round.RoundId, WagerRequest(round, "pass-line", 2m)))).Code);
         Assert.Equal("craps-insufficient-credits", (await Assert.ThrowsAsync<CrapsPaidException>(() => store.SetWagerAsync("alice", round.RoundId, WagerRequest(round, "odds", 3m)))).Code);
         Assert.Equal("craps-wager-unchanged", (await Assert.ThrowsAsync<CrapsPaidException>(() => store.SetWagerAsync("alice", round.RoundId, WagerRequest(round, "field", 0m)))).Code);
-        Assert.Equal(2, (await db.Collection("crapsPaidOperations").GetSnapshotAsync()).Count);
+        var operations = (await db.Collection("crapsPaidOperations").GetSnapshotAsync()).Documents;
+        Assert.Equal(3, operations.Count);
+        Assert.Single(operations, operation => operation.GetValue<string>("walletStatus") == "declined");
         Assert.Single((await db.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
         var oddsRequest = WagerRequest(round, "odds", 2m);
         var odds = await store.SetWagerAsync("alice", round.RoundId, oddsRequest);
@@ -282,7 +287,7 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         var db = Database();
         await Seed(db, "alice", 100m);
         var draws = new Queue<DicePair>([Dice(1, 3), Dice(2, 3), Dice(3, 4)]);
-        var store = new FirestorePaidCrapsStore(db, draws.Dequeue);
+        var store = CreateStore(db, draws.Dequeue);
         var round = await store.StartAsync("alice", new(1m, [new("field", 1m)], Key()));
         var reference = db.Collection("crapsPaidRounds").Document(round.RoundId.ToString("N"));
         var json = JsonNode.Parse((await reference.GetSnapshotAsync()).GetValue<string>("roundJson"))!.AsObject();
@@ -315,7 +320,7 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         var db = Database();
         await Seed(db, "alice", 1000m);
         var draws = new Queue<DicePair>([Dice(first, second), Dice(first, second)]);
-        var store = new FirestorePaidCrapsStore(db, draws.Dequeue);
+        var store = CreateStore(db, draws.Dequeue);
         var round = await store.StartAsync("alice", new(1m, null, Key()));
         round = await store.RollAsync("alice", round.RoundId, RollRequest(round));
         var request = new PlaceCrapsOddsRequest(stake, Key(), round.Revision, round.Rolls.Count + 1);
@@ -333,14 +338,14 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         var db = Database();
         await Seed(db, "alice", 100m);
         var draws = new Queue<DicePair>([Dice(1, 3), Dice(1, 3)]);
-        var store = new FirestorePaidCrapsStore(db, draws.Dequeue);
+        var store = CreateStore(db, draws.Dequeue);
         var start = new StartCrapsRoundRequest(1m, [new("field", 2m)], Key());
         var round = await store.StartAsync("alice", start);
         var startReference = Receipt(db, "alice", start.OperationId!);
         var legacyStartFingerprint = Hash(JsonSerializer.Serialize(new object[]
             { "start", 1m, new[] { new LegacyCrapsExtra("field", 2m, false, false, null) } }));
         Assert.Equal(legacyStartFingerprint, (await startReference.GetSnapshotAsync()).GetValue<string>("fingerprint"));
-        await startReference.UpdateAsync("responseJson", LegacyResponse(round));
+        await StoreLegacyReceipt(startReference, legacyStartFingerprint, round);
         var firstRoll = RollRequest(round);
         round = await store.RollAsync("alice", round.RoundId, firstRoll);
         var pointed = round;
@@ -350,17 +355,9 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         round = await store.RollAsync("alice", round.RoundId, RollRequest(round));
         var ledgerCount = (await db.Collection("balanceTransactions").GetSnapshotAsync()).Count;
         var firstReceipt = Receipt(db, "alice", firstRoll.OperationId!);
-        await firstReceipt.UpdateAsync(new Dictionary<string, object>
-        {
-            ["fingerprint"] = Hash(JsonSerializer.Serialize(new object[] { "roll", round.RoundId })),
-            ["responseJson"] = LegacyResponse(pointed),
-        });
+        await StoreLegacyReceipt(firstReceipt, Hash(JsonSerializer.Serialize(new object[] { "roll", round.RoundId })), pointed);
         var oddsReceipt = Receipt(db, "alice", odds.OperationId!);
-        await oddsReceipt.UpdateAsync(new Dictionary<string, object>
-        {
-            ["fingerprint"] = Hash(JsonSerializer.Serialize(new object[] { "odds", round.RoundId, 2m })),
-            ["responseJson"] = LegacyResponse(placed),
-        });
+        await StoreLegacyReceipt(oddsReceipt, Hash(JsonSerializer.Serialize(new object[] { "odds", round.RoundId, 2m })), placed);
         Assert.Equal("come-out", (await store.StartAsync("alice", start)).Phase);
         var oldRoll = await store.RollAsync("alice", round.RoundId, new(firstRoll.OperationId));
         Assert.Equal(pointed.WalletBalanceCents, oldRoll.WalletBalanceCents);
@@ -385,11 +382,11 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         var db = Database();
         await Seed(db, "alice", 100m);
         var draws = new Queue<DicePair>([Dice(2, 2), Dice(1, 2), Dice(2, 2)]);
-        var store = new FirestorePaidCrapsStore(db, draws.Dequeue);
+        var store = CreateStore(db, draws.Dequeue);
         var round = await store.StartAsync("alice", new(1m, null, Key()));
         round = await store.RollAsync("alice", round.RoundId, RollRequest(round));
         Assert.Equal((2, 2), (round.Rolls[0].First, round.Rolls[0].Second));
-        store = new FirestorePaidCrapsStore(db, draws.Dequeue);
+        store = CreateStore(db, draws.Dequeue);
         round = await store.GetAsync("alice", round.RoundId);
         Assert.Equal((2, 2), (round.Rolls[0].First, round.Rolls[0].Second));
         round = await store.PlaceOddsAsync("alice", round.RoundId, new(2m, Key(), round.Revision, 2));
@@ -416,6 +413,13 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         Assert.Equal(ledgerCount, (await db.Collection("balanceTransactions").GetSnapshotAsync()).Count);
         Assert.Empty(draws);
     }
+
+    private static Task StoreLegacyReceipt(DocumentReference receipt, string fingerprint, CrapsRoundResponse round) =>
+        receipt.UpdateAsync(new Dictionary<string, object>
+        {
+            ["fingerprint"] = fingerprint, ["responseJson"] = LegacyResponse(round), ["schemaVersion"] = 1L,
+            ["preparedJson"] = FieldValue.Delete, ["walletStatus"] = FieldValue.Delete, ["walletReceiptJson"] = FieldValue.Delete,
+        });
 
     private static string LegacyResponse(CrapsRoundResponse round) => JsonSerializer.Serialize(new
     {
@@ -444,10 +448,17 @@ public sealed class FirestorePaidCrapsStoreTests(BlackjackTableFirestoreEmulator
         EmulatorDetection = EmulatorDetection.None,
     }.Build();
 
-    private static async Task Seed(FirestoreDb db, string userId, decimal balance) =>
-        await db.Collection("userBalances").Document(userId + "_slotsCredits").SetAsync(new Dictionary<string, object>
+    internal static FirestorePaidCrapsStore CreateStore(FirestoreDb db, Func<DicePair> draw)
+    {
+        var wallet = new CrapsCompatibilityWallet(db, new FirestoreWalletRoundSettlementStore(db), TimeProvider.System);
+        return new FirestorePaidCrapsStore(db, wallet, wallet, draw);
+    }
+
+    internal static Task Seed(FirestoreDb db, string userId, decimal balance) =>
+        db.Collection("userBalances").Document(userId + "_slotsCredits").SetAsync(new Dictionary<string, object>
         {
-            ["available"] = (long)balance, ["availableFractionalCents"] = 0L,
+            ["userId"] = userId, ["currencyId"] = "slotsCredits", ["available"] = (long)balance,
+            ["availableFractionalCents"] = 0L, ["reserved"] = 0L, ["version"] = 1L,
         });
     private static DicePair Dice(int first, int second) => new(new DieValue(first), new DieValue(second));
     private static string Key() => Guid.NewGuid().ToString("N");

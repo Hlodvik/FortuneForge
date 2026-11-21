@@ -1,5 +1,6 @@
 // Edited: 2026-11-18T14:45:02-06:00 | Computer: Vinnabok
 using System.Collections.Concurrent;
+using FortuneForge.Games.Slots.Runtime;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
@@ -122,7 +123,7 @@ public sealed partial class SpinService(
 
     private static void ValidateOlympusCarryWager(GameDefinition game, long wagerPoints)
     {
-        if (!OlympusTumbleDemo.IsLegacyCarryWager(game.Wagering, wagerPoints))
+        if (!ClassicSlotEngine.IsCarryWager(game.Wagering, wagerPoints))
             throw new ArgumentOutOfRangeException(nameof(wagerPoints), "The Olympus free-spin wager is out of range.");
     }
 

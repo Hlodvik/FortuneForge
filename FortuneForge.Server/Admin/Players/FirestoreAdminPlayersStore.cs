@@ -1,4 +1,6 @@
 using System.Text.Json;
+using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Abstractions.Wallet;
 using FortuneForge.Server.Admin.Operations;
 using Google.Cloud.Firestore;
 using Microsoft.Extensions.Options;
@@ -197,19 +199,36 @@ internal sealed class FirestoreAdminPlayersStore(FirestoreDb database, IOptions<
         if (type == "credit-purchase" || type.StartsWith("withdrawal-", StringComparison.Ordinal)) return null;
         var prefix = GamePrefixes.FirstOrDefault(pair => type.StartsWith(pair.Prefix, StringComparison.Ordinal));
         var game = OptionalText(document, "gameId") ?? prefix.Game ?? "unclassified";
+        var directCardRound = DirectCardWalletRound(document, game, type);
         var amount = Money(document, "amount", "amountCents");
-        var isCharge = ChargeTypes.Contains(type) || type.StartsWith("texas-holdem-action-v", StringComparison.Ordinal) &&
+        var isCharge = ChargeTypes.Contains(type) || directCardRound is not null && type == "game-wager" ||
+            type.StartsWith("texas-holdem-action-v", StringComparison.Ordinal) &&
             int.TryParse(type.AsSpan("texas-holdem-action-v".Length), out var version) && version >= 0;
-        var isPayout = PayoutTypes.Contains(type);
+        var isPayout = PayoutTypes.Contains(type) || directCardRound is not null && type == "game-payout";
         var isRefund = RefundTypes.Contains(type);
         var isAdjustment = type is "blackjack-table-wager-adjustment" or "three-card-poker-table-wager-adjustment";
         var known = amount is not null && (isCharge && amount <= 0 || isPayout && amount >= 0 || isRefund && amount >= 0 || isAdjustment);
         decimal? wager = known ? amount < 0 ? -amount : 0 : null;
         decimal? paid = known ? isPayout ? amount : 0 : null;
         var refund = known && amount > 0 && (isRefund || isAdjustment) ? amount.Value : 0;
-        return new(document.Id, Text(document, "userId"), game, OptionalText(document, "matchId") ?? OptionalText(document, "roundId"),
+        return new(document.Id, Text(document, "userId"), game,
+            directCardRound ?? OptionalText(document, "matchId") ?? OptionalText(document, "roundId"),
             type, "posted", Time(document, "createdAt"), wager, paid, known ? amount : null, amount,
             Money(document, "balanceAfter", "balanceAfterCents"), "balanceTransactions", refund);
+    }
+
+    private static string? DirectCardWalletRound(DocumentSnapshot document, string game, string type)
+    {
+        if (game is not ("andar-bahar" or "dragon-tiger") || type is not ("game-wager" or "game-payout") ||
+            Integer(document, "schemaVersion") != 1 || OptionalText(document, "userId") is not { } actor ||
+            OptionalText(document, "operationId") is not { } round || !GameSecurityEventDocuments.IsEventId(round))
+            return null;
+
+        // Both games settle the whole round in one direct wallet operation using the round ID as its key.
+        var settlementId = GameWalletSettlementIdentity.CreateId(game, actor, round);
+        var suffix = type == "game-wager" ? "wager" : "payout";
+        return Text(document, "walletSettlementId") == settlementId && document.Id == $"{settlementId}-{suffix}" &&
+            Text(document, "transactionId") == document.Id && Text(document, "idempotencyKey") == document.Id ? round : null;
     }
 
     private static AdminPlayerMatch? CardMatch(DocumentSnapshot document)

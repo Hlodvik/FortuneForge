@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { completeSolitaireFreeRun, setSolitaireFreeRunPaused, startSolitaireFreeRun } from './solitaireFreeRunApi'
+import { completeSolitaireFreeRun, getSolitaireFreeRun, setSolitaireFreeRunPaused, startSolitaireFreeRun } from './solitaireFreeRunApi'
 
 describe('Solitaire free-run API boundary', () => {
   afterEach(() => vi.unstubAllGlobals())
@@ -110,6 +110,33 @@ describe('Solitaire free-run API boundary', () => {
       [`/api/solitaire/free/runs/${runId}/resume`, 'POST'],
     ])
     expect(fetchMock.mock.calls.every(([, init]) => init.body === undefined)).toBe(true)
+  })
+
+  it('reopens a durable run using only its owner-scoped server identifier', async () => {
+    const runId = `solitaire_free_${'d'.repeat(64)}`
+    const response = {
+      runId, seed: 42, drawCount: 3, gameId: 'free-solitaire', status: 'started',
+      startedAtUtc: '2026-09-06T12:00:00Z', isPaused: true, elapsedMilliseconds: 2_000,
+      completion: null, commands: null,
+    }
+    const fetchMock = successfulFetch(response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(getSolitaireFreeRun(runId)).resolves.toEqual(response)
+    expect(fetchMock.mock.calls[0][0]).toBe(`/api/solitaire/free/runs/${runId}`)
+  })
+
+  it('rejects recovery data for a different run or an inconsistent completed result', async () => {
+    const runId = `solitaire_free_${'d'.repeat(64)}`
+    const response = {
+      runId: `solitaire_free_${'e'.repeat(64)}`, seed: 42, drawCount: 3, gameId: 'free-solitaire', status: 'started',
+      startedAtUtc: '2026-09-06T12:00:00Z', isPaused: false, elapsedMilliseconds: 2_000,
+      completion: null, commands: null,
+    }
+    vi.stubGlobal('fetch', successfulFetch(response))
+    await expect(getSolitaireFreeRun(runId)).rejects.toThrow('different Solitaire free run')
+    vi.stubGlobal('fetch', successfulFetch({ ...response, runId, status: 'completed' }))
+    await expect(getSolitaireFreeRun(runId)).rejects.toThrow('invalid solitaire free-run recovery response')
   })
 })
 

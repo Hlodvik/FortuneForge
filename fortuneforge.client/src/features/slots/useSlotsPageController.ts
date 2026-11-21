@@ -47,6 +47,7 @@ import { getSlotKeyboardAction } from './slotKeyboard'
 import {
   requestArcanePotion,
   requestArcaneTomePage,
+  readPendingSlotSpin,
   requestDemoAvailability,
   requestDemoSpin,
   requestSlotState,
@@ -358,6 +359,8 @@ export function useSlotsPageController({
   const paidWagerRand = slotPointsToRand(paidWagerPoints, pointValueInCents)
   const expectedServerSymbolSetId = symbolSet.serverSymbolSetId ?? symbolSet.id
   const useFreeGameForNextSpin = freeSpinsRemaining > 0
+  const savedPaidSpin = demoMode ? undefined : readPendingSlotSpin(gameId, account?.userId)
+  const canAffordSelectedWager = savedPaidSpin !== undefined || useFreeGameForNextSpin || balance >= paidWagerRand
   const isSpecialGameActive = featureSet.specialRound !== undefined &&
     hasSpecialRoundStarted &&
     (useFreeGameForNextSpin || isSpecialSpinInProgress)
@@ -469,7 +472,7 @@ export function useSlotsPageController({
       return undefined
     }
 
-    if (!useFreeGameForNextSpin && balance < paidWagerRand) {
+    if (!canAffordSelectedWager) {
       setIsAutoSpinning(false)
       setSpinError(null)
       setIsReloadPromptOpen(true)
@@ -481,7 +484,7 @@ export function useSlotsPageController({
     }, 0)
     return () => window.clearTimeout(timer)
   }, [
-    balance,
+    canAffordSelectedWager,
     freeSpinsRemaining,
     isAutoSpinning,
     isAutoSpinCoolingDown,
@@ -494,9 +497,7 @@ export function useSlotsPageController({
     isReloadPromptOpen,
     isSettingsOpen,
     isSpinning,
-    paidWagerRand,
     mascotPhase,
-    useFreeGameForNextSpin,
     isSpecialGameActive,
   ])
 
@@ -689,6 +690,7 @@ export function useSlotsPageController({
     setFreeSpinWagerPoints(state.freeSpinWagerPoints)
     setFreeSpinFeatureMode(state.freeSpinFeatureMode)
     setEnergyBalance(state.energyBalance)
+    if (state.slotsCreditsBalance != null) setBalance(state.slotsCreditsBalance)
     if (award) setEnergyAward(award)
     setSealCollections(state.sealCollections.length > 0 ? state.sealCollections : defaultSealCollections)
     if (state.freeSpinWagerPoints !== null && !state.arcanePotions?.active) {
@@ -746,7 +748,7 @@ export function useSlotsPageController({
     }
 
     if (isPaidGodsTumble) setSpinAvailability('checking')
-    void requestSlotState(gameId)
+    void requestSlotState(gameId, account?.userId)
       .then((state) => {
         if (
           !isCurrent ||
@@ -765,7 +767,7 @@ export function useSlotsPageController({
     return () => {
       isCurrent = false
     }
-  }, [applySlotState, defaultSealCollections, demoMode, energyCompletionAward, gameId, isPaidGodsTumble])
+  }, [account?.userId, applySlotState, defaultSealCollections, demoMode, energyCompletionAward, gameId, isPaidGodsTumble])
 
   function isCurrentPresentation(signal: AbortSignal): boolean {
     return (
@@ -1526,7 +1528,7 @@ export function useSlotsPageController({
       const next = await request()
       if (isMountedRef.current) apply(next)
     } catch (error) {
-      const state = await requestSlotState(gameId).catch(() => null)
+      const state = await requestSlotState(gameId, account?.userId).catch(() => null)
       if (isMountedRef.current) {
         if (state) applySlotState(state)
         setArcaneError(error instanceof Error ? error.message : 'The Arcane workbench could not be updated.')
@@ -1549,7 +1551,7 @@ export function useSlotsPageController({
       return
     }
 
-    if (!useFreeGameForNextSpin && balance < paidWagerRand) {
+    if (!canAffordSelectedWager) {
       setIsAutoSpinning(false)
       setSpinError(null)
       setIsReloadPromptOpen(true)
@@ -1557,7 +1559,7 @@ export function useSlotsPageController({
     }
 
     const isFastAutoSpin = isAutoSpinning
-    const expectedFreeSpin = useFreeGameForNextSpin
+    const expectedFreeSpin = savedPaidSpin?.useFreeSpin ?? useFreeGameForNextSpin
     const expectsGodsTumble = usesGodsTumble && !expectedFreeSpin
     const autoSpinAmbienceCue = soundSet.events.autoSpinAmbience
     const ambienceCue = isFastAutoSpin && autoSpinAmbienceCue !== undefined
@@ -1569,11 +1571,11 @@ export function useSlotsPageController({
     const reelStopCue = expectedFreeSpin
       ? soundSet.events.specialReelStop ?? soundSet.events.reelStop
       : soundSet.events.reelStop
-    const requestedSpecialBoost = false
-    const wagerForSpin = expectedFreeSpin
+    const requestedSpecialBoost = savedPaidSpin?.useSpecialBoost ?? false
+    const wagerForSpin = savedPaidSpin?.wagerPoints ?? (expectedFreeSpin
       ? freeSpinWagerPoints ?? selectedWagerPoints
-      : paidWagerPoints
-    const optimisticCharge = expectedFreeSpin
+      : paidWagerPoints)
+    const optimisticCharge = expectedFreeSpin || savedPaidSpin
       ? 0
       : slotPointsToRand(wagerForSpin, pointValueInCents)
     const visibleBalanceBeforeAward = balance - optimisticCharge
@@ -1587,7 +1589,7 @@ export function useSlotsPageController({
     setIsFastSpinActive(isFastAutoSpin)
     setBalance((currentBalance) => currentBalance - optimisticCharge)
     if (expectedFreeSpin) {
-      setFreeSpinsRemaining((current) => Math.max(0, current - 1))
+      if (!savedPaidSpin) setFreeSpinsRemaining((current) => Math.max(0, current - 1))
       setHasSpecialRoundStarted(true)
       setIsSpecialSpinInProgress(true)
     }
@@ -1728,7 +1730,7 @@ export function useSlotsPageController({
             wagerPoints: wagerForSpin,
             useFreeSpin: expectedFreeSpin,
             useSpecialBoost: requestedSpecialBoost,
-          }, tumbleRules, symbolSet.definitions)
+          }, tumbleRules, symbolSet.definitions, account?.userId)
 
       const energyAwardResult = energyCompletionAward?.decode(result)
       if (energyAwardResult === null) {
@@ -1737,7 +1739,11 @@ export function useSlotsPageController({
       if (result.reels.length !== reelsBeforeSpin.length) {
         throw new Error(`Expected ${reelsBeforeSpin.length} reels but received ${result.reels.length}.`)
       }
-      if (result.reels.some((reel) => reel.length !== expectedRowCount)) {
+      const recoveredRows = result.reels[0]?.length
+      const recoveryMatchesLayout = savedPaidSpin && result.isFreeSpin &&
+        (recoveredRows === regularRowCount || recoveredRows === getSpinRowCount(true, 'rows', regularRowCount)) &&
+        result.reels.every(reel => reel.length === recoveredRows)
+      if (!recoveryMatchesLayout && result.reels.some((reel) => reel.length !== expectedRowCount)) {
         throw new Error(`Expected ${expectedRowCount} visible rows per reel but received an invalid slot grid.`)
       }
       if (result.symbolSetId !== expectedServerSymbolSetId) {
@@ -1966,6 +1972,10 @@ export function useSlotsPageController({
       if (!hasEnergyPayout) {
         await animateEnergyCollection(result, energyAwardResult, isFastAutoSpin, presentationSignal)
       }
+      if (savedPaidSpin) {
+        const current = await requestSlotState(gameId, account?.userId).catch(() => null)
+        if (current && isCurrentPresentation(presentationSignal)) applySlotState(current)
+      }
       shouldStartAutoSpinCooldown = isFastAutoSpin
     } catch (error) {
       completedRainbowBonus = null
@@ -2015,7 +2025,7 @@ export function useSlotsPageController({
       setWinAwardFlyover(null)
       setMoneyGrabPresentation(null)
       setLightningCollection(null)
-      if (expectedFreeSpin && !isFreeSpinUnavailable) {
+      if (expectedFreeSpin && !savedPaidSpin && !isFreeSpinUnavailable) {
         setFreeSpinsRemaining((current) => current + 1)
       }
       if (confirmedPaidTumbleBalance !== null) {
@@ -2027,12 +2037,14 @@ export function useSlotsPageController({
       }
       setSpinError(error instanceof Error ? error.message : 'The spin could not be completed.')
       if (!demoMode && error instanceof SpinRequestError &&
-          (error.code === 'free-spins-required' || error.code === 'arcane-tome-required' ||
+          (error.code === 'free-spins-required' || error.code === 'free-spin-wager-locked' ||
+            error.code === 'arcane-tome-required' || error.code === 'slot-operation-conflict' ||
+            error.code === 'legacy-slot-round-restored' ||
             error.code === 'arcane-potion-wager-locked')) {
-        const state = await requestSlotState(gameId).catch(() => null)
+        const state = await requestSlotState(gameId, account?.userId).catch(() => null)
         if (state && isCurrentPresentation(presentationSignal)) {
           applySlotState(state)
-          if ((error.code === 'free-spins-required' && state.freeSpinsRemaining > 0) ||
+          if (((error.code === 'free-spins-required' || error.code === 'free-spin-wager-locked') && state.freeSpinsRemaining > 0) ||
             (error.code === 'arcane-tome-required' && state.arcaneTome?.grimoireReady) ||
             (error.code === 'arcane-potion-wager-locked' && state.arcanePotions?.active)) {
             setSpinError(null)
@@ -2078,7 +2090,6 @@ export function useSlotsPageController({
     ...(bestWin?.matches.flatMap((match) => match.match.positions) ?? []),
     ...bonusPositions,
   ]
-  const canAffordSelectedWager = useFreeGameForNextSpin || balance >= paidWagerRand
   const activeWagerDisplay = useFreeGameForNextSpin
     ? slotPointsToRand(freeSpinWagerPoints ?? selectedWagerPoints, pointValueInCents)
     : paidWagerRand

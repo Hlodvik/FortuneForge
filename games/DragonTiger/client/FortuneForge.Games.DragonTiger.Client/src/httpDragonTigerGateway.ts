@@ -1,21 +1,41 @@
 import { DragonTigerGatewayError, type DragonTigerCard, type DragonTigerGateway, type DragonTigerRequestOptions, type DragonTigerRound, type DragonTigerStakes, type DragonTigerStatus } from './contracts'
 
 export class HttpDragonTigerGateway implements DragonTigerGateway {
-  constructor(readonly basePath = '/api/games/dragon-tiger', private readonly requestFn: typeof fetch = fetch) {}
+  constructor(readonly basePath = '/api/games/dragon-tiger', private readonly requestFn: typeof fetch = fetch, private readonly expectedAccountId?: string) {}
   getStatus(signal?: AbortSignal) { return this.request('/status', { signal }, isStatus) }
   async getLatestRound(signal?: AbortSignal) {
     return this.request('/rounds/latest', { signal }, (v): v is DragonTigerRound | null => v === null || isRound(v), true)
   }
   async createRound(stakes: DragonTigerStakes, options: DragonTigerRequestOptions) {
-    const round = await this.request('/rounds', {
+    const command: RequestInit = {
       method: 'POST', signal: options.signal, headers: { 'Content-Type': 'application/json', 'Idempotency-Key': options.idempotencyKey }, body: JSON.stringify(stakes),
-    }, isRound)
+    }
+    let round: DragonTigerRound
+    try {
+      round = await this.request('/rounds', command, isRound)
+    } catch (error) {
+      if (!(error instanceof DragonTigerGatewayError) || error.status !== 409 || error.code !== 'dragon-tiger-round-conflict') throw error
+      // Another tab can replace the shared legacy journal while the server still holds
+      // its earlier intent. Restore that intent, then replay this exact command once.
+      try { await this.getLatestRound(options.signal) }
+      catch (recoveryError) {
+        // A completed decline belongs to that earlier intent. This command still
+        // needs its own durable admission/decline rather than inheriting its result.
+        if (!(recoveryError instanceof DragonTigerGatewayError) || recoveryError.code !== 'insufficient-slot-credits') throw recoveryError
+      }
+      round = await this.request('/rounds', command, isRound)
+    }
     if (!round.bets.every(bet => bet.stake === stakes[`${bet.side}Stake`])) {
       throw new DragonTigerGatewayError('The table did not confirm these wagers. Restore this deal before playing again.', 'dragon-tiger-invalid-response')
     }
     return round
   }
   private async request<T>(path: string, init: RequestInit, validate: (v: unknown) => v is T, allowEmpty = false): Promise<T> {
+    if (this.expectedAccountId) {
+      const headers = new Headers(init.headers)
+      headers.set('X-FortuneForge-Expected-Account', this.expectedAccountId)
+      init = { ...init, headers }
+    }
     const request = this.requestFn
     const response = await request(`${this.basePath.replace(/\/$/, '')}${path}`, init)
     const value: unknown = response.status === 204 && allowEmpty ? null : await response.json().catch(() => undefined)

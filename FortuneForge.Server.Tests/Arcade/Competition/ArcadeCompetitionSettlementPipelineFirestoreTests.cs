@@ -1,3 +1,4 @@
+using FortuneForge.Server.Accounts.Storage;
 using FortuneForge.Server.Arcade.Competition;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
@@ -51,7 +52,7 @@ public sealed class ArcadeCompetitionSettlementPipelineFirestoreTests
             store,
             timeProvider,
             rulesOptions);
-        var creditor = new FirestoreArcadeCompetitionPayoutCreditor(database);
+        var creditor = new FirestoreArcadeCompetitionPayoutCreditor(new FirestoreWalletCreditStore(database));
         var executor = new ArcadeCompetitionSettlementExecutor(
             store,
             planner,

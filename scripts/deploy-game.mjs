@@ -147,6 +147,7 @@ async function selectBackend(game, assetsOnly = false) {
 
 async function publishGame({ gameId, gameDirectory, backendRoot }, assetsOnly, stageOnly) {
   const game = await findGame(gameId)
+  if (game.config.frontend === undefined) throw new Error(`Game ${gameId} has a backend-only release. Use --backend-only --stage.`)
   const frontend = await resolveWithin(game.directory, game.config.frontend?.directory)
   const entry = await resolveWithin(frontend, game.config.frontend?.entry)
   const { project, gamePackage } = await selectBackend(game, assetsOnly)
@@ -196,8 +197,16 @@ async function publishGame({ gameId, gameDirectory, backendRoot }, assetsOnly, s
   }
 }
 
+async function stageBackendOnly({ gameId, backendRoot }) {
+  const { project, gamePackage } = await selectBackend(await findGame(gameId))
+  const releaseId = randomUUID()
+  await buildBackend(project, join(backendRoot, releaseId), gameId, releaseId, gamePackage)
+  console.log('Staged local ' + gameId + ' backend release ' + releaseId)
+}
+
 async function publishCloudBrowser(gameId, options) {
-  await findGame(gameId)
+  const game = await findGame(gameId)
+  if (game.config.frontend === undefined) throw new Error(`Game ${gameId} has no separate browser release.`)
   const bucket = options['browser-bucket']
   const assetBase = new URL(process.env.VITE_GAME_RELEASE_BASE_URL ?? 'https://invalid.invalid/')
   if (assetBase.href.replace(/\/$/, '') !== 'https://storage.googleapis.com/' + bucket) {
@@ -230,7 +239,7 @@ async function publishCloudBrowser(gameId, options) {
 const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
-    'assets-only': { type: 'boolean' }, stage: { type: 'boolean' },
+    'assets-only': { type: 'boolean' }, 'backend-only': { type: 'boolean' }, stage: { type: 'boolean' },
     promote: { type: 'string' }, rollback: { type: 'string' },
     'browser-bucket': { type: 'string' }, 'publish-browser': { type: 'string' },
     'if-generation': { type: 'string' }, inspect: { type: 'boolean' },
@@ -252,10 +261,11 @@ const invalidCloudMode = bucket === undefined
     [upload !== undefined, selected !== undefined, values.inspect === true].filter(Boolean).length !== 1 ||
     upload !== undefined && !isReleaseId(upload) ||
     (selected === undefined ? generation !== undefined : !/^(0|[1-9][0-9]*)$/.test(generation ?? ''))
-if (positionals.length !== 1 || !isGameId(gameId) || invalidSelection || invalidCloudMode || mixedWorkerMode) {
+const invalidBackendMode = values['backend-only'] && (!values.stage || values['assets-only'] || bucket !== undefined || selected !== undefined)
+if (positionals.length !== 1 || !isGameId(gameId) || invalidSelection || invalidCloudMode || mixedWorkerMode || invalidBackendMode) {
   throw new Error('Usage: npm run deploy:game -- <game-id> [--assets-only] [--stage | --promote <release-id> | --rollback <release-id>]\n' +
     'Cloud browser releases require --assets-only --browser-bucket <bucket> and one of --inspect, --publish-browser <release-id>, or --promote/--rollback <release-id> --if-generation <generation>\n' +
-    'Private worker publishing uses --publish-worker <release-id> and the worker settings in docs/GAME_DEPLOYMENT.md')
+    'Stage a backend alone with --backend-only --stage. Private worker publishing then uses --publish-worker <release-id> and the settings in docs/GAME_DEPLOYMENT.md')
 }
 const target = {
   gameId,
@@ -270,6 +280,8 @@ if (workerMode) {
 } else if (selected !== undefined) {
   await activateRelease({ ...target, releaseId: selected, rollback: values.rollback !== undefined })
   console.log('Activated local ' + gameId + ' release ' + selected)
+} else if (values['backend-only']) {
+  await stageBackendOnly(target)
 } else {
   await publishGame(target, values['assets-only'], values.stage)
 }

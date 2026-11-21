@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Google.Cloud.Firestore" Version="4.3.0" />
+    <ProjectReference Include="../../src/FortuneForge.Games.TexasHoldem/FortuneForge.Games.TexasHoldem.csproj" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Hosting/FortuneForge.Games.Hosting.csproj" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Firestore/FortuneForge.Games.Firestore.csproj" />
+    <Using Include="FortuneForge.Games.TexasHoldem" />
+    <Using Include="FortuneForge.Games.Abstractions.ManagedPlayers" />
+    <Using Include="FortuneForge.Games.Abstractions.Matchmaking" />
+    <Using Include="FortuneForge.Games.Abstractions.Wallet" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="FortuneForge.Server" />
+    <InternalsVisibleTo Include="FortuneForge.Server.Tests" />
+    <InternalsVisibleTo Include="FortuneForge.Games.TexasHoldem.Tests" />
+  </ItemGroup>
+</Project>

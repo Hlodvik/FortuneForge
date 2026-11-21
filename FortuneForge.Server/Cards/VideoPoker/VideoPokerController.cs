@@ -2,7 +2,7 @@ using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.GameWorkers;
-using Google.Cloud.Firestore;
+using FortuneForge.Games.Abstractions.Wallet;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -11,11 +11,9 @@ namespace FortuneForge.Server.Cards.VideoPoker;
 [ApiController]
 [Route("api/games/video-poker")]
 public sealed class VideoPokerController(
-    FirestoreDb database,
     AccountService accountService,
     IConfiguration configuration,
-    ILogger<VideoPokerController> logger,
-    GameWorkerClient? workers = null) : ControllerBase
+    ILogger<VideoPokerController> logger) : ControllerBase
 {
     [HttpGet("status")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
@@ -87,11 +85,14 @@ public sealed class VideoPokerController(
 
     internal static bool IsEnabled(IConfiguration source) => source.GetValue("Features:VideoPokerEnabled", false);
 
-    private VideoPokerService Service() => new(
-        IsPractice
-            ? HttpContext.RequestServices.GetRequiredService<PracticeVideoPokerStore>()
-            : new VideoPokerFirestoreStore(database, workers),
-        TimeProvider.System);
+    [HttpGet("history")]
+    [EnableRateLimiting(RateLimitPolicies.SlotReads)]
+    public ActionResult History() => StatusCode(StatusCodes.Status503ServiceUnavailable,
+        new VideoPokerErrorResponse("video-poker-unavailable", "The Video Poker worker is unavailable."));
+
+    private VideoPokerService Service() => IsPractice
+        ? new(HttpContext.RequestServices.GetRequiredService<PracticeVideoPokerStore>(), TimeProvider.System)
+        : throw new GameWalletUnavailableException();
 
     private bool IsPractice => HttpContext?.Request.Headers.TryGetValue("X-FortuneForge-Practice", out var values) == true &&
         values.Any(value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase));
@@ -115,6 +116,7 @@ internal static class VideoPokerHttp
             "insufficient-slot-credits", exception.Message)),
         VideoPokerRoundConflictException => controller.Conflict(new VideoPokerErrorResponse("video-poker-round-conflict", exception.Message)),
         GameWorkerUnavailableException => controller.StatusCode(StatusCodes.Status503ServiceUnavailable, new VideoPokerErrorResponse("video-poker-unavailable", exception.Message)),
+        GameWalletUnavailableException => controller.StatusCode(StatusCodes.Status503ServiceUnavailable, new VideoPokerErrorResponse("video-poker-unavailable", exception.Message)),
         ArgumentException => controller.BadRequest(new VideoPokerErrorResponse("video-poker-invalid-request", exception.Message)),
         _ => Unexpected(controller, exception, logger),
     };

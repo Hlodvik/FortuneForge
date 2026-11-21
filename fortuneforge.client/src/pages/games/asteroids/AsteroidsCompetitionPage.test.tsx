@@ -6,6 +6,7 @@ import { ArcadeCompetitionRequestError } from '../../../games/arcade/arcadeCompe
 import type { AsteroidsCompetitionGateway } from './AsteroidsCompetitionPage'
 import { AsteroidsCompetitionPage } from './AsteroidsCompetitionPage'
 import {
+  canDiscardPendingAsteroidsStart,
   createAsteroidsIdempotencyKey,
   createPendingFreeAsteroidsSubmission,
   createPendingPaidAsteroidsSubmission,
@@ -90,6 +91,8 @@ describe('AsteroidsCompetitionPage', () => {
   it('maps real competition server codes by precedence without exposing codes', () => {
     expect(friendlyAsteroidsCompetitionError(new ArcadeCompetitionRequestError(409, 'arcade-competition-insufficient-credits')))
       .toBe('You need at least R1 in your balance to enter this competition.')
+    expect(friendlyAsteroidsCompetitionError(new ArcadeCompetitionRequestError(409, 'arcade-competition-entry-not-recorded')))
+      .toBe('That earlier entry was never accepted. Choose a new competition entry.')
     expect(friendlyAsteroidsCompetitionError(new ArcadeCompetitionRequestError(409, 'arcade-competition-settlement-closed')))
       .toBe('That competition has just closed. Please choose another available competition.')
     expect(friendlyAsteroidsCompetitionError(new ArcadeCompetitionRequestError(400, 'arcade-asteroids-replay-invalid')))
@@ -103,6 +106,13 @@ describe('AsteroidsCompetitionPage', () => {
   it('uses only the server score wording for final paid results', () => {
     expect(paidOfficialScoreText(940)).toBe('Official score: 940')
     expect(paidOfficialScoreText(940)).not.toContain('Your game score')
+  })
+
+  it('allows a deliberate new entry only after a definitive uncharged result', () => {
+    expect(canDiscardPendingAsteroidsStart(new ArcadeCompetitionRequestError(409, 'arcade-competition-entry-not-recorded'))).toBe(true)
+    expect(canDiscardPendingAsteroidsStart(new ArcadeCompetitionRequestError(409, 'arcade-competition-insufficient-credits'))).toBe(true)
+    expect(canDiscardPendingAsteroidsStart(new ArcadeCompetitionRequestError(503, 'arcade-competition-attempt-unavailable'))).toBe(false)
+    expect(canDiscardPendingAsteroidsStart(new TypeError('connection lost'))).toBe(false)
   })
 })
 

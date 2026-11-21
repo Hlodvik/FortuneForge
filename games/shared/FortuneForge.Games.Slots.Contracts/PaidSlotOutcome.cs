@@ -18,17 +18,10 @@ public sealed record PaidSlotOutcomeRequest(
     string? MathModelId)
 {
     public int FreeSpinsRemaining { get; init; }
-    public bool IsNeonDiscoPlay { get; init; }
-    public int? NeonDiscoMultiplier { get; init; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public PaidArcaneSpinOptions? Arcane { get; init; }
-}
 
-public sealed record PaidArcaneSpinOptions(string EngineVersion, bool TomeActive, PaidArcanePotion? Potion);
-public sealed record PaidArcanePotion(long Id, string IngredientId, int Potency)
-{
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? VariantId { get; init; }
+    // Keep game-owned options at their existing top-level wire names.
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement> GameOptions { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>A package's outcome and replay evidence, bound to the original admission.</summary>
@@ -46,9 +39,8 @@ public static class PaidSlotOutcomeProtocol
     public const string Route = "/internal/v1/paid/spins";
     public const string ClassicSlotKind = "classic-slot";
     public const string OlympusTumbleKind = "olympus-tumble";
-    public const string ArcaneSlotKind = "arcane-archives";
 
-    public static void ValidateRequest(PaidSlotOutcomeRequest request, string expectedGameId)
+    public static void ValidateRequest(PaidSlotOutcomeRequest request, string expectedGameId, params string[] optionNames)
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.AdmissionId == Guid.Empty || !string.Equals(request.GameId, expectedGameId, StringComparison.Ordinal))
@@ -58,5 +50,10 @@ public static class PaidSlotOutcomeProtocol
         ArgumentOutOfRangeException.ThrowIfNegative(request.EnergyBalance);
         ArgumentOutOfRangeException.ThrowIfNegative(request.PityMissesBefore);
         ArgumentOutOfRangeException.ThrowIfNegative(request.FreeSpinsRemaining);
+        // Legacy hosts serialize absent game flags and nullable options as false or null.
+        if (request.GameOptions.Any(option =>
+            option.Value.ValueKind is not (JsonValueKind.False or JsonValueKind.Null) &&
+            !optionNames.Contains(option.Key, StringComparer.OrdinalIgnoreCase)))
+            throw new ArgumentException("The admission includes unsupported game options.", nameof(request));
     }
 }

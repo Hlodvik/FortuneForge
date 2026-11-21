@@ -392,10 +392,11 @@ export function inspectRepository(root = repositoryRoot, { releaseId } = {}) {
     const configPath = path.join(game, 'game-release.json')
     if (!fs.existsSync(configPath)) continue
     try {
-      const { id, frontend } = JSON.parse(read(configPath))
+      const { id, frontend, backend } = JSON.parse(read(configPath))
       if (releaseId !== undefined && id !== releaseId) continue
       if (releaseEntries.has(id)) throw new Error('Duplicate game release ID: ' + id)
       releaseEntries.add(id)
+      if (frontend === undefined && backend?.kind === 'packaged-game') continue
       if (frontend?.kind === 'frame') continue // Frame CSS is isolated from the host document.
       const directory = fs.realpathSync(path.resolve(game, frontend.directory))
       const entry = fs.realpathSync(path.resolve(directory, frontend.entry))

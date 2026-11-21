@@ -63,6 +63,15 @@ const consolationV2 = (): MinesSession => {
 }
 
 describe('HttpMinesGateway', () => {
+  it('binds session reads and exact commands to the account that opened the table', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => json(idle()))
+    const gateway = new HttpMinesGateway(undefined, fetcher, 'original-account')
+    await gateway.getSession()
+    await gateway.execute({ action: 'start', requestId: 'bound-mines-request-0001', wagerCents: 100, mineCount: 3 })
+    for (const [, init] of fetcher.mock.calls)
+      expect(new Headers(init?.headers).get('X-FortuneForge-Expected-Account')).toBe('original-account')
+  })
+
   it('accepts full-board v2 late play and its exact server-provided next-mine disclosure', async () => {
     await expect(setup(lateV2()).gateway.getSession()).resolves.toEqual(lateV2())
   })

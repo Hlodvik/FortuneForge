@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using FortuneForge.Games.Firestore;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 
@@ -9,9 +10,10 @@ namespace FortuneForge.Server.Admin.Management;
 
 internal sealed class FirestoreAdminManagementStore(FirestoreDb database) : IAdminManagementStore
 {
-    internal const string StatePath = "adminRuntimeConfiguration/current";
+    internal const string StatePath = FirestoreManagedPlayerPolicy.StatePath;
     internal const string AuditCollection = "adminManagementAudit";
     private const string GuardsCollection = "adminManagementIdempotency";
+    private static readonly HashSet<string> KnownGameIds = AdminManagementCatalog.Games.Select(game => game.Id).ToHashSet(StringComparer.Ordinal);
 
     public async Task<AdminRuntimeState> ReadAsync(CancellationToken cancellationToken) =>
         ReadState(await database.Document(StatePath).GetSnapshotAsync(cancellationToken));
@@ -43,7 +45,7 @@ internal sealed class FirestoreAdminManagementStore(FirestoreDb database) : IAdm
                 case "bots-global": before = prior.BotsEnabled; break;
                 case "bots-game":
                     _ = AdminManagementCatalog.Require(mutation.GameId!);
-                    before = gameBots.GetValueOrDefault(mutation.GameId!, true);
+                    before = gameBots.GetValueOrDefault(mutation.GameId!, FirestoreManagedPlayerPolicy.DefaultEnabled);
                     gameBots[mutation.GameId!] = mutation.Value;
                     break;
                 case "catalog-visibility":
@@ -116,15 +118,15 @@ internal sealed class FirestoreAdminManagementStore(FirestoreDb database) : IAdm
         if (!snapshot.Exists) return AdminRuntimeState.Default;
         var version = snapshot.GetValue<long>("version");
         if (version < 0) throw new InvalidOperationException("The management settings version is invalid.");
-        return new(version, snapshot.GetValue<bool>("botsEnabled"), ReadFlags(snapshot, "gameBots"),
+        var (botsEnabled, gameBots) = FirestoreManagedPlayerPolicy.Read(snapshot, KnownGameIds.Contains);
+        return new(version, botsEnabled, gameBots,
             ReadFlags(snapshot, "visibility"), snapshot.GetValue<Timestamp>("updatedAt").ToDateTime());
     }
 
     private static IReadOnlyDictionary<string, bool> ReadFlags(DocumentSnapshot snapshot, string field)
     {
         if (!snapshot.TryGetValue<Dictionary<string, object>>(field, out var values)) return new Dictionary<string, bool>();
-        var allowlist = AdminManagementCatalog.Games.Select(game => game.Id).ToHashSet(StringComparer.Ordinal);
-        return values.Where(pair => allowlist.Contains(pair.Key)).ToDictionary(pair => pair.Key,
+        return values.Where(pair => KnownGameIds.Contains(pair.Key)).ToDictionary(pair => pair.Key,
             pair => pair.Value is bool flag ? flag : throw new InvalidOperationException("A management switch is invalid."), StringComparer.Ordinal);
     }
 

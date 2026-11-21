@@ -242,6 +242,17 @@ async function accountRequest<T>(
   return response.json() as Promise<T>
 }
 
+export function createAccountBoundGameFetch(
+  expectedAccountId: string,
+  fetcher: typeof fetchWithAccountSession = fetchWithAccountSession,
+): typeof fetchWithAccountSession {
+  return (path, init) => {
+    const headers = new Headers(init?.headers ?? (path instanceof Request ? path.headers : undefined))
+    headers.set('X-FortuneForge-Expected-Account', expectedAccountId)
+    return fetcher(path, { ...init, headers })
+  }
+}
+
 export async function fetchWithAccountSession(
   path: RequestInfo | URL,
   init: RequestInit = {},

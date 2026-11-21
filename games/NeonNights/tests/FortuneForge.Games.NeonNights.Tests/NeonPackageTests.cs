@@ -268,8 +268,10 @@ public sealed class NeonPackageTests
             finding => finding.Code == "slot-neon-nitro-wild-mismatch");
     }
 
-    [Fact]
-    public void LastTwoNitrosDeferPaymentUntilTheChosenReelTurnsWild()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void LastTwoNitrosDeferPaymentUntilTheChosenReelTurnsWild(bool historical)
     {
         var pending = SpinCarWithReels([
             ["7", "2", "4", "5", "5", "7", "SEAL_SYNC"],
@@ -278,6 +280,28 @@ public sealed class NeonPackageTests
             ["4", "NITRO", "7", "4", "7", "5", "4"],
             ["5", "7", "NITRO", "7", "4", "7", "5"]
         ]);
+        if (historical)
+        {
+            var audit = pending.EngineAudit;
+            var game = JsonSerializer.SerializeToNode(audit.EffectiveGame)!;
+            game["Math"]!["PayoutMultiplier"] = 1.23m;
+            var effectiveGame = game.Deserialize<GameDefinition>()!;
+            var engineVersion = NeonArcadeSlotDefinitions.PreviousCombinedRtpEngineVersion;
+            var evaluations = new NeonCombinationEvaluator().Evaluate(pending.Reels, effectiveGame, audit.SymbolSet, engineVersion);
+            var linePayout = new NeonPayoutCalculator().Calculate(evaluations, effectiveGame, audit.Paytable, pending.WagerPoints);
+            var bonus = NeonArcadeBonus.Apply(linePayout, pending.Reels, isFreeSpin: true, engineVersion: engineVersion);
+            pending = pending with
+            {
+                NeonArcade = bonus.Evidence,
+                FreeSpinsAwarded = bonus.FreeSpinsAwarded,
+                EngineAudit = audit with
+                {
+                    EngineVersion = engineVersion,
+                    EffectiveGame = effectiveGame,
+                    NeonArcade = bonus.Evidence
+                }
+            };
+        }
 
         Assert.True(pending.NeonNitroWild?.RequiresChoice);
         Assert.Equal(new GridPosition(4, 2), pending.NeonNitroWild?.SecondNitro);
@@ -286,7 +310,25 @@ public sealed class NeonPackageTests
         Assert.Empty(NeonCarRespin.EligibleReels(pending));
         Assert.Empty(NeonOutcomeReplay.Check(pending, pending.Payout));
 
-        var resolved = NeonNightsEngine.ResolveNitroChoice(pending, 2);
+        var offer = NeonNitroChoice.CreateSpinOffer(pending.SpinId, pending.WagerPoints, 6, pending.NeonNitroWild!);
+        var offerJson = JsonSerializer.Serialize(offer);
+        var wireOffer = JsonSerializer.Deserialize<JsonElement>(offerJson);
+        Assert.Equal(new[] { "SpinId", "SourceKind", "WagerPoints", "FreeSpinsRemaining", "InitialReels", "EligibleReels", "NeonNitroWild" },
+            wireOffer.EnumerateObject().Select(property => property.Name));
+        Assert.Equal("spin", wireOffer.GetProperty("SourceKind").GetString());
+        var savedOffer = Assert.IsType<NeonNitroChoiceOffer>(NeonNitroChoice.ReadOffer(offerJson));
+        Assert.Equal(offerJson, JsonSerializer.Serialize(savedOffer));
+        Assert.Throws<InvalidOperationException>(() => NeonNitroChoice.ReadOffer(
+            JsonSerializer.Serialize(offer with { EligibleReels = [0, 1, 2, 3, 3] })));
+        var savedSpin = JsonSerializer.Serialize(pending);
+        Assert.Throws<InvalidOperationException>(() => NeonNitroChoice.ResolveSavedSpin(
+            savedSpin, pending.SpinId, pending.WagerPoints + 1, 2, savedOffer));
+        Assert.Throws<InvalidOperationException>(() => NeonNitroChoice.ResolveSavedSpin(
+            savedSpin, pending.SpinId, pending.WagerPoints, 2, savedOffer with { WagerPoints = pending.WagerPoints + 1 }));
+        var resolved = NeonNitroChoice.ResolveSavedSpin(savedSpin, pending.SpinId, pending.WagerPoints, 2, savedOffer);
+        Assert.Equal(JsonSerializer.Serialize(resolved), JsonSerializer.Serialize(NeonNitroChoice.ResolveSavedSpin(
+            savedSpin, pending.SpinId, pending.WagerPoints, 2, null)));
+        Assert.Equal(pending.EngineAudit.EngineVersion, resolved.EngineAudit.EngineVersion);
         Assert.Equal(pending.SpinId, resolved.SpinId);
         Assert.Equal(pending.ReelStops, resolved.ReelStops);
         Assert.False(resolved.NeonNitroWild?.RequiresChoice);
@@ -314,13 +356,70 @@ public sealed class NeonPackageTests
         Assert.Equal(0, pending.ImprovementPoints);
         Assert.Empty(NeonCarRespin.Check(original, pending));
 
-        var resolved = NeonCarRespin.ResolveChoice(original, pending, 2);
+        var offer = NeonNitroChoice.CreateCarRespinOffer(original, pending, 5, 17);
+        var offerJson = JsonSerializer.Serialize(offer);
+        Assert.Contains("\"ReelIndex\":4", offerJson);
+        Assert.Contains("\"RoundWinPoints\":17", offerJson);
+        var savedOffer = Assert.IsType<NeonNitroChoiceOffer>(NeonNitroChoice.ReadOffer(offerJson));
+        Assert.Equal("car-respin", savedOffer.SourceKind);
+        var pendingJson = JsonSerializer.Serialize(pending);
+        var restored = NeonNitroChoice.ReadSavedCarRespin(pendingJson, original, savedOffer);
+        Assert.Equal(pendingJson, JsonSerializer.Serialize(restored));
+        Assert.Throws<InvalidOperationException>(() => NeonNitroChoice.ReadSavedCarRespin(pendingJson, original,
+            savedOffer with { ReelIndex = 3 }));
+        var resolved = NeonCarRespin.ResolveChoice(original, restored, 2);
         Assert.Equal(pending.StopIndex, resolved.StopIndex);
         Assert.Equal(2, resolved.NeonNitroWild?.ExpandedReel);
         Assert.All(resolved.Reels[2], symbol => Assert.Equal("ACE", symbol));
         Assert.Equal("NITRO", resolved.Reels[4][0]);
         Assert.Equal(210, resolved.ImprovementPoints);
         Assert.Empty(NeonCarRespin.Check(original, resolved));
+    }
+
+    [Fact]
+    public void CarRoundRetainsItsWagerEvidenceAndOnlyOffersARespinOnALoss()
+    {
+        var triggeredBy = Guid.NewGuid();
+        var loss = SpinCarWithReels([.. new[] { "2", "3", "4", "5", "6" }
+            .Select(symbol => Enumerable.Repeat(symbol, 7).ToList())]);
+        Assert.Equal(0, loss.Payout.TotalPoints);
+        var trigger = NeonCarRoundState.Inactive.Advance(triggeredBy, null, NeonArcadeBonus.PaidCarFeatureMode, 800);
+        Assert.Equal(triggeredBy.ToString("N"), trigger.RoundId);
+        Assert.Equal(0, trigger.WinPoints);
+
+        var win = trigger.Advance(Guid.NewGuid(), loss, NeonArcadeBonus.PaidCarFeatureMode, 600);
+        Assert.Null(win.AvailableOffer());
+        var offerState = win.Advance(loss.SpinId, loss, null, 0);
+        var guard = new Dictionary<string, object>();
+        offerState.WriteGuard(guard);
+        Assert.Equal(600L, guard["neonCarRoundWinPoints"]);
+        Assert.Equal(loss.SpinId.ToString("N"), guard["neonCarRespinSourceSpinId"]);
+        Assert.Equal(triggeredBy.ToString("N"), guard["neonCarRespinRoundId"]);
+        var offer = Assert.IsType<NeonCarRespinOffer>(offerState.AvailableOffer());
+        Assert.Equal(JsonSerializer.Serialize(offer), guard["neonCarRespinOfferJson"]);
+        Assert.Equal(new[] { 0, 1, 2, 3, 4 }, offer.EligibleReels);
+        Assert.True(offerState.CanRespin(triggeredBy.ToString("N"), loss.SpinId, 2));
+        Assert.False(offerState.CanRespin(Guid.NewGuid().ToString("N"), loss.SpinId, 2));
+        Assert.False((offerState with { HasActiveAdmission = true }).CanRespin(triggeredBy.ToString("N"), loss.SpinId, 2));
+        Assert.False(offerState.CanDismiss(loss.SpinId, () => true));
+        Assert.True(offerState.CanDismiss(loss.SpinId, () => false));
+
+        var savedResult = new Dictionary<string, object>();
+        offerState.WriteSpinResult(savedResult, loss);
+        string? ReadField(string key) => savedResult.GetValueOrDefault(key) as string;
+        var frozen = NeonCarRoundState.ReadFrozenSource(ReadField)!.Value;
+        Assert.Equal(loss.SpinId.ToString("N"), frozen.ReceiptId);
+        Assert.Equal(JsonSerializer.Serialize(loss), frozen.OutcomeJson);
+        Assert.False(frozen.UsesLegacyRoundReceipt);
+        savedResult.Remove("neonCarRespinReceiptId");
+        var legacy = NeonCarRoundState.ReadFrozenSource(ReadField)!.Value;
+        Assert.True(legacy.UsesLegacyRoundReceipt);
+        Assert.Equal(triggeredBy.ToString("N"), legacy.ReceiptId);
+
+        var completed = offerState.CompleteRespin(100);
+        Assert.Equal(700, completed.WinPointsForRound(triggeredBy.ToString("N")));
+        Assert.Null(completed.AvailableOffer());
+        Assert.Equal(NeonCarRoundState.Inactive, completed.Advance(Guid.NewGuid(), null, null, 0));
     }
 
     [Fact]

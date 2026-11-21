@@ -49,7 +49,7 @@ public sealed partial class FirestoreAccountStore
 
     // Keep the renamed production game on its existing Firestore balance keys
     // so the testers' seal progress and feature balances survive the cleanup.
-    private static string StorageGameId(string gameId) =>
+    internal static string StorageGameId(string gameId) =>
         string.Equals(gameId, SlotSpecialRoundProfiles.WukongGameId, StringComparison.Ordinal)
             ? LegacyWukongGameId
             : gameId;

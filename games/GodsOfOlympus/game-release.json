@@ -6,6 +6,6 @@
     "manifestExport": "GODS_OF_OLYMPUS_SLOT_GAME"
   },
   "backend": {
-    "kind": "classic-slot"
+    "kind": "packaged-game"
   }
 }

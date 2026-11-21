@@ -200,6 +200,23 @@ describe('paid Craps wallet and recovery', () => {
     expect(sessionStorage.getItem(paidKey)).toBeNull()
   })
 
+  it.each([[401, 'authentication-required'], [403, 'game-session-changed'], [429, 'rate-limited']])('retains the original paid identity after ambiguous auth/limit failures (%s)', async (httpStatus, code) => {
+    const server = fakeServer({ ...status, mode: paidMode, walletBalanceCents: 10000 })
+    server.gateway.startRound.mockRejectedValue(new CrapsGatewayError('Session unavailable.', String(code), Number(httpStatus)))
+    const first = renderHook(() => useCrapsTable(server.gateway, player, true, undefined, true))
+    await waitFor(() => expect(first.result.current.busy).toBe(false))
+    act(() => first.result.current.start(10))
+    await waitFor(() => expect(first.result.current.recovery).toBe('failed'))
+    const pending = JSON.parse(sessionStorage.getItem(paidKey)!) as { operationId: string }
+    expect(pending.operationId).toBeTruthy()
+    first.unmount()
+    server.gateway.startRound.mockImplementation(async () => { const accepted = { ...ready(), walletBalanceCents: 9000 }; server.state = accepted; return accepted })
+    const restored = renderHook(() => useCrapsTable(server.gateway, player, true, undefined, true))
+    await waitFor(() => expect(restored.result.current.busy).toBe(false))
+    expect(server.gateway.startRound.mock.calls.at(-1)?.[3]).toBe(pending.operationId)
+    expect(sessionStorage.getItem(paidKey)).toBeNull()
+  })
+
   it('restores an already active paid point without starting another wager', async () => {
     const server = fakeServer()
     server.gateway.getStatus.mockResolvedValue({ ...status, mode: paidMode, walletBalanceCents: 9000 })

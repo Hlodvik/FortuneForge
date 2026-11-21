@@ -21,14 +21,26 @@ export function useSicBoTable({gateway,scope,roundOwnerId,recoveryMode,onBalance
   function publish(patch: Partial<Model>) { current.current={...current.current,...patch}; setModel(current.current) }
   function controller() { const request=new AbortController();requests.current.add(request);return request }
   function clearTimers() { timers.current.forEach(window.clearTimeout);timers.current=[] }
-  function accept(round: SicBoRound, animate: boolean) {
+  function accept(round: SicBoRound, animate: boolean, recovered = !animate) {
     clearTimers()
     const reduce = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    publish({round,slip:round.settlements.map(({kind,stake,face,total,firstFace,secondFace})=>({kind,stake,face,total,firstFace,secondFace})),pending:null,error:null,phase:animate&&!reduce?'revealing':'settled',revealed:animate&&!reduce?0:3})
-    const finish = () => { if(!live.current)return; clearPending(scope); const validated=appendRollHistory(current.current.history,round);const history=validated===current.current.history&&!/^[a-f0-9]{64}$/.test(round.roundId)?[round,...validated.filter(item=>item.roundId!==round.roundId)].slice(0,12):validated;writeHistory(scope,history);publish({phase:'settled',revealed:3,balance:round.balance,history});callback.current?.(round.balance) }
+    const recoveringAccount=recovered&&recoveryMode==='account'
+    publish({round,slip:round.settlements.map(({kind,stake,face,total,firstFace,secondFace})=>({kind,stake,face,total,firstFace,secondFace})),pending:recoveringAccount?current.current.pending:null,error:null,phase:animate&&!reduce?'revealing':recoveringAccount?'recovering':'settled',revealed:animate&&!reduce?0:3})
+    const finish = async () => {
+      let balance=round.balance
+      if(recoveringAccount){
+        publish({phase:'recovering'})
+        const request=controller();++statusRevision.current
+        try{const status=await gateway.getStatus(request.signal);if(request.signal.aborted||!live.current)return;balance=status.balance;publish({status})}
+        catch{if(!request.signal.aborted&&live.current)publish({phase:'read-failed',error:'Result restored. Retry restoration to refresh your account balance.'});return}
+        finally{requests.current.delete(request)}
+      }
+      if(!live.current)return
+      clearPending(scope);const validated=appendRollHistory(current.current.history,round);const history=validated===current.current.history&&!/^[a-f0-9]{64}$/.test(round.roundId)?[round,...validated.filter(item=>item.roundId!==round.roundId)].slice(0,12):validated;writeHistory(scope,history);publish({phase:'settled',revealed:3,balance,pending:null,history});callback.current?.(balance)
+    }
     if(animate&&!reduce) {
       timers.current=[window.setTimeout(()=>{if(live.current)publish({revealed:1})},180),window.setTimeout(()=>{if(live.current)publish({revealed:2})},340),window.setTimeout(finish,520)]
-    } else finish()
+    } else void finish()
   }
   async function loadStatus() {
     if(statusOperation.current&&!statusOperation.current.signal.aborted)return
@@ -79,7 +91,7 @@ export function useSicBoTable({gateway,scope,roundOwnerId,recoveryMode,onBalance
       const round=await gateway.createRound(bets,{idempotencyKey:key,signal:request.signal});if(request.signal.aborted||!live.current)return
       if(pending.roundId&&round.roundId!==pending.roundId)throw new Error('The result has an unexpected round ID.');
       if(!sameSlip(round.settlements,bets))throw new Error('The result does not match your slip.')
-      accept(round,true)
+      accept(round,true,!!state.pending)
     } catch(reason){if(request.signal.aborted||!live.current)return;
       const rejected=!state.pending&&reason instanceof SicBoGatewayError&&((reason.status===400&&reason.code==='sic-bo-invalid-request')||(reason.status===409&&reason.code==='insufficient-slot-credits'))
       if(rejected){clearPending(scope);publish({pending:null,phase:'loading',status:null,balance:null,error:null});await loadStatus();if(request.signal.aborted||!live.current)return;if(current.current.status)publish({error:reason.code==='insufficient-slot-credits'?'Insufficient balance. Edit your slip.':'Bet rejected. Edit your slip.'});return}

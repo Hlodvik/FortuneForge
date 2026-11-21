@@ -1,4 +1,6 @@
 using FortuneForge.Server.GameWorkers;
+using FortuneForge.Games.Abstractions.Wallet;
+using FortuneForge.Games.Abstractions.ManagedPlayers;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
@@ -189,22 +191,8 @@ public sealed class BlackjackTableController(
     internal static bool IsEnabled(IConfiguration source) =>
         source.GetValue("Features:BlackjackTableEnabled", false);
 
-    internal static BlackjackTableStatusResponse StatusContract(bool multiplayerEnabled = true) => new(
-        true,
-        BlackjackMoney.ToRand(BlackjackMoney.MinimumWagerCents),
-        BlackjackMoney.ToRand(BlackjackMoney.MaximumWagerCents),
-        BlackjackMoney.ToRand(BlackjackMoney.WagerIncrementCents),
-        multiplayerEnabled ? BlackjackManagedTablePolicy.MinimumStartOccupancy : 1,
-        multiplayerEnabled ? BlackjackTableEngine.Capacity : 1,
-        multiplayerEnabled ? checked((int)BlackjackTableEngine.HumanGrace.TotalSeconds) : 0,
-        multiplayerEnabled ? checked((int)BlackjackTableEngine.ActionDuration.TotalSeconds) : 0,
-        1,
-        "Dealer stands on all 17s",
-        "3:2",
-        true,
-        true,
-        true,
-        true);
+    internal static BlackjackTableStatusResponse StatusContract(bool multiplayerEnabled = true) =>
+        BlackjackTableEndpoints.Status(multiplayerEnabled);
 
     private ActionResult? Disabled() => IsEnabled(configuration) ? null : StatusCode(
         StatusCodes.Status503ServiceUnavailable,
@@ -217,7 +205,10 @@ public sealed class BlackjackTableController(
     private async Task<AccountSummary?> AccountAsync(CancellationToken cancellationToken) =>
         (await accountService.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken)).Value;
 
-    private BlackjackTableService Service => services.GetRequiredService<BlackjackTableService>();
+    private BlackjackTableService Service
+    {
+        get { _ = services; throw new GameWalletUnavailableException(); }
+    }
 
     private static BlackjackTableMutationResponse ToMutation(BlackjackTableStoreResult value) =>
         new(value.Session, BlackjackMoney.ToRand(value.BalanceCents));
@@ -244,6 +235,8 @@ internal static class BlackjackTableHttp
             case BlackjackTableIllegalActionException:
                 return controller.BadRequest(new { code = "illegal-blackjack-action", error = exception.Message });
             case GameWorkerUnavailableException:
+            case GameWalletUnavailableException:
+            case ManagedPlayerRosterUnavailableException:
                 return controller.StatusCode(StatusCodes.Status503ServiceUnavailable, new
                 {
                     code = "game-worker-unavailable",

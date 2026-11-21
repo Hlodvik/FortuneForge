@@ -30,7 +30,7 @@ export type ObstacleKind =
   | 'storm-cloud'
 
 export type HorseBiome = 'mountain' | 'castle-town' | 'dark-forest' | 'battleground' | 'haunted' | 'desert' | 'sky'
-export type HorseRulesVersion = 2 | 3 | 4
+export type HorseRulesVersion = 1 | 2 | 3 | 4
 export const draftMultiBiomeRulesVersion: HorseRulesVersion = 2
 export const currentRulesVersion: HorseRulesVersion = 4
 export type HorseBiomeSection = Readonly<{
@@ -116,6 +116,7 @@ export const horseScreenX = 336
 const horseX = horseScreenX
 const horseWidth = 48
 const horseHeight = 40
+const slideHorseHeight = 20
 const horseLeft = horseX - horseWidth / 2
 const horseRight = horseX + horseWidth / 2
 export const horseCollisionWidth = 38
@@ -371,9 +372,9 @@ export function stepHorse(source: HorseState, wantsJump: boolean, wantsRightClic
   state.score = Math.floor(state.distance / 10) + state.cleared * 100
   state.tick++
   state.biome = biomeForTick(state.tick, state.rulesVersion)
-  const collisionHorseHeight = isSlidingThisTick && state.grounded
-    ? slideHorseCollisionHeight
-    : horseCollisionHeight
+  const collisionHorseHeight = state.rulesVersion === 1
+    ? isSlidingThisTick && state.grounded ? slideHorseHeight : horseHeight
+    : isSlidingThisTick && state.grounded ? slideHorseCollisionHeight : horseCollisionHeight
   const dashedObstacleId = isSlidingThisTick && state.grounded
     ? obstacleHitByDash(state, collisionHorseHeight)
     : null
@@ -408,6 +409,7 @@ function fill(state: HorseState) {
   const level = 1 + Math.floor(state.score / 500)
   const section = biomeSectionForTick(state.tick, state.rulesVersion)
   const biome = section.biome
+  const legacy = state.rulesVersion === 1
   const eligibleDefinitions = state.rulesVersion === draftMultiBiomeRulesVersion
     ? section.phase === 'transition'
       ? transitionObstacleDefinitions[section.to]
@@ -422,7 +424,8 @@ function fill(state: HorseState) {
     const obstacleSlots = Math.min(
       maximumObstaclesPerPlatform,
       1 + Math.floor((level - 1) / levelsPerAdditionalObstacle))
-    const width = 260 + next(state) * 180
+    const generatedWidth = 260 + next(state) * 180
+    const width = legacy ? Math.max(80 + obstacleSlots * maximumObstacleWidth + (obstacleSlots - 1) * obstacleClearance, generatedWidth) : generatedWidth
     const platform: Platform = {
       id: state.nextPlatform++,
       x: previous ? previous.x + previous.width : 0,
@@ -435,10 +438,11 @@ function fill(state: HorseState) {
       const definition = eligibleDefinitions[Math.min(
         Math.floor(next(state) * eligibleDefinitions.length),
         eligibleDefinitions.length - 1)]
-      const naturalX = platform.x + 40 +
-        slot * (maximumObstacleWidth + obstacleClearance) +
-        next(state) * obstacleClearance
-      const x = state.obstacles.reduce(
+      const slotWidth = (platform.width - 80 - (obstacleSlots - 1) * obstacleClearance) / obstacleSlots
+      const naturalX = legacy
+        ? platform.x + 40 + slot * (slotWidth + obstacleClearance) + next(state) * (slotWidth - definition.width)
+        : platform.x + 40 + slot * (maximumObstacleWidth + obstacleClearance) + next(state) * obstacleClearance
+      const x = legacy ? naturalX : state.obstacles.reduce(
         (requiredX, previousObstacle) => Math.max(
           requiredX,
           requiredFollowingObstacleX(previousObstacle, definition)),
@@ -454,11 +458,11 @@ function fill(state: HorseState) {
         elevation: definition.elevation,
         additionalSpeed: definition.additionalSpeed,
       }
-      if (!hasRecoveryWindowAfter(state.obstacles, obstacle)) {
+      if (!legacy && !hasRecoveryWindowAfter(state.obstacles, obstacle)) {
         throw new Error('Horse Flight generated an obstacle sequence without a clear recovery window.')
       }
       state.obstacles.push(obstacle)
-      platform.width = Math.max(platform.width, obstacle.x + obstacle.width + 40 - platform.x)
+      if (!legacy) platform.width = Math.max(platform.width, obstacle.x + obstacle.width + 40 - platform.x)
     }
   }
 }
@@ -530,7 +534,11 @@ export function captureProjectileGeometry(
 
 function collidingObstacle(state: HorseState, horseCollisionHeight: number): Obstacle | null {
   const y = new Map(state.platforms.map(platform => [platform.id, platform.y]))
-  const horseBottom = state.horseY - horseCollisionBottomInset
+  const legacy = state.rulesVersion === 1
+  const left = legacy ? horseLeft : horseCollisionLeft, right = legacy ? horseRight : horseCollisionRight
+  const horizontalInset = legacy ? 3 : obstacleHorizontalHitboxInset
+  const verticalInset = legacy ? 2 : obstacleVerticalHitboxInset
+  const horseBottom = state.horseY - (legacy ? 0 : horseCollisionBottomInset)
   const top = horseBottom - horseCollisionHeight
   const collision = state.obstacles.find(obstacle => {
     if (obstacle.knockedDownAt !== undefined) return false
@@ -539,23 +547,23 @@ function collidingObstacle(state: HorseState, horseCollisionHeight: number): Obs
       if (platformY === undefined) return false
       const projectile = captureProjectileGeometry(obstacle, platformY)
       return projectile?.canCollide === true &&
-        projectile.x - projectile.width / 2 < horseCollisionRight &&
-        projectile.x + projectile.width / 2 > horseCollisionLeft &&
+        projectile.x - projectile.width / 2 < right &&
+        projectile.x + projectile.width / 2 > left &&
         projectile.y - projectile.height / 2 < horseBottom &&
         projectile.y + projectile.height / 2 > top
     }
     const bottom = y.get(obstacle.platformId)! - obstacle.elevation -
       (obstacle.kind === 'fence' ? fenceSlideClearance : 0)
-    const obstacleLeft = obstacle.x + obstacleHorizontalHitboxInset
-    const obstacleRight = obstacle.x + obstacle.width - obstacleHorizontalHitboxInset
+    const obstacleLeft = obstacle.x + horizontalInset
+    const obstacleRight = obstacle.x + obstacle.width - horizontalInset
     // The tower itself is scenery; its falling net is the low hazard that
     // requires a dash to duck beneath.
-    if (obstacle.kind === 'net-tower' && horseCollisionHeight <= slideHorseCollisionHeight) return false
+    if (obstacle.kind === 'net-tower' && horseCollisionHeight <= (legacy ? slideHorseHeight : slideHorseCollisionHeight)) return false
     const collisionHeight = obstacle.kind === 'net-tower' ? 24 : obstacle.height
-    const obstacleTop = bottom - collisionHeight + obstacleVerticalHitboxInset
-    const obstacleBottom = bottom - obstacleVerticalHitboxInset
-    return obstacleLeft < horseCollisionRight &&
-      obstacleRight > horseCollisionLeft &&
+    const obstacleTop = bottom - collisionHeight + verticalInset
+    const obstacleBottom = bottom - verticalInset
+    return obstacleLeft < right &&
+      obstacleRight > left &&
       obstacleTop < horseBottom &&
       obstacleBottom > top
   })
@@ -564,17 +572,21 @@ function collidingObstacle(state: HorseState, horseCollisionHeight: number): Obs
 
 function obstacleHitByDash(state: HorseState, horseCollisionHeight: number): number | null {
   const platformY = new Map(state.platforms.map(platform => [platform.id, platform.y]))
-  const horseBottom = state.horseY - horseCollisionBottomInset
+  const legacy = state.rulesVersion === 1
+  const left = legacy ? horseLeft : horseCollisionLeft, right = legacy ? horseRight : horseCollisionRight
+  const horizontalInset = legacy ? 3 : obstacleHorizontalHitboxInset
+  const verticalInset = legacy ? 2 : obstacleVerticalHitboxInset
+  const horseBottom = state.horseY - (legacy ? 0 : horseCollisionBottomInset)
   const horseTop = horseBottom - horseCollisionHeight
   const dashable = state.obstacles.find(obstacle => {
     if ((obstacle.kind !== 'lasso-thrower' && obstacle.kind !== 'dog') || obstacle.knockedDownAt !== undefined) return false
     const bottom = platformY.get(obstacle.platformId)! - obstacle.elevation
-    const obstacleLeft = obstacle.x + obstacleHorizontalHitboxInset
-    const obstacleRight = obstacle.x + obstacle.width - obstacleHorizontalHitboxInset
-    const obstacleTop = bottom - obstacle.height + obstacleVerticalHitboxInset
-    const obstacleBottom = bottom - obstacleVerticalHitboxInset
-    return obstacleLeft < horseCollisionRight &&
-      obstacleRight > horseCollisionLeft &&
+    const obstacleLeft = obstacle.x + horizontalInset
+    const obstacleRight = obstacle.x + obstacle.width - horizontalInset
+    const obstacleTop = bottom - obstacle.height + verticalInset
+    const obstacleBottom = bottom - verticalInset
+    return obstacleLeft < right &&
+      obstacleRight > left &&
       obstacleTop < horseBottom &&
       obstacleBottom > horseTop
   })

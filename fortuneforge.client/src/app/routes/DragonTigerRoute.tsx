@@ -33,7 +33,7 @@ function DragonTigerSession({ initialAccount }: Readonly<{ initialAccount: Accou
   const practiceMode = walletPracticeModeEnabled()
   const gateway = useMemo(() => practiceMode
     ? new HttpDragonTigerGateway('/api/games/dragon-tiger', practiceAccountFetch(fetchWithAccountSession))
-    : new HttpDragonTigerGateway('/api/games/dragon-tiger', fetchWithAccountSession), [practiceMode])
+    : new HttpDragonTigerGateway('/api/games/dragon-tiger', fetchWithAccountSession, initialAccount.userId), [practiceMode, initialAccount.userId])
 
   useEffect(() => setAccount(initialAccount), [initialAccount])
   const refreshBalance = useCallback(() => {

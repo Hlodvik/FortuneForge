@@ -17,34 +17,7 @@ public static class HorseFlightReplayEvaluator
 
     public static HorseFlightReplayResult Evaluate(uint seed, HorseFlightReplay replay)
     {
-        ArgumentNullException.ThrowIfNull(replay);
-        if (replay.TotalTicks is < 1 or > MaximumTicks)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(replay),
-                $"A Horse Flight replay must contain between 1 and {MaximumTicks} ticks.");
-        }
-        if (replay.JumpTicks.IsDefault || replay.JumpTicks.Length > MaximumJumps)
-        {
-            throw new ArgumentException(
-                $"A Horse Flight replay must contain no more than {MaximumJumps} jumps.",
-                nameof(replay));
-        }
-        if (replay.RightClickTicks.IsDefault || replay.RightClickTicks.Length > MaximumRightClicks)
-        {
-            throw new ArgumentException(
-                $"A Horse Flight replay must contain no more than {MaximumRightClicks} right-click actions.",
-                nameof(replay));
-        }
-
-        ValidateTicks(replay.JumpTicks, replay.TotalTicks, "jump", nameof(replay));
-        ValidateTicks(replay.RightClickTicks, replay.TotalTicks, "right-click", nameof(replay));
-        if (replay.JumpTicks.Intersect(replay.RightClickTicks).Any())
-        {
-            throw new ArgumentException(
-                "A replay cannot use a jump and a right-click action on the same tick.",
-                nameof(replay));
-        }
+        ValidateReplayInput(replay);
 
         var state = HorseFlightEngine.Start(seed, rulesVersion: replay.RulesVersion);
         var jumpIndex = 0;
@@ -83,6 +56,38 @@ public static class HorseFlightReplayEvaluator
         {
             RightClickTicks = replay.RightClickTicks,
         };
+    }
+
+    public static void ValidateReplayInput(HorseFlightReplay replay)
+    {
+        ArgumentNullException.ThrowIfNull(replay);
+        if (replay.TotalTicks is < 1 or > MaximumTicks)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(replay),
+                $"A Horse Flight replay must contain between 1 and {MaximumTicks} ticks.");
+        }
+        if (replay.JumpTicks.IsDefault || replay.JumpTicks.Length > MaximumJumps)
+        {
+            throw new ArgumentException(
+                $"A Horse Flight replay must contain no more than {MaximumJumps} jumps.",
+                nameof(replay));
+        }
+        if (replay.RightClickTicks.IsDefault || replay.RightClickTicks.Length > MaximumRightClicks)
+        {
+            throw new ArgumentException(
+                $"A Horse Flight replay must contain no more than {MaximumRightClicks} right-click actions.",
+                nameof(replay));
+        }
+
+        ValidateTicks(replay.JumpTicks, replay.TotalTicks, "jump", nameof(replay));
+        ValidateTicks(replay.RightClickTicks, replay.TotalTicks, "right-click", nameof(replay));
+        if (replay.JumpTicks.Intersect(replay.RightClickTicks).Any())
+        {
+            throw new ArgumentException(
+                "A replay cannot use a jump and a right-click action on the same tick.",
+                nameof(replay));
+        }
     }
 
     private static void ValidateTicks(

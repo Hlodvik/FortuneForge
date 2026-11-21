@@ -1,7 +1,11 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Abstractions.Wallet;
+using FortuneForge.Games.Hosting;
 using FortuneForge.Games.Mines;
 using FortuneForge.Games.Mines.Server;
+using FortuneForge.Server.Accounts.Storage;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.SecurityAudit;
@@ -34,21 +38,31 @@ internal static class MinesSequenceReplayAudit
             var sourceRound = ReadRound(sourceDocument.RootElement);
             if (sourceRound.RoundId != settled.RoundId || sourceRound.UserId != settled.UserId ||
                 sourceRound.Version != settled.Version || sourceRound.CreatedAt != settled.CreatedAt ||
-                sourceRound.UpdatedAt != settled.UpdatedAt || !SameState(sourceRound.State, settled.State))
+                sourceRound.UpdatedAt != settled.UpdatedAt || sourceRound.ReservationSha256 != settled.ReservationSha256 ||
+                !SameState(sourceRound.State, settled.State))
                 return Error("mines-source-round-mismatch", "The Mines source round differs from its private terminal evidence.");
             var participant = summary.Participants[0];
-            if (!result.Exists || Text(result, "game") != "mines" || Text(result, "userId") != participant.ActorId ||
+            if (settled.RoundId != summary.RoundId || settled.UserId != participant.ActorId ||
+                settled.State.Status == MinesRoundStatus.Active || settled.State.WagerCents != participant.WagerCents ||
+                settled.State.PayoutCents != participant.PayoutCents || !result.Exists || Text(result, "game") != "mines" ||
+                Text(result, "userId") != participant.ActorId ||
                 Text(result, "matchId") != summary.RoundId || Text(result, "settlementStatus") != "paid" ||
                 Number(result, "wagerCents") != participant.WagerCents ||
                 Number(result, "payoutCents") != participant.PayoutCents ||
                 Number(result, "netCents") != participant.NetCents)
                 return Error("mines-result-mismatch", "The settled Mines result document is missing or differs from the private round.");
+            if (settled.ReservationSha256 is { } reservation)
+                return ledger.Count == 0 && await PaidReservationMatchesAsync(database, settled, reservation, ct)
+                    ? [] : Error("mines-ledger-mismatch", "The Mines reservation or completion differs from the private settlement.");
+
             var wager = ledger.Documents.Where(item => Text(item, "type") == "mines-wager").ToArray();
             var payout = ledger.Documents.Where(item => Text(item, "type") == "mines-payout").ToArray();
-            if (ledger.Count != 1 + (participant.PayoutCents > 0 ? 1 : 0) || wager.Length != 1 ||
-                payout.Length != (participant.PayoutCents > 0 ? 1 : 0) ||
-                !Entry(wager[0], participant.ActorId, -participant.WagerCents) ||
-                (payout.Length == 1 && !Entry(payout[0], participant.ActorId, participant.PayoutCents)))
+            var availableTerminal = await FindMixedTerminalWalletAsync(database, settled, ct);
+            var expectsLegacyCredit = availableTerminal is null && participant.PayoutCents > 0;
+            if (ledger.Count != 1 + (expectsLegacyCredit ? 1 : 0) || wager.Length != 1 ||
+                payout.Length != (expectsLegacyCredit ? 1 : 0) || !Entry(wager[0], participant.ActorId, -participant.WagerCents) ||
+                (payout.Length == 1 && !Entry(payout[0], participant.ActorId, participant.PayoutCents)) ||
+                (availableTerminal is not null && !await PaidWalletRequestsMatchAsync(database, settled.UserId, [availableTerminal], ct)))
                 return Error("mines-ledger-mismatch", "The Mines wager debit or payout credit is missing or differs from the private settlement.");
             return [];
         }
@@ -57,6 +71,80 @@ internal static class MinesSequenceReplayAudit
         {
             return Error("mines-financial-evidence-invalid", "The saved Mines source or financial records cannot be parsed for reconciliation.");
         }
+    }
+
+    private static Task<bool> PaidReservationMatchesAsync(FirestoreDb database, MinesStoredRound settled,
+        string reservation, CancellationToken ct)
+    {
+        var state = settled.State;
+        var opening = settled with
+        {
+            Version = 1,
+            UpdatedAt = settled.CreatedAt,
+            ReservationSha256 = null,
+            State = new(state.WagerCents, state.MineCount, state.MinePositions, [], MinesRoundStatus.Active, 0,
+                state.HouseEdgeBasisPoints, state.PayoutPolicyVersion),
+        };
+        if (MinesService.Hash(JsonSerializer.Serialize(opening)) != reservation)
+            return Task.FromResult(false);
+        GameWalletSettlementRequest hold = new(settled.RoundId, reservation, state.WagerCents, 0,
+            Phase: GameWalletSettlementPhase.Reserve);
+        GameWalletSettlementRequest terminal = new(settled.RoundId, MinesService.Hash(JsonSerializer.Serialize(settled)),
+            0, state.PayoutCents, Phase: GameWalletSettlementPhase.CompleteReservation, ReservationSha256: reservation);
+        return PaidWalletRequestsMatchAsync(database, settled.UserId, [hold, terminal], ct);
+    }
+
+    private static async Task<GameWalletSettlementRequest?> FindMixedTerminalWalletAsync(FirestoreDb database,
+        MinesStoredRound settled, CancellationToken ct)
+    {
+        // A legacy-start round lacks a reservation ID. Its new terminal action is identified by the frozen outcome digest.
+        var hash = MinesService.Hash(JsonSerializer.Serialize(settled));
+        var matches = await database.Collection("walletRoundSettlements").WhereEqualTo("outcomeSha256", hash)
+            .Limit(3).GetSnapshotAsync(ct);
+        var match = matches.Documents.SingleOrDefault(item => Text(item, "gameId") == "mines" && Text(item, "userId") == settled.UserId);
+        if (match is null) return null;
+        var operationId = Text(match, "operationId");
+        if (operationId.Length != 64 || operationId.Any(character => !char.IsAsciiHexDigit(character)) ||
+            match.Id != GameWalletSettlementIdentity.CreateId("mines", settled.UserId, operationId))
+            throw new InvalidOperationException("The legacy Mines round links to an invalid wallet operation.");
+        GameWalletSettlementRequest expected = new(operationId, hash, 0, settled.State.PayoutCents);
+        var command = await database.Collection("minesCommands").Document(operationId).GetSnapshotAsync(ct);
+        if (!command.Exists || Number(command, "walletProtocol") != 1 || Text(command, "userId") != settled.UserId ||
+            !command.ContainsField("responseJson"))
+            throw new InvalidOperationException("The Mines terminal wallet operation lacks its accepted command.");
+        using var pending = JsonDocument.Parse(Text(command, "pendingJson"));
+        var intent = pending.RootElement;
+        var request = intent.GetProperty("WalletRequest").Deserialize<GameWalletSettlementRequest>();
+        var round = intent.GetProperty("Mutation").GetProperty("Round").Deserialize<MinesStoredRound>();
+        var receipt = JsonSerializer.Deserialize<GameWalletSettlementReceipt>(Text(command, "walletReceiptJson"));
+        if (request != expected || round is null || MinesService.Hash(JsonSerializer.Serialize(round)) != hash ||
+            receipt is null || receipt.InsufficientFunds || receipt.WasAlreadySettled ||
+            !GameWalletReceiptVerifier.MatchesSettlement(receipt, "mines", settled.UserId, expected))
+            throw new InvalidOperationException("The Mines terminal command does not match its archived wallet evidence.");
+        return expected;
+    }
+
+    private static async Task<bool> PaidWalletRequestsMatchAsync(FirestoreDb database, string actor,
+        IReadOnlyList<GameWalletSettlementRequest> requests, CancellationToken ct)
+    {
+        try
+        {
+            return await database.RunTransactionAsync(async transaction =>
+            {
+                foreach (var request in requests)
+                {
+                    var bodyHash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(request, GameWalletAuthentication.WireJson)));
+                    var archived = await FirestoreWalletRoundSettlementStore.StageAsync(database, transaction,
+                        new("mines", actor, request.OperationId, request.OutcomeSha256, request.WagerCents, request.PayoutCents,
+                            RequestBodySha256: bodyHash, Phase: request.Phase, ReservationSha256: request.ReservationSha256),
+                        DateTimeOffset.UnixEpoch, ct, requireExisting: true);
+                    if (archived.InsufficientFunds)
+                        return false;
+                }
+                return true;
+            }, cancellationToken: ct);
+        }
+        catch (InvalidOperationException) { return false; }
     }
 
     internal static IReadOnlyList<RoundAuditFinding> Inspect(
@@ -80,8 +168,8 @@ internal static class MinesSequenceReplayAudit
                 summary.Participants[0].WagerCents != record.State.WagerCents ||
                 summary.Participants[0].PayoutCents != record.State.PayoutCents ||
                 summary.Participants[0].NetCents != checked(record.State.PayoutCents - record.State.WagerCents) ||
-                summary.StartedAtUtc != record.CreatedAt.UtcDateTime ||
-                summary.CompletedAtUtc != record.UpdatedAt.UtcDateTime ||
+                !MatchesSummaryTimestamp(summary.StartedAtUtc, record.CreatedAt.UtcDateTime) ||
+                !MatchesSummaryTimestamp(summary.CompletedAtUtc, record.UpdatedAt.UtcDateTime) ||
                 !MinesOutcomeAudit.Verify(record, summary.Participants[0].PayoutCents))
                 return Error("mines-terminal-replay-mismatch", "The saved Mines round, independent payout, or audit summary disagree.");
 
@@ -105,6 +193,7 @@ internal static class MinesSequenceReplayAudit
                 if (current.Version != i + 1 || current.Round.Version != current.Version ||
                     current.Round.RoundId != record.RoundId || current.Round.UserId != record.UserId ||
                     current.Round.CreatedAt != record.CreatedAt ||
+                    current.Round.ReservationSha256 != record.ReservationSha256 ||
                     current.Round.UpdatedAt.UtcDateTime != current.OccurredAtUtc ||
                     current.Round.UpdatedAt > record.UpdatedAt ||
                     !SameTermsAndBoard(current.Round.State, record.State))
@@ -126,6 +215,10 @@ internal static class MinesSequenceReplayAudit
             return Error("mines-replay-evidence-invalid", "The private Mines round or observation stream cannot be parsed for sequence replay.");
         }
     }
+
+    // The summary uses Firestore timestamps while the frozen JSON retains all .NET ticks.
+    private static bool MatchesSummaryTimestamp(DateTime summary, DateTime frozen) =>
+        summary == frozen || summary == frozen.AddTicks(-(frozen.Ticks % TimeSpan.TicksPerMicrosecond));
 
     private static MinesStoredRound ReadRound(JsonElement json) =>
         JsonSerializer.Deserialize<MinesStoredRound>(json.GetRawText(), RoundAuditCapture.Json) ??

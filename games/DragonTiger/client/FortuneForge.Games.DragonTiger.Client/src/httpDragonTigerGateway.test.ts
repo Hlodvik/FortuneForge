@@ -21,6 +21,36 @@ const makeGateway = (value: unknown) => {
 }
 
 describe('HttpDragonTigerGateway', () => {
+  it.each([false, true])('recovers another tab intent before replaying the unchanged pending command (earlier decline: %s)', async earlierDeclined => {
+    const earlier = { ...settled, roundId: 'earlier-tab-round' }
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(json({ code: 'dragon-tiger-round-conflict', message: 'Another deal is pending.' }, 409))
+      .mockResolvedValueOnce(earlierDeclined ? json({ code: 'insufficient-slot-credits', message: 'Earlier wager declined.' }, 409) : json(earlier))
+      .mockResolvedValueOnce(json(settled))
+    const gateway = new HttpDragonTigerGateway(undefined, fetcher, 'opened-account')
+    await expect(gateway.createRound(stakes, { idempotencyKey: 'dragon-tiger-original-key' })).resolves.toEqual(settled)
+    expect(fetcher.mock.calls.map(call => call[0])).toEqual(['/api/games/dragon-tiger/rounds', '/api/games/dragon-tiger/rounds/latest', '/api/games/dragon-tiger/rounds'])
+    const first = fetcher.mock.calls[0][1]!, retry = fetcher.mock.calls[2][1]!
+    expect(retry.body).toBe(first.body)
+    expect(new Headers(retry.headers).get('Idempotency-Key')).toBe(new Headers(first.headers).get('Idempotency-Key'))
+    for (const [, init] of fetcher.mock.calls) expect(new Headers(init?.headers).get('X-FortuneForge-Expected-Account')).toBe('opened-account')
+  })
+
+  it('binds every paid request to the account that opened the table', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async input => String(input).endsWith('/status')
+      ? json({ available: true, minimumStake: .5, maximumStake: 100, maximumTotalStake: 100, stakeIncrement: .5, balance: 100, mode: 'eight-deck-dragon-tiger' })
+      : String(input).endsWith('/latest') ? new Response(null, { status: 204 }) : json(settled))
+    const gateway = new HttpDragonTigerGateway(undefined, fetcher, 'opened-account')
+    await gateway.getStatus()
+    await gateway.getLatestRound()
+    await gateway.createRound(stakes, { idempotencyKey: 'dragon-tiger-original-key' })
+    expect(fetcher).toHaveBeenCalledTimes(3)
+    for (const [, init] of fetcher.mock.calls) expect(new Headers(init?.headers).get('X-FortuneForge-Expected-Account')).toBe('opened-account')
+    const command = fetcher.mock.calls[2][1]!
+    expect(new Headers(command.headers).get('Idempotency-Key')).toBe('dragon-tiger-original-key')
+    expect(command.body).toBe(JSON.stringify(stakes))
+  })
+
   it('posts the selected wagers and original idempotency key, with abort support', async () => {
     const { gateway, fetcher } = makeGateway(settled)
     const signal = new AbortController().signal

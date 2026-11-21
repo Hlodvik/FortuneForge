@@ -8,6 +8,7 @@ using FortuneForge.Server.Games.Craps;
 using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.SecurityAudit;
 using FortuneForge.Server.Tests.Blackjack.Table;
+using FortuneForge.Server.Tests.Games.Craps;
 using Google.Cloud.Firestore;
 using Xunit;
 
@@ -231,13 +232,10 @@ public sealed class PaidCrapsFinancialAuditTests(BlackjackTableFirestoreEmulator
             Endpoint = fixture.Endpoint, ChannelCredentials = Grpc.Core.ChannelCredentials.Insecure,
             EmulatorDetection = Google.Api.Gax.EmulatorDetection.None,
         }.Build();
-        await db.Collection("userBalances").Document("alice_slotsCredits").SetAsync(new Dictionary<string, object>
-        {
-            ["available"] = 1000L, ["availableFractionalCents"] = 0L,
-        });
+        await FirestorePaidCrapsStoreTests.Seed(db, "alice", 1000m);
         var draws = new Queue<DicePair>([Dice(1, 3), Dice(1, 5), Dice(2, 3),
             pointHit ? Dice(2, 2) : Dice(3, 4)]);
-        var store = new FirestorePaidCrapsStore(db, draws.Dequeue);
+        var store = FirestorePaidCrapsStoreTests.CreateStore(db, draws.Dequeue);
         var current = await store.StartAsync("alice", new(10m, [new("field", 1m), new("any-craps", 2m)], Key()));
         await Roll();
         current = await store.PlaceOddsAsync("alice", current.RoundId,
@@ -260,15 +258,16 @@ public sealed class PaidCrapsFinancialAuditTests(BlackjackTableFirestoreEmulator
         var summary = FirestoreGameRoundAuditStore.Summary(Assert.Single(summaries.Documents));
         var evidence = await db.Collection(RoundAuditDocuments.Evidence).Document(summary.Id).GetSnapshotAsync();
         var audit = new RoundAuditCapture(summary, evidence.GetValue<string>("payloadJson"));
-        var observations = (await db.Collection(GameSecurityEventDocuments.CollectionName).GetSnapshotAsync())
+        var observations = (await db.Collection(GameSecurityEventDocuments.CollectionName)
+            .WhereEqualTo("instanceId", id).GetSnapshotAsync())
             .Documents.OrderBy(item => item.GetValue<long>("version"))
             .Select(item => item.GetValue<string>("payloadJson")).ToArray();
         Assert.Empty(PaidCrapsReplayAudit.Inspect(audit.Summary, audit.PayloadJson, observations));
         Assert.Empty(await Financial());
         var ledgers = await db.Collection("balanceTransactions").GetSnapshotAsync();
         Assert.True(ledgers.Count > 10);
-        var refund = ledgers.Documents.First(item => item.GetValue<double>("amount") > 0 &&
-            item.GetValue<string>("type") == "craps-wager-adjustment");
+        var refund = ledgers.Documents.First(item => item.GetValue<long>("amountCents") == 1600 &&
+            item.GetValue<string>("type") == "game-payout");
         var amount = refund.GetValue<double>("amount");
         var after = refund.GetValue<double>("balanceAfter");
         await refund.Reference.UpdateAsync("amount", amount + .01d);
@@ -281,9 +280,16 @@ public sealed class PaidCrapsFinancialAuditTests(BlackjackTableFirestoreEmulator
         await refund.Reference.UpdateAsync("idempotencyKey", Key());
         Assert.Contains(await Financial(), item => item.Code == "craps-paid-ledger-mismatch");
         await refund.Reference.UpdateAsync("idempotencyKey", operation);
-        await refund.Reference.UpdateAsync("type", "craps-payout");
+        await refund.Reference.UpdateAsync("type", "game-wager");
         Assert.Contains(await Financial(), item => item.Code == "craps-paid-ledger-mismatch");
-        await refund.Reference.UpdateAsync("type", "craps-wager-adjustment");
+        await refund.Reference.UpdateAsync("type", "game-payout");
+
+        var receipt = db.Collection("walletRoundSettlements").Document(refund.GetValue<string>("walletSettlementId"));
+        var originalReceipt = await receipt.GetSnapshotAsync();
+        await receipt.DeleteAsync();
+        Assert.Contains(await Financial(), item => item.Code == "craps-paid-ledger-mismatch");
+        Assert.False((await receipt.GetSnapshotAsync()).Exists);
+        await receipt.SetAsync(originalReceipt.ToDictionary());
 
         var extra = db.Collection("balanceTransactions").Document($"craps-{id}-zzzz-extra");
         await extra.SetAsync(Ledger(extra.Id, "craps-payout", 1));
@@ -305,7 +311,7 @@ public sealed class PaidCrapsFinancialAuditTests(BlackjackTableFirestoreEmulator
         async Task Set(string kind, decimal target) => current = await store.SetWagerAsync("alice", current.RoundId,
             new(kind, target, Key(), current.Revision, current.Rolls.Count + 1));
         Task<IReadOnlyList<RoundAuditFinding>> Financial() =>
-            PaidCrapsReplayAudit.InspectFinancialAsync(db, audit.Summary, audit.PayloadJson, default);
+            CrapsWalletFinancialAudit.InspectAsync(db, audit.Summary, audit.PayloadJson, default);
         void AssertRejected(int index, Action<JsonNode> alter)
         {
             var changed = observations.ToArray();

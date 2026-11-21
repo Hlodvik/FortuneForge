@@ -13,7 +13,14 @@ public sealed class ReelRichesEngine
     private static readonly FrozenSlotDefinitions Definitions = ClassicSlotDefinitionFactory.Create(Profile);
     private readonly ClassicSlotEngine engine;
 
-    public ReelRichesEngine(IGameRandomSource random) => engine = new(Definitions, Profile, random, EngineVersion);
+    public ReelRichesEngine(IGameRandomSource random) => engine = new(Definitions, Profile, random, EngineVersion,
+        new ClassicSlotEngineOptions { AllowFreeSpinCarryWager = true });
+
+    public static decimal WagerPointValueInCents => Definitions.Game.Wagering.PointValueInCents;
+    public static long MinimumWagerPoints => Definitions.Game.Wagering.MinimumWagerPoints;
+    public static void ValidateWager(long wagerPoints, bool isFreeSpin) =>
+        ClassicSlotEngine.ValidateWager(Definitions.Game, wagerPoints, allowCarryWager: isFreeSpin);
+
     public ClassicSlotSpinOutcome Spin(long wagerPoints, string playerId,
         bool specialBoostApplied = false, long currentEnergyBalance = 0,
         string? featureMode = null, int? persistedPityMisses = null, bool isFreeSpin = false) =>

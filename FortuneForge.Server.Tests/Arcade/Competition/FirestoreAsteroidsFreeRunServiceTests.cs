@@ -1,6 +1,7 @@
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Arcade;
 using FortuneForge.Server.Arcade.Asteroids;
+using FortuneForge.Games.Asteroids;
 using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;

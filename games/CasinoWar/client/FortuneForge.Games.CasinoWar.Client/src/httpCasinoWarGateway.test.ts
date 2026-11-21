@@ -55,6 +55,26 @@ const completedWarRound = {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('HttpCasinoWarGateway', () => {
+  it('recovers pending paid actions and validates the restored open-round list', async () => {
+    const recovery = { recoveredRound: null, openRounds: [awaitingTieRound] }
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse(recovery))
+      .mockResolvedValueOnce(jsonResponse({ recoveredRound: null, openRounds: [immediateRound] }))
+    const gateway = new HttpCasinoWarGateway('/api/games/casino-war', fetchMock)
+
+    await expect(gateway.recoverPending()).resolves.toEqual(recovery)
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/games/casino-war/rounds/pending', { signal: undefined })
+    await expect(gateway.recoverPending()).rejects.toBeInstanceOf(CasinoWarGatewayError)
+  })
+
+  it('loads game-owned historical results and bounds the requested history count', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([immediateRound, completedWarRound]))
+    const gateway = new HttpCasinoWarGateway('/api/games/casino-war', fetchMock)
+
+    await expect(gateway.getHistory(10)).resolves.toEqual([immediateRound, completedWarRound])
+    expect(fetchMock).toHaveBeenCalledWith('/api/games/casino-war/rounds/history?limit=10', { signal: undefined })
+    expect(() => gateway.getHistory(0)).toThrow(CasinoWarGatewayError)
+  })
+
   it('requests status from the expected route', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
       available: true, minimumPrimaryStake: 1, maximumPrimaryStake: 100, stakeIncrement: 1,

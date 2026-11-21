@@ -29,6 +29,10 @@ describe('Hi-Lo pending-operation recovery', () => {
     new DOMException('Aborted', 'AbortError'),
     new HiLoGatewayError('Retry', 'retry_required', 503),
     new HiLoGatewayError('Incomplete success', 'hi-lo-invalid-response', 200),
+    new HiLoGatewayError('Sign back in to the account that opened this game.', 'game-session-changed', 403),
+    new HiLoGatewayError('Sign in to restore the original action.', 'authentication_required', 401),
+    new HiLoGatewayError('Retry the original action after the limit resets.', 'rate_limited', 429),
+    new HiLoGatewayError('The earlier request may have completed.', 'request_timeout', 408),
   ])('keeps an uncertain mutation through refresh and repeats the original key: %s', async error => {
     const saved = storage(), store = new HiLoPendingOperationStore('alice:practice', saved), api = gateway()
     api.startRound.mockRejectedValueOnce(error)

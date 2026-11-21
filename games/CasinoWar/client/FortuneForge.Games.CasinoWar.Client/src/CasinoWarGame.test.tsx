@@ -259,6 +259,42 @@ describe('CasinoWarGame', () => {
     expect(getRound).toHaveBeenCalledWith('round-12', expect.any(AbortSignal))
   })
 
+  it('restores an account-owned round on a new device without local recovery data', async () => {
+    const recoverPending = vi.fn().mockResolvedValue({ recoveredRound: null, openRounds: [awaitingTieRound] })
+    const gateway = fakeGateway({ recoverPending })
+    render(<CasinoWarGame playerId="new-device-player" gateway={gateway} />)
+
+    expect(await screen.findByRole('button', { name: 'Surrender' })).toBeTruthy()
+    expect(recoverPending).toHaveBeenCalledWith(expect.any(AbortSignal))
+    expect(gateway.createRound).not.toHaveBeenCalled()
+    expect(sessionStorage.getItem('fortuneforge:casino-war:round:new-device-player')).toBe('round-12')
+  })
+
+  it('allows surrender under a fresh key after the wallet definitively declines war', async () => {
+    const user = userEvent.setup()
+    const surrenderedRound: CasinoWarRound = {
+      ...awaitingTieRound, balance: 5, phase: 'completed', decision: 'surrender',
+      primarySettlement: { disposition: 'surrender', outcome: 'player-surrendered', totalWagered: 10, totalReturn: 5, profit: -5 },
+    }
+    const gateway = fakeGateway({
+      createRound: vi.fn().mockResolvedValue(awaitingTieRound),
+      getRound: vi.fn().mockResolvedValue({ ...awaitingTieRound, balance: 0 }),
+      decide: vi.fn().mockRejectedValueOnce(new CasinoWarGatewayError('Not enough credits.', 'insufficient-slot-credits', 409))
+        .mockResolvedValueOnce(surrenderedRound),
+    })
+    render(<CasinoWarGame gateway={gateway} />)
+    await placeChip(user, 'Main', 1)
+    await user.click(await screen.findByRole('button', { name: 'Deal' }))
+    await user.click(await screen.findByRole('button', { name: 'Go to War' }))
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Surrender' }) as HTMLButtonElement).disabled).toBe(false))
+    await user.click(screen.getByRole('button', { name: 'Surrender' }))
+    await screen.findByRole('button', { name: 'Continue' })
+    const calls = vi.mocked(gateway.decide).mock.calls
+    expect(calls[0]?.[1]).toBe('go-to-war')
+    expect(calls[1]?.[1]).toBe('surrender')
+    expect(calls[1]?.[2]?.idempotencyKey).not.toBe(calls[0]?.[2]?.idempotencyKey)
+  })
+
   it('replays the exact player-scoped pending opening after a reload', async () => {
     sessionStorage.setItem('fortuneforge:casino-war:pending:player-7', JSON.stringify({
       operation: 'opening', idempotencyKey: 'casino-war-opening-recovery-0001', primaryStake: 10, tieStake: 2,

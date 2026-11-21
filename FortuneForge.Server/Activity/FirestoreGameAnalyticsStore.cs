@@ -1,5 +1,5 @@
 using FortuneForge.Games.Abstractions.Analytics;
-using FortuneForge.Server.Accounts.Storage;
+using FortuneForge.Games.NeonNights.Server;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 using System.Globalization;
@@ -107,7 +107,7 @@ internal sealed class FirestoreGameAnalyticsStore(FirestoreDb database, TimeProv
         var known = paid && value.WagerCents is not null && value.PayoutCents is not null;
         // A Car reel respin adjusts an already counted paid spin. Its outbox
         // entry carries the extra payout into RTP without counting a new spin.
-        var payoutAdjustment = value.SourceCollection == NeonCarRespinReceipt.CollectionName;
+        var payoutAdjustment = value.SourceCollection == NeonCarRespinReport.ReceiptCollection;
         var net = known ? value.PayoutCents!.Value - value.WagerCents!.Value : 0;
         return new()
         {

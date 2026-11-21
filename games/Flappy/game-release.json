@@ -1,0 +1,6 @@
+{
+  "id": "flappy",
+  "backend": {
+    "kind": "packaged-game"
+  }
+}

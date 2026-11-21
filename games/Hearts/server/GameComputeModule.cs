@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Builder;
 using System.Security.Cryptography;
 using FortuneForge.Games.Abstractions;
 using FortuneForge.Games.Cards;
@@ -6,11 +7,11 @@ using FortuneForge.Games.TrickTaking;
 
 namespace FortuneForge.Games.GameCompute.Server;
 
-internal static class GameComputeModule
+public static class GameComputeModule
 {
     internal static GameDescriptor Descriptor => HeartsModule.Descriptor;
 
-    internal static void Map(WebApplication app)
+    public static void Map(WebApplication app)
     {
         app.MapComputeAction(HeartsCompute.StartRoute, (HeartsComputeStartRequest request) =>
             HeartsMatchEngine.Start(request.Seed ?? CreateSeed(), request.TargetScore), isRuleViolation: IsRuleViolation);

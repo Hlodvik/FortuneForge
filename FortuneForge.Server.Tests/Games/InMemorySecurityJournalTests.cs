@@ -3,9 +3,9 @@ using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Games.DropMerge;
 using FortuneForge.Server.Games.Craps;
 using FortuneForge.Server.Games.Roulette;
-using FortuneForge.Server.Matchmaking;
 using FortuneForge.Server.Games.TwentyFortyEight;
 using FortuneForge.Server.SecurityAudit;
+using FortuneForge.Server.Tests.Games.Roulette;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Games;
@@ -83,7 +83,7 @@ public sealed class InMemorySecurityJournalTests
     public async Task Roulette_completion_preserves_the_whole_shared_virtual_credit_round()
     {
         var sink = new RecordingGameSecuritySink();
-        var service = new RouletteGameService(new MultiplayerMatchmaker(), securityEvents: sink);
+        var service = new RouletteGameService(events: new RouletteSecurityEventRecorder(sink));
         var alice = await service.StartAuditedAsync("alice");
         var bob = await service.StartAuditedAsync("bob");
         Assert.Equal(alice.RoundId, bob.RoundId);

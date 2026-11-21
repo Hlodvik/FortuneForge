@@ -5,6 +5,7 @@ using FortuneForge.Games.HiLo.Server;
 using FortuneForge.Server.Admin.Operations;
 using FortuneForge.Server.Admin.Players;
 using FortuneForge.Server.Cards.History;
+using FortuneForge.Server.Tests.Accounts;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
@@ -27,8 +28,10 @@ public sealed class HiLoHistoryIntegrationTests
         await database.Collection("users").Document("player").SetAsync(new Dictionary<string, object>
             { ["playerName"] = "Player", ["role"] = "player" });
         await database.Collection("userBalances").Document("player_slotsCredits").SetAsync(new Dictionary<string, object>
-            { ["available"] = 100L, ["availableFractionalCents"] = 0L });
-        var store = new HiLoFirestoreStore(database);
+            { ["userId"] = "player", ["currencyId"] = "slotsCredits", ["available"] = 100L,
+                ["availableFractionalCents"] = 0L, ["reserved"] = 0L, ["version"] = 1L });
+        var wallet = new GameWalletFirestoreTestClient(database, "hi-lo");
+        var store = new HiLoFirestoreStore(database, wallet, wallet);
         var start = await new HiLoService(store, draw: () => new(CardRank.Seven, CardSuit.Clubs))
             .StartAsync("player", new(Guid.NewGuid().ToString("N"), 100));
         var win = await new HiLoService(store, draw: () => new(CardRank.King, CardSuit.Hearts))

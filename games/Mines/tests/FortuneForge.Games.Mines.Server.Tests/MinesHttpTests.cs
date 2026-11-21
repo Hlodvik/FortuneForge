@@ -155,7 +155,7 @@ public sealed class MinesHttpTests : IDisposable
         await using var app = await CreateApp(practice: false, paidEnabled: true, allowedOrigins: ["https://fortuneforgegame.web.app"]);
         var client = app.GetTestClient();
         client.DefaultRequestHeaders.Add("Origin", "https://fortuneforgegame.web.app");
-        Assert.Equal(HttpStatusCode.InternalServerError, (await client.PostAsJsonAsync("/api/games/mines/rounds", new StartMinesRequest("mines-http-request-0001", 100, 3))).StatusCode);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, (await client.PostAsJsonAsync("/api/games/mines/rounds", new StartMinesRequest("mines-http-request-0001", 100, 3))).StatusCode);
         Assert.False(File.Exists(Path.Combine(directory, "practice.json")));
     }
 

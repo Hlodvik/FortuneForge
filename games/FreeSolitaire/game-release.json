@@ -5,6 +5,6 @@
     "entry": "src/index.ts"
   },
   "backend": {
-    "kind": "game-compute"
+    "kind": "packaged-game"
   }
 }

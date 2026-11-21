@@ -21,7 +21,7 @@ public sealed class MinesFirestoreTests(MinesEmulator emulator)
         ProjectId = $"demo-mines-{Guid.NewGuid():N}", Endpoint = emulator.Endpoint,
         ChannelCredentials = ChannelCredentials.Insecure, EmulatorDetection = EmulatorDetection.None,
     }.Build();
-    private static MinesService Service(FirestoreDb database, int mines = 3) => new(new FirestoreMinesStore(database), new MinesEngine(new MinesStoreTests.FixedBoard(mines)));
+    private static MinesService Service(FirestoreDb database, int mines = 3) => new(new FirestoreMinesStore(database, new MinesTestWallet(database), new MinesTestWallet(database)), new MinesEngine(new MinesStoreTests.FixedBoard(mines)));
     private static Task Seed(FirestoreDb database, string player, long cents) => database.Collection("userBalances").Document($"{player}_slotsCredits")
         .SetAsync(new Dictionary<string, object> { ["available"] = cents / 100, ["availableFractionalCents"] = cents % 100, ["version"] = 1L });
     private static async Task<long> Balance(FirestoreDb database, string player)
@@ -227,7 +227,7 @@ public sealed class MinesFirestoreTests(MinesEmulator emulator)
         var database = Database();
         await Seed(database, "poor", 9);
         var generator = new MinesStoreTests.FixedBoard(3);
-        var service = new MinesService(new FirestoreMinesStore(database), new MinesEngine(generator));
+        var service = new MinesService(new FirestoreMinesStore(database, new MinesTestWallet(database), new MinesTestWallet(database)), new MinesEngine(generator));
         await Assert.ThrowsAsync<MinesInsufficientFundsException>(() => service.StartAsync("poor", new(Key(1), 100, 3)));
         await Assert.ThrowsAsync<MinesInsufficientFundsException>(() => service.StartAsync("missing", new(Key(1), 100, 3)));
         await database.Collection("userBalances").Document("broken_slotsCredits").SetAsync(new Dictionary<string, object> { ["availableFractionalCents"] = 50L });

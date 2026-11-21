@@ -2,8 +2,8 @@ using System.Text.Json.Nodes;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Games.Craps;
 using FortuneForge.Server.Games.Roulette;
-using FortuneForge.Server.Matchmaking;
 using FortuneForge.Server.SecurityAudit;
+using FortuneForge.Server.Tests.Games.Roulette;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.SecurityAudit;
@@ -55,7 +55,7 @@ public sealed class CasinoPracticeActionReplayAuditTests
     public async Task Roulette_real_service_bet_remove_clear_and_spin_replay_and_detect_balance_tampering()
     {
         var sink = new RecordingSink();
-        var service = new RouletteGameService(new MultiplayerMatchmaker(), securityEvents: sink);
+        var service = new RouletteGameService(events: new RouletteSecurityEventRecorder(sink));
         var alice = await service.StartAuditedAsync("alice");
         var bob = await service.StartAuditedAsync("bob");
         Assert.Equal(alice.RoundId, bob.RoundId);

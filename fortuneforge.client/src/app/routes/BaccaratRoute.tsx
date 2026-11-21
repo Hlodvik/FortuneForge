@@ -32,8 +32,8 @@ function BaccaratSession({ initialAccount }: Readonly<{ initialAccount: AccountS
   const [account, setAccount] = useState(initialAccount)
   const practiceMode = walletPracticeModeEnabled()
   const gateway = useMemo(() => practiceMode
-    ? new HttpBaccaratGateway('/api/games/baccarat', practiceAccountFetch(fetchWithAccountSession))
-    : new HttpBaccaratGateway('/api/games/baccarat', fetchWithAccountSession), [practiceMode])
+    ? new HttpBaccaratGateway('/api/games/baccarat', practiceAccountFetch(fetchWithAccountSession), account.userId)
+    : new HttpBaccaratGateway('/api/games/baccarat', fetchWithAccountSession, account.userId), [practiceMode, account.userId])
 
   useEffect(() => setAccount(initialAccount), [initialAccount])
   const refreshBalance = useCallback(() => {

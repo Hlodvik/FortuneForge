@@ -35,6 +35,8 @@ public static class AccountServicesConfiguration
             FirebaseAuth.GetAuth(provider.GetRequiredService<FirebaseApp>()));
         services.AddHttpClient<FirebaseEmailVerificationService>();
         services.AddSingleton<IAccountStore, FirestoreAccountStore>();
+        services.AddSingleton<IWalletCreditStore, FirestoreWalletCreditStore>();
+        services.AddSingleton<IWalletRoundSettlementStore, FirestoreWalletRoundSettlementStore>();
         services.AddHostedService<AccountSchemaInitializer>();
         services.AddSingleton<DevelopmentDefaultAccount>();
         services.AddHostedService<DevelopmentDefaultAccountBootstrapper>();

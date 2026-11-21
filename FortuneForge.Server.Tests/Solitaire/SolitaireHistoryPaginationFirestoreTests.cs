@@ -18,16 +18,8 @@ public sealed class SolitaireHistoryPaginationFirestoreTests
             ProjectId = $"demo-solitaire-history-{Guid.NewGuid():N}",
             EmulatorDetection = EmulatorDetection.EmulatorOnly
         }.Build();
-        var store = new FirestoreCompetitiveSolitaireStore(database,
-            new CompetitiveSolitaireOptions { AllowSingleHumanBotFill = false });
-        await database.Collection("userBalances").Document("alice_slotsCredits").SetAsync(
-            new Dictionary<string, object>
-            {
-                ["available"] = 100L,
-                ["availableFractionalCents"] = 0L,
-                ["version"] = 1L,
-                ["updatedAt"] = Timestamp.FromDateTime(Start)
-            });
+        var store = CompetitiveSolitaireTestStore.Create(database);
+        await CompetitiveSolitaireTestStore.SeedBalanceAsync(database, "alice", Start);
 
         var expected = new List<string>();
         for (var index = 0; index < 6; index++)
@@ -71,18 +63,9 @@ public sealed class SolitaireHistoryPaginationFirestoreTests
             ProjectId = $"demo-solitaire-history-{Guid.NewGuid():N}",
             EmulatorDetection = EmulatorDetection.EmulatorOnly
         }.Build();
-        var store = new FirestoreCompetitiveSolitaireStore(database,
-            new CompetitiveSolitaireOptions { AllowSingleHumanBotFill = false });
+        var store = CompetitiveSolitaireTestStore.Create(database);
         foreach (var user in new[] { "alice", "bob" })
-        {
-            await database.Collection("userBalances").Document($"{user}_slotsCredits").SetAsync(
-                new Dictionary<string, object>
-                {
-                    ["available"] = 100L,
-                    ["version"] = 1L,
-                    ["updatedAt"] = Timestamp.FromDateTime(Start)
-                });
-        }
+            await CompetitiveSolitaireTestStore.SeedBalanceAsync(database, user, Start);
         var alice = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
             "alice", "Alice", 4, 500, 3, "join-alice-history", 1001, Start, default)).Session);
         var player = Assert.Single((await database.Collection("solitaireMatchPlayers")

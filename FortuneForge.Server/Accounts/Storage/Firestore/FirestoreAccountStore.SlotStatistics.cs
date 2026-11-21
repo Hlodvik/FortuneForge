@@ -4,6 +4,7 @@ using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Models;
 using Google.Cloud.Firestore;
+using PiratesGemRules = FortuneForge.Games.PiratesFortune.PiratesGemBonus;
 
 namespace FortuneForge.Server.Accounts.Storage;
 
@@ -185,45 +186,13 @@ public sealed partial class FirestoreAccountStore
         SlotSpecialRoundProfile profile,
         long spinWagerCents)
     {
-        var awardedByMode = SealFeatureModes.ToDictionary(mode => mode, _ => 0, StringComparer.Ordinal);
-        foreach (var (symbolId, count) in result.SealsAwarded)
-        {
-            if (count > 0 && SealFeatureModesBySymbolId.TryGetValue(symbolId, out var mode))
-                awardedByMode[mode] = checked(awardedByMode[mode] + count);
-        }
-
-        var freeSpinsAwarded = 0;
-        string? freeSpinFeatureMode = result.FreeSpinsAwarded > 0
-            ? profile.ScatterFeatureMode
-            : null;
-        var freeSpinWagerPoints = 0L;
-        var changed = false;
-        foreach (var mode in SealFeatureModes)
-        {
-            var gems = awardedByMode[mode];
-            if (gems == 0) continue;
-            var progress = PiratesGemBonus.Advance(result.SpinId, mode,
-                checked((int)counts[mode]), wagerCents[mode], gems, spinWagerCents);
-            counts[mode] = progress.Count;
-            wagerCents[mode] = progress.WagerTotal;
-            changed = true;
-
-            foreach (var award in progress.Awards)
-            {
-                freeSpinsAwarded = checked(freeSpinsAwarded + profile.CollectionAwardedSpins);
-                freeSpinFeatureMode = PiratesGemBonus.AddFeatureMode(freeSpinFeatureMode, mode);
-                if (freeSpinWagerPoints > 0) continue;
-                var totalWagerPoints = RandMoney.CentsToPoints(
-                    award.WagerTotal, result.PointValueInCents);
-                freeSpinWagerPoints = Math.Max(1,
-                    DivideRounded(totalWagerPoints, award.GemCount));
-            }
-        }
-
-        return new SealCollectionSettlement(counts, wagerCents, freeSpinsAwarded,
-            freeSpinFeatureMode, freeSpinWagerPoints,
-            CreateSealCollections(counts, wagerCents, result.PointValueInCents,
-                profile.CollectionTarget), changed);
+        var progress = PiratesGemRules.AdvancePaid(result.SpinId, counts, wagerCents, result.SealsAwarded,
+            spinWagerCents, result.PointValueInCents, profile.CollectionAwardedSpins,
+            result.FreeSpinsAwarded > 0 ? profile.ScatterFeatureMode : null);
+        return new SealCollectionSettlement(progress.Counts, progress.WagerCents, progress.FreeSpinsAwarded,
+            progress.FeatureMode, progress.FreeSpinWagerPoints,
+            CreateSealCollections(progress.Counts, progress.WagerCents, result.PointValueInCents,
+                profile.CollectionTarget), progress.Changed);
     }
 
     private static IReadOnlyList<SlotSealCollection> CreateSealCollections(

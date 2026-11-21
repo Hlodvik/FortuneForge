@@ -127,15 +127,24 @@ internal sealed class ManagedPlayerQueuer(
         CancellationToken cancellationToken) =>
         assignments.TryRenewAsync(gameId, assignmentId, profileIds, nowUtc, cancellationToken);
 
-    public async Task ReleaseAsync(
+    public Task ReleaseAsync(
         string assignmentId,
         IReadOnlyCollection<string> profileIds,
         DateTime nowUtc,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken) => ReleaseCoreAsync(null, assignmentId, profileIds, nowUtc, cancellationToken);
+
+    public Task ReleaseForGameAsync(string gameId, string assignmentId, IReadOnlyCollection<string> profileIds, DateTime nowUtc,
+        CancellationToken cancellationToken) => ReleaseCoreAsync(gameId, assignmentId, profileIds, nowUtc, cancellationToken);
+
+    private async Task ReleaseCoreAsync(string? gameId, string assignmentId, IReadOnlyCollection<string> profileIds,
+        DateTime nowUtc, CancellationToken cancellationToken)
     {
         foreach (var profileId in profileIds.Distinct(StringComparer.Ordinal))
         {
-            if (await assignments.ReleaseAsync(profileId, assignmentId, nowUtc, cancellationToken))
+            var released = await (gameId is null
+                ? assignments.ReleaseAsync(profileId, assignmentId, nowUtc, cancellationToken)
+                : assignments.ReleaseForGameAsync(profileId, gameId, assignmentId, nowUtc, cancellationToken));
+            if (released)
                 await profiles.MarkLastActiveAsync(profileId, nowUtc, cancellationToken);
         }
     }

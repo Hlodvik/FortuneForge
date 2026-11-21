@@ -1,6 +1,5 @@
 using System.Text.Json;
 using FortuneForge.Server.Arcade.Competition;
-using FortuneForge.Server.Arcade.Flappy;
 using FortuneForge.Server.Accounts.Security;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -97,259 +96,79 @@ public sealed class ArcadeCompetitionControllerTests
     }
 
     [Fact]
-    public async Task PaidAttemptRouteGuardsGamePeriodAndIdempotencyBeforeResolvingServices()
+    public void RunStatusRegistersAGetRouteAndRequiresTheWorker()
     {
+        var action = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.GetRun))!;
+        Assert.Equal("{gameId}/{period}/runs/{runId}", Assert.Single(action.GetCustomAttributes(typeof(HttpGetAttribute), false)
+            .Cast<HttpGetAttribute>()).Template);
+
         var controller = Create();
-
-        var unknownGame = Assert.IsType<NotFoundObjectResult>(await controller.StartAttempt(
-            "other-arcade", "daily", "attempt-1", null!, null!, null!, null!, null!, default));
-        var allTime = Assert.IsType<BadRequestObjectResult>(await controller.StartAttempt(
-            "asteroids", "all-time", "attempt-1", null!, null!, null!, null!, null!, default));
-        var badPeriod = Assert.IsType<BadRequestObjectResult>(await controller.StartAttempt(
-            "asteroids", "monthly", "attempt-1", null!, null!, null!, null!, null!, default));
-        var missingKey = Assert.IsType<BadRequestObjectResult>(await controller.StartAttempt(
-            "asteroids", "daily", " ", null!, null!, null!, null!, null!, default));
-
-        Assert.Equal("arcade-competition-game-not-found", ErrorCode(unknownGame));
-        Assert.Equal("arcade-competition-period-not-startable", ErrorCode(allTime));
-        Assert.Equal("arcade-competition-period-invalid", ErrorCode(badPeriod));
-        Assert.Equal("arcade-competition-idempotency-key-required", ErrorCode(missingKey));
-    }
-
-    [Fact]
-    public void PaidAttemptContractIsPostAndUsesThePaidPlayRateLimit()
-    {
-        var method = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.StartAttempt))
-            ?? throw new InvalidOperationException("Paid attempt action is missing.");
-
-        Assert.Equal("{gameId}/{period}/attempts", method.GetCustomAttributes(typeof(HttpPostAttribute), false)
-            .Cast<HttpPostAttribute>().Single().Template);
-        Assert.Equal(RateLimitPolicies.SlotSpins, method.GetCustomAttributes(typeof(EnableRateLimitingAttribute), false)
-            .Cast<EnableRateLimitingAttribute>().Single().PolicyName);
-        Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionAsteroidsPaidEntryService");
-        Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionFlappyPaidEntryService");
-        Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionHorseFlightPaidEntryService");
-        Assert.DoesNotContain(method.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionPaidEntryService");
-        Assert.DoesNotContain(method.GetParameters(), parameter => parameter.Name is "score" or "userId" or "balance" or "time" or "window");
-    }
-
-    [Fact]
-    public void PaidAttemptResponseExposesTheRunSeedOnlyAsCanonicalHex()
-    {
-        var response = new ArcadeCompetitionPaidAttemptResponse(
-            "attempt-1",
-            "asteroids",
-            "daily",
-            new DateTimeOffset(2026, 9, 3, 22, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 9, 4, 22, 0, 0, TimeSpan.Zero),
-            100,
-            false,
-            "asteroids_0123456789abcdef",
-            "000000000000002a");
-        var json = JsonSerializer.Serialize(response, new JsonSerializerOptions(JsonSerializerDefaults.Web));
-
-        Assert.Contains("\"seedHex\":\"000000000000002a\"", json);
-        Assert.DoesNotContain("\"seed\":", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("42", json);
-    }
-
-    [Fact]
-    public void ReplayCompletionContractIsPaidPostAndExposesOnlyReplayInputs()
-    {
-        var method = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.CompleteAsteroidsReplay))
-            ?? throw new InvalidOperationException("Replay completion action is missing.");
-        Assert.Equal("{gameId}/{period}/runs/{runId}/replay", method.GetCustomAttributes(typeof(HttpPostAttribute), false)
-            .Cast<HttpPostAttribute>().Single().Template);
-        Assert.Equal(RateLimitPolicies.SlotSpins, method.GetCustomAttributes(typeof(EnableRateLimitingAttribute), false)
-            .Cast<EnableRateLimitingAttribute>().Single().PolicyName);
-        Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "AccountService");
-        Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionAsteroidsPaidEntryService");
-        Assert.DoesNotContain(method.GetParameters(), parameter => parameter.Name is "score" or "userId" or "seed" or "time" or "competition");
-        var properties = typeof(AsteroidsReplayInputRequest).GetProperties().Select(property => property.Name).ToArray();
-        Assert.Equal(new[] { "RulesVersion", "TotalSteps", "Commands" }, properties);
+        foreach (var (game, period) in new[] { ("asteroids", "free"), ("asteroids", "daily"), ("flappy", "weekly"), ("horse-flight", "daily") })
+        {
+            var unavailable = Assert.IsType<ObjectResult>(controller.GetRun(game, period));
+            Assert.Equal(StatusCodes.Status503ServiceUnavailable, unavailable.StatusCode);
+            Assert.Equal("arcade-competition-worker-required", ErrorCode(unavailable));
+        }
+        Assert.IsType<NotFoundObjectResult>(controller.GetRun("other-arcade", "daily"));
+        Assert.IsType<BadRequestObjectResult>(controller.GetRun("flappy", "free"));
+        Assert.IsType<BadRequestObjectResult>(controller.GetRun("asteroids", "all-time"));
     }
 
     [Theory]
-    [InlineData("settled", 409, "arcade-competition-settlement-closed")]
-    [InlineData("invalid", 400, "arcade-asteroids-replay-invalid")]
-    [InlineData("conflict", 409, "arcade-asteroids-run-conflict")]
-    [InlineData("unexpected", 500, "arcade-asteroids-replay-failed")]
-    public void ReplayCompletionFailuresHaveStableSafeCodes(string kind, int status, string code)
-    {
-        var result = ArcadeCompetitionController.ReplayCompletionFailure(kind switch
-        {
-            "settled" => new ArcadeCompetitionSettlementCompletedException(),
-            "invalid" => new ArgumentException("internal validation"),
-            "conflict" => new InvalidOperationException("internal conflict"),
-            _ => new Exception("internal failure"),
-        });
-        var objectResult = Assert.IsAssignableFrom<ObjectResult>(result);
-        Assert.Equal(status, objectResult.StatusCode);
-        Assert.Equal(code, Assert.IsType<ArcadeCompetitionApiError>(objectResult.Value).Code);
-    }
-
-    [Fact]
-    public void ReplayCompletionResponseSerializesOnlySafeDerivedFields()
-    {
-        var json = JsonSerializer.Serialize(new AsteroidsReplayCompletionResponse(
-            "asteroids_0123456789abcdef", 100, "completed", false), new JsonSerializerOptions(JsonSerializerDefaults.Web));
-        Assert.Contains("\"score\":100", json);
-        Assert.DoesNotContain("seed", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("player", json, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task FreeStartRequiresIdempotencyBeforeResolvingAuthenticatedServices()
-    {
-        var result = Assert.IsType<BadRequestObjectResult>(await Create().StartFreeAsteroidsRun(
-            " ", null!, null!, default));
-
-        Assert.Equal("arcade-asteroids-free-idempotency-key-required", ErrorCode(result));
-    }
-
-    [Fact]
-    public void FreeRunRoutesAreAuthenticatedRateLimitedReplayOnlyContracts()
-    {
-        var start = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.StartFreeAsteroidsRun))
-            ?? throw new InvalidOperationException("Free start action is missing.");
-        var complete = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.CompleteFreeAsteroidsReplay))
-            ?? throw new InvalidOperationException("Free completion action is missing.");
-
-        Assert.Equal("asteroids/free/runs", start.GetCustomAttributes(typeof(HttpPostAttribute), false)
-            .Cast<HttpPostAttribute>().Single().Template);
-        Assert.Equal("asteroids/free/runs/{runId}/replay", complete.GetCustomAttributes(typeof(HttpPostAttribute), false)
-            .Cast<HttpPostAttribute>().Single().Template);
-        Assert.All(new[] { start, complete }, method =>
-        {
-            Assert.Equal(RateLimitPolicies.SlotSpins, method.GetCustomAttributes(typeof(EnableRateLimitingAttribute), false)
-                .Cast<EnableRateLimitingAttribute>().Single().PolicyName);
-            Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "AccountService");
-            Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "FirestoreAsteroidsFreeRunService");
-            Assert.DoesNotContain(method.GetParameters(), parameter => parameter.Name is "score" or "userId" or "seed" or "balance");
-        });
-    }
-
-    [Fact]
-    public void FlappyFreeRunRoutesAreAuthenticatedRateLimitedReplayOnlyContracts()
-    {
-        var start = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.StartFreeFlappyRun))
-            ?? throw new InvalidOperationException("Flappy free start action is missing.");
-        var complete = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.CompleteFreeFlappyReplay))
-            ?? throw new InvalidOperationException("Flappy free completion action is missing.");
-
-        Assert.Equal("flappy/free/runs", start.GetCustomAttributes(typeof(HttpPostAttribute), false)
-            .Cast<HttpPostAttribute>().Single().Template);
-        Assert.Equal("flappy/free/runs/{runId}/replay", complete.GetCustomAttributes(typeof(HttpPostAttribute), false)
-            .Cast<HttpPostAttribute>().Single().Template);
-        Assert.All(new[] { start, complete }, method =>
-        {
-            Assert.Equal(RateLimitPolicies.SlotSpins, method.GetCustomAttributes(typeof(EnableRateLimitingAttribute), false)
-                .Cast<EnableRateLimitingAttribute>().Single().PolicyName);
-            Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "AccountService");
-            Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "FirestoreFlappyFreeRunService");
-            Assert.DoesNotContain(method.GetParameters(), parameter => parameter.Name is "score" or "userId" or "seed" or "balance");
-        });
-        Assert.Equal(new[] { "TotalTicks", "FlapTicks" }, typeof(FlappyReplayInputRequest).GetProperties().Select(property => property.Name));
-    }
-
-    [Fact]
-    public void FlappyPaidReplayRouteIsAuthenticatedRateLimitedAndAcceptsReplayInputOnly()
-    {
-        var complete = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.CompletePaidFlappyReplay))
-            ?? throw new InvalidOperationException("Flappy paid completion action is missing.");
-
-        Assert.Equal("flappy/{period}/runs/{runId}/replay", complete.GetCustomAttributes(typeof(HttpPostAttribute), false)
-            .Cast<HttpPostAttribute>().Single().Template);
-        Assert.Equal(RateLimitPolicies.SlotSpins, complete.GetCustomAttributes(typeof(EnableRateLimitingAttribute), false)
-            .Cast<EnableRateLimitingAttribute>().Single().PolicyName);
-        Assert.Contains(complete.GetParameters(), parameter => parameter.ParameterType.Name == "AccountService");
-        Assert.Contains(complete.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionFlappyPaidEntryService");
-        Assert.DoesNotContain(complete.GetParameters(), parameter => parameter.Name is "score" or "userId" or "seed" or "balance");
-    }
-
-    [Fact]
-    public void HorseFlightRunRoutesAreAuthenticatedRateLimitedReplayOnlyContracts()
-    {
-        var freeStart = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.StartFreeHorseFlightRun))
-            ?? throw new InvalidOperationException("Horse Flight free start action is missing.");
-        var freeComplete = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.CompleteFreeHorseFlightReplay))
-            ?? throw new InvalidOperationException("Horse Flight free completion action is missing.");
-        var paidComplete = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.CompletePaidHorseFlightReplay))
-            ?? throw new InvalidOperationException("Horse Flight paid completion action is missing.");
-
-        Assert.Equal("horse-flight/free/runs", freeStart.GetCustomAttributes(typeof(HttpPostAttribute), false)
-            .Cast<HttpPostAttribute>().Single().Template);
-        Assert.Equal("horse-flight/free/runs/{runId}/replay", freeComplete.GetCustomAttributes(typeof(HttpPostAttribute), false)
-            .Cast<HttpPostAttribute>().Single().Template);
-        Assert.Equal("horse-flight/{period}/runs/{runId}/replay", paidComplete.GetCustomAttributes(typeof(HttpPostAttribute), false)
-            .Cast<HttpPostAttribute>().Single().Template);
-        Assert.All(new[] { freeStart, freeComplete, paidComplete }, method =>
-        {
-            Assert.Equal(RateLimitPolicies.SlotSpins, method.GetCustomAttributes(typeof(EnableRateLimitingAttribute), false)
-                .Cast<EnableRateLimitingAttribute>().Single().PolicyName);
-            Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "AccountService");
-            Assert.DoesNotContain(method.GetParameters(), parameter => parameter.Name is "score" or "userId" or "seed" or "balance");
-        });
-        Assert.Contains(freeStart.GetParameters(), parameter => parameter.ParameterType.Name == "HorseFlightFirestoreStore");
-        Assert.Contains(freeComplete.GetParameters(), parameter => parameter.ParameterType.Name == "HorseFlightFirestoreStore");
-        Assert.Contains(paidComplete.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionHorseFlightPaidEntryService");
-        Assert.Equal(
-            new[] { "TotalTicks", "JumpTicks", "RightClickTicks" },
-            typeof(HorseFlightReplayInputRequest).GetProperties().Select(property => property.Name));
-    }
-
-    [Fact]
-    public async Task HorseFlightPaidAttemptHonorsTheExistingFeatureGateBeforeAuthentication()
+    [InlineData("asteroids")]
+    [InlineData("flappy")]
+    [InlineData("horse-flight")]
+    public void PaidAdmissionCannotRunOnThePlatform(string game)
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["Features:HorseFlightEnabled"] = "false",
-        }).Build();
-
-        var result = Assert.IsAssignableFrom<ObjectResult>(await Create().StartAttempt(
-            "horse-flight", "daily", "horse-flight-attempt-1", null!, null!, null!, null!, configuration, default));
-
+            { ["Features:HorseFlightEnabled"] = "true" }).Build();
+        var controller = Create();
+        var result = Assert.IsType<ObjectResult>(controller.StartAttempt(game, "daily", configuration));
         Assert.Equal(StatusCodes.Status503ServiceUnavailable, result.StatusCode);
-        Assert.Equal("arcade-horse-flight-disabled", ErrorCode(result));
+        Assert.Equal("arcade-competition-worker-required", ErrorCode(result));
     }
 
     [Fact]
-    public void HorseFlightResponsesExposeCanonicalRunAndAuthoritativeReplayFields()
+    public void PaidAndFreeMutationRoutesRetainTheirPublicContracts()
     {
-        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        var startJson = JsonSerializer.Serialize(new HorseFlightFreeRunStartResponse(
-            $"horse_flight_free_{new string('a', 64)}", 42, 20, true), options);
-        var completionJson = JsonSerializer.Serialize(new HorseFlightReplayCompletionResponse(
-            $"horse_flight_{new string('b', 64)}", 123, "obstacle-collision", 456, [7], [9], false), options);
-
-        Assert.Contains("\"seed\":42", startJson);
-        Assert.Contains("\"wasReplay\":true", startJson);
-        Assert.Contains("\"score\":123", completionJson);
-        Assert.Contains("\"phase\":\"obstacle-collision\"", completionJson);
-        Assert.Contains("\"wasReplay\":false", completionJson);
-        Assert.DoesNotContain("balance", completionJson, StringComparison.OrdinalIgnoreCase);
+        PostRoutes(nameof(ArcadeCompetitionController.StartAttempt), "{gameId}/{period}/attempts");
+        PostRoutes(nameof(ArcadeCompetitionController.CompletePaidReplay), "{gameId}/{period}/runs/{runId}/replay");
+        PostRoutes(nameof(ArcadeCompetitionController.FreeRun), "asteroids/free/runs", "asteroids/free/runs/{runId}/replay",
+            "flappy/free/runs", "flappy/free/runs/{runId}/replay");
+        PostRoutes(nameof(ArcadeCompetitionController.StartFreeHorseFlightRun), "horse-flight/free/runs");
+        PostRoutes(nameof(ArcadeCompetitionController.CompleteHorseFlightReplay), "horse-flight/free/runs/{runId}/replay",
+            "horse-flight/{period}/runs/{runId}/replay");
+        var horseReplay = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.CompleteHorseFlightReplay))!;
+        Assert.Single(horseReplay.GetCustomAttributes(typeof(RequestSizeLimitAttribute), false));
     }
 
-    [Theory]
-    [InlineData("insufficient", 409, "arcade-competition-insufficient-credits")]
-    [InlineData("settled", 409, "arcade-competition-settlement-closed")]
-    [InlineData("argument", 400, "arcade-competition-attempt-invalid")]
-    [InlineData("conflict", 409, "arcade-competition-attempt-conflict")]
-    [InlineData("unexpected", 500, "arcade-competition-attempt-failed")]
-    public void PaidAttemptFailuresHaveStableSafeCodes(string kind, int expectedStatus, string expectedCode)
+    [Fact]
+    public void HorseFlightMaintenanceGateAppliesToFreeAndPaidRoutes()
     {
-        var result = ArcadeCompetitionController.PaidEntryFailure(kind switch
+        var controller = Create();
+        var disabled = new ConfigurationBuilder().Build();
+        var responses = new[]
         {
-            "insufficient" => new ArcadeCompetitionInsufficientCreditsException(0, 100),
-            "settled" => new ArcadeCompetitionSettlementCompletedException(),
-            "argument" => new ArgumentException("internal validation detail"),
-            "conflict" => new InvalidOperationException("internal conflict detail"),
-            _ => new Exception("internal failure detail"),
+            controller.StartAttempt("horse-flight", "weekly", disabled),
+            controller.StartFreeHorseFlightRun(disabled),
+            controller.CompleteHorseFlightReplay(disabled),
+        };
+        Assert.All(responses, response =>
+        {
+            var result = Assert.IsType<ObjectResult>(response);
+            Assert.Equal(StatusCodes.Status503ServiceUnavailable, result.StatusCode);
+            Assert.Equal("arcade-horse-flight-disabled", ErrorCode(result));
         });
+    }
 
-        var objectResult = Assert.IsAssignableFrom<ObjectResult>(result);
-        Assert.Equal(expectedStatus, objectResult.StatusCode);
-        Assert.Equal(expectedCode, Assert.IsType<ArcadeCompetitionApiError>(objectResult.Value).Code);
+    private static void PostRoutes(string action, params string[] routes)
+    {
+        var method = typeof(ArcadeCompetitionController).GetMethod(action)!;
+        var templates = method.GetCustomAttributes(typeof(HttpPostAttribute), false).Cast<HttpPostAttribute>()
+            .Select(attribute => attribute.Template).Order().ToArray();
+        Assert.Equal(routes.Order().ToArray(), templates);
+        Assert.Equal(RateLimitPolicies.SlotSpins,
+            Assert.Single(method.GetCustomAttributes(typeof(EnableRateLimitingAttribute), false).Cast<EnableRateLimitingAttribute>()).PolicyName);
     }
 
     private static ArcadeCompetitionController Create(DateTimeOffset? now = null) => new(

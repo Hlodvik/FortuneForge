@@ -32,7 +32,7 @@ public sealed class HiLoEmulator : IAsyncLifetime
         var port = ((System.Net.IPEndPoint)reservation.LocalEndpoint).Port;
         reservation.Stop();
         var start = new ProcessStartInfo(java) { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true, WorkingDirectory = AppContext.BaseDirectory };
-        foreach (var arg in new[] { "-jar", jar, "--host", "127.0.0.1", "--port", port.ToString(), "--project_id", "demo-hilo-tests" }) start.ArgumentList.Add(arg);
+        foreach (var arg in new[] { "-Xmx256m", "-jar", jar, "--host", "127.0.0.1", "--port", port.ToString(), "--project_id", "demo-hilo-tests" }) start.ArgumentList.Add(arg);
         process = new Process { StartInfo = start };
         process.OutputDataReceived += (_, args) => { if (args.Data is { } line) output.Enqueue(line); };
         process.ErrorDataReceived += (_, args) => { if (args.Data is { } line) output.Enqueue(line); };

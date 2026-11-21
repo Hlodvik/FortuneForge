@@ -12,7 +12,7 @@ describe('Flappy route integration', () => {
     expect(renderRoute('/games/flappy')).toContain('Opening Fortune Forge…')
     expect(routesSource).toContain("import('./routes/FlappyRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/games/flappy')")
-    expect(routeSource).toContain('new HttpArcadeCompetitionGateway(fetchWithAccountSession)')
+    expect(routeSource).toContain('createAccountBoundGameFetch(initialAccount.userId, fetchWithAccountSession)')
     expect(routeSource).not.toContain('GameAmbientMusic')
   })
 })

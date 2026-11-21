@@ -16,6 +16,15 @@ const round = {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('HttpKenoGateway', () => {
+  it('binds reads and paid draws to the account that opened the game', async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(jsonResponse(status)).mockResolvedValueOnce(jsonResponse(round))
+    const gateway = new HttpKenoGateway(undefined, fetcher, 'original-account')
+    await gateway.getStatus()
+    await gateway.createRound(request, { idempotencyKey: 'keno-bound-request-0001' })
+    for (const [, init] of fetcher.mock.calls)
+      expect(new Headers(init?.headers).get('X-FortuneForge-Expected-Account')).toBe('original-account')
+  })
+
   it('requests authenticated Keno status with balance and paytable', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(status))
     vi.stubGlobal('fetch', fetchMock)
@@ -37,6 +46,16 @@ describe('HttpKenoGateway', () => {
     vi.stubGlobal('fetch', fetchMock)
     await new HttpKenoGateway().createRound(request, { idempotencyKey: 'keno-retry-0001' })
     expect(fetchMock).toHaveBeenCalledWith('/api/games/keno/rounds', expect.objectContaining({ headers: expect.objectContaining({ 'Idempotency-Key': 'keno-retry-0001' }) }))
+  })
+
+  it('restores a historical round only when its complete draw matches the requested identifier', async () => {
+    const id = 'a'.repeat(64)
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({ ...round, roundId: id }))
+      .mockResolvedValueOnce(jsonResponse({ ...round, roundId: 'b'.repeat(64) }))
+    const gateway = new HttpKenoGateway('/api/games/keno', fetchMock)
+    await expect(gateway.getRound(id)).resolves.toMatchObject({ roundId: id })
+    await expect(gateway.getRound(id)).rejects.toBeInstanceOf(KenoGatewayError)
+    expect(fetchMock).toHaveBeenCalledWith(`/api/games/keno/rounds/${id}`, { signal: undefined })
   })
 
   it('preserves non-success responses as typed gateway errors', async () => {

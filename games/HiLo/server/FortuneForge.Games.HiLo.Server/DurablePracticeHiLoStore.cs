@@ -43,7 +43,7 @@ public sealed class DurablePracticeHiLoStore(string path, long startingBalanceCe
         foreach (var player in database.Players.Values)
         {
             if (player.State.BalanceCents < 0) throw new InvalidOperationException("The persisted practice wallet is corrupt.");
-            if (player.State.Round is { } round) HiLoFirestoreStore.ValidateRound(round);
+            if (player.State.Round is { } round) HiLoEngine.ValidateRevealedHistory(round);
         }
         var response = action(database);
         if (!write) return response;

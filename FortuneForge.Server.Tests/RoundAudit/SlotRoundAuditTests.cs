@@ -62,6 +62,21 @@ public sealed class SlotRoundAuditTests
     }
 
     [Fact]
+    public void HighNoonPaidArchive_IgnoresDormantEnergyWhenItsCapturedRulesDisableTheMeter()
+    {
+        var provider = Provider();
+        var result = Enumerable.Range(1, 32)
+            .Select(seed => Spin(provider, SlotSpecialRoundProfiles.HighNoonFortuneGameId, energy: 100, seed: seed).Result)
+            .First(spin => spin.Payout.TotalPoints > 0);
+
+        Assert.Equal(100, Assert.IsType<SlotSpinEngineAudit>(result.EngineAudit).EnergyBalanceBefore);
+        Assert.Empty(SlotRoundAudit.Check(result, result.Payout, isPaid: true));
+        var inflated = EnergyBonus.Settle(100, result.EnergyAwarded, result.Payout).Payout;
+        Assert.Contains(SlotRoundAudit.Check(result, inflated, isPaid: true),
+            finding => finding.Code == "slot-settlement-mismatch");
+    }
+
+    [Fact]
     public void MutatedPayoutAndReel_AreFlagged()
     {
         var provider = Provider();
@@ -529,13 +544,13 @@ public sealed class SlotRoundAuditTests
 
     private static (SpinResult Result, GameDefinition Game, ReelSetDefinition ReelSet,
         SymbolSetDefinition Symbols, PaytableDefinition Paytable) Spin(
-        OptionsSlotsDefinitionProvider provider, string gameId, long energy = 0)
+        OptionsSlotsDefinitionProvider provider, string gameId, long energy = 0, int seed = 72)
     {
         var game = provider.GetGame(gameId)!;
         var reelSet = provider.GetReelSet(game.Math.ReelSetId)!;
         var symbolSet = provider.GetSymbolSet(game.Symbols.SymbolSetId)!;
         var paytable = provider.GetPaytable(game.Math.PaytableId)!;
-        var random = new SeededRandom(72);
+        var random = new SeededRandom(seed);
         var service = new SpinService(provider, new CryptoReelGenerator(random),
             new CombinationEvaluator(), new PayoutCalculator(), random);
         var wager = game.Wagering.AllowedWagerPoints.Count > 0

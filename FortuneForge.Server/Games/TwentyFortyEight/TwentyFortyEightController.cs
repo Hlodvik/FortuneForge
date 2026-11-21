@@ -1,3 +1,4 @@
+using FortuneForge.Games.TwentyFortyEight;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
@@ -17,8 +18,8 @@ public sealed class TwentyFortyEightController(TwentyFortyEightGameService games
 
     [HttpPost("games")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public async Task<ActionResult> Start(StartTwentyFortyEightRequest? request, CancellationToken cancellationToken) =>
-        await WithAccountAsync(cancellationToken, async account => Ok(await games.StartAuditedAsync(account.UserId, request?.Seed, cancellationToken)));
+    public ActionResult Start(StartTwentyFortyEightRequest? request, CancellationToken cancellationToken) =>
+        StatusCode(StatusCodes.Status503ServiceUnavailable, TwentyFortyEightErrors.WorkerUnavailable());
 
     [HttpGet("games/{gameId:guid}")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
@@ -45,40 +46,37 @@ public sealed class TwentyFortyEightController(TwentyFortyEightGameService games
     public async Task<ActionResult> Reset(Guid gameId, StartTwentyFortyEightRequest? request, CancellationToken cancellationToken) =>
         await WithAccountAsync(cancellationToken, account => ExecuteAsync(() => games.ResetAuditedAsync(account.UserId, gameId, request?.Seed, cancellationToken)));
 
-    private async Task<ActionResult> WithAccount(CancellationToken cancellationToken, Func<AccountSummary, ActionResult> action)
-    {
-        var account = await accounts.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken);
-        return account.Value is null
-            ? Unauthorized(new TwentyFortyEightErrorResponse("2048-authentication-required", "Sign in to play 2048."))
-            : action(account.Value);
-    }
+    private Task<ActionResult> WithAccount(CancellationToken cancellationToken, Func<AccountSummary, ActionResult> action) =>
+        WithAccountAsync(cancellationToken, account => Task.FromResult(action(account)));
 
     private async Task<ActionResult> WithAccountAsync(CancellationToken cancellationToken, Func<AccountSummary, Task<ActionResult>> action)
     {
         var account = await accounts.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken);
         if (account.Value is null)
-            return Unauthorized(new TwentyFortyEightErrorResponse("2048-authentication-required", "Sign in to play 2048."));
+            return Unauthorized(TwentyFortyEightErrors.AuthenticationRequired());
+        if (!GameAccountBinding.Matches(Request, account.Value.UserId))
+            return StatusCode(StatusCodes.Status403Forbidden, GameAccountBinding.SessionChanged);
         try { return await action(account.Value); }
-        catch (GameWorkerUnavailableException exception)
+        catch (GameWorkerUnavailableException)
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                new TwentyFortyEightErrorResponse("2048-worker-unavailable", exception.Message));
+                TwentyFortyEightErrors.WorkerUnavailable());
         }
     }
 
     private async Task<ActionResult> ExecuteAsync(Func<Task<TwentyFortyEightGameResponse>> action)
     {
         try { return Ok(await action()); }
-        catch (TwentyFortyEightAccessException exception) { return NotFound(new TwentyFortyEightErrorResponse("2048-game-not-found", exception.Message)); }
+        catch (TwentyFortyEightAccessException exception) { return NotFound(TwentyFortyEightErrors.GameNotFound(exception)); }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
-        { return BadRequest(new TwentyFortyEightErrorResponse("2048-invalid-action", exception.Message)); }
+        { return BadRequest(TwentyFortyEightErrors.InvalidAction(exception.Message)); }
     }
 
     private ActionResult Execute(Func<TwentyFortyEightGameResponse> action)
     {
         try { return Ok(action()); }
-        catch (TwentyFortyEightAccessException exception) { return NotFound(new TwentyFortyEightErrorResponse("2048-game-not-found", exception.Message)); }
+        catch (TwentyFortyEightAccessException exception) { return NotFound(TwentyFortyEightErrors.GameNotFound(exception)); }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
-        { return BadRequest(new TwentyFortyEightErrorResponse("2048-invalid-action", exception.Message)); }
+        { return BadRequest(TwentyFortyEightErrors.InvalidAction(exception.Message)); }
     }
 }

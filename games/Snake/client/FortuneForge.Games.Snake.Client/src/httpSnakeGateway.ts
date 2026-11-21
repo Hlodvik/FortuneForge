@@ -1,3 +1,4 @@
+import type { GameCommandRecovery } from '@fortuneforge/client-presentation/game-command-recovery'
 import type { SnakeDirection, SnakeEvent, SnakeGameState, SnakeGateway, SnakeOptions, SnakePhase, SnakePoint, SnakeStatus } from './contracts'
 
 export class SnakeGatewayError extends Error {
@@ -13,9 +14,10 @@ export class SnakeGatewayError extends Error {
 }
 
 export class HttpSnakeGateway implements SnakeGateway {
-  constructor(private readonly basePath = '/api/games/snake') {}
+  constructor(private readonly basePath = '/api/games/snake', private readonly fetcher: typeof fetch = (...args) => fetch(...args), private readonly recovery?: GameCommandRecovery, private readonly expectedAccountId?: string) {}
 
   getStatus(signal?: AbortSignal) { return this.request('/status', { signal }, isStatus) }
+  getGame(gameId: string, signal?: AbortSignal) { return this.request(`/games/${encodeURIComponent(gameId)}`, { signal }, isGame) }
 
   startGame(seed?: number, signal?: AbortSignal, options?: SnakeOptions) {
     return this.request('/games', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ ...(seed === undefined ? {} : { seed }), ...options }), signal }, isGame)
@@ -33,14 +35,40 @@ export class HttpSnakeGateway implements SnakeGateway {
     return this.request(`/games/${encodeURIComponent(gameId)}/reset`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ ...(seed === undefined ? {} : { seed }), ...options }), signal }, isGame)
   }
 
+  async recoverGame(signal?: AbortSignal) {
+    const saved = this.recovery?.read()
+    if (saved?.pending) {
+      const pending = saved.pending
+      if (!pending.path.startsWith(this.basePath + '/')) throw new SnakeGatewayError('The saved command belongs to a different game service.')
+      const recovered = await this.request(pending.path.slice(this.basePath.length),
+        { method: 'POST', headers: jsonHeaders, body: pending.body, signal }, isGame)
+      return this.getGame(recovered.gameId, signal)
+    }
+    return saved?.activeBoardId ? this.getGame(saved.activeBoardId, signal) : this.startGame(undefined, signal)
+  }
+
   private async request<T>(path: string, init: RequestInit, validate: (value: unknown) => value is T): Promise<T> {
-    const response = await fetch(`${this.basePath}${path}`, init)
+    const target = this.basePath + path
+    const command = init.method === 'POST' ? this.recovery?.prepare(target, String(init.body ?? '')) : undefined
+    if (command) {
+      const headers = new Headers(init.headers)
+      headers.set('Idempotency-Key', command.idempotencyKey)
+      init = { ...init, headers, body: command.body }
+    }
+    if (this.expectedAccountId) {
+      const headers = new Headers(init.headers)
+      headers.set('X-FortuneForge-Expected-Account', this.expectedAccountId)
+      init = { ...init, headers }
+    }
+    const response = await this.fetcher(target, init)
     const value: unknown = await response.json().catch(() => null)
     if (!response.ok) {
+      if (command && response.status < 500 && ![401, 403, 408, 425, 429].includes(response.status)) this.recovery?.complete(command)
       const error = isError(value) ? value : null
       throw new SnakeGatewayError(error?.message ?? `The Snake request failed (${response.status}).`, error?.code, response.status)
     }
     if (!validate(value)) throw new SnakeGatewayError('The Snake service returned an invalid response.')
+    if (command && isGame(value)) this.recovery?.complete(command, value.gameId)
     return value
   }
 }

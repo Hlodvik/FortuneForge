@@ -16,12 +16,37 @@ import type {
 } from '@fortuneforge/slot-game-runtime/experience'
 import type { SlotSymbolSet } from '../config/symbolSets'
 import { fetchWithAccountSession } from '../../account/services/accountsApi'
+import { createPreparedSlotSpinStore, isPreparedSlotSpin, preparedSlotSpinHeaders, preparedSlotSpinPath, type PreparedSlotSpin } from '@fortuneforge/slot-client-core/preparedSpin'
 
 type SpinRequest = {
   gameId: string
   wagerPoints: number
   useFreeSpin: boolean
   useSpecialBoost: boolean
+}
+
+const paidSpinPath = '/api/slots/spins'
+const preparedRoutes = new Map([
+  ['arcane-archives-v1', { path: '/api/slots/arcane/prepared-spins', store: createPreparedSlotSpinStore('arcane'), enabled: false }],
+  ['wukong-journey-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('wukong'), enabled: false }],
+  ['rainbow-realm-fruits-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('rainbow-realm'), enabled: false }],
+  ['pirates-fortune-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('pirates-fortune'), enabled: false }],
+  ['gods-of-olympus-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('gods-of-olympus'), enabled: false }],
+  ['reel-riches-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('reel-riches'), enabled: false }],
+  ['high-noon-fortune-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('high-noon-fortune'), enabled: false }],
+  ['royal-draw-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('royal-draw'), enabled: false }],
+  ['cosmic-fortune-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('cosmic-fortune'), enabled: false }],
+  ['ocean-odyssey-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('ocean-odyssey'), enabled: false }],
+  ['samurai-fortune-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('samurai-fortune'), enabled: false }],
+  ['candy-carnival-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('candy-carnival'), enabled: false }],
+  ['phantom-manor-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('phantom-manor'), enabled: false }],
+  ['nordic-legends-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('nordic-legends'), enabled: false }],
+  ['desert-treasures-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('desert-treasures'), enabled: false }],
+  ['robot-revolution-v1', { path: preparedSlotSpinPath, store: createPreparedSlotSpinStore('robot-revolution'), enabled: false }],
+])
+
+export function readPendingSlotSpin(gameId: string, accountId?: string): PreparedSlotSpin | undefined {
+  return accountId ? preparedRoutes.get(gameId)?.store.read(accountId) : undefined
 }
 
 type DemoSpinRequest = Omit<SpinRequest, 'useSpecialBoost'> & {
@@ -40,6 +65,7 @@ export type SlotState = {
   energyBalance: number
   sealCollections: SlotSealCollection[]
   freeSpinFeatureMode: string | null
+  slotsCreditsBalance?: number | null
   arcaneTome?: SlotTomeState | null
   arcanePotions?: SlotPotionState | null
 }
@@ -52,6 +78,8 @@ type SpinProblem = {
   required?: number
   freeSpinsRemaining?: number
   retryAfterMilliseconds?: number
+  pendingOperation?: unknown
+  preparedOperationPending?: boolean
 }
 
 export class SpinRequestError extends Error {
@@ -94,14 +122,42 @@ export async function requestSpin(
   request: SpinRequest,
   tumbleRules?: SlotTumbleRules,
   symbolDefinitions?: SlotSymbolSet['definitions'],
+  accountId?: string,
 ): Promise<SpinResult> {
-  const response = await fetchWithAccountSession('/api/slots/spins', {
-    method: 'POST',
-    body: JSON.stringify(request),
-  })
+  const route = preparedRoutes.get(request.gameId)
+  let prepared = readPendingSlotSpin(request.gameId, accountId)
+  if (prepared && route?.path === preparedSlotSpinPath && !route.enabled) {
+    throw new SpinRequestError('The saved spin is waiting for the game server.', 503, null)
+  }
+  if (route && accountId && !prepared && route.enabled) {
+    const { wagerPoints, useFreeSpin, useSpecialBoost } = request
+    prepared = { operationId: crypto.randomUUID(), wagerPoints, useFreeSpin, useSpecialBoost }
+    route.store.remember(accountId, prepared)
+  }
+  let response = route && prepared && accountId
+    ? await submitPreparedSpin(route.path, request.gameId, prepared, accountId)
+    : await fetchWithAccountSession(paidSpinPath, {
+      method: 'POST', headers: preparedSlotSpinHeaders(accountId), body: JSON.stringify(request),
+    })
+  let problem = response.ok ? null : await response.json().catch(() => null) as SpinProblem | null
+
+  // A different tab or a previous page may already have a prepared round. The
+  // server returns its original terms only to the authenticated player.
+  if (route && accountId && response.status === 409 && isPreparedSlotSpin(problem?.pendingOperation) &&
+      problem.pendingOperation.operationId !== prepared?.operationId) {
+    prepared = problem.pendingOperation
+    route.store.remember(accountId, prepared)
+    if (route.path === preparedSlotSpinPath) {
+      throw new SpinRequestError(problem.error ?? 'Resume the saved spin first.', response.status, problem)
+    }
+    response = await submitPreparedSpin(route.path, request.gameId, prepared, accountId)
+    problem = response.ok ? null : await response.json().catch(() => null) as SpinProblem | null
+  }
 
   if (!response.ok) {
-    const problem = (await response.json().catch(() => null)) as SpinProblem | null
+    if (route && accountId && prepared && (response.status === 400 || problem?.code === 'slot-prepared-start-paused' ||
+        response.status === 409 && !problem?.preparedOperationPending && !isPreparedSlotSpin(problem?.pendingOperation)))
+      route.store.forget(accountId, prepared.operationId)
     throw new SpinRequestError(
       problem?.error ?? problem?.detail ?? `Spin request failed with status ${response.status}.`,
       response.status,
@@ -113,13 +169,29 @@ export async function requestSpin(
   if (!isSpinResult(result, symbolDefinitions, tumbleRules)) {
     throw new Error('The spin server returned an invalid reel result.')
   }
-
-  if (tumbleRules && !request.useFreeSpin) {
-    validateGodsTumbleResult(result, request, false, tumbleRules)
+  if (result.gameId !== request.gameId || prepared &&
+      (result.wagerPoints !== prepared.wagerPoints || result.isFreeSpin !== prepared.useFreeSpin)) {
+    throw new Error('The spin result does not match the requested round.')
   }
+
+  const settledTerms = prepared ?? request
+  if (tumbleRules && !settledTerms.useFreeSpin) {
+    validateGodsTumbleResult(result, { gameId: request.gameId, wagerPoints: settledTerms.wagerPoints }, false, tumbleRules)
+  }
+  if (route && accountId && prepared) route.store.forget(accountId, prepared.operationId)
 
   return result
 }
+
+function submitPreparedSpin(path: string, gameId: string, spin: PreparedSlotSpin, accountId: string): Promise<Response> {
+  const { operationId, ...terms } = spin
+  return fetchWithAccountSession(path, {
+    method: 'POST',
+    headers: preparedSlotSpinHeaders(accountId, operationId),
+    body: JSON.stringify({ gameId, ...terms }),
+  })
+}
+
 
 export async function requestDemoSpin(
   request: DemoSpinRequest,
@@ -155,15 +227,14 @@ export async function requestDemoSpin(
   return result
 }
 
-export async function requestSlotState(gameId: string): Promise<SlotState> {
+export async function requestSlotState(gameId: string, accountId?: string): Promise<SlotState> {
   const response = await fetchWithAccountSession(
     `/api/slots/state?gameId=${encodeURIComponent(gameId)}`,
-    { method: 'GET' },
+    { method: 'GET', headers: preparedSlotSpinHeaders(accountId) },
   )
   if (!response.ok) {
     throw new Error(`Slot state request failed with status ${response.status}.`)
   }
-
   const state = (await response.json()) as unknown
   if (
     !isRecord(state) ||
@@ -182,8 +253,18 @@ export async function requestSlotState(gameId: string): Promise<SlotState> {
     || (state.arcaneTome != null && !isTomeState(state.arcaneTome))
     || (state.arcanePotions != null && !isPotionState(state.arcanePotions))
     || (state.freeSpinFeatureMode !== null && typeof state.freeSpinFeatureMode !== 'string')
+    || (state.slotsCreditsBalance != null && (typeof state.slotsCreditsBalance !== 'number' ||
+      !Number.isFinite(state.slotsCreditsBalance) || state.slotsCreditsBalance < 0))
+    || (state.pendingOperation != null && !isPreparedSlotSpin(state.pendingOperation))
   ) {
     throw new Error('The slot server returned an invalid bonus state.')
+  }
+
+  const route = preparedRoutes.get(gameId)
+  if (route) {
+    route.enabled = response.headers?.get('X-FortuneForge-Prepared-Spin') === '1'
+    if (route.enabled && accountId && isPreparedSlotSpin(state.pendingOperation) && !route.store.read(accountId))
+      route.store.remember(accountId, state.pendingOperation)
   }
 
   return state as SlotState

@@ -1,6 +1,8 @@
 using System.Collections;
+using System.Security.Cryptography;
 using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Abstractions.Wallet;
 using FortuneForge.Games.AndarBahar;
 using FortuneForge.Games.AndarBahar.Server;
 using FortuneForge.Games.Baccarat;
@@ -10,8 +12,10 @@ using FortuneForge.Games.DragonTiger;
 using FortuneForge.Games.DragonTiger.Server;
 using FortuneForge.Games.HiLo;
 using FortuneForge.Games.HiLo.Server;
+using FortuneForge.Games.Hosting;
 using FortuneForge.Games.HouseHoldem;
 using FortuneForge.Games.VideoPoker;
+using FortuneForge.Server.Accounts.Storage;
 using FortuneForge.Server.Cards.Baccarat;
 using FortuneForge.Server.Cards.CasinoWar;
 using FortuneForge.Server.Cards.HouseHoldem;
@@ -31,6 +35,12 @@ internal static class PaidCardFinancialAudit
     internal static async Task<IReadOnlyList<RoundAuditFinding>> InspectAsync(
         FirestoreDb database, RoundAuditSummary summary, string payloadJson, CancellationToken ct)
     {
+        if (summary.GameId == "blackjack")
+            return await BlackjackWalletFinancialAudit.InspectAsync(database, summary, payloadJson, ct);
+        if (summary.GameId == "three-card-poker")
+            return await ThreeCardPokerWalletFinancialAudit.InspectAsync(database, summary, payloadJson, ct);
+        if (await ProtectedCardWalletAudit.TryInspectAsync(database, summary, payloadJson, ct) is { } protectedFindings)
+            return protectedFindings;
         if (PaidCardEvidenceReplayAudit.Supports(summary) && summary.GameId == "hi-lo")
             return await HiLoAsync(database, summary, payloadJson, ct);
         if (PaidCardEvidenceReplayAudit.Supports(summary) && summary.GameId == "house-holdem")
@@ -47,6 +57,14 @@ internal static class PaidCardFinancialAudit
                 summary.Participants[0].WagerCents != wager || summary.Participants[0].PayoutCents != payout)
                 return [new("paid-card-financial-receipt-mismatch", "error",
                     "The saved financial receipt differs from its audit summary.")];
+            DocumentSnapshot? source = null;
+            if (summary.GameId == "baccarat")
+            {
+                source = await database.Collection("baccaratRounds").Document(summary.RoundId).GetSnapshotAsync(ct);
+                if (source.Exists && (source.ContainsField("walletStatus") || source.ContainsField("walletReceiptJson") ||
+                    source.ContainsField("outcomeSha256") || source.ContainsField("pendingShoeSha256")))
+                    return await BaccaratWalletAsync(database, summary, root, wager, payout, ct);
+            }
             var expected = Ledgers(summary.GameId, summary.RoundId, root.GetProperty("data"), wager, payout);
             var collection = database.Collection("balanceTransactions");
             var reads = await Task.WhenAll(expected.Select(item =>
@@ -80,11 +98,11 @@ internal static class PaidCardFinancialAudit
                 findings.Add(new("paid-card-ledger-set-mismatch", "error",
                     "The round-linked wallet ledger set differs from the settled wager and return."));
             if (PaidCardEvidenceReplayAudit.Supports(summary))
-                findings.AddRange(await InspectSourceAsync(database, summary, root, wager, payout, ct));
+                findings.AddRange(await InspectSourceAsync(database, summary, root, wager, payout, ct, source));
             return findings;
         }
         catch (Exception exception) when (exception is JsonException or InvalidOperationException or
-            ArgumentException or OverflowException or InvalidCastException or FormatException)
+            ArgumentException or OverflowException or InvalidCastException or FormatException or KeyNotFoundException)
         {
             return [new("paid-card-financial-evidence-invalid", "error",
                 "The saved financial receipt cannot be reconciled with wallet ledgers.")];
@@ -143,7 +161,7 @@ internal static class PaidCardFinancialAudit
 
     private static async Task<IReadOnlyList<RoundAuditFinding>> InspectSourceAsync(
         FirestoreDb database, RoundAuditSummary summary, JsonElement root, long wager, long payout,
-        CancellationToken ct)
+        CancellationToken ct, DocumentSnapshot? source)
     {
         var collection = summary.GameId switch
         {
@@ -154,7 +172,7 @@ internal static class PaidCardFinancialAudit
         if (root.GetProperty("sourceCollection").GetString() != collection ||
             root.GetProperty("sourceDocumentId").GetString() != summary.RoundId)
             return [Failure("paid-card-source-round-mismatch", "The immutable receipt points to a different source round.")];
-        var source = await database.Collection(collection).Document(summary.RoundId).GetSnapshotAsync(ct);
+        source ??= await database.Collection(collection).Document(summary.RoundId).GetSnapshotAsync(ct);
         if (!source.Exists || Text(source, "roundId") != summary.RoundId ||
             Text(source, "userId") != summary.Participants[0].ActorId ||
             !source.TryGetValue<Timestamp>("createdAt", out var createdAt) ||
@@ -198,7 +216,7 @@ internal static class PaidCardFinancialAudit
         if (Number(source, "schemaVersion") != 1 || Number(source, "primaryStakeCents") != primary ||
             Number(source, "tieStakeCents") != tieStake || Text(source, "phase") != "completed" ||
             !Strings(source, "deck").SequenceEqual(cards) ||
-            CasinoWarFirestoreStore.Hash($"{summary.Participants[0].ActorId}\n{openingKey}") != summary.RoundId)
+            CasinoWarRoundCodec.Hash($"{summary.Participants[0].ActorId}\n{openingKey}") != summary.RoundId)
             return false;
         if (decision.ValueKind == JsonValueKind.Null)
             return !source.ContainsField("decision") && wager == primary + tieStake;
@@ -285,6 +303,97 @@ internal static class PaidCardFinancialAudit
             Number(source, "combinedTotalReturnCents") == payout;
     }
 
+    private static Task<IReadOnlyList<RoundAuditFinding>> BaccaratWalletAsync(FirestoreDb database,
+        RoundAuditSummary summary, JsonElement root, long wager, long payout, CancellationToken ct)
+    {
+        const string sourceCollection = "baccaratRounds";
+        var user = SingleActor(summary, root);
+        var data = root.GetProperty("data");
+        var digest = GameSecurityEventDocuments.Hash(data.GetRawText());
+        if (root.GetProperty("sourceCollection").GetString() != sourceCollection ||
+            root.GetProperty("sourceDocumentId").GetString() != summary.RoundId ||
+            data.GetProperty("roundId").GetString() != summary.RoundId || data.GetProperty("userId").GetString() != user)
+            return Task.FromResult<IReadOnlyList<RoundAuditFinding>>(
+                [Failure("paid-card-source-round-mismatch", "The immutable Baccarat receipt points to a different source round.")]);
+
+        return database.RunTransactionAsync<IReadOnlyList<RoundAuditFinding>>(async transaction =>
+        {
+            var source = await transaction.GetSnapshotAsync(database.Collection(sourceCollection).Document(summary.RoundId), ct);
+            var operationId = Text(source, "startIdempotencyKey");
+            if (!source.Exists || Number(source, "schemaVersion") != 2 || Text(source, "roundId") != summary.RoundId ||
+                Text(source, "userId") != user || string.IsNullOrWhiteSpace(operationId) ||
+                Text(source, "walletStatus") != "settled" || Text(source, "outcomeSha256") != digest ||
+                !source.TryGetValue<Timestamp>("createdAt", out var createdAt) ||
+                !BaccaratSource(source, summary, data, wager, payout))
+                return [Failure("paid-card-source-round-mismatch", "The Baccarat source round differs from its saved outcome.")];
+
+            var request = new GameWalletSettlementRequest(operationId, digest, wager, payout);
+            var receipt = JsonSerializer.Deserialize<GameWalletSettlementReceipt>(Text(source, "walletReceiptJson"), RoundAuditCapture.Json);
+            if (receipt is null || receipt.InsufficientFunds || receipt.InsufficientLegacyFreeGames ||
+                receipt.LegacyFreeGamesCountMismatch || !GameWalletReceiptVerifier.MatchesSettlement(receipt, summary.GameId, user, request))
+                return [Failure("paid-card-financial-evidence-invalid", "The saved Baccarat wallet receipt differs from the admitted wager or return.")];
+
+            var preparedAt = createdAt.ToDateTime();
+            var settledAt = receipt.SettledAtUtc.UtcDateTime;
+            // Existing package summaries use the wallet time in both summary fields. The preparation
+            // time is independently committed in the opening journal and can also be used as StartedAt.
+            if (preparedAt > settledAt || summary.CompletedAtUtc != settledAt ||
+                (summary.StartedAtUtc != settledAt && summary.StartedAtUtc != preparedAt) ||
+                !await BaccaratPreparationMatchesAsync(database, transaction, summary, user, digest, preparedAt, ct))
+                return [Failure("paid-card-source-round-mismatch", "The Baccarat preparation and settlement times differ from the recorded evidence.")];
+
+            var bodyHash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(request, GameWalletAuthentication.WireJson)));
+            var settlement = new WalletRoundSettlement(summary.GameId, user, operationId, digest, wager, payout,
+                RequestBodySha256: bodyHash);
+            var saved = await FirestoreWalletRoundSettlementStore.StageAsync(database, transaction, settlement,
+                receipt.SettledAtUtc, ct, requireExisting: true);
+            if ((saved.ToWireReceipt() with { WasAlreadySettled = false }) != (receipt with { WasAlreadySettled = false }))
+                return [Failure("paid-card-financial-evidence-invalid", "The saved Baccarat receipt differs from the canonical wallet settlement.")];
+
+            var legacyLedgers = await transaction.GetAllSnapshotsAsync(Ledgers(summary.GameId, summary.RoundId, data, wager, payout)
+                .Select(ledger => database.Collection("balanceTransactions").Document(ledger.Id)), ct);
+            return legacyLedgers.Any(ledger => ledger.Exists)
+                ? [Failure("paid-card-ledger-extra", "A signed Baccarat round has a separate legacy wallet ledger.")]
+                : [];
+        }, cancellationToken: ct);
+    }
+
+    private static async Task<bool> BaccaratPreparationMatchesAsync(FirestoreDb database, Transaction transaction,
+        RoundAuditSummary summary, string user, string digest, DateTime preparedAt, CancellationToken ct)
+    {
+        var manifest = await transaction.GetSnapshotAsync(database.Collection(GameSecurityEventDocuments.ManifestCollectionName)
+            .Document(GameSecurityEventDocuments.ManifestId(summary.GameId, summary.RoundId)), ct);
+        if (!manifest.Exists || Number(manifest, "schemaVersion") != 1 || Text(manifest, "gameId") != summary.GameId ||
+            Text(manifest, "instanceId") != summary.RoundId || !manifest.TryGetValue<List<string>>("eventIds", out var ids) ||
+            ids is null || ids.Count is 0 or > GameSecurityEventDocuments.ManifestPageSize ||
+            ids.Any(id => !GameSecurityEventDocuments.IsEventId(id)) || ids.Distinct(StringComparer.Ordinal).Count() != ids.Count)
+            return false;
+
+        var observations = await transaction.GetAllSnapshotsAsync(ids.Select(id =>
+            database.Collection(GameSecurityEventDocuments.CollectionName).Document(id)), ct);
+        var opening = observations.Where(observation => observation.Exists && Number(observation, "version") == 0).ToArray();
+        if (opening.Length != 1) return false;
+        var prepared = opening[0];
+        var json = Text(prepared, "payloadJson");
+        if (Number(prepared, "schemaVersion") != 1 || Text(prepared, "gameId") != summary.GameId ||
+            Text(prepared, "instanceId") != summary.RoundId || Text(prepared, "eventKind") != "prepared" ||
+            Text(prepared, "sha256") != prepared.Id || GameSecurityEventDocuments.Hash(json) != prepared.Id ||
+            !prepared.TryGetValue<Timestamp>("occurredAtUtc", out var occurredAt) || occurredAt.ToDateTime() != preparedAt ||
+            !Strings(prepared, "participantIds").SequenceEqual([user]))
+            return false;
+
+        using var document = JsonDocument.Parse(json);
+        var payload = document.RootElement;
+        var observedAt = payload.GetProperty("occurredAtUtc").GetDateTime();
+        return payload.GetProperty("contractVersion").GetString() == GameSecurityEventDocuments.ContractVersion &&
+            payload.GetProperty("gameId").GetString() == summary.GameId &&
+            payload.GetProperty("instanceId").GetString() == summary.RoundId && payload.GetProperty("version").GetInt64() == 0 &&
+            payload.GetProperty("eventKind").GetString() == "prepared" && observedAt.Kind == DateTimeKind.Utc &&
+            observedAt.AddTicks(-(observedAt.Ticks % TimeSpan.TicksPerMicrosecond)) == preparedAt &&
+            payload.GetProperty("participants").EnumerateArray().Select(participant => participant.GetString()).SequenceEqual([user]) &&
+            GameSecurityEventDocuments.Hash(payload.GetProperty("state").GetRawText()) == digest;
+    }
+
     private static bool DragonTigerSource(DocumentSnapshot source, RoundAuditSummary summary,
         JsonElement data, long wager, long payout)
     {
@@ -365,7 +474,7 @@ internal static class PaidCardFinancialAudit
 
             var states = new List<HiLoRound>();
             var choices = new List<string> { "start" };
-            var replay = HiLoEngine.Start(round.Id, round.Wager, round.History[0].Card);
+            var replay = HiLoEngine.RebuildInitial(round.Id, round.Wager, round.History[0].Card);
             states.Add(replay);
             foreach (var entry in round.History.Skip(1))
             {
@@ -395,7 +504,9 @@ internal static class PaidCardFinancialAudit
 
             var result = await database.Collection("cardGameResults").Document($"hi-lo-{summary.RoundId}")
                 .GetSnapshotAsync(ct);
-            if (!SourceResultMatches(result, summary, user, wager, payout, HiLoStatus(round.Status)))
+            var resultVersion = Number(result, "schemaVersion");
+            if (resultVersion is not (1 or 2) || !SourceResultMatches(result, summary, user, wager, payout,
+                HiLoStatus(round.Status), microsecondTolerance: resultVersion == 2, schemaVersion: resultVersion))
                 return [Failure("paid-card-source-result-mismatch", "The Hi-Lo source result differs from its final receipt.")];
             var events = (await database.Collection("hiLoEvents").WhereEqualTo("roundId", summary.RoundId)
                 .Limit(200).GetSnapshotAsync(ct)).Documents;
@@ -403,29 +514,36 @@ internal static class PaidCardFinancialAudit
                 return [Failure("paid-card-event-mismatch", "The Hi-Lo accepted operation events do not cover the saved history.")];
             var ordered = events.OrderBy(item => Number(item, "revision")).ToArray();
             var linked = new List<LinkedLedger>(ordered.Length);
+            var walletOperations = new List<(WalletRoundSettlement Settlement, GameWalletSettlementReceipt Receipt)>();
             var operationIds = new string[ordered.Length];
             var hashes = new string[ordered.Length];
-            var previousTime = Timestamp.FromDateTime(summary.StartedAtUtc);
+            Timestamp? previousTime = null;
+            var previousSchema = 1L;
             for (var revision = 0; revision < ordered.Length; revision++)
             {
                 var entry = ordered[revision];
                 var operationId = Text(entry, "operationId");
                 var hash = HiLoService.Hash($"{user}\n{operationId}");
+                var schema = Number(entry, "schemaVersion");
                 if (Number(entry, "revision") != revision || Text(entry, "roundId") != summary.RoundId ||
-                    Text(entry, "userId") != user || Number(entry, "schemaVersion") != 1 ||
+                    Text(entry, "userId") != user || schema is not (1 or 2) || schema < previousSchema ||
                     Text(entry, "choice") != choices[revision] || entry.Id != hash ||
                     operationId.Length is < 16 or > 128 || !entry.TryGetValue<Timestamp>("createdAt", out var createdAt) ||
-                    createdAt < previousTime || createdAt.ToDateTime() > summary.CompletedAtUtc)
+                    previousTime is { } time && createdAt < time || createdAt.ToDateTime() > summary.CompletedAtUtc)
                     return [Failure("paid-card-event-mismatch", "A Hi-Lo operation event differs from the accepted action history.")];
                 previousTime = createdAt;
+                previousSchema = schema;
                 operationIds[revision] = operationId;
                 hashes[revision] = hash;
             }
-            if (ordered[0].GetValue<Timestamp>("createdAt").ToDateTime() != summary.StartedAtUtc ||
-                ordered[^1].GetValue<Timestamp>("createdAt").ToDateTime() != summary.CompletedAtUtc)
+            if (previousSchema != resultVersion ||
+                !SameTime(ordered[0].GetValue<Timestamp>("createdAt").ToDateTime(), summary.StartedAtUtc,
+                    Number(ordered[0], "schemaVersion") == 2) ||
+                !SameTime(ordered[^1].GetValue<Timestamp>("createdAt").ToDateTime(), summary.CompletedAtUtc, resultVersion == 2))
                 return [Failure("paid-card-event-mismatch", "The Hi-Lo operation timestamps differ from the settled receipt.")];
             var operations = await Task.WhenAll(hashes.Select(hash => database.Collection("hiLoOperations")
                 .Document(hash).GetSnapshotAsync(ct)));
+            GameWalletSettlementRequest? reservation = null;
             for (var revision = 0; revision < ordered.Length; revision++)
             {
                 var eventEntry = ordered[revision];
@@ -438,7 +556,7 @@ internal static class PaidCardFinancialAudit
                 var fingerprint = HiLoService.Fingerprint(command);
                 if (!operation.Exists || operation.Id != hashes[revision] ||
                     Text(operation, "userId") != user || Text(operation, "operationId") != operationIds[revision] ||
-                    Number(operation, "schemaVersion") != 1 ||
+                    Number(operation, "schemaVersion") != Number(eventEntry, "schemaVersion") ||
                     Text(operation, "fingerprint") != fingerprint || Text(eventEntry, "fingerprint") != fingerprint ||
                     !operation.TryGetValue<Timestamp>("createdAt", out var operationTime) ||
                     operationTime != eventEntry.GetValue<Timestamp>("createdAt"))
@@ -454,17 +572,89 @@ internal static class PaidCardFinancialAudit
                     HiLoRoundStatus.AutoCashedOut ? HiLoService.Cents(state.Payout) : 0L;
                 if (Number(operation, "walletDeltaCents") != delta)
                     return [Failure("paid-card-operation-mismatch", "A Hi-Lo operation wallet delta differs from its accepted outcome.")];
+                if (Number(operation, "schemaVersion") == 2)
+                {
+                    var native = ReadHiLoWalletEvidence(operation, eventEntry, summary, user, state, command,
+                        response, delta, reservation);
+                    if (native is null)
+                        return [Failure("paid-card-operation-mismatch", "A Hi-Lo operation differs from its frozen wallet evidence.")];
+                    reservation = native.Value.Reservation;
+                    walletOperations.Add((native.Value.Settlement, native.Value.Receipt));
+                    continue;
+                }
                 linked.Add(new LinkedLedger($"hi-lo-{hashes[revision]}", delta < 0 ? "hi-lo-wager" :
                     delta > 0 ? "hi-lo-payout" : "", delta, operationIds[revision],
                     eventEntry.GetValue<Timestamp>("createdAt"), response.WalletBalanceCents, summary.RoundId));
             }
-            return await CheckLinkedLedgersAsync(database, summary, linked, true, ct);
+            var findings = await CheckLinkedLedgersAsync(database, summary, linked, true, ct);
+            if (findings.Count != 0 || walletOperations.Count == 0)
+                return findings;
+
+            var matches = await database.RunTransactionAsync(async transaction =>
+            {
+                foreach (var (settlement, receipt) in walletOperations)
+                {
+                    var stored = await FirestoreWalletRoundSettlementStore.StageAsync(database, transaction, settlement,
+                        receipt.SettledAtUtc, ct, requireExisting: true);
+                    if ((stored.ToWireReceipt() with { WasAlreadySettled = false }) != receipt)
+                        return false;
+                }
+                return true;
+            }, cancellationToken: ct);
+            return matches ? [] : [Failure("paid-card-financial-evidence-invalid", "A Hi-Lo wallet settlement receipt differs from the canonical wallet record.")];
         }
         catch (Exception exception) when (exception is JsonException or InvalidOperationException or
-            ArgumentException or OverflowException or InvalidCastException or FormatException)
+            ArgumentException or OverflowException or InvalidCastException or FormatException or KeyNotFoundException)
         {
             return [Failure("paid-card-financial-evidence-invalid", "The saved Hi-Lo operations cannot be reconciled with the wallet ledger.")];
         }
+    }
+
+    private sealed record HiLoAuditIntent(HiLoCommand Command, HiLoMutation Mutation, DateTimeOffset OccurredAtUtc,
+        DateTimeOffset StartedAtUtc, string? ReservationOperationId, string? ReservationSha256,
+        GameWalletSettlementRequest Wallet);
+
+    private static (WalletRoundSettlement Settlement, GameWalletSettlementReceipt Receipt,
+        GameWalletSettlementRequest? Reservation)? ReadHiLoWalletEvidence(DocumentSnapshot operation,
+        DocumentSnapshot eventEntry, RoundAuditSummary summary, string user, HiLoRound round,
+        HiLoCommand command, HiLoSessionResponse response, long delta, GameWalletSettlementRequest? reservation)
+    {
+        var intent = JsonSerializer.Deserialize<HiLoAuditIntent>(Text(operation, "intentJson"));
+        var receipt = JsonSerializer.Deserialize<GameWalletSettlementReceipt>(Text(operation, "walletReceiptJson"));
+        var outcomeHash = HiLoService.Hash(JsonSerializer.Serialize(new { command, round }));
+        var terminal = round.Status != HiLoRoundStatus.Active;
+        GameWalletSettlementRequest wallet;
+        if (command.Kind == "start")
+        {
+            HiLoRules.ValidateWager(round.Wager);
+            wallet = new($"round-{summary.RoundId}", outcomeHash, HiLoService.Cents(round.Wager), 0,
+                Phase: GameWalletSettlementPhase.Reserve);
+            reservation = wallet;
+        }
+        else if (terminal && reservation is not null)
+            wallet = new(reservation.OperationId, outcomeHash, 0, delta,
+                Phase: GameWalletSettlementPhase.CompleteReservation, ReservationSha256: reservation.OutcomeSha256);
+        else
+            wallet = new($"action-{command.OperationId}", outcomeHash, 0, delta);
+
+        if (intent?.Mutation is not { State.Round: { } frozenRound, Response: { } frozenResponse } mutation ||
+            receipt is null || Text(operation, "status") != "completed" ||
+            intent.Command != command || intent.Wallet != wallet || mutation.WalletDeltaCents != delta ||
+            intent.ReservationOperationId != reservation?.OperationId || intent.ReservationSha256 != reservation?.OutcomeSha256 ||
+            intent.OccurredAtUtc.Offset != TimeSpan.Zero || intent.StartedAtUtc.Offset != TimeSpan.Zero ||
+            !SameTime(intent.OccurredAtUtc.UtcDateTime, eventEntry.GetValue<Timestamp>("createdAt").ToDateTime(), true) ||
+            !SameTime(intent.StartedAtUtc.UtcDateTime, summary.StartedAtUtc, true) ||
+            !JsonElement.DeepEquals(JsonSerializer.SerializeToElement(frozenRound), JsonSerializer.SerializeToElement(round)) ||
+            response.Practice || receipt.WasAlreadySettled || receipt.InsufficientFunds ||
+            Text(eventEntry, "walletSettlementId") != receipt.SettlementId ||
+            !GameWalletReceiptVerifier.MatchesSettlement(receipt, summary.GameId, user, wallet) ||
+            !JsonElement.DeepEquals(JsonSerializer.SerializeToElement(response), JsonSerializer.SerializeToElement(
+                frozenResponse with { WalletBalanceCents = receipt.BalanceAfterCents })))
+            return null;
+
+        var bodyHash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(wallet, GameWalletAuthentication.WireJson)));
+        return (new(summary.GameId, user, wallet.OperationId, wallet.OutcomeSha256, wallet.WagerCents, wallet.PayoutCents,
+            RequestBodySha256: bodyHash, Phase: wallet.Phase, ReservationSha256: wallet.ReservationSha256), receipt, reservation);
     }
 
     private static string HiLoStatus(HiLoRoundStatus status) => status switch
@@ -517,7 +707,7 @@ internal static class PaidCardFinancialAudit
                 return [Failure("paid-card-source-round-mismatch", "The House Hold'em source deck differs from the saved dealt cards.")];
             var startKey = Text(source, "startIdempotencyKey");
             if (startKey.Length == 0 ||
-                HouseHoldemFirestoreStore.LookupKey($"{user}\n{startKey}") != summary.RoundId)
+                HouseHoldemRoundCodec.Hash($"{user}\n{startKey}") != summary.RoundId)
                 return [Failure("paid-card-source-round-mismatch", "The House Hold'em source round has no valid opening operation key.")];
 
             var events = (await database.Collection("houseHoldemRoundEvents")
@@ -525,7 +715,7 @@ internal static class PaidCardFinancialAudit
             if (events.Count != steps.Length + 1 || events.Any(entry =>
                     Text(entry, "roundId") != summary.RoundId || Text(entry, "userId") != user ||
                     Number(entry, "schemaVersion") != 1 ||
-                    entry.Id != $"{summary.RoundId}-{HouseHoldemFirestoreStore.LookupKey(Text(entry, "idempotencyKey"))}" ||
+                    entry.Id != $"{summary.RoundId}-{HouseHoldemRoundCodec.Hash(Text(entry, "idempotencyKey"))}" ||
                     !entry.TryGetValue<Timestamp>("createdAt", out _)))
                 return [Failure("paid-card-event-mismatch", "House Hold'em accepted command events do not cover the saved actions.")];
             var opening = events.Where(entry => Text(entry, "command") == "start").ToArray();
@@ -558,7 +748,7 @@ internal static class PaidCardFinancialAudit
                 var play = playEvents[0];
                 var key = Text(play, "idempotencyKey");
                 expected.Add(new LinkedLedger(
-                    $"house-holdem-{summary.RoundId}-{HouseHoldemFirestoreStore.LookupKey(key)}-wager",
+                    $"house-holdem-{summary.RoundId}-{HouseHoldemRoundCodec.Hash(key)}-wager",
                     "house-holdem-play-wager", -round.PlayWagerCents, key,
                     play.GetValue<Timestamp>("createdAt")));
             }
@@ -640,7 +830,7 @@ internal static class PaidCardFinancialAudit
              MoneyCents(read, "balanceAfter") == item.BalanceAfterCents));
 
     private static bool SourceResultMatches(DocumentSnapshot result, RoundAuditSummary summary,
-        string user, long wager, long payout, string outcome, bool microsecondTolerance = false) =>
+        string user, long wager, long payout, string outcome, bool microsecondTolerance = false, long schemaVersion = 1) =>
         result.Exists && Text(result, "resultId") == result.Id &&
         result.Id == $"{summary.GameId}-{summary.RoundId}" &&
         Text(result, "game") == summary.GameId && Text(result, "mode") == "credit" &&
@@ -648,7 +838,7 @@ internal static class PaidCardFinancialAudit
         Number(result, "wagerCents") == wager && Number(result, "payoutCents") == payout &&
         Number(result, "netCents") == checked(payout - wager) &&
         Text(result, "outcome") == outcome && Text(result, "settlementStatus") == "paid" &&
-        Text(result, "claimStatus") == "completed" && Number(result, "schemaVersion") == 1 &&
+        Text(result, "claimStatus") == "completed" && Number(result, "schemaVersion") == schemaVersion &&
         result.TryGetValue<Timestamp>("startedAt", out var startedAt) &&
         SameTime(startedAt.ToDateTime(), summary.StartedAtUtc, microsecondTolerance) &&
         result.TryGetValue<Timestamp>("completedAt", out var completedAt) &&

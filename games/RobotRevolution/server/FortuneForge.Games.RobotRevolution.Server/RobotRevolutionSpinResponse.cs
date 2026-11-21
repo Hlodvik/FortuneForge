@@ -1,0 +1,76 @@
+using System.Text.Json.Serialization;
+using FortuneForge.Games.Slots;
+using FortuneForge.Games.Slots.Runtime;
+
+namespace FortuneForge.Games.RobotRevolution.Server;
+
+/// <summary>Maps Robot Revolution's settled slot outcome to the established public response.</summary>
+public sealed record RobotRevolutionSpinResponse(
+    Guid SpinId, string GameId, string ReelSetId, string SymbolSetId, string PaytableId,
+    long WagerPoints, decimal PointValueInCents, IReadOnlyList<int> ReelStops,
+    IReadOnlyList<IReadOnlyList<string>> Reels, SpinPayout Payout,
+    int ConsecutiveFiveMisses, bool FiveMatchPityTriggered, int FreeSpinsAwarded,
+    int SpecialPointsAwarded, int EnergyAwarded, bool SpecialBoostApplied)
+{
+    public decimal? SlotsCreditsBalance { get; init; }
+    public bool IsFreeSpin { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public long ChargedWagerCents { get; init; }
+    public int NeonDiscoSpinsRemaining => 0;
+    public int FreeSpinsRemaining { get; init; }
+    public long? FreeSpinWagerPoints { get; init; }
+    public int SpecialPointsBalance { get; init; }
+    public long EnergyBalance => 0;
+    public bool EnergyMultiplierApplied => false;
+    public decimal PayoutMultiplier => 1m;
+    public int MonkeyPawCount { get; init; }
+    public long MoneyGrabPoints { get; init; }
+    public long BananaBonusPoints { get; init; }
+    public IReadOnlyDictionary<string, int> SealsAwarded { get; init; } = new Dictionary<string, int>(StringComparer.Ordinal);
+    public IReadOnlyList<RobotRevolutionSealCollection> SealCollections { get; init; } = [];
+    public int CollectionFreeSpinsAwarded => 0;
+    public string? FreeSpinFeatureMode { get; init; }
+    public object? BonusRound => null;
+    public IReadOnlyList<object> QueuedBonusRounds => [];
+    public IReadOnlyList<object> AwardedBonusRounds => [];
+    public object? MidnightBonusState => null;
+
+    public static RobotRevolutionSpinResponse From(RobotRevolutionRoundResult result)
+    {
+        if (result.Round is not { } round || result.Features is not { } features)
+            throw new InvalidOperationException("The Robot Revolution round has no settled spin response.");
+
+        return Capture(round) with
+        {
+            ChargedWagerCents = 0,
+            SlotsCreditsBalance = result.Wallet.BalanceAfterCents / 100m,
+            FreeSpinsRemaining = features.FreeSpinsRemaining,
+            FreeSpinWagerPoints = features.FreeSpinWagerPoints,
+            SpecialPointsBalance = features.SpecialPointsBalance,
+            SealCollections = features.SealCollections,
+            FreeSpinFeatureMode = features.FreeSpinFeatureMode
+        };
+    }
+
+    internal static RobotRevolutionSpinResponse Capture(RobotRevolutionPreparedRound round)
+    {
+        var spin = round.Outcome;
+        return new(spin.SpinId, spin.GameId, spin.ReelSetId, spin.SymbolSetId, spin.PaytableId,
+            spin.WagerPoints, spin.PointValueInCents, spin.ReelStops, spin.Reels, spin.Payout,
+            spin.ConsecutiveFiveMisses, spin.FiveMatchPityTriggered, spin.FreeSpinsAwarded,
+            spin.SpecialPointsAwarded, spin.EnergyAwarded, spin.SpecialBoostApplied)
+        {
+            IsFreeSpin = spin.IsFreeSpin,
+            ChargedWagerCents = round.WagerCents,
+            MonkeyPawCount = spin.PawCount,
+            MoneyGrabPoints = spin.CollectorPoints,
+            BananaBonusPoints = spin.PatternBonusPoints,
+            SealsAwarded = spin.CollectionsAwarded
+        };
+    }
+
+    internal ClassicSlotSpinOutcome ToOutcome(ClassicSlotEngineAudit audit) =>
+        new(SpinId, GameId, ReelSetId, SymbolSetId, PaytableId, WagerPoints, PointValueInCents, ReelStops, Reels,
+            Payout, ConsecutiveFiveMisses, FiveMatchPityTriggered, FreeSpinsAwarded, SpecialPointsAwarded, EnergyAwarded,
+            SpecialBoostApplied, IsFreeSpin, MonkeyPawCount, MoneyGrabPoints, BananaBonusPoints, SealsAwarded, audit);
+}

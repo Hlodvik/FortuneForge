@@ -23,8 +23,8 @@ function SicBoSession({ initialAccount }: Readonly<{ initialAccount: AccountSumm
   const balanceRevision = useRef(0)
   const practiceMode = walletPracticeModeEnabled()
   const gateway = useMemo(() => practiceMode
-    ? new HttpSicBoGateway('/api/games/sic-bo', practiceAccountFetch(fetchWithAccountSession))
-    : new HttpSicBoGateway('/api/games/sic-bo', fetchWithAccountSession), [practiceMode])
+    ? new HttpSicBoGateway('/api/games/sic-bo', practiceAccountFetch(fetchWithAccountSession), initialAccount.userId)
+    : new HttpSicBoGateway('/api/games/sic-bo', fetchWithAccountSession, initialAccount.userId), [practiceMode, initialAccount.userId])
 
   useEffect(() => setAccount(initialAccount), [initialAccount])
   useEffect(() => {

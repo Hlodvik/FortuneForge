@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
@@ -20,6 +21,13 @@ public sealed class RequestObservationTests
     [InlineData("POST", "/api/arcade-competitions/asteroids/day/runs/run-1/replay", "asteroids", "run-1")]
     [InlineData("POST", "/api/solitaire/free/runs/run-2/replay", "solitaire", "run-2")]
     [InlineData("POST", "/api/slots/spins", "slots", null)]
+    [InlineData("POST", "/api/slots/prepared-spins", "slots", null)]
+    [InlineData("POST", "/api/slots/arcane/prepared-spins", "arcane-archives", null)]
+    [InlineData("POST", "/api/slots/neon/car-respin", "neon-nights", null)]
+    [InlineData("POST", "/api/slots/neon/car-respin/nitro-choice", "neon-nights", null)]
+    [InlineData("POST", "/api/slots/neon/car-respin/dismiss", "neon-nights", null)]
+    [InlineData("POST", "/api/slots/neon/nitro-choice", "neon-nights", null)]
+    [InlineData("POST", "/api/slots/admin/neon-trigger", "neon-nights", null)]
     [InlineData("POST", "/api/slots/demo/spins", "slots", null)]
     [InlineData("POST", "/api/games/2048/games/run-3/move", "2048", "run-3")]
     public void Only_known_mutating_game_routes_are_observed(string method, string path, string game, string? instance)
@@ -54,6 +62,16 @@ public sealed class RequestObservationTests
         }
         Assert.Equal("invalid-json", Parse("{broken").State);
         Assert.Equal("non-object", Parse("[]").State);
+    }
+
+    [Fact]
+    public void Neon_reel_evidence_keeps_the_source_spin_and_selected_reel()
+    {
+        var payload = Parse("""{"spinId":"ee9c35c6-5e38-4c8a-b67b-f69b1528cd24","reelIndex":3}""");
+        Assert.Equal("ee9c35c6-5e38-4c8a-b67b-f69b1528cd24", payload.InstanceId);
+        Assert.Equal("sanitized", payload.State);
+        using var json = JsonDocument.Parse(payload.Json!);
+        Assert.Equal(3, json.RootElement.GetProperty("reelIndex").GetInt32());
     }
 
     [Fact]
@@ -95,6 +113,26 @@ public sealed class RequestObservationTests
         Assert.DoesNotContain("raw-session", JsonSerializer.Serialize(store.Intents));
         Assert.Equal("203.0.113.3", store.Intents[0].IpAddress);
         Assert.Equal(Now, store.Intents[0].ReceivedAtUtc);
+    }
+
+    [Theory]
+    [InlineData("{ \"direction\": \"up\", \"ignored\": 2 }", "application/json", "turn")]
+    [InlineData("", null, "tick")]
+    public async Task LegacySnakeCommandsExposeAnExactDigestWithoutPersistingUnrecognizedBytes(string raw, string? type, string action)
+    {
+        var store = new Store();
+        var context = Context(raw);
+        context.Request.Path = $"/api/games/snake/games/{Guid.NewGuid():D}/{action}";
+        context.Request.ContentType = type;
+        var digest = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(raw)));
+        await Invoke(Middleware(request =>
+        {
+            Assert.Equal(digest, GameSecurityRequestMiddleware.ReadExactBodyDigest(request));
+            Assert.Equal(0, request.Request.Body.Position);
+            Assert.DoesNotContain("ignored", GameSecurityContext.Current?.RequestJson ?? string.Empty);
+            return Task.CompletedTask;
+        }), context, store);
+        Assert.Single(store.Intents);
     }
 
     [Fact]

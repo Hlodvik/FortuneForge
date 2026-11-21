@@ -1,3 +1,4 @@
+using FortuneForge.Server.Accounts.Storage;
 using FortuneForge.Server.Arcade.Competition;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
@@ -67,6 +68,11 @@ public sealed class FirestoreArcadeCompetitionPayoutCreditorTests
         Assert.Equal("refund", Field<string>(ledger, "payoutKind"));
         Assert.Null(ledger.ToDictionary()["placement"]);
         Assert.Equal(200, Field<long>(ledger, "amountCents"));
+
+        await ledger.Reference.UpdateAsync("placement", FieldValue.Delete);
+        var replay = await creditor.CreditAsync(Identity(), instruction, End.AddHours(1), default);
+        Assert.Equal(result with { WasAlreadyCredited = true }, replay);
+        Assert.Equal(225, await ReadBalanceCentsAsync(database, instruction.PlayerId));
     }
 
     [Fact]
@@ -89,15 +95,17 @@ public sealed class FirestoreArcadeCompetitionPayoutCreditorTests
         Assert.Single((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
     }
 
-    [Fact]
-    public async Task TamperedExistingLedgerIsRejectedWithoutAnotherBalanceIncrease()
+    [Theory]
+    [InlineData("amountCents", 201L)]
+    [InlineData("gameId", "flappy")]
+    public async Task TamperedExistingLedgerIsRejectedWithoutAnotherBalanceIncrease(string field, object value)
     {
         var (database, creditor) = CreateCreditor();
         var instruction = PrizeInstruction();
         await SeedBalanceAsync(database, instruction.PlayerId, 100);
         var first = await creditor.CreditAsync(Identity(), instruction, End, default);
         await database.Collection("balanceTransactions").Document(first.TransactionId)
-            .UpdateAsync("amountCents", instruction.AmountCents + 1);
+            .UpdateAsync(field, value);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             creditor.CreditAsync(Identity(), instruction, End.AddHours(1), default));
@@ -138,7 +146,7 @@ public sealed class FirestoreArcadeCompetitionPayoutCreditorTests
             ProjectId = $"demo-arcade-payout-credit-{Guid.NewGuid():N}",
             EmulatorDetection = EmulatorDetection.EmulatorOnly,
         }.Build();
-        return (database, new FirestoreArcadeCompetitionPayoutCreditor(database));
+        return (database, new FirestoreArcadeCompetitionPayoutCreditor(new FirestoreWalletCreditStore(database)));
     }
 
     private static ArcadeCompetitionCreditInstruction PrizeInstruction() =>

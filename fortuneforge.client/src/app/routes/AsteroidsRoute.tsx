@@ -3,7 +3,7 @@ import { useAuthenticatedAccount } from '../../features/account/useAuthenticated
 import {
   AccountRequestError,
   clearAccountToken,
-  fetchWithAccountSession,
+  createAccountBoundGameFetch,
   getCurrentAccount,
 } from '../../features/account/services/accountsApi'
 import type { AccountSummary } from '../../features/account/services/accountsApi'
@@ -23,13 +23,15 @@ export function AuthenticatedAsteroidsRoute() {
     return <AuthenticatedRouteState error={error} loadingLabel="Opening Asteroid Blaster…" errorTitle="Asteroid Blaster could not be opened." onRetry={reload} />
   }
 
-  return <AsteroidsCompetitionSession initialAccount={account} />
+  return <AsteroidsCompetitionSession key={account.userId} initialAccount={account} />
 }
 
 function AsteroidsCompetitionSession({ initialAccount }: Readonly<{ initialAccount: AccountSummary }>) {
   const [currentAccount, setCurrentAccount] = useState(initialAccount)
   const lastAuthenticatedAccount = useRef(initialAccount)
-  const gateway = useMemo(() => new HttpArcadeCompetitionGateway(fetchWithAccountSession), [])
+  const gateway = useMemo(() => new HttpArcadeCompetitionGateway(
+    createAccountBoundGameFetch(initialAccount.userId),
+  ), [initialAccount.userId])
 
   useEffect(() => {
     const hasNewAuthenticatedSnapshot = lastAuthenticatedAccount.current !== initialAccount

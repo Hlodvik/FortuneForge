@@ -2,8 +2,11 @@
 
 The host supplies normal account authentication through `MinesAccountResolver`; no player
 request supplies a trusted account ID. `AddMinesServer` registers package services, and
-`MapMines` maps the four account operations. The main website supplies its Firestore client,
-rate limits and an exact allowed-origin list. The isolated sample separately uses
+`MapMines` maps the four account operations. The independent Mines worker supplies its Firestore
+client, rate limits and exact allowed-origin list. Its `GameWorkerModule` alone registers
+`AddGameWalletClient("mines")`; general `AddMinesServer` does not register an unkeyed wallet client
+in a shared host. Paid operation without the correct worker wallet registration fails closed.
+The isolated sample separately uses
 `ForcePractice` and a private file ledger for non-cash development testing.
 
 ## API and gates
@@ -15,7 +18,9 @@ rate limits and an exact allowed-origin list. The isolated sample separately use
 | POST | `/api/games/mines/rounds/{roundId}/reveal` | `{ "requestId":"<stable unique ID>", "tile":24 }` |
 | POST | `/api/games/mines/rounds/{roundId}/cashout` | `{ "requestId":"<stable unique ID>" }` |
 
-Both the general feature flag and paid flag must permit account-credit play.
+Both `Features:MinesEnabled` and `Features:MinesPaidEnabled` must permit a genuinely new paid
+round. Existing commands, session recovery, reveals and cash-outs remain available when new
+wagers are paused. The gateway must keep those routes assigned to the same configured worker.
 The main host rejects an explicit practice header with 403; it does not silently charge that
 request to a real wallet. `AllowedOrigins` is an exact host configuration allowlist;
 `PracticeOrigins` never grants paid access. Mutation requests require JSON and trusted origin
@@ -51,16 +56,31 @@ A fresh session read after replay is required before allowing further client inp
 
 `requestId` is an account-scoped idempotency key (16–128 ASCII letters/digits/underscore/hyphen),
 bound to the complete action and payload. A duplicate returns its original response; changed
-payload/action reuse conflicts. Successful receipts have no expiry. Failed validation does not
-consume an ID.
+payload/action reuse conflicts. Successful receipts have no expiry. Malformed input does not
+consume an ID. A valid insufficient-funds admission is immutable, including after a later top-up.
 
 ## Transactions, privacy and history
 
-A single Firestore transaction updates the existing account wallet, any financial ledger entry,
-private round, latest-round pointer and immutable command receipt. Terminal settlement, including
-a positive mine return, also creates exactly one shared history entry with frozen policy/edge.
-History does not contain the hidden board or command data. Missing real wallets have zero funds.
-Concurrent starts, reveal/cash-out races, response loss and restart/replay cannot duplicate credit.
+The game package owns the private board, accepted wager/policy, command admission, transitions,
+resume pointer, outcomes and history. It never writes `userBalances` or `balanceTransactions`.
+The shared account API performs generic signed wallet operations only.
+
+A Firestore transaction first saves the exact private command intent and an account-scoped pending
+pointer. A new round uses the signed wallet `Reserve` phase before its board is returned. Terminal
+cash-out, full clear, mine loss or consolation uses `CompleteReservation` with that original
+reservation digest. Safe nonterminal reveals require no wallet mutation. A final game transaction
+records the response, state, audit/participation evidence and one terminal history entry.
+
+A lost reserve or payout reply is recovered by resubmitting the identical stored wallet operation.
+Every wallet response and saved response balance is checked against its account, operation and
+outcome. The pending pointer serializes competing starts and reveal/cash-out races across replicas.
+Before a terminal wallet call, existing history is checked so an inconsistent legacy active head
+cannot cause another credit. History contains no hidden board or command data.
+
+Historical `minesRounds`, `minesSessions` and schema-1 `minesCommands` remain readable. Legacy
+active rounds have already paid their wager; their terminal operation is a credit-only signed
+`Direct` settlement, never another debit. Their frozen wager, house edge and payout policy survive
+new-entry limits. Old immutable replies are returned without rewriting them.
 
 Private collections are `minesRounds`, `minesSessions` and `minesCommands`.
 The root tracked Firestore rules deny every direct browser read/write; server access is separately
@@ -72,6 +92,18 @@ alone cannot prove browser rules are restrictive.
 `FileMinesPracticeStore` is exclusively a local development store with separate non-cash balances.
 It uses an exclusive cross-process lock and atomic ledger replacement and survives restart.
 It is not a distributed production backend. Preserve its ignored ledger when restarting samples.
+
+## Worker configuration and deployment
+
+Configure the worker with `GameWorker:Mode=hosted`, its `GameWorker:SigningKey`, hosted Firestore,
+`GameWallet:Url` and the game-specific `GameWallet:SigningKey`. The shared API requires matching
+`GameWallet:Games:mines:SigningKey`, `AllowAccountBalanceRead=true` and
+`AllowWagerReservations=true`. This game uses neither legacy free-game spending nor legacy-slot
+ledger layout. Configure the public gateway worker URL/key and preserve forwarding during pauses.
+
+Local source changes and local test results are separate from production deployment. This work
+does not enable a live feature, change live wallet data, or deploy a worker/client/API. Current
+lane evidence is recorded in `artifacts/backend-completion/table-number-subhandoff.json`.
 
 ## Verification
 

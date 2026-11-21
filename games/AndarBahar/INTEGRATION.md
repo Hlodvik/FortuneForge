@@ -1,5 +1,14 @@
 # Main-site integration — Andar Bahar
 
+## Backend ownership update — 21 November 2026
+
+New paid rounds run in the packaged game worker. `AndarBaharWalletStore` saves an immutable deal intent before calling the signed `IGameWalletClient`; after the wallet confirms, the package finalizes its outcome, audit, activity and recovery pointer in one transaction. The package never updates account balances or wallet ledger documents for a new round. Schema-v1/v2 rounds retain their saved wagers and outcomes through the read-only compatibility store. Pending rounds recover through the original POST key or the existing GET/latest routes, including while new wagers are paused.
+
+The worker module registers `AddGameWalletClient` for `andar-bahar`. It requires `GameWallet:Url` and `GameWallet:SigningKey`; the generic account service requires the matching per-game signing key and `AllowAccountBalanceRead=true`. These tables use the standard wallet ledger, so `LegacySlotLedger` must remain false. The shared authenticated gateway must route paid requests to the configured worker and preserve the existing public URLs. The standalone sample remains forced practice.
+
+This is a local migration. Package verification and shared gateway cutover are tracked in `artifacts/backend-completion/table-card-subhandoff.json`; no production deployment has been performed. The older host wiring notes below describe the prior architecture.
+
+
 The following central integration is implemented in local source as of October 24, 2026: workspace/dependency and lockfile, both .NET solutions, authenticated route and shared navigation, catalogue/manifest, server registration, account-history display and route/release inventory. `/games/andar-bahar` is the composed host route; the isolated sample remains on 5182/API5202. No commit, push or deployment is implied by these local changes.
 
 ## Workspace and build
@@ -28,7 +37,7 @@ The active manifest is `games/catalog/games/andar-bahar.game.json`; its migratio
 
 The host references the server package, registers `AddAndarBaharServer` in Startup and maps `MapAndarBahar` after routing/rate-limit/authorization middleware. See [the server integration document](server/INTEGRATION.md) for the resolver, rate limits, Firestore schema and feature flag.
 
-The account resolver must use the existing account session cookie. Never bind player identity, cards, outcomes or balance from a client request. Paid outcomes, wallet debit/credit, ledger, settlement event and latest pointer commit in one Firestore transaction. The public result contains only the central Joker and dealt prefix through the first match; the undealt deck is never returned or persisted. There is no cash-out endpoint for this instantly settled game.
+The account resolver must use the existing account session cookie. Never bind player identity, cards, outcomes or balance from a client request. New paid outcomes use the immutable package intent and signed wallet lifecycle described above; wallet debit/credit belongs to the generic account service, and the game finalizes its history and recovery pointer after confirmation. The public result contains only the central Joker and dealt prefix through the first match; the undealt deck is never returned or persisted. There is no cash-out endpoint for this instantly settled game.
 
 The package's missing-feature fallback remains false; the main site's checked-in Production and Development settings now explicitly enable `Features:AndarBaharEnabled`, matching the other integrated tables. This is not a live configuration change. The main host explicitly enables authenticated practice to match Hi-Lo and Dragon Tiger: practice requests use a separate account-scoped temporary ledger and cannot debit the paid Firestore wallet. `ForcePractice` remains false. A host that disables practice receives a 403 for an explicit practice request and never silently spends paid funds.
 

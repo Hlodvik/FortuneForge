@@ -66,13 +66,13 @@ public sealed class DemoSlotsController(
                 GoldFoundryDemoBoundary.Validate(request);
             if (request.OlympusTumbleShowcase is { } showcase)
                 return await SpinOlympusTumble(request, showcase, cancellationToken);
+            if (isNeon)
+                return await SpinNeon(request, cancellationToken);
 
-            if (request.NeonDiscoSpinsRemaining < 0 ||
-                request.NeonDiscoSpinsRemaining > NeonArcadeSlotDefinitions.DiscoPlaySpins ||
-                !isNeon && request.NeonDiscoSpinsRemaining != 0)
+            if (request.NeonDiscoSpinsRemaining != 0)
                 throw new ArgumentOutOfRangeException(nameof(request.NeonDiscoSpinsRemaining),
                     "The demo Disco play balance is outside the allowed range.");
-            if (request.FreeSpinsRemaining < 0 || !isNeon && request.FreeSpinsRemaining > 1_000)
+            if (request.FreeSpinsRemaining is < 0 or > 1_000)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(request.FreeSpinsRemaining),
@@ -88,25 +88,11 @@ public sealed class DemoSlotsController(
             {
                 throw new ArgumentException("No demo free spins are available.", nameof(request));
             }
-            if (isNeon && !request.UseFreeSpin && request.FreeSpinsRemaining > 0)
-                throw new ArgumentException("Finish your awarded Neon spins before placing another bet.", nameof(request));
-            if (isNeon && request.UseFreeSpin && request.WagerPoints != request.FreeSpinWagerPoints)
-                throw new ArgumentException("Special Plays use the wager from the triggering spin.", nameof(request));
-            var isNeonDiscoPlay = isNeon && !request.UseFreeSpin &&
-                request.NeonDiscoSpinsRemaining > 0;
-            if (isNeonDiscoPlay)
-                NeonPlayPolicy.ValidateDiscoWager(request.NeonDiscoSpinsRemaining,
-                    request.NeonDiscoWagerPoints, request.WagerPoints);
-            var neonDiscoMultiplierBefore = request.NeonDiscoMultiplier ?? NeonDiscoCascade.InitialMultiplier;
-            if (!NeonDiscoCascade.IsValidMultiplier(neonDiscoMultiplierBefore) ||
-                request.NeonDiscoSpinsRemaining == 0 && neonDiscoMultiplierBefore != NeonDiscoCascade.InitialMultiplier)
-                throw new ArgumentOutOfRangeException(nameof(request.NeonDiscoMultiplier));
-
             if (request.GameId == SlotSpecialRoundProfiles.DragonHoardGameId)
                 return await SpinMidnight(request, cancellationToken);
             spinService.ValidateRequest(request.GameId, request.WagerPoints);
             SlotSpecialRoundProfiles.TryGet(request.GameId, out var profile);
-            var usesEnergy = !isNeon && profile?.UsesEnergy != false;
+            var usesEnergy = profile?.UsesEnergy != false;
             var currentEnergy = usesEnergy ? request.EnergyBalance : 0;
             var startedAtUtc = DateTime.UtcNow;
             var engineResult = spinService.Spin(
@@ -115,13 +101,9 @@ public sealed class DemoSlotsController(
                 DemoPlayerId,
                 specialBoostApplied: false,
                 currentEnergy,
-                request.UseFreeSpin && (isNeon ? NeonPlayPolicy.IsFeatureMode(request.FreeSpinFeatureMode) :
-                    SlotSpecialRoundProfiles.IsFeatureMode(request.FreeSpinFeatureMode))
+                request.UseFreeSpin && SlotSpecialRoundProfiles.IsFeatureMode(request.FreeSpinFeatureMode)
                     ? request.FreeSpinFeatureMode
-                    : null,
-                isFreeSpin: isNeon && request.UseFreeSpin,
-                isNeonDiscoPlay: isNeonDiscoPlay,
-                neonDiscoMultiplier: isNeonDiscoPlay ? neonDiscoMultiplierBefore : NeonDiscoCascade.InitialMultiplier);
+                    : null);
             if (isGoldFoundry)
             {
                 var settled = GoldFoundryCrucible.SettleDemo(engineResult, currentEnergy, request.CrucibleWageredCents);
@@ -130,11 +112,11 @@ public sealed class DemoSlotsController(
                 return Ok(settled);
             }
 
-            var energy = isNeon ? new EnergyBonusSettlement(engineResult.Payout, 0, 0, 0, false, 1m) : EnergyBonus.Settle(
+            var energy = EnergyBonus.Settle(
                 currentEnergy,
                 engineResult.EnergyAwarded,
                 engineResult.Payout);
-            var specialRounds = isNeon || profile is null
+            var specialRounds = profile is null
                 ? new SlotSpecialRoundProgress(0, null, [])
                 : SlotSpecialRoundProfiles.SettleDemo(
                     profile,
@@ -143,21 +125,14 @@ public sealed class DemoSlotsController(
                     engineResult.WagerPoints,
                     energy.MultiplierApplied,
                     engineResult.SpinId);
-            var neonProgress = isNeon ? NeonPlayPolicy.AdvanceAwardedPlays(
-                request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0), request.UseFreeSpin,
-                request.FreeSpinFeatureMode, engineResult.FreeSpinsAwarded,
-                engineResult.WagerPoints, engineResult.NeonArcade) : null;
-            var nextFreeSpins = neonProgress?.Remaining ?? (long)request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0) +
+            var nextFreeSpins = (long)request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0) +
                 engineResult.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded;
             if (nextFreeSpins > int.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(request.FreeSpinsRemaining),
                     "The next demo free-spin balance exceeds the supported range.");
             var freeSpinsRemaining = checked((int)nextFreeSpins);
-            var neonDiscoSpinsRemaining = isNeon
-                ? NeonPlayPolicy.NextDiscoSpins(request.NeonDiscoSpinsRemaining, isNeonDiscoPlay, engineResult.NeonArcade)
-                : 0;
             long? freeSpinWagerPoints = freeSpinsRemaining > 0
-                ? isNeon ? engineResult.WagerPoints : request.FreeSpinWagerPoints ?? request.WagerPoints
+                ? request.FreeSpinWagerPoints ?? request.WagerPoints
                 : null;
 
             var responseResult = engineResult with
@@ -170,25 +145,16 @@ public sealed class DemoSlotsController(
                 CollectionFreeSpinsAwarded = engineResult.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
                     ? specialRounds.FreeSpinsAwarded : 0,
                 IsFreeSpin = request.UseFreeSpin,
-                ChargedWagerCents = isNeon
-                    ? NeonPlayPolicy.ChargesWager(request.UseFreeSpin, request.FreeSpinFeatureMode)
-                        ? RandMoney.PointsToCents(engineResult.WagerPoints, engineResult.PointValueInCents) : 0
-                    : !request.UseFreeSpin
+                ChargedWagerCents = !request.UseFreeSpin
                     ? RandMoney.PointsToCents(engineResult.WagerPoints, engineResult.PointValueInCents)
                     : 0,
                 FreeSpinsRemaining = freeSpinsRemaining,
-                NeonDiscoSpinsRemaining = neonDiscoSpinsRemaining,
-                NeonDiscoWagerPoints = isNeon
-                    ? NeonPlayPolicy.NextDiscoWager(request.NeonDiscoSpinsRemaining,
-                        request.NeonDiscoWagerPoints, isNeonDiscoPlay, engineResult.WagerPoints, engineResult.NeonArcade) : null,
-                NeonDiscoMultiplier = isNeon ? NeonPlayPolicy.NextDiscoMultiplier(neonDiscoMultiplierBefore,
-                    neonDiscoSpinsRemaining, engineResult.NeonDiscoCascade, engineResult.NeonArcade) : null,
                 FreeSpinWagerPoints = freeSpinWagerPoints,
                 EnergyBalance = energy.FinalEnergyBalance,
                 EnergyMultiplierApplied = energy.MultiplierApplied,
                 PayoutMultiplier = energy.PayoutMultiplier,
                 SealCollections = specialRounds.Collections,
-                FreeSpinFeatureMode = isNeon ? neonProgress!.FeatureMode : freeSpinsRemaining > 0
+                FreeSpinFeatureMode = freeSpinsRemaining > 0
                     ? specialRounds.FeatureMode ??
                         (engineResult.FreeSpinsAwarded > 0 ? profile?.ScatterFeatureMode : null) ??
                         (request.UseFreeSpin ? request.FreeSpinFeatureMode : null)
@@ -221,6 +187,37 @@ public sealed class DemoSlotsController(
         }
     }
 
+    private async Task<ActionResult> SpinNeon(DemoSpinRequest request, CancellationToken cancellationToken)
+    {
+        var policy = new NeonDemoPolicy(new(request.WagerPoints, request.UseFreeSpin, request.FreeSpinsRemaining,
+            request.FreeSpinWagerPoints, request.FreeSpinFeatureMode, request.NeonDiscoSpinsRemaining,
+            request.NeonDiscoWagerPoints, request.NeonDiscoMultiplier, request.EnergyBalance), EnergyBonus.MeterCapacityPoints);
+        var play = policy.Engine;
+        spinService.ValidateRequest(request.GameId, play.WagerPoints);
+        var startedAtUtc = DateTime.UtcNow;
+        var engineResult = spinService.Spin(request.GameId, play.WagerPoints, DemoPlayerId, specialBoostApplied: false,
+            play.EnergyBalance, play.FeatureMode, play.PityMissesBefore, play.IsFreeSpin, play.IsDiscoPlay, play.DiscoMultiplier);
+        var progress = policy.Complete(engineResult.WagerPoints, engineResult.FreeSpinsAwarded,
+            engineResult.NeonArcade, engineResult.NeonDiscoCascade);
+        var response = engineResult with
+        {
+            SlotsCreditsBalance = null,
+            ChargedWagerCents = policy.ChargesWager
+                ? RandMoney.PointsToCents(engineResult.WagerPoints, engineResult.PointValueInCents) : 0,
+            FreeSpinsRemaining = progress.FreeSpinsRemaining,
+            FreeSpinWagerPoints = progress.FreeSpinWagerPoints,
+            FreeSpinFeatureMode = progress.FreeSpinFeatureMode,
+            NeonDiscoSpinsRemaining = progress.NeonDiscoSpinsRemaining,
+            NeonDiscoWagerPoints = progress.NeonDiscoWagerPoints,
+            NeonDiscoMultiplier = progress.NeonDiscoMultiplier,
+            EnergyBalance = progress.EnergyBalance,
+            EnergyMultiplierApplied = progress.EnergyMultiplierApplied,
+            PayoutMultiplier = progress.PayoutMultiplier
+        };
+        await auditStore.RecordAsync(new DemoSlotAuditEntry(request, engineResult, response, startedAtUtc, DateTime.UtcNow), cancellationToken);
+        return Ok(response);
+    }
+
     private async Task<ActionResult> SpinOlympusTumble(
         DemoSpinRequest request, bool showcase, CancellationToken cancellationToken)
     {
@@ -240,22 +237,12 @@ public sealed class DemoSlotsController(
     private async Task<ActionResult> SpinMidnight(DemoSpinRequest request, CancellationToken cancellationToken)
     {
         var state = CreateMidnightState(request);
-        MidnightVaultBonusRounds.Validate(state.Rounds);
-        if (state.Rounds.Sum(round => (long)round.RemainingSpins) > 1_000)
-            throw new ArgumentException("The demo bonus queue exceeds its allowed size.");
-        var head = state.Rounds.FirstOrDefault();
-        if (request.FreeSpinsRemaining != (head?.RemainingSpins ?? 0) ||
-            request.UseFreeSpin != (head is not null))
-            throw new ArgumentException("Finish the active demo bonus round before placing another bet.");
-        var wager = head?.WagerPoints ?? request.WagerPoints;
-        if (request.WagerPoints != wager)
-            throw new ArgumentException("The bonus round uses its locked wager.");
-        spinService.ValidateRequest(request.GameId, wager, head is not null);
+        var (head, wager) = MidnightVaultDemoPolicy.Admit(state.Rounds, request.UseFreeSpin,
+            request.FreeSpinsRemaining, request.WagerPoints);
         var startedAt = DateTime.UtcNow;
         var engine = spinService.SpinMidnightDemo(wager, DemoPlayerId, head);
-        var progress = MidnightVaultBonusRounds.Advance(
-            head is null ? state.Rounds : MidnightVaultBonusRounds.Consume(state.Rounds),
-            state.CollectionCounts, state.CollectionWagerPoints, engine.SealsAwarded,
+        var progress = MidnightVaultDemoPolicy.Advance(state.Rounds, state.CollectionCounts, state.CollectionWagerPoints,
+            request.UseFreeSpin, engine.SealsAwarded,
             wager, engine.FreeSpinsAwarded, engine.EngineAudit!.FeatureProfile?.ScatterFeatureMode,
             engine.PaytableId, engine.SpinId);
         var next = progress.Rounds.FirstOrDefault();
@@ -267,7 +254,7 @@ public sealed class DemoSlotsController(
             BonusRound = next,
             QueuedBonusRounds = progress.Rounds.Skip(1).ToArray(),
             AwardedBonusRounds = progress.AwardedRounds,
-            CollectionFreeSpinsAwarded = progress.AwardedRounds.Where(round => round.FeatureMode == "rows-paw").Sum(round => round.TotalSpins),
+            CollectionFreeSpinsAwarded = MidnightVaultDemoPolicy.CollectionSpinsAwarded(progress),
             SealCollections = CreateMidnightCollections(progress.CollectionCounts, progress.CollectionWagerPoints),
             MidnightBonusState = new(progress.Rounds, progress.CollectionCounts, progress.CollectionWagerPoints)
         };
@@ -278,40 +265,14 @@ public sealed class DemoSlotsController(
     internal static MidnightVaultDemoState CreateMidnightState(DemoSpinRequest request, string? capturedMathModelId = null)
     {
         if (request.MidnightBonusState is { } state) return state;
-        // Compatibility for an older local demo client. All newly returned state
-        // carries exact totals and the complete ordered round queue. Missing live
-        // state retains the previous v2 contract; replay supplies its captured model.
-        var mathModelId = capturedMathModelId ?? MidnightVaultSlotDefinitions.PreviousPaytableId;
-        if (mathModelId is not (MidnightVaultSlotDefinitions.LegacyPaytableId or
-            MidnightVaultSlotDefinitions.PreviousPaytableId or MidnightVaultSlotDefinitions.PaytableId))
-            throw new ArgumentException("The demo carry has an unsupported Midnight Vault payout model.", nameof(capturedMathModelId));
-        // A v1 aggregate does not identify its original six/seven-spin rounds.
-        // Preserve old generic receipt replay; never fabricate ten-spin v1 rounds.
-        if (request.FreeSpinsRemaining > 0 && mathModelId == MidnightVaultSlotDefinitions.LegacyPaytableId)
-            throw new ArgumentException("A legacy v1 demo bonus requires its original round state.", nameof(capturedMathModelId));
-        var rounds = new List<MidnightVaultBonusRound>();
-        var remaining = request.FreeSpinsRemaining;
-        for (var index = 0; remaining > 0; index++)
-        {
-            var spins = Math.Min(10, remaining);
-            rounds.Add(new($"demo-carry:{index}", 10, spins,
-                request.FreeSpinWagerPoints ?? request.WagerPoints, request.FreeSpinFeatureMode,
-                mathModelId));
-            remaining -= spins;
-        }
-        var collections = request.SealCollections ?? [];
-        var counts = collections.ToDictionary(entry => entry.SealId, entry => (long)entry.Count, StringComparer.Ordinal);
-        var totals = collections.ToDictionary(entry => entry.SealId,
-            entry => checked(entry.Count * (entry.AverageWagerPoints > 0 ? entry.AverageWagerPoints : request.WagerPoints)), StringComparer.Ordinal);
-        return new(rounds, counts, totals);
+        var carry = MidnightVaultDemoPolicy.ReadLegacyCarry(request.WagerPoints, request.FreeSpinsRemaining,
+            request.FreeSpinWagerPoints, request.FreeSpinFeatureMode, (request.SealCollections ?? [])
+                .Select(entry => (entry.SealId, entry.Count, entry.AverageWagerPoints)), capturedMathModelId);
+        return new(carry.Rounds, carry.CollectionCounts, carry.CollectionWagerPoints);
     }
 
     internal static IReadOnlyList<SlotSealCollection> CreateMidnightCollections(
         IReadOnlyDictionary<string, long> counts, IReadOnlyDictionary<string, long> totals) =>
-        new[] { "sync", "rows", "paw", "rand" }.Select(mode =>
-        {
-            var count = counts.GetValueOrDefault(mode);
-            return new SlotSealCollection(mode, checked((int)count),
-                count > 0 ? checked((totals.GetValueOrDefault(mode) + count / 2) / count) : 0, 30);
-        }).ToArray();
+        MidnightVaultDemoPolicy.DescribeCollections(counts, totals).Select(entry =>
+            new SlotSealCollection(entry.SealId, entry.Count, entry.AverageWagerPoints, entry.RequiredCount)).ToArray();
 }

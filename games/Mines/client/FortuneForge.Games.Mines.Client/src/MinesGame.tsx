@@ -7,15 +7,15 @@ import { currentMinesHouseEdgeBasisPoints,legacyMinesHouseEdgeBasisPoints,minesM
 import { currentMinesMaximumWagerCents,currentMinesMinimumWagerCents } from './minesWagerLimits'
 import './mines.css'
 
-export type MinesGameProps=Readonly<{playerId:string;gateway?:MinesGateway;onBalanceChange?:(balanceCents:number)=>void;currencySymbol?:string;showTitle?:boolean}>
-const defaultGateway=new HttpMinesGateway()
+export type MinesGameProps=Readonly<{playerId:string;accountId?:string;gateway?:MinesGateway;onBalanceChange?:(balanceCents:number)=>void;currencySymbol?:string;showTitle?:boolean}>
 export function MinesGame(props:MinesGameProps){return <MinesTable key={props.playerId} {...props}/>}
 const money=(cents:number,symbol:string)=>`${symbol}${(cents/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 const multiplier=(value:number)=>`${value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}×`
 function Icon({name}:{name:'diamond'|'sound'|'mute'|'help'|'arrow'|'lock'}){
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{name==='diamond'?<><path d="m3 8 4-5h10l4 5-9 13L3 8Z"/><path d="M3 8h18M7 3l5 18 5-18"/></>:name==='help'?<><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1.5 1-1.5 2-1.5 2M12 16h.01"/></>:name==='arrow'?<path d="m9 6 6 6-6 6"/>:name==='lock'?<><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></>:<><path d="M11 4 5 9H2v6h3l6 5V4Z"/>{name==='mute'?<path d="m16 9 6 6m0-6-6 6"/>:<><path d="M15 8a6 6 0 0 1 0 8M18 4a11 11 0 0 1 0 16"/></>}</>}</svg>
 }
-function MinesTable({playerId,gateway=defaultGateway,onBalanceChange,currencySymbol='R',showTitle=true}:MinesGameProps){
+function MinesTable({playerId,accountId,gateway:suppliedGateway,onBalanceChange,currencySymbol='R',showTitle=true}:MinesGameProps){
+  const gateway=useMemo(()=>suppliedGateway??new HttpMinesGateway(undefined,undefined,accountId),[suppliedGateway,accountId])
   const {session,busy,error,needsRecovery,restore,start,reveal,cashout}=useMinesSession(gateway,playerId,onBalanceChange)
   const [wager,setWager]=useState('1.00'),[mineCount,setMineCount]=useState(3),[rulesOpen,setRulesOpen]=useState(false)
   const [muted,setMuted]=useState(()=>{try{return localStorage.getItem('fortuneforge:mines:muted')==='true'}catch{return true}})

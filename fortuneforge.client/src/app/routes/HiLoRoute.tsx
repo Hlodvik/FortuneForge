@@ -33,7 +33,7 @@ function HiLoSession({ initialAccount }: Readonly<{ initialAccount: AccountSumma
   const practiceMode = walletPracticeModeEnabled()
   const gateway = useMemo(() => practiceMode
     ? new HttpHiLoGateway('/api/games/hi-lo', practiceAccountFetch(fetchWithAccountSession))
-    : new HttpHiLoGateway('/api/games/hi-lo', fetchWithAccountSession), [practiceMode])
+    : new HttpHiLoGateway('/api/games/hi-lo', fetchWithAccountSession, initialAccount.userId), [practiceMode, initialAccount.userId])
 
   useEffect(() => setAccount(initialAccount), [initialAccount])
   const refreshBalance = useCallback(() => {

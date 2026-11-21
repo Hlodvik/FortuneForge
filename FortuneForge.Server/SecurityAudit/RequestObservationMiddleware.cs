@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Hosting;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Activity;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -11,12 +12,21 @@ namespace FortuneForge.Server.SecurityAudit;
 
 internal sealed class GameSecurityRequestMiddleware(RequestDelegate next, ILogger<GameSecurityRequestMiddleware> logger)
 {
+    private static readonly object ExactBodyDigestKey = new();
+
+    internal static string? ReadExactBodyDigest(HttpContext context) => context.Items[ExactBodyDigestKey] as string;
+
     public async Task InvokeAsync(HttpContext context, IGameActivityAccountResolver accounts,
         IGameSecurityRequestStore store, IGameRequestGeoResolver geoResolver,
         IOptions<GameSecurityRequestOptions> configuration, TimeProvider clock)
     {
         var options = configuration.Value;
-        var route = GameRequestPayloadObservation.Route(context.Request.Method, context.Request.Path.Value ?? "");
+        var request = context.Request;
+        var workerRoute = context.GetEndpoint()?.Metadata.GetMetadata<GameWorkerPublicRoute>();
+        var route = workerRoute is not null && (request.Method is "POST" or "PUT" or "PATCH" or "DELETE") &&
+            request.Path.StartsWithSegments(workerRoute.PathPrefix, StringComparison.OrdinalIgnoreCase)
+            ? new GameRequestRoute(workerRoute.AuditGameId, null)
+            : GameRequestPayloadObservation.Route(request.Method, request.Path.Value ?? "");
         if (!options.Enabled || route is null) { await next(context); return; }
         var received = clock.GetUtcNow().UtcDateTime;
         var started = Stopwatch.GetTimestamp();
@@ -81,7 +91,9 @@ internal sealed class GameSecurityRequestMiddleware(RequestDelegate next, ILogge
     private static async Task<GameRequestPayload> ReadPayloadAsync(HttpContext context, GameSecurityRequestOptions options)
     {
         var command = context.Request.Headers["Idempotency-Key"].FirstOrDefault();
-        if (!context.Request.HasJsonContentType()) return new(null, "non-json-omitted", GameRequestPayloadObservation.SafeId(command), null, null);
+        var isJson = context.Request.HasJsonContentType();
+        if (!isJson && !context.Request.Path.StartsWithSegments("/api/games/snake"))
+            return new(null, "non-json-omitted", GameRequestPayloadObservation.SafeId(command), null, null);
         context.Request.EnableBuffering();
         try
         {
@@ -94,7 +106,9 @@ internal sealed class GameSecurityRequestMiddleware(RequestDelegate next, ILogge
                 read += count;
             }
             if (read > options.MaximumBodyBytes) return new(null, "oversize-omitted", GameRequestPayloadObservation.SafeId(command), null, null);
-            return GameRequestPayloadObservation.Parse(bytes.AsMemory(0, read), command);
+            context.Items[ExactBodyDigestKey] = Convert.ToHexString(SHA256.HashData(bytes.AsSpan(0, read)));
+            return isJson ? GameRequestPayloadObservation.Parse(bytes.AsMemory(0, read), command)
+                : new(null, "non-json-omitted", GameRequestPayloadObservation.SafeId(command), null, null);
         }
         finally { context.Request.Body.Position = 0; }
     }

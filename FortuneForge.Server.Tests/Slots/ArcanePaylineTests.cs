@@ -80,16 +80,14 @@ public sealed class ArcanePaylineTests
         string version, SlotPaylineMatchMode mode, int multiplierThousandths, int scribeTripleMultiplier, bool hasStrongerMandrake)
     {
         var potion = new ArcanePotionBottle(1, "MANDRAKE_ROOT", 0);
-        var request = new PaidSlotOutcomeRequest(Guid.NewGuid(), ArcaneArchivesEngine.GameId, "arcane-payline-test",
-            Wager, false, false, 0, null, 0, null)
-        {
-            Arcane = new(version, true, new(potion.Id, potion.IngredientId, potion.Potency))
-        };
+        var options = new PaidArcaneSpinOptions(version, true, new(potion.Id, potion.IngredientId, potion.Potency));
+        var request = options.WriteTo(new(Guid.NewGuid(), ArcaneArchivesEngine.GameId, "arcane-payline-test",
+            Wager, false, false, 0, null, 0, null));
         var worker = new ArcanePaidSlotOutcomes(new SeededRandom());
         var response = worker.Resolve(request);
         var outcome = response.Outcome.Deserialize<ClassicSlotSpinOutcome>(new JsonSerializerOptions(JsonSerializerDefaults.Web));
         Assert.NotNull(outcome);
-        Assert.Equal(PaidSlotOutcomeProtocol.ArcaneSlotKind, response.OutcomeKind);
+        Assert.Equal(ArcanePaidSlotOutcomes.OutcomeKind, response.OutcomeKind);
         Assert.Equal(version, outcome.Audit.EngineVersion);
         Assert.Equal(mode, outcome.Audit.BaseGame.Matching.PaylineMatchMode);
         Assert.Equal(multiplierThousandths / 1_000m, outcome.Audit.BaseGame.Math.PayoutMultiplier);

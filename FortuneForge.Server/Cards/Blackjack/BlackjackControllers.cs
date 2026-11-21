@@ -1,7 +1,7 @@
 using FortuneForge.Server.GameWorkers;
+using FortuneForge.Games.Abstractions.Wallet;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Security;
-using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -10,11 +10,9 @@ namespace FortuneForge.Server.Cards.Blackjack;
 [ApiController]
 [Route("api/cards/blackjack")]
 public sealed class BlackjackController(
-    FirestoreDb database,
     AccountService accountService,
     IConfiguration configuration,
-    ILogger<BlackjackController> logger,
-    GameWorkerClient? gameWorker = null) : ControllerBase
+    ILogger<BlackjackController> logger) : ControllerBase
 {
     [HttpGet("status")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
@@ -107,7 +105,7 @@ public sealed class BlackjackController(
         }
     }
 
-    private BlackjackService Service() => new(new FirestoreBlackjackStore(database, gameWorker));
+    private BlackjackService Service() => throw new GameWalletUnavailableException();
 
     private ActionResult? Disabled() => IsEnabled(configuration)
         ? null
@@ -167,6 +165,7 @@ internal static class BlackjackHttp
                     error = exception.Message
                 });
             case GameWorkerUnavailableException:
+            case GameWalletUnavailableException:
                 return controller.StatusCode(StatusCodes.Status503ServiceUnavailable, new
                 {
                     code = "game-worker-unavailable",

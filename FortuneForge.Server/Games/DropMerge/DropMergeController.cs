@@ -1,3 +1,4 @@
+using FortuneForge.Games.DropMerge;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
@@ -17,8 +18,8 @@ public sealed class DropMergeController(DropMergeGameService games, AccountServi
 
     [HttpPost("games")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public async Task<ActionResult> Start(StartDropMergeRequest? request, CancellationToken cancellationToken) =>
-        await WithAccountAsync(cancellationToken, async account => Ok(await games.StartAuditedAsync(account.UserId, request?.Seed, cancellationToken)));
+    public ActionResult Start(StartDropMergeRequest? request, CancellationToken cancellationToken) =>
+        StatusCode(StatusCodes.Status503ServiceUnavailable, DropMergeErrors.WorkerUnavailable());
 
     [HttpGet("games/{gameId:guid}")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
@@ -40,40 +41,37 @@ public sealed class DropMergeController(DropMergeGameService games, AccountServi
     public async Task<ActionResult> Reset(Guid gameId, StartDropMergeRequest? request, CancellationToken cancellationToken) =>
         await WithAccountAsync(cancellationToken, account => ExecuteAsync(() => games.ResetAuditedAsync(account.UserId, gameId, request?.Seed, cancellationToken)));
 
-    private async Task<ActionResult> WithAccount(CancellationToken cancellationToken, Func<AccountSummary, ActionResult> action)
-    {
-        var account = await accounts.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken);
-        return account.Value is null
-            ? Unauthorized(new DropMergeErrorResponse("drop-merge-authentication-required", "Sign in to play Drop Merge."))
-            : action(account.Value);
-    }
+    private Task<ActionResult> WithAccount(CancellationToken cancellationToken, Func<AccountSummary, ActionResult> action) =>
+        WithAccountAsync(cancellationToken, account => Task.FromResult(action(account)));
 
     private async Task<ActionResult> WithAccountAsync(CancellationToken cancellationToken, Func<AccountSummary, Task<ActionResult>> action)
     {
         var account = await accounts.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken);
         if (account.Value is null)
-            return Unauthorized(new DropMergeErrorResponse("drop-merge-authentication-required", "Sign in to play Drop Merge."));
+            return Unauthorized(DropMergeErrors.AuthenticationRequired());
+        if (!GameAccountBinding.Matches(Request, account.Value.UserId))
+            return StatusCode(StatusCodes.Status403Forbidden, GameAccountBinding.SessionChanged);
         try { return await action(account.Value); }
-        catch (GameWorkerUnavailableException exception)
+        catch (GameWorkerUnavailableException)
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                new DropMergeErrorResponse("drop-merge-worker-unavailable", exception.Message));
+                DropMergeErrors.WorkerUnavailable());
         }
     }
 
     private async Task<ActionResult> ExecuteAsync(Func<Task<DropMergeGameResponse>> action)
     {
         try { return Ok(await action()); }
-        catch (DropMergeAccessException exception) { return NotFound(new DropMergeErrorResponse("drop-merge-game-not-found", exception.Message)); }
+        catch (DropMergeAccessException exception) { return NotFound(DropMergeErrors.GameNotFound(exception)); }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
-        { return BadRequest(new DropMergeErrorResponse("drop-merge-invalid-action", exception.Message)); }
+        { return BadRequest(DropMergeErrors.InvalidAction(exception.Message)); }
     }
 
     private ActionResult Execute(Func<DropMergeGameResponse> action)
     {
         try { return Ok(action()); }
-        catch (DropMergeAccessException exception) { return NotFound(new DropMergeErrorResponse("drop-merge-game-not-found", exception.Message)); }
+        catch (DropMergeAccessException exception) { return NotFound(DropMergeErrors.GameNotFound(exception)); }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
-        { return BadRequest(new DropMergeErrorResponse("drop-merge-invalid-action", exception.Message)); }
+        { return BadRequest(DropMergeErrors.InvalidAction(exception.Message)); }
     }
 }

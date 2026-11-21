@@ -1,4 +1,5 @@
 using FortuneForge.Server.Accounts.Models;
+using FortuneForge.Games.NeonNights.Server;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Models;
@@ -32,23 +33,22 @@ public sealed partial class FirestoreAccountStore
                 [guardReference, balanceReference], cancellationToken);
             var guard = snapshots[0];
             var balance = snapshots[1];
-            if (ReadLong(balance, "available") != 0 ||
-                ReadNeonDiscoSpinsRemaining(guard) != 0 ||
+            if (ReadString(guard, NeonCarRespinStore.WorkerOwnerField) is not null ||
+                ReadLong(balance, "available") != 0 ||
+                NeonDiscoRoundState.ReadSpinsRemaining(field => ReadNeonDiscoField(guard, field)) != 0 ||
                 ReadPendingNeonNitroChoice(guard) is not null ||
                 !string.IsNullOrEmpty(ReadString(guard, "activeAdmissionId")))
                 return false;
 
             if (discoBall)
             {
-                transaction.Set(guardReference, new Dictionary<string, object>
+                var guardData = new Dictionary<string, object>
                 {
                     ["userId"] = userId,
-                    ["neonDiscoSpinsRemaining"] = NeonArcadeSlotDefinitions.DiscoPlaySpins,
-                    ["neonDiscoWagerPoints"] = wagerPoints,
-                    ["neonDiscoMultiplier"] = NeonDiscoCascade.InitialMultiplier,
-                    ["neonDiscoRoundWinPoints"] = 0L,
                     ["updatedAt"] = Timestamp.FromDateTime(grantedAt)
-                }, SetOptions.MergeAll);
+                };
+                NeonDiscoRoundState.Grant(wagerPoints).WriteGuard(guardData);
+                transaction.Set(guardReference, guardData, SetOptions.MergeAll);
                 return true;
             }
 
@@ -64,19 +64,18 @@ public sealed partial class FirestoreAccountStore
                 transaction.Create(balanceReference,
                     BalanceData(userId, currencyId, remaining, grantedAt));
 
-            transaction.Set(guardReference, new Dictionary<string, object>
+            var featureMode = arcadeRows ? NeonArcadeBonus.PaidCarFeatureMode : string.Empty;
+            var grantGuardData = new Dictionary<string, object>
             {
                 ["userId"] = userId,
                 ["freeSpinWagerPoints"] = wagerPoints,
                 ["freeSpinWagerCents"] = RandMoney.PointsToCents(wagerPoints, pointValueInCents),
-                ["freeSpinFeatureMode"] = arcadeRows ? NeonArcadeBonus.PaidCarFeatureMode : string.Empty,
+                ["freeSpinFeatureMode"] = featureMode,
                 ["freeSpinMathModelId"] = string.Empty,
-                ["neonCarRespinRoundId"] = arcadeRows ? receiptReference.Id : string.Empty,
-                ["neonCarRespinSourceSpinId"] = string.Empty,
-                ["neonCarRespinOfferJson"] = string.Empty,
-                ["neonCarRoundWinPoints"] = 0L,
                 ["updatedAt"] = Timestamp.FromDateTime(grantedAt)
-            }, SetOptions.MergeAll);
+            };
+            NeonCarRoundState.Start(receiptReference.Id, featureMode).WriteGuard(grantGuardData);
+            transaction.Set(guardReference, grantGuardData, SetOptions.MergeAll);
             transaction.Create(receiptReference, BalanceTransactionData(
                 receiptReference.Id, userId, currencyId, remaining, remaining,
                 "admin-neon-special-plays", receiptReference.Id, grantedAt));

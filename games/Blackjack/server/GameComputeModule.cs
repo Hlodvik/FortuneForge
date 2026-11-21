@@ -1,15 +1,16 @@
 using FortuneForge.Games.Hosting;
+using Microsoft.AspNetCore.Builder;
 using System.Security.Cryptography;
 using FortuneForge.Games.Abstractions;
 using FortuneForge.Games.Blackjack;
 
 namespace FortuneForge.Games.GameCompute.Server;
 
-internal static class GameComputeModule
+public static class GameComputeModule
 {
     internal static GameDescriptor Descriptor => BlackjackModule.Descriptor;
 
-    internal static void Map(WebApplication app)
+    public static void Map(WebApplication app)
     {
         app.MapGameAction("/internal/v1/solo/deal", (SoloDealRequest request) =>
         {

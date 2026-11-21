@@ -1,6 +1,11 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Abstractions.Wallet;
+using FortuneForge.Games.Firestore;
+using FortuneForge.Games.Hosting;
 using FortuneForge.Games.Solitaire;
+using FortuneForge.Server.Accounts.Wallet;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Cards.Solitaire;
@@ -10,6 +15,9 @@ internal static class SolitaireFinancialAudit
 {
     private const string HouseFundedModel = "house-funded-bot-pool-v1";
     private const string Currency = "slotsCredits";
+    private const string BatchOwner = "solitaire-package-v1";
+    private const string GuardCollection = "solitaireCommandGuards";
+    private static readonly JsonSerializerOptions PlanJson = new(JsonSerializerDefaults.Web);
 
     internal static bool Supports(RoundAuditSummary summary) =>
         summary.GameId == "solitaire" && summary.AuditorVersion == CompetitiveSolitaireRoundAudit.Version;
@@ -178,8 +186,13 @@ internal static class SolitaireFinancialAudit
                     findings.Add(Error("solitaire-financial-ticket-mismatch", $"The paid ticket {ticketId} is absent or differs from the saved match seat."));
                 var buyinId = $"{ticketId}-buyin";
                 var buyin = await database.Collection("balanceTransactions").Document(buyinId).GetSnapshotAsync(ct);
-                if (!LedgerMatches(buyin, buyinId, userId, -match.BuyInCents, "solitaire-buyin") ||
-                    Time(buyin, "createdAt") != match.JoinedAtUtc[seat])
+                var joinGuard = await database.Collection(GuardCollection).Document(ticketId).GetSnapshotAsync(ct);
+                var joinedAt = match.JoinedAtUtc[seat];
+                var buyinValid = HasWalletOwner(joinGuard)
+                    ? !buyin.Exists && await BatchMatchesAsync(database, joinGuard, userId, "join", ticketId,
+                        $"solitaireTickets/{ticketId}", null, joinedAt, match.BuyInCents, 0, ct)
+                    : LedgerMatches(buyin, buyinId, userId, -match.BuyInCents, "solitaire-buyin") && Time(buyin, "createdAt") == joinedAt;
+                if (!buyinValid)
                     findings.Add(Error("solitaire-financial-buyin-ledger-mismatch", $"The account-backed buy-in ledger for ticket {ticketId} is absent or differs from its stake."));
                 var refund = await database.Collection("balanceTransactions").Document($"{ticketId}-refund").GetSnapshotAsync(ct);
                 if (refund.Exists)
@@ -225,10 +238,21 @@ internal static class SolitaireFinancialAudit
                 else if (status == SolitaireClaimStatuses.Completed)
                 {
                     var claimedAt = Time(result, "claimedAt");
-                    if (claimedAt is null || claimedAt < match.CompletedAtUtc ||
-                        string.IsNullOrWhiteSpace(Text(result, "claimIdempotencyKey")))
+                    var claimKey = Text(result, "claimIdempotencyKey");
+                    if (claimedAt is null || claimedAt < match.CompletedAtUtc || string.IsNullOrWhiteSpace(claimKey))
+                    {
                         findings.Add(Error("solitaire-financial-claim-state-mismatch", $"The claim state for {player.UserId} lacks a valid claim time or command key."));
-                    if (player.PayoutCents > 0)
+                        continue;
+                    }
+                    var operationId = FirestoreCompetitiveSolitaireStore.CreateLookupKey($"{player.UserId}\n{claimKey}");
+                    var claimGuard = await database.Collection(GuardCollection).Document(operationId).GetSnapshotAsync(ct);
+                    if (HasWalletOwner(claimGuard))
+                    {
+                        if (claim.Exists || !await BatchMatchesAsync(database, claimGuard, player.UserId, "claim", match.MatchId,
+                            $"cardGameResults/{resultId}", claimKey, claimedAt, 0, player.PayoutCents, ct))
+                            findings.Add(Error("solitaire-financial-claim-ledger-mismatch", $"The claimed award for {player.UserId} has no matching wallet batch."));
+                    }
+                    else if (player.PayoutCents > 0)
                     {
                         expectedClaims.Add(claimId);
                         var type = match.AdmissionClosesAtUtc is not null && match.PlayerIds.Count == 1
@@ -237,7 +261,7 @@ internal static class SolitaireFinancialAudit
                                 ? "solitaire-test-refund-claim" : "solitaire-winner-payout-claim";
                         if (!LedgerMatches(claim, claimId, player.UserId, player.PayoutCents, type) ||
                             Time(claim, "createdAt") != claimedAt ||
-                            Text(claim, "idempotencyKey") != Text(result, "claimIdempotencyKey"))
+                            Text(claim, "idempotencyKey") != claimKey)
                             findings.Add(Error("solitaire-financial-claim-ledger-mismatch", $"The claimed award for {player.UserId} has no matching wallet credit."));
                     }
                     else if (claim.Exists)
@@ -257,6 +281,72 @@ internal static class SolitaireFinancialAudit
             ArgumentException or ArithmeticException or FormatException or OverflowException or IndexOutOfRangeException)
         {
             return [Error("solitaire-financial-evidence-invalid", "The paid Solitaire financial receipt cannot be parsed for independent reconciliation.")];
+        }
+    }
+
+    private static bool HasWalletOwner(DocumentSnapshot guard) => guard.Exists &&
+        (guard.ContainsField("backendOwner") || guard.ContainsField("walletBatchId") || guard.ContainsField("walletOperationId"));
+
+    private static async Task<bool> BatchMatchesAsync(FirestoreDb database, DocumentSnapshot guard, string userId,
+        string operation, string target, string targetPath, string? sourceKey, DateTime? occurredAt,
+        long wager, long payout, CancellationToken ct)
+    {
+        try
+        {
+            var gameId = CompetitiveSolitaireEndpoints.GameId;
+            var id = guard.Id;
+            if (occurredAt is null || Text(guard, "backendOwner") != BatchOwner || Text(guard, "walletOperationId") != id ||
+                Text(guard, "walletBatchId") != GameWalletBatchIdentity.CreateId(gameId, id) || Text(guard, "userId") != userId ||
+                Text(guard, "operation") != operation || Text(guard, "targetId") != target || Time(guard, "createdAt") != occurredAt)
+                return false;
+
+            var entry = await database.Collection(FirestoreCompetitiveSolitaireStore.FinancialOperations).Document(id).GetSnapshotAsync(ct);
+            var json = Text(entry, "payloadJson");
+            var digest = GameSecurityEventDocuments.Hash(json);
+            if (!entry.Exists || Text(entry, "payloadSha256") != digest || Text(entry, "stage") is not ("published" or "complete") ||
+                Long(entry, "schemaVersion") != 1 || Text(entry, "userId") != userId || Text(entry, "operation") != operation)
+                return false;
+
+            var plan = JsonSerializer.Deserialize<SolitaireFinancialPlan>(json, PlanJson);
+            var receipt = JsonSerializer.Deserialize<GameWalletBatchReceipt>(Text(entry, "walletJson"), PlanJson);
+            if (plan is null || receipt is not { BatchDeclined: false, WasAlreadySettled: false } ||
+                plan.Id != id || plan.AccountId != userId || plan.Operation != operation || plan.Target != target ||
+                plan.Detail != Text(guard, "detail") || string.IsNullOrWhiteSpace(plan.Key) ||
+                sourceKey is not null && plan.Key != sourceKey ||
+                FirestoreCompetitiveSolitaireStore.CreateLookupKey($"{userId}\n{plan.Key}") != id ||
+                plan.PreparedAtUtc.Kind != DateTimeKind.Utc || Math.Abs((plan.PreparedAtUtc - occurredAt.Value).Ticks) >= TimeSpan.TicksPerMicrosecond ||
+                plan.WagerCents != wager || plan.PayoutCents != payout ||
+                plan.Observation is { } observation && (observation.UserId != userId || observation.GameId != gameId))
+                return false;
+
+            var frozenGuard = plan.Writes.SingleOrDefault(write => write?.Path == $"{GuardCollection}/{id}");
+            var targetWrite = plan.Writes.SingleOrDefault(write => write?.Path == targetPath);
+            if (frozenGuard is not { Mode: "create" } || targetWrite is null ||
+                targetWrite.Mode != (operation == "join" ? "create" : "update")) return false;
+            var fields = FirestoreFieldCodec.Deserialize(frozenGuard.Fields);
+            if (!Equals(fields.GetValueOrDefault("userId"), userId) || !Equals(fields.GetValueOrDefault("targetId"), target) ||
+                !Equals(fields.GetValueOrDefault("operation"), operation) || !Equals(fields.GetValueOrDefault("detail"), plan.Detail))
+                return false;
+            var targetFields = FirestoreFieldCodec.Deserialize(targetWrite.Fields);
+            if (operation == "join"
+                ? !Equals(targetFields.GetValueOrDefault("ticketId"), target) ||
+                    !Equals(targetFields.GetValueOrDefault("userId"), userId) || !Equals(targetFields.GetValueOrDefault("buyInCents"), wager)
+                : !Equals(targetFields.GetValueOrDefault("claimStatus"), SolitaireClaimStatuses.Completed) ||
+                    !Equals(targetFields.GetValueOrDefault("claimIdempotencyKey"), sourceKey))
+                return false;
+
+            var request = new GameWalletBatchRequest(id, digest, [new(userId, wager, payout)]);
+            if (!GameWalletBatchVerifier.MatchesSettlement(receipt, gameId, userId, request)) return false;
+            var bodyHash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(request, GameWalletAuthentication.WireJson)));
+            var canonical = await new GameWalletBatchFirestoreStore(database).SettleAsync(gameId, userId, request,
+                bodyHash, receipt.SettledAtUtc, ct, requireExisting: true);
+            return canonical.BatchId == receipt.BatchId && canonical.ActorAccountId == receipt.ActorAccountId &&
+                canonical.SettledAtUtc == receipt.SettledAtUtc && canonical.BatchDeclined == receipt.BatchDeclined &&
+                canonical.Accounts.SequenceEqual(receipt.Accounts);
+        }
+        catch (Exception error) when (error is JsonException or ArgumentException or InvalidOperationException or FormatException or ArithmeticException)
+        {
+            return false;
         }
     }
 

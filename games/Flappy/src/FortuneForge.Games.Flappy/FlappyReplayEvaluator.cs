@@ -15,22 +15,7 @@ public static class FlappyReplayEvaluator
 
     public static FlappyReplayResult Evaluate(uint seed, FlappyReplay replay)
     {
-        ArgumentNullException.ThrowIfNull(replay);
-        if (replay.TotalTicks is < 1 or > MaximumTicks)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(replay),
-                $"A Flappy replay must contain between 1 and {MaximumTicks} ticks.");
-        }
-
-        if (replay.FlapTicks.IsDefault || replay.FlapTicks.Length > MaximumFlaps)
-        {
-            throw new ArgumentException(
-                $"A Flappy replay must contain no more than {MaximumFlaps} flaps.",
-                nameof(replay));
-        }
-
-        ValidateFlapTicks(replay);
+        ValidateReplayInput(replay);
 
         var state = FlappyEngine.Start(seed);
         var flapIndex = 0;
@@ -58,6 +43,26 @@ public static class FlappyReplayEvaluator
         return new FlappyReplayResult(
             FlappyEngine.ToSnapshot(state),
             replay.FlapTicks);
+    }
+
+    public static void ValidateReplayInput(FlappyReplay replay)
+    {
+        ArgumentNullException.ThrowIfNull(replay);
+        if (replay.TotalTicks is < 1 or > MaximumTicks)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(replay),
+                $"A Flappy replay must contain between 1 and {MaximumTicks} ticks.");
+        }
+
+        if (replay.FlapTicks.IsDefault || replay.FlapTicks.Length > MaximumFlaps)
+        {
+            throw new ArgumentException(
+                $"A Flappy replay must contain no more than {MaximumFlaps} flaps.",
+                nameof(replay));
+        }
+
+        ValidateFlapTicks(replay);
     }
 
     private static void ValidateFlapTicks(FlappyReplay replay)

@@ -27,5 +27,5 @@ export function activeMidnightWager(state: MidnightState, selectedWager: number)
 }
 
 export function midnightRows(state: MidnightState) {
-  return state.freeSpinFeatureMode === 'rows-paw' && state.freeSpinsRemaining > 0 ? 6 : 4
+  return state.freeSpinsRemaining > 0 && state.freeSpinFeatureMode?.split('-').some(mode => mode.trim() === 'rows') ? 6 : 4
 }

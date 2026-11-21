@@ -27,7 +27,7 @@ public sealed class CasinoWarContractTests
     [Fact]
     public async Task DisabledFeature_ReturnsServiceUnavailableBeforeAccountOrStoreAccess()
     {
-        var controller = new CasinoWarController(null!, null!, new ConfigurationBuilder().Build(), NullLogger<CasinoWarController>.Instance);
+        var controller = new CasinoWarController(null!, new ConfigurationBuilder().Build(), NullLogger<CasinoWarController>.Instance);
         var responses = new ActionResult[]
         {
             await controller.Status(CancellationToken.None),
@@ -41,6 +41,29 @@ public sealed class CasinoWarContractTests
             var unavailable = Assert.IsType<ObjectResult>(response);
             Assert.Equal(StatusCodes.Status503ServiceUnavailable, unavailable.StatusCode);
             Assert.Equal("casino-war-disabled", Assert.IsType<CasinoWarErrorResponse>(unavailable.Value).Code);
+        });
+    }
+
+    [Fact]
+    public async Task PaidHostFallbackFailsClosedBeforeAccountOrStoreAccess()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Features:CasinoWarEnabled"] = "true",
+        }).Build();
+        var controller = new CasinoWarController(null!, configuration, NullLogger<CasinoWarController>.Instance);
+        var responses = new ActionResult[]
+        {
+            await controller.Status(CancellationToken.None),
+            await controller.Start(new CreateCasinoWarRoundRequest(1m, 0m), "casino-war-start-0001", CancellationToken.None),
+            await controller.Get(new string('a', 64), CancellationToken.None),
+            await controller.Decide(new string('a', 64), new DecideCasinoWarRoundRequest("surrender"), "casino-war-decision-0001", CancellationToken.None),
+        };
+        Assert.All(responses, response =>
+        {
+            var unavailable = Assert.IsType<ObjectResult>(response);
+            Assert.Equal(StatusCodes.Status503ServiceUnavailable, unavailable.StatusCode);
+            Assert.Equal("casino-war-worker-required", Assert.IsType<CasinoWarErrorResponse>(unavailable.Value).Code);
         });
     }
 

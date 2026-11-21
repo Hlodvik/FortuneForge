@@ -2,8 +2,11 @@ namespace FortuneForge.Games.NeonNights;
 
 public sealed record NeonDemoEngineRequest(
     long WagerPoints,
-    int PityMissesBefore,
+    int? PityMissesBefore,
     bool IsFreeSpin,
     string? FeatureMode,
     bool IsDiscoPlay,
-    int DiscoMultiplier);
+    int DiscoMultiplier)
+{
+    public long EnergyBalance => 0;
+}

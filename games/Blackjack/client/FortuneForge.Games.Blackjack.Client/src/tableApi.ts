@@ -1,4 +1,5 @@
 import type { CardRank, CardSuit, PlayingCardModel } from '@fortuneforge/client-presentation'
+import { createGameCommandRecovery, type GameCommandRecoveryOptions, type PendingGameCommand } from '@fortuneforge/client-presentation/game-command-recovery'
 
 const basePath = '/api/cards/blackjack/table'
 const contractVersion = 'cards.blackjack.table.v2'
@@ -190,7 +191,16 @@ export function stableBlackjackTableMutation(
 export function createBlackjackTableApi(
   fetchWithAccountSession: typeof fetch,
   isPublicResponse?: (value: unknown) => boolean,
+  recoveryOptions?: Omit<GameCommandRecoveryOptions, 'gameId' | 'routePrefix'>,
 ) {
+  const recovery = recoveryOptions && createGameCommandRecovery({
+    ...recoveryOptions, gameId: 'blackjack', routePrefix: basePath,
+  })
+  const send: typeof fetch = (input, init) => {
+    const headers = new Headers(init?.headers)
+    if (recoveryOptions) headers.set('X-FortuneForge-Expected-Account', recoveryOptions.accountId)
+    return fetchWithAccountSession(input, { ...init, headers })
+  }
   async function readResponse<T>(
     response: Response,
     validator: (value: unknown) => value is T,
@@ -212,21 +222,21 @@ export function createBlackjackTableApi(
   }
 
   async function getBlackjackTableStatus(signal?: AbortSignal): Promise<BlackjackTableStatus> {
-    const response = await fetchWithAccountSession(`${basePath}/status`, {
+    const response = await send(`${basePath}/status`, {
       method: 'GET', cache: 'no-store', signal,
     })
     return readResponse(response, isBlackjackTableStatus, 'Blackjack table status')
   }
 
   async function getBlackjackTableSession(signal?: AbortSignal): Promise<BlackjackTableSession> {
-    const response = await fetchWithAccountSession(`${basePath}/session`, {
+    const response = await send(`${basePath}/session`, {
       method: 'GET', cache: 'no-store', signal,
     })
     return readResponse(response, isBlackjackTableSession, 'Blackjack table session')
   }
 
   async function getBlackjackTableSnapshot(signal?: AbortSignal): Promise<BlackjackTableMutationResponse> {
-    const response = await fetchWithAccountSession(`${basePath}/snapshot`, {
+    const response = await send(`${basePath}/snapshot`, {
       method: 'GET', cache: 'no-store', signal,
     })
     return readResponse(response, isBlackjackTableMutation, 'Blackjack table snapshot')
@@ -236,7 +246,7 @@ export function createBlackjackTableApi(
     limit = 20,
     signal?: AbortSignal,
   ): Promise<readonly BlackjackTableHistoryItem[]> {
-    const response = await fetchWithAccountSession(`${basePath}/history?limit=${encodeURIComponent(limit)}`, {
+    const response = await send(`${basePath}/history?limit=${encodeURIComponent(limit)}`, {
       method: 'GET', cache: 'no-store', signal,
     })
     return readResponse(response, isBlackjackTableHistory, 'Blackjack table history')
@@ -245,7 +255,7 @@ export function createBlackjackTableApi(
   async function markBlackjackTableHistorySeen(
     resultId: string,
   ): Promise<BlackjackTableHistoryItem> {
-    const response = await fetchWithAccountSession(
+    const response = await send(
       `${basePath}/history/${encodeURIComponent(resultId)}/seen`,
       { method: 'POST' },
     )
@@ -332,15 +342,41 @@ export function createBlackjackTableApi(
     body: Record<string, unknown>,
     idempotencyKey: string,
   ): Promise<BlackjackTableMutationResponse> {
-    return fetchWithAccountSession(`${basePath}${suffix}`, {
-      method,
-      headers: new Headers({ 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey }),
-      body: JSON.stringify(body),
-    }).then((response) => readResponse(response, isBlackjackTableMutation, 'Blackjack table mutation'))
+    const path = `${basePath}${suffix}`
+    const serialized = JSON.stringify(body)
+    const command = recovery?.prepare(path, serialized) ?? { path, body: serialized, idempotencyKey }
+    return sendMutation(command, method)
+  }
+
+  async function sendMutation(command: PendingGameCommand, method: 'POST' | 'DELETE', signal?: AbortSignal): Promise<BlackjackTableMutationResponse> {
+    try {
+      const response = await send(command.path, {
+        method, signal,
+        headers: new Headers({ 'Content-Type': 'application/json', 'Idempotency-Key': command.idempotencyKey }),
+        body: command.body,
+      })
+      const mutation = await readResponse(response, isBlackjackTableMutation, 'Blackjack table mutation')
+      recovery?.complete(command, mutation.session.kind === 'table' ? mutation.session.table.tableId : null)
+      return mutation
+    } catch (error) {
+      if (error instanceof BlackjackTableRequestError && (error.status === 400 ||
+          error.code === 'insufficient-slot-credits' || error.code === 'blackjack-table-state-conflict' ||
+          error.code === 'illegal-blackjack-action' || error.code === 'blackjack-table-disabled')) recovery?.complete(command)
+      throw error
+    }
+  }
+
+  async function recoverBlackjackTableMutation(signal?: AbortSignal): Promise<BlackjackTableMutationResponse | null> {
+    const command = recovery?.read().pending
+    if (!command) return null
+    // Queue cancellation is the only DELETE mutation in the existing table contract.
+    const method = command.path.startsWith(`${basePath}/queue/`) ? 'DELETE' : 'POST'
+    return sendMutation(command, method, signal)
   }
 
   return {
     getBlackjackTableStatus,
+    recoverBlackjackTableMutation,
     getBlackjackTableSession,
     getBlackjackTableSnapshot,
     getBlackjackTableHistory,
@@ -355,7 +391,7 @@ export function createBlackjackTableApi(
 }
 
 export function isUncertainBlackjackTableFailure(error: unknown): boolean {
-  return !(error instanceof BlackjackTableRequestError) || error.status >= 500
+  return !(error instanceof BlackjackTableRequestError) || error.status >= 500 && error.code !== 'blackjack-table-disabled'
 }
 
 export function toBlackjackTablePlayingCard(

@@ -8,6 +8,7 @@
     ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
     "./money": { "types": "./dist/formatMoney.d.ts", "import": "./dist/formatMoney.js" },
     "./game-experience": { "types": "./dist/GameExperienceContext.d.ts", "import": "./dist/GameExperienceContext.js" },
+    "./game-command-recovery": { "types": "./dist/gameCommandRecovery.d.ts", "import": "./dist/gameCommandRecovery.js" },
     "./slots/paylines": { "types": "./dist/slots/WinningPaylines.d.ts", "import": "./dist/slots/WinningPaylines.js" }
   },
   "scripts": {

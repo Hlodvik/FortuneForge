@@ -22,6 +22,11 @@ public sealed class GodsOfOlympusEngine
             new ClassicSlotEngineOptions { AllowFreeSpinCarryWager = true });
     }
 
+    public static decimal WagerPointValueInCents => Definitions.Game.Wagering.PointValueInCents;
+    public static long MinimumWagerPoints => Definitions.Game.Wagering.MinimumWagerPoints;
+    public static void ValidateWager(long wagerPoints, bool isFreeSpin) =>
+        ClassicSlotEngine.ValidateWager(Definitions.Game, wagerPoints, allowCarryWager: isFreeSpin);
+
     public ClassicSlotSpinOutcome Spin(long wagerPoints, string playerId,
         bool specialBoostApplied = false, long currentEnergyBalance = 0,
         string? featureMode = null, int? persistedPityMisses = null,
@@ -31,7 +36,7 @@ public sealed class GodsOfOlympusEngine
     public GodsOfOlympusTumbleSpinOutcome SpinTumble(long wagerPoints,
         bool showcase = false, string engineVersion = EngineVersion)
     {
-        classic.ValidateWager(wagerPoints);
+        ValidateWager(wagerPoints, isFreeSpin: false);
         var draws = new List<int>();
         var outcome = OlympusTumbleRules.Resolve(engineVersion, wagerPoints, showcase, maximum =>
         {
@@ -39,8 +44,7 @@ public sealed class GodsOfOlympusEngine
             if (value < 0 || value >= maximum) throw new InvalidOperationException("Invalid random index.");
             draws.Add(value); return value;
         });
-        return new(Guid.NewGuid(), GameId, engineVersion, wagerPoints,
-            Definitions.Game.Wagering.PointValueInCents, outcome, draws,
+        return new(Guid.NewGuid(), GameId, engineVersion, wagerPoints, WagerPointValueInCents, outcome, draws,
             Definitions.CreateGame());
     }
 

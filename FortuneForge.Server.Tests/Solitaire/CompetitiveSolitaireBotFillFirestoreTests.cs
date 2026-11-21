@@ -407,10 +407,7 @@ public sealed class CompetitiveSolitaireBotFillFirestoreTests
             ProjectId = $"demo-solitaire-{Guid.NewGuid():N}",
             EmulatorDetection = EmulatorDetection.EmulatorOnly
         }.Build();
-        return (database, new FirestoreCompetitiveSolitaireStore(database, new CompetitiveSolitaireOptions
-        {
-            AllowSingleHumanBotFill = allowManagedPlayers
-        }));
+        return (database, CompetitiveSolitaireTestStore.Create(database, allowManagedPlayers));
     }
 
     private static Task<SolitaireStoreSession> JoinAsync(FirestoreCompetitiveSolitaireStore store,
@@ -445,14 +442,7 @@ public sealed class CompetitiveSolitaireBotFillFirestoreTests
     }
 
     private static Task SeedBalanceAsync(FirestoreDb database, string userId) =>
-        database.Collection("userBalances").Document($"{userId}_slotsCredits").SetAsync(
-            new Dictionary<string, object>
-            {
-                ["available"] = 100L,
-                ["availableFractionalCents"] = 0L,
-                ["version"] = 1L,
-                ["updatedAt"] = Timestamp.FromDateTime(Start)
-            });
+        CompetitiveSolitaireTestStore.SeedBalanceAsync(database, userId, Start);
 
     private static async Task<long> ReadBalanceAsync(FirestoreDb database, string userId)
     {

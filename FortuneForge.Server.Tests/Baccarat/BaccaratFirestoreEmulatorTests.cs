@@ -1,6 +1,7 @@
 using FortuneForge.Games.Baccarat;
 using FortuneForge.Games.Cards;
 using FortuneForge.Server.Cards.Baccarat;
+using FortuneForge.Server.Tests.Accounts;
 using FortuneForge.Server.Tests.Blackjack.Table;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
@@ -17,17 +18,10 @@ public sealed class BaccaratFirestoreEmulatorTests(BlackjackTableFirestoreEmulat
     {
         var database = CreateDatabase();
         const string userId = "pair-player";
-        await database.Collection("userBalances").Document($"{userId}_slotsCredits")
-            .SetAsync(new Dictionary<string, object>
-            {
-                ["available"] = 100L,
-                ["availableFractionalCents"] = 0L,
-                ["version"] = 1L,
-                ["updatedAt"] = Timestamp.FromDateTime(DateTime.UtcNow),
-            });
+        await SeedBalanceAsync(database, userId);
 
-        var first = new BaccaratService(new BaccaratFirestoreStore(database), TimeProvider.System, PairShoe);
-        var second = new BaccaratService(new BaccaratFirestoreStore(database), TimeProvider.System, PairShoe);
+        var first = CreateService(database);
+        var second = CreateService(database);
         var request = new CreateBaccaratRoundRequest("banker", 0.25m, 0.25m, 0.50m);
         const string key = "baccarat_pair_emulator_0001";
         var settled = await Task.WhenAll(Enumerable.Range(0, 4).Select(index =>
@@ -79,8 +73,7 @@ public sealed class BaccaratFirestoreEmulatorTests(BlackjackTableFirestoreEmulat
         var roundId = BaccaratFirestoreStore.CreateLookupKey($"{userId}\n{key}");
         var dealt = PuntoBancoRoundDealer.Deal(PairShoe());
         var settlement = PuntoBancoPaytable.Settle(BaccaratBetSide.Banker, 10m, dealt);
-        await database.Collection("userBalances").Document($"{userId}_slotsCredits")
-            .SetAsync(new Dictionary<string, object> { ["available"] = 100L, ["availableFractionalCents"] = 0L });
+        await SeedBalanceAsync(database, userId);
         await database.Collection("baccaratRounds").Document(roundId).SetAsync(new Dictionary<string, object>
         {
             ["roundId"] = roundId,
@@ -105,7 +98,7 @@ public sealed class BaccaratFirestoreEmulatorTests(BlackjackTableFirestoreEmulat
         await database.Collection("baccaratRoundEvents").Document($"{roundId}-settled")
             .SetAsync(new Dictionary<string, object> { ["roundId"] = roundId });
 
-        var service = new BaccaratService(new BaccaratFirestoreStore(database), TimeProvider.System, PairShoe);
+        var service = CreateService(database);
         var restored = await service.GetAsync(userId, roundId, CancellationToken.None);
         var replay = await service.StartAsync(userId,
             new CreateBaccaratRoundRequest("banker", 10m), key, CancellationToken.None);
@@ -118,9 +111,29 @@ public sealed class BaccaratFirestoreEmulatorTests(BlackjackTableFirestoreEmulat
         Assert.Equal(0m, restored.BankerPairStake);
         Assert.Equal(10m, restored.TotalStake);
         Assert.Equal(settlement.TotalReturn, restored.CombinedTotalReturn);
+        Assert.Equal(2, (await database.Collection("balanceTransactions").GetSnapshotAsync()).Count);
+        Assert.Empty((await database.Collection("walletRoundSettlements").GetSnapshotAsync()).Documents);
         await Assert.ThrowsAsync<BaccaratRoundConflictException>(() => service.StartAsync(userId,
             new CreateBaccaratRoundRequest("banker", 10m, 0.25m), key, CancellationToken.None));
     }
+
+    private static BaccaratService CreateService(FirestoreDb database)
+    {
+        var wallet = new GameWalletFirestoreTestClient(database, "baccarat");
+        return new BaccaratService(new BaccaratFirestoreStore(database, wallet, wallet), TimeProvider.System, PairShoe);
+    }
+
+    private static Task SeedBalanceAsync(FirestoreDb database, string userId) =>
+        database.Collection("userBalances").Document($"{userId}_slotsCredits").SetAsync(new Dictionary<string, object>
+        {
+            ["userId"] = userId,
+            ["currencyId"] = "slotsCredits",
+            ["available"] = 100L,
+            ["availableFractionalCents"] = 0L,
+            ["reserved"] = 0L,
+            ["version"] = 1L,
+            ["updatedAt"] = Timestamp.FromDateTime(DateTime.UtcNow),
+        });
 
     private FirestoreDb CreateDatabase() => new FirestoreDbBuilder
     {

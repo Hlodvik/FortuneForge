@@ -10,7 +10,7 @@ import type { AccountSummary } from '../../features/account/services/accountsApi
 import type { AndarBaharCard } from '@fortuneforge/games-andar-bahar'
 import { PlayingCard } from '../../games/cards/shared/PlayingCard'
 
-type GameProps = { playerId: string; gateway: { basePath: string; requestFn: typeof fetch }; onBalanceChange?: (balance: number) => void; renderCardFace?: (card: AndarBaharCard) => ReactNode }
+type GameProps = { playerId: string; gateway: { basePath: string; requestFn: typeof fetch; expectedAccountId?: string }; onBalanceChange?: (balance: number) => void; renderCardFace?: (card: AndarBaharCard) => ReactNode }
 const state = vi.hoisted(() => ({
   account: null as AccountSummary | null, loading: false, error: null as string | null, games: [] as GameProps[],
   shellAccounts: [] as (AccountSummary | undefined)[],
@@ -37,7 +37,8 @@ vi.mock('@fortuneforge/games-andar-bahar', () => ({
   HttpAndarBaharGateway: class {
     basePath: string
     requestFn: typeof fetch
-    constructor(basePath: string, requestFn: typeof fetch) { this.basePath = basePath; this.requestFn = requestFn }
+    expectedAccountId?: string
+    constructor(basePath: string, requestFn: typeof fetch, expectedAccountId?: string) { this.basePath = basePath; this.requestFn = requestFn; this.expectedAccountId = expectedAccountId }
   },
   AndarBaharGame: (props: GameProps) => { state.games.push(props); return <div data-testid="andar-bahar-game" data-player-id={props.playerId} /> },
 }))
@@ -127,6 +128,7 @@ describe('Andar Bahar connected route', () => {
     expect(game().playerId).toBe('first:account')
     expect(game().gateway.basePath).toBe('/api/games/andar-bahar')
     expect(game().gateway.requestFn).toBe(state.fetch)
+    expect(game().gateway.expectedAccountId).toBe('first')
     state.refresh.mockResolvedValue(account('first', 100.45))
     await act(async () => { game().onBalanceChange!(100.45); await Promise.resolve() })
     expect(state.refresh).toHaveBeenCalledOnce()
@@ -157,6 +159,7 @@ describe('Andar Bahar connected route', () => {
     state.account = account('second', 700); render()
     await act(async () => { finish(account('first', 12)); await Promise.resolve() })
     expect(game().playerId).toBe('second:account')
+    expect(game().gateway.expectedAccountId).toBe('second')
     expect(shellAccount().userId).toBe('second')
     expect(shellAccount().balances.slotsCredits).toBe(700)
   })

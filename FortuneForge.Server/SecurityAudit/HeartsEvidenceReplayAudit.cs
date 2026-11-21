@@ -2,9 +2,13 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Abstractions.Wallet;
 using FortuneForge.Games.Cards;
+using FortuneForge.Games.Firestore;
 using FortuneForge.Games.Hearts;
+using FortuneForge.Games.Hosting;
 using FortuneForge.Games.TrickTaking;
+using FortuneForge.Server.Accounts.Wallet;
 using FortuneForge.Server.Games.Hearts;
 using Google.Cloud.Firestore;
 
@@ -210,6 +214,12 @@ internal static class HeartsEvidenceReplayAudit
                     .Select(player => (player, Entry: false,
                         Id: $"{match.Id}-payout-{Hash(player.UserId)}", Amount: player.PayoutCents,
                         Type: "hearts-match-payout"))).ToArray();
+            if (document.RootElement.TryGetProperty(RoundAuditFinancialProof.PropertyName, out var proof))
+            {
+                var expected = ledgers.Where(value => value.Entry || value.Amount > 0).ToDictionary(value => value.Id,
+                    value => new ExpectedWalletEntry(value.player.UserId, value.Type, value.Amount), StringComparer.Ordinal);
+                return await InspectProtectedWalletAsync(database, summary, payloadJson, proof, expected, ct);
+            }
             var reads = await Task.WhenAll(ledgers.Select(value => database.Collection("balanceTransactions")
                 .Document(value.Id).GetSnapshotAsync(ct)));
             for (var index = 0; index < ledgers.Length; index++)
@@ -261,6 +271,125 @@ internal static class HeartsEvidenceReplayAudit
             return Error("hearts-paid-financial-evidence-invalid", "The paid Hearts financial source or ledger cannot be parsed for independent review.");
         }
     }
+
+    private sealed record ExpectedWalletEntry(string Account, string Kind, long Cents);
+
+    private static async Task<IReadOnlyList<RoundAuditFinding>> InspectProtectedWalletAsync(FirestoreDb database,
+        RoundAuditSummary summary, string payload, JsonElement proof, IReadOnlyDictionary<string, ExpectedWalletEntry> expected,
+        CancellationToken token)
+    {
+        try
+        {
+            if (Hash(payload) != summary.EvidenceSha256 ||
+                proof.GetProperty("backendOwner").GetString() != HeartsBackend.Owner ||
+                proof.GetProperty("contractVersion").GetString() != HeartsBackend.FinancialProofContract)
+                return InvalidProtectedWallet();
+
+            var entries = proof.GetProperty("entries").Deserialize<RoundAuditLedgerEntry[]>(RoundAuditCapture.Json);
+            var operations = proof.GetProperty("walletOperations").Deserialize<RoundAuditWalletOperation[]>(RoundAuditCapture.Json);
+            if (entries is null || operations is null) return InvalidProtectedWallet();
+
+            var matched = new HashSet<string>(StringComparer.Ordinal);
+            var signed = new Dictionary<string, RoundAuditLedgerEntry>(StringComparer.Ordinal);
+            var unavailable = false;
+            foreach (var entry in entries)
+            {
+                if (entry is null || entry.RoundReference != summary.RoundId) return InvalidProtectedWallet();
+                if (entry.Provenance == RoundAuditFinancialProof.LegacyHostUnavailable)
+                {
+                    var original = expected.SingleOrDefault(value => value.Value.Account == entry.UserId && value.Value.Cents < 0);
+                    if (original.Value is null || !matched.Add(original.Key) || entry.EvidenceAvailable ||
+                        entry.Collection != "heartsPaidMatches" || entry.DocumentId != summary.RoundId ||
+                        entry.Kind != "legacy-hearts-entry-unavailable" || entry.AmountCents != original.Value.Cents ||
+                        entry.WalletOperationId is not null || entry.WalletSettlementId is not null)
+                        return InvalidProtectedWallet();
+                    unavailable = true;
+                    continue;
+                }
+
+                if (!entry.EvidenceAvailable || !expected.TryGetValue(entry.DocumentId, out var leg) ||
+                    !matched.Add(entry.DocumentId) || entry.UserId != leg.Account || entry.Kind != leg.Kind || entry.AmountCents != leg.Cents)
+                    return InvalidProtectedWallet();
+                if (entry.Provenance == RoundAuditFinancialProof.SignedWallet &&
+                    entry.Collection == FirestorePaidHeartsStore.WalletJournalCollection)
+                    signed.Add(entry.DocumentId, entry);
+                else if (entry.Provenance != RoundAuditFinancialProof.LegacyHost || entry.Collection != "balanceTransactions" ||
+                    entry.WalletOperationId is not null || entry.WalletSettlementId is not null)
+                    return InvalidProtectedWallet();
+            }
+            var hasLegacy = entries.Length > signed.Count;
+            var hasSigned = operations.Length > 0 || signed.Count > 0;
+            var provenance = (hasLegacy, hasSigned) switch
+            {
+                (true, true) => RoundAuditFinancialProof.MixedLegacyAndSignedWallet,
+                (true, false) => RoundAuditFinancialProof.LegacyHost,
+                (false, true) => RoundAuditFinancialProof.SignedWallet,
+                _ => RoundAuditFinancialProof.NoFinancialEvidence,
+            };
+            if (matched.Count != expected.Count || proof.GetProperty("provenance").GetString() != provenance)
+                return InvalidProtectedWallet();
+
+            foreach (var entry in entries.Where(entry => entry.Provenance == RoundAuditFinancialProof.LegacyHost))
+            {
+                var ledger = await database.Collection("balanceTransactions").Document(entry.DocumentId).GetSnapshotAsync(token);
+                if (FirestoreWalletEvidence.Legacy(ledger, summary.RoundId) != entry)
+                    return InvalidProtectedWallet();
+            }
+
+            var accounts = expected.Values.Select(entry => entry.Account).ToHashSet(StringComparer.Ordinal);
+            var seenOperations = new HashSet<string>(StringComparer.Ordinal);
+            var seenSigned = new HashSet<string>(StringComparer.Ordinal);
+            var wallet = new GameWalletBatchFirestoreStore(database);
+            foreach (var operation in operations)
+            {
+                if (operation is null || operation.Collection != FirestorePaidHeartsStore.PreparedCollection ||
+                    !seenOperations.Add(operation.DocumentId) ||
+                    operation.LedgerEvidenceIds is null || operation.ReceiptsByAccount is not { Count: 0 } ||
+                    operation.BatchRequest is not { } request || !GameWalletBatchVerifier.IsValidRequest(request) ||
+                    operation.BatchReceipt is not { BatchDeclined: false, WasAlreadySettled: false } receipt ||
+                    operation.DocumentId != request.OperationId || operation.OutcomeSha256 != request.OutcomeSha256 ||
+                    request.Effects.Any(effect => !accounts.Contains(effect.AccountId)) ||
+                    !GameWalletBatchVerifier.MatchesSettlement(receipt, summary.GameId, receipt.ActorAccountId, request))
+                    return InvalidProtectedWallet();
+
+                var deltas = new List<(string AccountId, long AmountCents)>();
+                foreach (var id in operation.LedgerEvidenceIds)
+                {
+                    if (!seenSigned.Add(id) || !signed.TryGetValue(id, out var entry) ||
+                        entry.WalletOperationId != operation.DocumentId || entry.WalletSettlementId != receipt.BatchId)
+                        return InvalidProtectedWallet();
+                    deltas.Add((entry.UserId, entry.AmountCents));
+                }
+                var effects = GameWalletJournal.Aggregate(deltas.Concat(request.Effects.Select(effect => (effect.AccountId, 0L))))
+                    .Select(balance => new GameWalletBatchEffect(balance.AccountId, Math.Max(0, -balance.NetCents),
+                        Math.Max(0, balance.NetCents), balance.MinimumBalanceBeforeCents > 0 ? balance.MinimumBalanceBeforeCents : null));
+                if (!effects.SequenceEqual(request.Effects)) return InvalidProtectedWallet();
+
+                // Recheck the original platform transaction and its real ledger legs without submitting another mutation.
+                var body = JsonSerializer.SerializeToUtf8Bytes(request, GameWalletAuthentication.WireJson);
+                var digest = Convert.ToHexString(SHA256.HashData(body));
+                var original = await wallet.SettleAsync(summary.GameId, receipt.ActorAccountId, request, digest,
+                    receipt.SettledAtUtc, token, requireExisting: true);
+                if (original.BatchId != receipt.BatchId || original.ActorAccountId != receipt.ActorAccountId ||
+                    !original.SettledAtUtc.EqualsExact(receipt.SettledAtUtc) || original.BatchDeclined || !original.WasAlreadySettled ||
+                    !original.Accounts.SequenceEqual(receipt.Accounts))
+                    return InvalidProtectedWallet();
+            }
+
+            if (seenSigned.Count != signed.Count) return InvalidProtectedWallet();
+            return unavailable ? [new RoundAuditFinding(RoundAuditFinancialProof.UnavailableLegacyEvidenceCode, "warning",
+                "At least one original Hearts wallet entry is unavailable for independent financial verification.")] : [];
+        }
+        catch (Exception exception) when (exception is JsonException or ArgumentException or InvalidOperationException or
+            ArithmeticException or FormatException or KeyNotFoundException or InvalidCastException or
+            GameWalletUnavailableException or GameWalletConflictException)
+        {
+            return InvalidProtectedWallet();
+        }
+    }
+
+    private static IReadOnlyList<RoundAuditFinding> InvalidProtectedWallet() =>
+        Error("hearts-paid-protected-wallet-mismatch", "The frozen Hearts wallet batches or their ledger evidence do not reconcile with this match.");
 
     private static string Text(DocumentSnapshot snapshot, string field) =>
         snapshot.Exists && snapshot.TryGetValue<string>(field, out var value) ? value : "";

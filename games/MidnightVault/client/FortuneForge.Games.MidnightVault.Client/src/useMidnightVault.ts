@@ -18,7 +18,7 @@ import {
 import { createMidnightApi, MidnightRequestError } from './api.js'
 import { MIDNIGHT_VAULT_SOUNDS } from './audio.js'
 import { midnightCabinet, midnightRules, midnightSymbols } from './manifest.js'
-import { activeMidnightWager, emptyMidnightDemoState, emptyMidnightState } from './roundState.js'
+import { activeMidnightWager, emptyMidnightDemoState, emptyMidnightState, midnightRows } from './roundState.js'
 import type {
   MidnightBonusRound,
   MidnightCollectionId,
@@ -82,7 +82,8 @@ function collectionFromRound(round: MidnightBonusRound | undefined): MidnightCol
 
 /** Owns Midnight sequencing; the application host supplies identity, wallet chrome and transport only. */
 export function useMidnightVault({ account, demoMode = false, authenticatedFetch, onSpinStateChange }: MidnightVaultGameProps) {
-  const api = useMemo(() => createMidnightApi(authenticatedFetch), [authenticatedFetch])
+  const accountId = account?.userId
+  const api = useMemo(() => createMidnightApi(authenticatedFetch, accountId), [authenticatedFetch, accountId])
   const reducedMotion = usePrefersReducedMotion()
   const audio = useSlotAudio(MIDNIGHT_VAULT_SOUNDS)
   const [state, setState] = useState<MidnightState>(emptyMidnightState)
@@ -150,24 +151,44 @@ export function useMidnightVault({ account, demoMode = false, authenticatedFetch
   }, [])
   useEffect(() => { onSpinStateChange?.(isSpinning); return () => onSpinStateChange?.(false) }, [isSpinning, onSpinStateChange])
 
+  const restoreState = useCallback((loaded: MidnightState, result?: MidnightSpinResult) => {
+    setState(loaded)
+    if (loaded.slotsCreditsBalance != null) setBalance(loaded.slotsCreditsBalance)
+    if (loaded.freeSpinWagerPoints !== null) {
+      const index = midnightRules.wagerOptions.indexOf(loaded.freeSpinWagerPoints)
+      if (index >= 0) setWagerIndex(index)
+    }
+    const rows = midnightRows(loaded)
+    if (result && result.bonusRound?.id === loaded.bonusRound?.id &&
+      result.freeSpinsRemaining === loaded.freeSpinsRemaining && result.reels[0].length === rows) {
+      setDisplayedReels(result.reels.map(reel => [...reel]))
+      setBestWin(bestPayline(result.payout.paylines))
+      setWinningPaylines(result.payout.paylines)
+      setLastWin(money(result.payout.totalPoints))
+      setHasCompletedSpin(true)
+    } else {
+      setDisplayedReels(current => current.map((reel, index) => normalizedRows(reel, midnightRules.initialReels[index], rows)))
+    }
+  }, [])
+
   useEffect(() => {
     const abort = new AbortController()
     setSpinAvailability('checking')
-    const load = demoMode ? api.availability(abort.signal) : api.state().then(loaded => {
+    const load = demoMode ? api.availability(abort.signal) : api.state().then(async loaded => {
       if (abort.signal.aborted) return
-      setState(loaded)
-      if (loaded.freeSpinWagerPoints !== null) {
-        const index = midnightRules.wagerOptions.indexOf(loaded.freeSpinWagerPoints)
-        if (index >= 0) setWagerIndex(index)
+      restoreState(loaded)
+      try {
+        const recovered = await api.resumeSpin()
+        if (recovered && !abort.signal.aborted) restoreState(recovered.state, recovered.result)
+      } catch (error) {
+        if (!abort.signal.aborted) setSpinError(error instanceof Error ? error.message : 'The saved spin could not be recovered.')
       }
-      const rows = loaded.freeSpinFeatureMode === 'rows-paw' && loaded.freeSpinsRemaining > 0 ? 6 : 4
-      setDisplayedReels(current => current.map((reel, index) => normalizedRows(reel, midnightRules.initialReels[index], rows)))
     })
     void load.then(() => { if (!abort.signal.aborted) setSpinAvailability('available') }, () => {
       if (!abort.signal.aborted) { setSpinAvailability('unavailable'); setIsAutoSpinning(false) }
     })
     return () => abort.abort()
-  }, [api, demoMode])
+  }, [api, demoMode, restoreState])
 
   const { playCue, playSequence, startLoop, stopLoop, stopResultCues, toggleMuted } = audio
   useEffect(() => {
@@ -257,6 +278,22 @@ export function useMidnightVault({ account, demoMode = false, authenticatedFetch
 
   async function handleSpin() {
     if (blocked || busy.current || isSpinning || collectionAwardPresentation || spinAvailability !== 'available') return
+    if (!demoMode && api.pendingSpin()) {
+      busy.current = true
+      setIsSpinning(true)
+      setIsAutoSpinning(false)
+      setSpinError(null)
+      try {
+        const recovered = await api.resumeSpin()
+        if (recovered && mounted.current) restoreState(recovered.state, recovered.result)
+      } catch (error) {
+        if (mounted.current) setSpinError(error instanceof Error ? error.message : 'The saved spin could not be recovered.')
+      } finally {
+        busy.current = false
+        if (mounted.current) setIsSpinning(false)
+      }
+      return
+    }
     const expectedFreeSpin = state.freeSpinsRemaining > 0
     const wagerPoints = activeMidnightWager(state, selectedWagerPoints)
     const wagerRand = money(wagerPoints)
@@ -264,7 +301,7 @@ export function useMidnightVault({ account, demoMode = false, authenticatedFetch
       setIsAutoSpinning(false); setSpinError(null); setIsReloadPromptOpen(true); return
     }
     const fast = isAutoSpinning
-    const expectedRows = expectedFreeSpin && state.freeSpinFeatureMode === 'rows-paw' ? 6 : 4
+    const expectedRows = midnightRows(state)
     const reelsBefore = midnightRules.initialReels.map((fallback, index) => normalizedRows(displayedReels[index] ?? fallback, fallback, expectedRows))
     const optimisticCharge = expectedFreeSpin ? 0 : wagerRand
     const visibleBalanceBeforeAward = balance - optimisticCharge
@@ -375,6 +412,12 @@ export function useMidnightVault({ account, demoMode = false, authenticatedFetch
       else setBalance(current => current + optimisticCharge)
       setSpinError(error instanceof Error ? error.message : 'The spin could not be completed.')
       setBestWin(null); setWinningPaylines([]); setBonusPositions([]); setLastSpinOutcome(null); setWinAward(null)
+      if (!demoMode && error instanceof MidnightRequestError &&
+        (freeUnavailable || error.code === 'free-spins-required' || error.code === 'midnight-vault-free-wager-locked' ||
+          error.code === 'midnight-vault-legacy-free-spins-changed')) {
+        const latest = await api.state().catch(() => null)
+        if (latest && mounted.current) restoreState(latest)
+      }
     } finally {
       stopLoop(spinCue)
       if (mounted.current) {

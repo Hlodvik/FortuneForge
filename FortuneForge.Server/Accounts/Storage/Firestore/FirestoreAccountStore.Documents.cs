@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using FortuneForge.Games.Slots;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Models;
@@ -13,13 +14,13 @@ public sealed partial class FirestoreAccountStore
         database.Collection("users").Document(userId);
 
     private DocumentReference BalanceDocument(string userId, string currencyId) =>
-        database.Collection("userBalances").Document($"{userId}_{currencyId}");
+        FirestoreWalletDocuments.Balance(database, userId, currencyId);
 
     private DocumentReference CurrencyDocument(string currencyId) =>
         database.Collection("currencies").Document(currencyId);
 
     private DocumentReference BalanceTransactionDocument(string transactionId) =>
-        database.Collection("balanceTransactions").Document(transactionId);
+        FirestoreWalletDocuments.Transaction(database, transactionId);
 
     private DocumentReference StatisticsDocument(string userId) =>
         database.Collection("userSlotStatistics").Document(userId);
@@ -31,8 +32,7 @@ public sealed partial class FirestoreAccountStore
         database.Collection("slotSpinAdmissions").Document(admissionId.ToString("N"));
 
     private DocumentReference SlotSpinGuardDocument(string userId, string gameId) =>
-        database.Collection("slotSpinGuards").Document(
-            $"{userId}_{CreateLookupKey(StorageGameId(gameId))}");
+        database.Collection(SlotSpinGuard.Collection).Document(SlotSpinGuard.DocumentId(userId, StorageGameId(gameId)));
 
     private DocumentReference EmailKeyDocument(string email) =>
         database.Collection("accountEmailKeys").Document(CreateLookupKey(email));

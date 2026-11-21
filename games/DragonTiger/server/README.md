@@ -18,13 +18,17 @@ dotnet test games/DragonTiger/tests/FortuneForge.Games.DragonTiger.Tests/Fortune
 
 The tests include a real local Firestore emulator. Set `FIRESTORE_EMULATOR_HOST` to an existing localhost emulator, or have a Firebase emulator JAR cached under `~/.cache/firebase/emulators` and Java installed (the fixture finds a Windows Eclipse Adoptium installation). Every Firestore test uses a unique `demo-dragon-tiger-*` project; it cannot reach production credentials or endpoints. The fixture owns and stops only the emulator process it starts.
 
-## Host integration
+## Paid worker integration
 
-Reference `FortuneForge.Games.DragonTiger.Server.csproj`. In startup, call `services.AddDragonTigerServer`, setting the existing read and wager rate-limit policy names. In the host pipeline, call `app.MapDragonTiger` with an account resolver returning the authenticated account's user ID and `SlotsCredits` balance. The host owns its existing cookie and account service. Add the game module's descriptor to the host catalogue separately.
+The packaged worker is the production owner. Its module registers `AddDragonTigerServer` and `AddGameWalletClient("dragon-tiger")`. The shared host authenticates the account and forwards paid requests to this worker; the standalone sample and authorized host practice use the separate practice store.
 
-The feature flag is `Features:DragonTigerEnabled`, and defaults to false. The main application must opt in after verification. `X-FortuneForge-Practice: true` uses the separate per-account practice wallet; the standalone sample forces practice regardless of this header. Practice and account rounds have separate stores.
+Set worker `GameWallet:Url` and `GameWallet:SigningKey`. The generic account service needs the matching `GameWallet:Games:dragon-tiger:SigningKey` and `AllowAccountBalanceRead=true`. This game uses the standard wallet ledger; leave `LegacySlotLedger`, free-game allowances and reservations disabled. Signed worker authentication uses the existing `GameWorker` configuration. Deployment tooling and shared gateway activation remain owned by the shared integration lane.
 
-The connected wallet uses the existing `userBalances/{userId}_slotsCredits`, `available` whole-rand value, and `availableFractionalCents` remainder. One Firestore transaction records the stake debit, optional payout, settled round, event, current shoe, latest-round pointer, and final wallet balance. Every ledger mutation uses integer cents internally. The ledger `amount` and `balanceAfter` fields follow the existing wallet's numeric-rand convention. Replays verify recorded settlement, ledger identity/amount/balance, and event integrity; corrupt persisted data fails without an additional debit.
+`DragonTigerWalletStore` freezes a schema-2 intent containing the wager, original request observation, shoe and dealt cards. The signed wallet settles that immutable request exactly once. A subsequent game transaction commits the receipt, accepted shoe position, analytics/audit and activity. Pending intents recover through the original POST or GET/latest after a lost response, including while `Features:DragonTigerEnabled=false` blocks new keys. A declined key stays declined after a top-up.
+
+`DragonTigerFirestoreStore` is a read-only adapter for schema-1 historical rounds. It checks their original saved cards, wagers, wallet ledger and event before replay; it cannot create a new paid round. The package does not update account balances or wallet ledger documents. Shared audit and wallet receipt rules come from `FortuneForge.Games.Firestore` and `GameWalletReceiptVerifier`.
+
+This migration has local package verification; no production deployment is implied. Shared gateway routing must keep exact retries on this worker when new play is paused and fail unavailable when the worker cannot be reached. The paid browser gateway sends `X-FortuneForge-Expected-Account` for the account that opened the table. Journals survive session changes and recover a conflicting earlier tab intent through GET/latest before replaying the frozen command.
 
 ## API
 
@@ -34,14 +38,14 @@ All paths are under `/api/games/dragon-tiger`; money is JSON numeric rand values
 | --- | --- |
 | `GET /status` | `available`, `minimumStake` = 0.50, `maximumStake` = 100, `stakeIncrement` = 0.50, `maximumTotalStake` = 100, `balance`, `mode` |
 | `POST /rounds` | A settled round; body `{ "dragonStake": 0.50, "tigerStake": 0, "tieStake": 0.50 }`; requires `Idempotency-Key` |
-| `GET /rounds/{roundId}` | An owned settled round with the current wallet balance |
+| `GET /rounds/{roundId}` | An owned settled round and its original wallet receipt balance (historical schema 1 uses the current wallet balance) |
 | `GET /rounds/latest` | The latest owned round, or HTTP 204 if none |
 
-`Idempotency-Key` must contain 16–128 ASCII letters, digits, hyphens, or underscores. Reusing the key with identical stakes returns the original round and current balance without another wager or shoe advance. Different stakes on the same key return HTTP 409. The client must retain its original request and key until its outcome is known, including after refresh or a network timeout. GET recovery must be scoped to the same authenticated account and practice/account mode.
+`Idempotency-Key` must contain 16–128 ASCII letters, digits, hyphens, or underscores. Reusing the key with identical stakes returns the original round and receipt balance without another wager or shoe advance; historical schema-1 rounds retain their current-wallet-balance convention. Different stakes on the same key return HTTP 409. The client must retain its original request and key until its outcome is known, including after refresh or a network timeout. GET recovery must be scoped to the same authenticated account and practice/account mode.
 
 The settled round contains `roundId`, `balance`, `phase: "settled"`, `dragonCard`, `tigerCard`, `dragonValue`, `tigerValue`, `outcome`, `bets`, `totalStake`, `profit`, `totalReturn`, `shoeCardsUsed`, and `shoeCardsRemaining`. `bets` always has Dragon, Tiger, and Tie entries in that order, with `side`, `stake`, `disposition`, `profit`, and `totalReturn`; an empty spot is `not-placed` with numeric zeros. A tied main bet is `half-loss`.
 
-HTTP 400 means the wager was invalid. HTTP 401 requires authentication. HTTP 404 means that account cannot access the round. HTTP 409 means conflicting stakes or insufficient funds. HTTP 503 `dragon-tiger-retry-required` means wallet contention or a transient database failure: retain the request and key and retry it. HTTP 500 and network failures are also ambiguous; preserve the pending request and recover rather than submitting a fresh key. Feature-disabled HTTP 503 accepts no wager. Responses disable caching.
+HTTP 400 means the wager was invalid. HTTP 401 requires authentication. HTTP 404 means that account cannot access the round. HTTP 409 means conflicting stakes or insufficient funds. HTTP 503 `dragon-tiger-retry-required` means wallet contention or a transient database failure: retain the request and key and retry it. HTTP 500 and network failures are also ambiguous; preserve the pending request and recover rather than submitting a fresh key. Feature-disabled HTTP 503 rejects new keys while existing-key and GET/latest recovery remains available. Responses disable caching.
 
 ## Rules and paytable
 

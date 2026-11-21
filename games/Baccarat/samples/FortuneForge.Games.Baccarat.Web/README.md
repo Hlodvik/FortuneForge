@@ -2,7 +2,7 @@
 
 Developer-only ASP.NET adapter for the reusable Baccarat client contract. Each hand uses a cryptographically Fisher–Yates-shuffled eight-deck shoe in the host and delegates dealing and settlement to the Punto Banco package.
 
-The `roundId` returned for each hand is the local play and audit correlation ID, providing a seam for a later durable integration. Persistence and authentication belong to the integrating host.
+The `roundId` returned for each hand is the local play and audit correlation ID, providing a seam for a later durable integration. The paid production backend is the separate `FortuneForge.Games.Baccarat.Server` package, which owns durable deals and recovery; this sample remains a process-local QA adapter.
 
 Run the API:
 

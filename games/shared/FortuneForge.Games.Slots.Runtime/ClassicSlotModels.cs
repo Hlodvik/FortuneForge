@@ -74,12 +74,16 @@ public sealed record SlotCollectionProgress(
 public static class ClassicSlotCollections
 {
     private static readonly string[] Modes = ["sync", "rows", "paw", "rand"];
+    public static IReadOnlyList<string> TrackIds { get; } = Array.AsReadOnly(Modes);
+    public static IReadOnlyList<string> PracticeTrackIds { get; } = Array.AsReadOnly<string>([.. Modes, "arcade"]);
     private static readonly IReadOnlyDictionary<string, string> ModeBySymbol =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["SEAL_SYNC"] = "sync", ["SEAL_ROWS"] = "rows",
             ["SEAL_PAW"] = "paw", ["SEAL_RAND"] = "rand"
         };
+
+    public static string? TrackForSymbol(string symbol) => ModeBySymbol.GetValueOrDefault(symbol);
 
     public static SlotCollectionProgress Advance(SlotProfile profile,
         IReadOnlyList<SlotCollectionState> current, IReadOnlyDictionary<string, int> awarded,
@@ -128,7 +132,7 @@ public static class ClassicSlotCollections
                     MidpointRounding.AwayFromZero);
             freeSpins = checked(freeSpins + profile.CollectionAwardedSpins);
             featureMode ??= profile.CollectionFeatureMode ?? mode;
-            if (freeSpinWager == 0) freeSpinWager = Math.Max(1, average);
+            if (freeSpinWager == 0) freeSpinWager = average > 0 ? average : wagerPoints;
             var overflow = state.Count - profile.CollectionTarget;
             states[mode] = state with
             {

@@ -1,12 +1,22 @@
+using System.Text.Json;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net.Sockets;
+using System.Net;
+using System.Net.Http.Json;
 using FortuneForge.Games.Cards;
+using FortuneForge.Games.Abstractions.Wallet;
+using FortuneForge.Games.Abstractions.Analytics;
+using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.DragonTiger.Server;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 using Xunit.Abstractions;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FortuneForge.Games.DragonTiger.Tests;
 
@@ -14,222 +24,264 @@ namespace FortuneForge.Games.DragonTiger.Tests;
 public sealed class DragonTigerFirestoreCollection : ICollectionFixture<DragonTigerEmulator>;
 
 [Collection("Dragon Tiger Firestore")]
-public sealed class DragonTigerFirestoreTests(DragonTigerEmulator emulator, ITestOutputHelper output)
+public sealed class DragonTigerFirestoreTests(DragonTigerEmulator emulator)
 {
-    [Fact]
-    public async Task AtomicLedger_ConcurrentInstancesReplayExactlyOnceAndRecoverAfterResponseLoss()
-    {
-        var database = Database();
-        await Seed(database, "player", 100);
-        var first = Service(database, CardRank.King, CardRank.Ace);
-        var second = Service(database, CardRank.King, CardRank.Ace);
-        const string key = "dragon_tiger_atomic_0001";
-        var request = new CreateDragonTigerRoundRequest(10, 0, 0.50m);
-        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(90));
-        var rounds = await Task.WhenAll(Enumerable.Range(0, 2).Select(index => PlaceWithContentionRecovery(index)));
-        Assert.Single(rounds.Select(round => round.RoundId).Distinct());
-        Assert.All(rounds, round => Assert.Equal(109.50m, round.Balance));
-        Assert.Single((await database.Collection("dragonTigerRounds").GetSnapshotAsync()).Documents);
-        Assert.Single((await database.Collection("dragonTigerRoundEvents").GetSnapshotAsync()).Documents);
-        var entries = (await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents;
-        Assert.Equal(2, entries.Count);
-        Assert.Contains(entries, entry => entry.GetValue<double>("amount") == -10.5);
-        Assert.Contains(entries, entry => entry.GetValue<double>("amount") == 20.0);
-        var restored = await second.GetAsync("player", rounds[0].RoundId);
-        Assert.Equal(rounds[0].DragonCard, restored.DragonCard);
-        Assert.Equal(rounds[0].RoundId, (await second.LatestAsync("player"))!.RoundId);
-        Assert.Equal(2, restored.ShoeCardsUsed);
-        var balance = await Balance(database, "player");
-        Assert.Equal(109L, balance.GetValue<long>("available"));
-        Assert.Equal(50L, balance.GetValue<long>("availableFractionalCents"));
-        Assert.Equal(2L, balance.GetValue<long>("version"));
-        await Assert.ThrowsAsync<DragonTigerRoundConflictException>(() => second.StartAsync("player", request with { TieStake = 1 }, key));
-        await Assert.ThrowsAsync<DragonTigerRoundNotFoundException>(() => second.GetAsync("other", rounds[0].RoundId));
-        Assert.Null(await second.LatestAsync("other"));
-        Assert.Equal(2, (await database.Collection("balanceTransactions").GetSnapshotAsync()).Count);
+    private static readonly DateTimeOffset Now = new(2026, 11, 21, 6, 0, 0, TimeSpan.Zero);
 
-        async Task<DragonTigerRoundResponse> PlaceWithContentionRecovery(int index)
-        {
-            // Both service instances still race. The emulator can hold
-            // contested locks for up to 30 seconds, unlike production Firestore:
-            // https://firebase.google.com/docs/emulator-suite/connect_firestore#transactions
-            // Model the existing HTTP 503/Retry-After contract, never an entire
-            // test retry: only a definitive Aborted retries this immutable key/body.
-            const int maximumAttempts = 3;
-            for (var attempt = 1; ; attempt++)
-            {
-                try
-                {
-                    return await (index % 2 == 0 ? first : second).StartAsync("player", request, key, deadline.Token);
-                }
-                catch (RpcException exception) when (exception.StatusCode == StatusCode.Aborted &&
-                    attempt < maximumAttempts && !deadline.IsCancellationRequested)
-                {
-                    output.WriteLine($"Emulator contention: caller {index}, attempt {attempt}; replaying the same request key.");
-                    await Task.Delay(1_000 + Random.Shared.Next(0, 501), deadline.Token);
-                }
-            }
-        }
+    [Fact]
+    public async Task PaidHttp_LostWalletResponseAndFeaturePauseKeepOriginalRecoveryRoutes()
+    {
+        var db = Database(); var wallet = new Wallet { LoseNextResponse = true };
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+        builder.Configuration["Features:DragonTigerEnabled"] = "true";
+        builder.Services.AddDragonTigerServer();
+        builder.Services.AddSingleton(db);
+        builder.Services.AddSingleton<IGameWalletClient>(wallet);
+        builder.Services.AddSingleton<IGameWalletAccountReader>(wallet);
+        await using var app = builder.Build();
+        app.MapDragonTiger((_, _) => Task.FromResult<DragonTigerAccount?>(new("player", wallet.Balance / 100m)));
+        await app.StartAsync();
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("Idempotency-Key", "dragon_tiger_paid_http_01");
+        var busy = await client.PostAsJsonAsync("/api/games/dragon-tiger/rounds", new CreateDragonTigerRoundRequest(.5m));
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, busy.StatusCode);
+        Assert.Equal(TimeSpan.FromSeconds(1), busy.Headers.RetryAfter!.Delta);
+        builder.Configuration["Features:DragonTigerEnabled"] = "false";
+        var recovered = await client.GetFromJsonAsync<DragonTigerRoundResponse>("/api/games/dragon-tiger/rounds/latest");
+        var replay = await client.PostAsJsonAsync("/api/games/dragon-tiger/rounds", new CreateDragonTigerRoundRequest(.5m));
+        Assert.Equal(HttpStatusCode.Created, replay.StatusCode);
+        var result = await replay.Content.ReadFromJsonAsync<DragonTigerRoundResponse>();
+        Assert.Equal(recovered!.RoundId, result!.RoundId);
+        Assert.Equal(recovered.Balance, result.Balance);
+        Assert.Equal(recovered.DragonCard, result.DragonCard);
+        Assert.False((await client.GetFromJsonAsync<DragonTigerStatusResponse>("/api/games/dragon-tiger/status"))!.Available);
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", "dragon_tiger_paid_http_02");
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, (await client.PostAsJsonAsync("/api/games/dragon-tiger/rounds", new CreateDragonTigerRoundRequest(.5m))).StatusCode);
+        Assert.Equal(1, wallet.Committed);
     }
 
     [Fact]
-    public async Task AtomicLedger_TiePreservesQuarterRandReturnAndIndependentTiePayout()
+    public async Task SignedWallet_LostResponseRecoversAcrossRestartAndPauseExactlyOnce()
     {
-        var database = Database();
-        await Seed(database, "tie-player", 100);
-        var service = Service(database, CardRank.Queen, CardRank.Queen);
-        var request = new CreateDragonTigerRoundRequest(0.50m, 0, 0.50m);
-        var result = await service.StartAsync("tie-player", request, "dragon_tiger_tied_0001");
-        Assert.Equal("tie", result.Outcome);
-        Assert.Equal("half-loss", result.Bets[0].Disposition);
+        var db = Database(); var wallet = new Wallet { LoseNextResponse = true };
+        const string key = "dragon_tiger_recovery_0001";
+        var request = new CreateDragonTigerRoundRequest(10, 0, .5m);
+        using (GameSecurityContext.Push(Observation("original-wager", "POST", "/api/games/dragon-tiger/rounds")))
+            await Assert.ThrowsAsync<GameWalletUnavailableException>(() => Service(db, wallet).StartAsync("player", request, key));
+        Assert.Equal(10_950, wallet.Balance);
+        Assert.Empty((await db.Collection(GameAnalyticsOutbox.CollectionName).GetSnapshotAsync()).Documents);
+        using var recovery = GameSecurityContext.Push(Observation("recovery-request", "GET", "/api/games/dragon-tiger/rounds/latest"));
+        var restarted = Service(db, wallet, enabled: false);
+        var recovered = await restarted.LatestAsync("player");
+        Assert.Equal(109.50m, recovered!.Balance);
+        Assert.Equal(2, recovered.ShoeCardsUsed);
+        var replay = await restarted.StartAsync("player", request, key);
+        Assert.Equal(recovered.RoundId, replay.RoundId);
+        Assert.Equal(recovered.Balance, replay.Balance);
+        Assert.Equal(recovered.DragonCard, replay.DragonCard);
+        Assert.Equal(1, wallet.Committed);
+        Assert.Single((await db.Collection(GameAnalyticsOutbox.CollectionName).GetSnapshotAsync()).Documents);
+        Assert.Single((await db.Collection(RoundAuditDocuments.Summaries).GetSnapshotAsync()).Documents);
+        Assert.Equal("original-wager", Assert.Single((await db.Collection(GameSecurityEventDocuments.CollectionName).GetSnapshotAsync()).Documents).GetValue<string>("requestId"));
+        Assert.Empty((await db.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
+        Assert.Empty((await db.Collection("userBalances").GetSnapshotAsync()).Documents);
+        await Assert.ThrowsAsync<DragonTigerDisabledException>(() => restarted.StartAsync("player", request, "dragon_tiger_disabled_0002"));
+        await Assert.ThrowsAsync<DragonTigerRoundNotFoundException>(() => restarted.GetAsync("other", recovered.RoundId));
+    }
+
+    [Fact]
+    public async Task SignedWallet_PendingDealBlocksAnotherWagerAndConflictingExactRetry()
+    {
+        var db = Database(); var wallet = new Wallet { LoseNextResponse = true };
+        var service = Service(db, wallet);
+        await Assert.ThrowsAsync<GameWalletUnavailableException>(() => service.StartAsync("player", new(1), "dragon_tiger_pending_0001"));
+        await Assert.ThrowsAsync<DragonTigerRoundConflictException>(() => service.StartAsync("player", new(2), "dragon_tiger_pending_0001"));
+        await Assert.ThrowsAsync<DragonTigerRoundConflictException>(() => service.StartAsync("player", new(1), "dragon_tiger_pending_0002"));
+        Assert.Equal(1, wallet.Committed);
+        var recovered = await service.GetAsync("player", DragonTigerService.LookupKey("player", "dragon_tiger_pending_0001"));
+        Assert.Equal(101m, recovered.Balance);
+        var next = await service.StartAsync("player", new(1), "dragon_tiger_pending_0002");
+        Assert.Equal(4, next.ShoeCardsUsed);
+        Assert.Equal(2, wallet.Committed);
+    }
+
+    [Fact]
+    public async Task SignedWallet_ConcurrentInstancesUseOneFrozenOutcomeAndSettlement()
+    {
+        var db = Database(); var wallet = new Wallet();
+        var services = new[] { Service(db, wallet), Service(db, wallet, dragon: CardRank.Ace, tiger: CardRank.King) };
+        var results = await Task.WhenAll(services.Select(service => service.StartAsync("player", new(.5m), "dragon_tiger_parallel_0001")));
+        Assert.Single(results.Select(result => result.RoundId).Distinct());
+        Assert.Single(results.Select(result => result.DragonCard).Distinct());
+        Assert.Single(results.Select(result => result.Balance).Distinct());
+        Assert.Equal(1, wallet.Committed);
+        Assert.Equal(2, results[0].ShoeCardsUsed);
+    }
+
+    [Fact]
+    public async Task SignedWallet_QuarterRandTieAndDeclineAreDurable()
+    {
+        var db = Database(); var wallet = new Wallet();
+        var tied = Service(db, wallet, dragon: CardRank.Queen, tiger: CardRank.Queen);
+        var result = await tied.StartAsync("player", new(.5m, 0, .5m), "dragon_tiger_tie_0001");
         Assert.Equal(4.75m, result.TotalReturn);
         Assert.Equal(103.75m, result.Balance);
-        var balance = await Balance(database, "tie-player");
-        Assert.Equal(103L, balance.GetValue<long>("available"));
-        Assert.Equal(75L, balance.GetValue<long>("availableFractionalCents"));
-        var replay = await service.StartAsync("tie-player", request, "dragon_tiger_tied_0001");
-        Assert.Equal(result.Balance, replay.Balance);
-        Assert.Equal(result.RoundId, replay.RoundId);
-        Assert.Equal(2, replay.ShoeCardsUsed);
+        Assert.Equal("half-loss", result.Bets[0].Disposition);
+        var poorDb = Database(); var poor = new Wallet { Balance = 0 };
+        var service = Service(poorDb, poor);
+        await Assert.ThrowsAsync<DragonTigerInsufficientCreditsException>(() => service.StartAsync("player", new(.5m), "dragon_tiger_poor_0001"));
+        poor.Balance = 10000;
+        await Assert.ThrowsAsync<DragonTigerInsufficientCreditsException>(() => service.StartAsync("player", new(.5m), "dragon_tiger_poor_0001"));
+        Assert.Equal(0, poor.Committed);
+        Assert.Empty((await poorDb.Collection(GameAnalyticsOutbox.CollectionName).GetSnapshotAsync()).Documents);
+        var next = await service.StartAsync("player", new(.5m), "dragon_tiger_poor_0002");
+        Assert.Equal(2, next.ShoeCardsUsed);
     }
 
     [Fact]
-    public async Task AtomicLedger_LosingBetWritesOnlyDebitAndInsufficientFundsWriteNothing()
+    public async Task CorruptShoe_IsServerFailureWithoutChargingAnotherWager()
     {
-        var database = Database();
-        await Seed(database, "poor", 1);
-        var service = Service(database, CardRank.Ace, CardRank.King);
-        await Assert.ThrowsAsync<DragonTigerInsufficientCreditsException>(() => service.StartAsync("poor", new(1.50m), "dragon_tiger_poor_0001"));
-        Assert.Empty((await database.Collection("dragonTigerRounds").GetSnapshotAsync()).Documents);
-        Assert.Empty((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
-        var result = await service.StartAsync("poor", new(0.50m), "dragon_tiger_loss_0001");
-        Assert.Equal(0.50m, result.Balance);
-        Assert.Equal(-0.50m, result.Profit);
-        Assert.Equal(0m, result.TotalReturn);
-        Assert.Single((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
-        var replay = await service.StartAsync("poor", new(0.50m), "dragon_tiger_loss_0001");
-        Assert.Equal(result.Balance, replay.Balance);
+        var db = Database(); var wallet = new Wallet(); var service = Service(db, wallet);
+        await service.StartAsync("player", new(.5m), "dragon_tiger_shoe_proof_1");
+        var shoe = Assert.Single((await db.Collection("dragonTigerShoes").GetSnapshotAsync()).Documents);
+        await shoe.Reference.UpdateAsync("cards", new[] { "invalid-card" });
+        await Assert.ThrowsAsync<GameWalletUnavailableException>(() => service.StartAsync("player", new(.5m), "dragon_tiger_shoe_proof_2"));
+        await Assert.ThrowsAsync<GameWalletUnavailableException>(() => service.LatestAsync("player"));
+        Assert.Equal(1, wallet.Committed);
+    }
+
+    [Theory]
+    [InlineData("intentSha256")]
+    [InlineData("receiptSha256")]
+    public async Task SignedWallet_CorruptEvidenceFailsClosedWithoutSettlement(string field)
+    {
+        var db = Database(); var wallet = new Wallet(); var service = Service(db, wallet);
+        var result = await service.StartAsync("player", new(1), "dragon_tiger_integrity_0001");
+        await db.Collection("dragonTigerRounds").Document(result.RoundId).UpdateAsync(field, "corrupt");
+        await Assert.ThrowsAsync<GameWalletUnavailableException>(() => service.GetAsync("player", result.RoundId));
+        Assert.Equal(1, wallet.Committed);
     }
 
     [Fact]
-    public async Task AtomicLedger_ConcurrentDifferentKeysAdvanceShoeWithoutOverdrawing()
+    public async Task PersistedIntentBytes_KeepOriginalWalletFingerprintAcrossRecovery()
     {
-        var database = Database();
-        await Seed(database, "concurrent", 100);
-        var service = Service(database, CardRank.King, CardRank.Ace);
-        var results = await Task.WhenAll(Enumerable.Range(0, 2).Select(index => service.StartAsync("concurrent", new(0.50m, 0.50m), $"dragon_tiger_concurrent_{index:0000}")));
-        Assert.Equal(2, results.Select(round => round.RoundId).Distinct().Count());
-        Assert.Equal(new[] { 2, 4 }, results.Select(round => round.ShoeCardsUsed).Order().ToArray());
-        var totalProfit = results.Sum(round => round.Profit);
-        var balance = await Balance(database, "concurrent");
-        var cents = balance.GetValue<long>("available") * 100 + balance.GetValue<long>("availableFractionalCents");
-        Assert.Equal(100m + totalProfit, cents / 100m);
-        Assert.True(cents >= 0);
+        var db = Database(); var wallet = new Wallet { FailBeforeNextCommit = true };
+        const string key = "dragon_tiger_frozen_bytes_1";
+        await Assert.ThrowsAsync<GameWalletUnavailableException>(() => Service(db, wallet).StartAsync("player", new(.5m), key));
+        Assert.Equal(0, wallet.Committed);
+        var id = DragonTigerService.LookupKey("player", key);
+        var record = db.Collection("dragonTigerRounds").Document(id);
+        var pending = await record.GetSnapshotAsync();
+        using var parsed = JsonDocument.Parse(pending.GetValue<string>("intentJson"));
+        var originalBytes = JsonSerializer.Serialize(parsed.RootElement, new JsonSerializerOptions { WriteIndented = true });
+        var digest = GameSecurityEventDocuments.Hash(originalBytes);
+        await record.UpdateAsync(new Dictionary<string, object> { ["intentJson"] = originalBytes, ["intentSha256"] = digest });
+        // Model an older serializer's successful wallet call whose response was lost.
+        await wallet.SettleAsync("player", new(id, digest, 50, 100), default);
+        var recovered = await Service(db, wallet).LatestAsync("player");
+        Assert.Equal(id, recovered!.RoundId);
+        Assert.Equal(100.5m, recovered.Balance);
+        Assert.Equal(1, wallet.Committed);
+        Assert.Single((await db.Collection(GameAnalyticsOutbox.CollectionName).GetSnapshotAsync()).Documents);
+    }
+
+    [Theory]
+    [InlineData("wager")]
+    [InlineData("payout")]
+    [InlineData("event")]
+    public async Task OrphanedLegacyProof_BlocksNewChargeForTheSameKey(string kind)
+    {
+        var db = Database(); var wallet = new Wallet();
+        const string key = "dragon_tiger_orphaned_01";
+        var id = DragonTigerService.LookupKey("player", key);
+        var proof = kind == "event" ? db.Collection("dragonTigerRoundEvents").Document(id + "-settled")
+            : db.Collection("balanceTransactions").Document($"dragon-tiger-{id}-{kind}");
+        await proof.SetAsync(new Dictionary<string, object> { ["legacyProof"] = true });
+        await Assert.ThrowsAsync<GameWalletUnavailableException>(() => Service(db, wallet).StartAsync("player", new(.5m), key));
+        Assert.Equal(0, wallet.Committed);
+        Assert.Empty((await db.Collection("dragonTigerRounds").GetSnapshotAsync()).Documents);
     }
 
     [Fact]
-    public async Task AtomicLedger_CompetingWagersCannotOverdrawOneStakeBalance()
+    public async Task LegacyRound_ExactRetryAndHistoryUseSavedCardsAndNeverCharge()
     {
-        var database = Database();
-        await Seed(database, "one-stake", 0);
-        await database.Collection("userBalances").Document("one-stake_slotsCredits").UpdateAsync("availableFractionalCents", 50L);
-        var service = Service(database, CardRank.Ace, CardRank.King);
-        async Task<bool> Place(int index)
+        var db = Database(); var wallet = new Wallet { Balance = 12_345 };
+        const string key = "dragon_tiger_legacy_0001";
+        var id = DragonTigerService.LookupKey("player", key);
+        var cards = DragonTigerTests.Shoe(CardRank.Ace, CardRank.King);
+        await db.Collection("dragonTigerRounds").Document(id).SetAsync(new Dictionary<string, object>
         {
-            try { await service.StartAsync("one-stake", new(0.50m), $"dragon_tiger_compete_{index:0000}"); return true; }
-            catch (DragonTigerInsufficientCreditsException) { return false; }
-        }
-        var outcomes = await Task.WhenAll(Place(1), Place(2));
-        Assert.Single(outcomes, value => value);
-        var balance = await Balance(database, "one-stake");
-        Assert.Equal(0L, balance.GetValue<long>("available"));
-        Assert.Equal(0L, balance.GetValue<long>("availableFractionalCents"));
-        Assert.Single((await database.Collection("dragonTigerRounds").GetSnapshotAsync()).Documents);
-        Assert.Single((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
+            ["schemaVersion"] = 1L, ["roundId"] = id, ["userId"] = "player", ["startIdempotencyKey"] = key,
+            ["dragonStakeCents"] = 50L, ["tigerStakeCents"] = 0L, ["tieStakeCents"] = 0L, ["totalStakeCents"] = 50L,
+            ["dragonCard"] = CardCode.Format(cards[0]), ["tigerCard"] = CardCode.Format(cards[1]), ["outcome"] = "tiger",
+            ["totalReturnCents"] = 0L, ["profitCents"] = -50L, ["balanceAfterWagerCents"] = 9950L,
+            ["balanceAfterSettlementCents"] = 9950L, ["shoeCardsUsed"] = 2L, ["shoeCardsRemaining"] = 414L,
+        });
+        await db.Collection("balanceTransactions").Document($"dragon-tiger-{id}-wager").SetAsync(new Dictionary<string, object>
+        {
+            ["transactionId"] = $"dragon-tiger-{id}-wager", ["userId"] = "player", ["currencyId"] = "slotsCredits",
+            ["type"] = "dragon-tiger-wager", ["idempotencyKey"] = key, ["amount"] = -.5d, ["balanceAfter"] = 99.5d,
+        });
+        await db.Collection("dragonTigerRoundEvents").Document(id + "-settled").SetAsync(new Dictionary<string, object>
+        { ["roundId"] = id, ["userId"] = "player", ["event"] = "settled", ["idempotencyKey"] = key, ["schemaVersion"] = 1L });
+        await db.Collection("dragonTigerShoes").Document(Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes("player")))).SetAsync(new Dictionary<string, object>
+        { ["userId"] = "player", ["schemaVersion"] = 1L, ["cards"] = cards.Select(CardCode.Format).ToArray(), ["nextIndex"] = 2L, ["latestRoundId"] = id });
+        var service = Service(db, wallet, enabled: false);
+        var replay = await service.StartAsync("player", new(.5m), key);
+        Assert.Equal("tiger", replay.Outcome);
+        Assert.Equal(123.45m, replay.Balance);
+        Assert.Equal(id, (await service.LatestAsync("player"))!.RoundId);
+        Assert.Equal(0, wallet.Committed);
+        await db.Collection("balanceTransactions").Document($"dragon-tiger-{id}-wager").UpdateAsync("amount", 999d);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.StartAsync("player", new(.5m), key));
+        Assert.Equal(0, wallet.Committed);
     }
 
-    [Fact]
-    public async Task CorruptLedgerOrSettlement_FailsClosedWithoutAdditionalDebit()
-    {
-        var database = Database();
-        await Seed(database, "player", 100);
-        var service = Service(database, CardRank.King, CardRank.Ace);
-        const string key = "dragon_tiger_corrupt_0001";
-        var result = await service.StartAsync("player", new(1), key);
-        await database.Collection("balanceTransactions").Document($"dragon-tiger-{result.RoundId}-payout").DeleteAsync();
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.StartAsync("player", new(1), key));
-        Assert.Equal(101L, (await Balance(database, "player")).GetValue<long>("available"));
-        await database.Collection("dragonTigerRounds").Document(result.RoundId).UpdateAsync("totalReturnCents", 999L);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetAsync("player", result.RoundId));
-        Assert.Equal(101L, (await Balance(database, "player")).GetValue<long>("available"));
-    }
-
-    [Theory]
-    [InlineData("transactionId", "wrong")]
-    [InlineData("idempotencyKey", "wrong")]
-    [InlineData("balanceAfter", 999.0)]
-    public async Task CorruptLedgerIdentityOrBalance_IsRejectedOnReplay(string field, object value)
-    {
-        var database = Database();
-        await Seed(database, "player", 100);
-        var service = Service(database, CardRank.King, CardRank.Ace);
-        const string key = "dragon_tiger_ledger_0001";
-        var result = await service.StartAsync("player", new(1), key);
-        await database.Collection("balanceTransactions").Document($"dragon-tiger-{result.RoundId}-wager").UpdateAsync(field, value);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.StartAsync("player", new(1), key));
-        Assert.Equal(101L, (await Balance(database, "player")).GetValue<long>("available"));
-    }
-
-    [Theory]
-    [InlineData("event", "wrong")]
-    [InlineData("idempotencyKey", "wrong")]
-    [InlineData("schemaVersion", 2L)]
-    public async Task CorruptEventIdentity_IsRejectedOnReplay(string field, object value)
-    {
-        var database = Database();
-        await Seed(database, "player", 100);
-        var service = Service(database, CardRank.King, CardRank.Ace);
-        const string key = "dragon_tiger_event_0001";
-        var result = await service.StartAsync("player", new(1), key);
-        await database.Collection("dragonTigerRoundEvents").Document($"{result.RoundId}-settled").UpdateAsync(field, value);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.StartAsync("player", new(1), key));
-        Assert.Equal(101L, (await Balance(database, "player")).GetValue<long>("available"));
-    }
-
-    [Fact]
-    public async Task ExistingWalletWithoutAvailable_IsRejectedWithoutCreatingRound()
-    {
-        var database = Database();
-        await database.Collection("userBalances").Document("corrupt_slotsCredits").SetAsync(new Dictionary<string, object> { ["availableFractionalCents"] = 50L });
-        var service = Service(database, CardRank.King, CardRank.Ace);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.StartAsync("corrupt", new(0.50m), "dragon_tiger_badwallet_0001"));
-        Assert.Empty((await database.Collection("dragonTigerRounds").GetSnapshotAsync()).Documents);
-        Assert.Empty((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
-    }
-
-    [Theory]
-    [InlineData("dragonCard", "invalid-card")]
-    [InlineData("dragonStakeCents", -50L)]
-    public async Task CorruptPersistedInput_ThrowsServerFailureInsteadOfUserValidation(string field, object value)
-    {
-        var database = Database();
-        await Seed(database, "player", 100);
-        var service = Service(database, CardRank.King, CardRank.Ace);
-        var result = await service.StartAsync("player", new(1), "dragon_tiger_badinput_0001");
-        await database.Collection("dragonTigerRounds").Document(result.RoundId).UpdateAsync(field, value);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetAsync("player", result.RoundId));
-    }
-
+    private static GameRequestObservation Observation(string id, string method, string path) => new(id, "player", "session", "127.0.0.1",
+        Now.UtcDateTime, method, path, "dragon-tiger", null, null, null, null, "not-retained", "test");
     private FirestoreDb Database() => new FirestoreDbBuilder
     {
         ProjectId = $"demo-dragon-tiger-{Guid.NewGuid():N}", Endpoint = emulator.Endpoint,
         ChannelCredentials = ChannelCredentials.Insecure, EmulatorDetection = EmulatorDetection.None,
     }.Build();
-    private static DragonTigerService Service(FirestoreDb database, CardRank dragon, CardRank tiger) =>
-        new(new DragonTigerFirestoreStore(database), TimeProvider.System, () => DragonTigerTests.Shoe(dragon, tiger));
-    private static Task Seed(FirestoreDb database, string user, long whole) => database.Collection("userBalances").Document($"{user}_slotsCredits")
-        .SetAsync(new Dictionary<string, object> { ["available"] = whole, ["availableFractionalCents"] = 0L, ["version"] = 1L });
-    private static Task<DocumentSnapshot> Balance(FirestoreDb database, string user) => database.Collection("userBalances").Document($"{user}_slotsCredits").GetSnapshotAsync();
+    private static DragonTigerService Service(FirestoreDb db, Wallet wallet, bool enabled = true,
+        CardRank dragon = CardRank.King, CardRank tiger = CardRank.Ace) => new(new DragonTigerWalletStore(db, wallet, wallet, enabled),
+            new FixedTimeProvider(), () => DragonTigerTests.Shoe(dragon, tiger));
+    private sealed class FixedTimeProvider : TimeProvider { public override DateTimeOffset GetUtcNow() => Now; }
+    private sealed class Wallet : IGameWalletClient, IGameWalletAccountReader
+    {
+        private readonly Dictionary<string, (GameWalletSettlementRequest Request, GameWalletSettlementReceipt Receipt)> receipts = new();
+        public long Balance { get; set; } = 10000;
+        public int Committed { get; private set; }
+        public bool LoseNextResponse { get; set; }
+        public bool FailBeforeNextCommit { get; set; }
+        public Task<GameWalletAccountState> GetStateAsync(string accountId, CancellationToken token) => Task.FromResult(new GameWalletAccountState(0, Balance));
+        public Task<GameWalletSettlementReceipt> SettleAsync(string accountId, GameWalletSettlementRequest request, CancellationToken token)
+        {
+            lock (receipts)
+            {
+                if (FailBeforeNextCommit) { FailBeforeNextCommit = false; throw new GameWalletUnavailableException(); }
+                var identity = accountId + "/" + request.OperationId;
+                if (receipts.TryGetValue(identity, out var prior))
+                {
+                    if (prior.Request != request) throw new GameWalletConflictException();
+                    return Task.FromResult(prior.Receipt with { WasAlreadySettled = true });
+                }
+                var decline = Balance < request.WagerCents;
+                var before = Balance; var afterWager = decline ? before : before - request.WagerCents;
+                Balance = decline ? before : afterWager + request.PayoutCents;
+                var receipt = new GameWalletSettlementReceipt(GameWalletSettlementIdentity.CreateId("dragon-tiger", accountId, request.OperationId),
+                    decline ? null : GameWalletSettlementIdentity.CreateId("dragon-tiger", accountId, request.OperationId) + "-wager", !decline && request.PayoutCents > 0 ? GameWalletSettlementIdentity.CreateId("dragon-tiger", accountId, request.OperationId) + "-payout" : null,
+                    before, afterWager, Balance, Now, false, decline);
+                receipts.Add(identity, (request, receipt));
+                if (!decline) Committed++;
+                if (LoseNextResponse) { LoseNextResponse = false; throw new GameWalletUnavailableException(); }
+                return Task.FromResult(receipt);
+            }
+        }
+    }
 }
 
 public sealed class DragonTigerEmulator : IAsyncLifetime
@@ -260,7 +312,7 @@ public sealed class DragonTigerEmulator : IAsyncLifetime
         var port = ((System.Net.IPEndPoint)reservation.LocalEndpoint).Port;
         reservation.Stop();
         var start = new ProcessStartInfo(java) { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true, WorkingDirectory = AppContext.BaseDirectory };
-        foreach (var arg in new[] { "-jar", jar, "--host", "127.0.0.1", "--port", port.ToString(), "--project_id", "demo-dragon-tiger-tests" }) start.ArgumentList.Add(arg);
+        foreach (var arg in new[] { "-Xms32m", "-Xmx256m", "-jar", jar, "--host", "127.0.0.1", "--port", port.ToString(), "--project_id", "demo-dragon-tiger-tests" }) start.ArgumentList.Add(arg);
         process = new Process { StartInfo = start };
         process.OutputDataReceived += (_, args) => { if (args.Data is { } line) output.Enqueue(line); };
         process.ErrorDataReceived += (_, args) => { if (args.Data is { } line) output.Enqueue(line); };

@@ -4,6 +4,7 @@ using FortuneForge.Server.Bots.Hearts;
 using FortuneForge.Server.Bots.LiarsDice;
 using FortuneForge.Server.Games.Hearts;
 using FortuneForge.Server.Games.LiarsDice;
+using FortuneForge.Games.Abstractions.ManagedPlayers;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Admin.Management;
@@ -50,7 +51,7 @@ public sealed class ManagedPlayerAdmissionTests
     {
         var roster = new Roster { Enabled = false };
         var service = new HeartsGameService(roster, TimeProvider.System);
-        await Assert.ThrowsAsync<ManagedPlayerSupplyUnavailableException>(() => trial
+        await Assert.ThrowsAsync<ManagedPlayerRosterUnavailableException>(() => trial
             ? service.StartTrialAsync("alice")
             : service.StartAsync("alice", new(1931, 100)));
         Assert.Equal(1, roster.Releases);

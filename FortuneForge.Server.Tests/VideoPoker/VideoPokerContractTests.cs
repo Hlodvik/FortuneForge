@@ -47,7 +47,6 @@ public sealed class VideoPokerContractTests
     {
         var controller = new VideoPokerController(
             null!,
-            null!,
             new ConfigurationBuilder().Build(),
             NullLogger<VideoPokerController>.Instance);
 

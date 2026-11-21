@@ -7,21 +7,17 @@ using FortuneForge.Server.Cards.TexasHoldem.Credit;
 using FortuneForge.Server.Cards.Blackjack.Table;
 using FortuneForge.Server.Cards.ThreeCardPoker.Table;
 using FortuneForge.Server.Cards.Solitaire;
-using FortuneForge.Server.Games.Hearts;
-using FortuneForge.Server.Games.Roulette;
-using FortuneForge.Server.Games.Craps;
 using FortuneForge.Server.Games.DropMerge;
 using FortuneForge.Server.Games.LiarsDice;
 using FortuneForge.Server.Games.TwentyFortyEight;
 using FortuneForge.Server.Games.Snake;
 using FortuneForge.Server.Bots;
-using FortuneForge.Server.Bots.Hearts;
 using FortuneForge.Server.Bots.LiarsDice;
 using FortuneForge.Server.Arcade.Competition;
 using FortuneForge.Server.Cards.VideoPoker;
 using FortuneForge.Server.Cards.Baccarat;
 using FortuneForge.Server.Cards.CasinoWar;
-using FortuneForge.Server.Dice.SicBo;
+using FortuneForge.Games.SicBo.Server;
 using FortuneForge.Games.DragonTiger.Server;
 using FortuneForge.Games.HiLo.Server;
 using FortuneForge.Games.AndarBahar.Server;
@@ -54,41 +50,22 @@ public static class FortuneForgeStartup
         builder.Services.AddSlotServices(builder.Configuration);
         builder.Services.AddManagedPlayers();
         builder.Services.AddMultiplayerMatchmaking();
-        builder.Services.AddHeartsManagedPlayers();
         builder.Services.AddLiarsDiceManagedPlayers();
         builder.Services.AddCreditHoldem(builder.Configuration);
         builder.Services.AddBlackjackTables();
         builder.Services.AddThreeCardPokerTables();
-        builder.Services.AddCompetitiveSolitaireQueues(builder.Configuration);
         builder.Services.AddAdminOperations(builder.Configuration);
         builder.Services.AddAdminPlayers(builder.Configuration);
         builder.Services.AddAdminManagement(builder.Configuration);
         builder.Services.AddCataloguePopularity();
         builder.Services.AddGameReports(builder.Configuration, builder.Environment.IsDevelopment());
         builder.Services.AddGameActivity();
-        builder.Services.AddSingleton<FortuneForge.Server.SecurityAudit.IGameSecurityEventSink,
+        builder.Services.AddSingleton<FortuneForge.Games.Abstractions.Auditing.IGameSecurityEventSink,
             FortuneForge.Server.SecurityAudit.FirestoreGameSecurityEventSink>();
         FortuneForge.Server.SecurityAudit.GameSecurityRequestConfiguration.AddGameSecurityRequests(builder.Services, builder.Configuration);
         FortuneForge.Server.SecurityAudit.SecurityAuditInvestigationConfiguration.AddSecurityAuditInvestigations(builder.Services, builder.Configuration);
         FortuneForge.Server.Risk.RiskConfiguration.AddPlayerRiskEnforcement(builder.Services);
         FortuneForge.Server.RoundAudit.GameRoundAuditConfiguration.AddGameRoundAuditing(builder.Services, builder.Configuration);
-        builder.Services.AddSingleton<HeartsGameService>();
-        builder.Services.AddSingleton<IHeartsOnboardingStore, FirestoreHeartsOnboardingStore>();
-        builder.Services.AddPaidHearts(builder.Configuration);
-        builder.Services.AddSingleton(provider => new RouletteGameService(
-            provider.GetRequiredService<FortuneForge.Server.Matchmaking.IMultiplayerMatchmaker>(),
-            provider.GetRequiredService<IManagedTablePopulationDirector>(),
-            provider.GetRequiredService<FortuneForge.Server.Activity.IGameAnalyticsSink>(),
-            provider.GetRequiredService<FortuneForge.Server.SecurityAudit.IGameSecurityEventSink>(),
-            provider.GetRequiredService<GameWorkers.GameWorkerClient>()));
-        builder.Services.AddHostedService<RouletteTableWorker>();
-        builder.Services.AddSingleton(provider =>
-        {
-            var database = provider.GetRequiredService<Google.Cloud.Firestore.FirestoreDb>();
-            return new FirestorePaidCrapsStore(database, writeActivity: (transaction, observation) =>
-                Activity.AcceptedGameTransactionWitness.Write(database, observation,
-                    (reference, fields) => transaction.Set(reference, fields, Google.Cloud.Firestore.SetOptions.MergeAll)));
-        });
         builder.Services.AddDragonTigerServer(options =>
         {
             options.ReadRateLimitPolicy = RateLimitPolicies.SlotReads;
@@ -137,10 +114,18 @@ public static class FortuneForgeStartup
         builder.Services.AddSingleton<PracticeVideoPokerStore>();
         builder.Services.AddSingleton<PracticeBaccaratStore>();
         builder.Services.AddSingleton<PracticeCasinoWarStore>();
-        builder.Services.AddSingleton<PracticeSicBoStore>();
+        if (builder.Environment.IsDevelopment()) builder.Services.AddSingleton<PracticeSicBoStore>();
         builder.Services.AddHttpClient<GameWorkers.GameWorkerClient>(client =>
                 client.MaxResponseContentBufferSize = 8 * 1024 * 1024)
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+        // Authoritative commands return deliberate recovery statuses. The caller
+        // retries the original command with its original operation ID.
+#pragma warning disable EXTEXP0001
+        builder.Services.AddHttpClient(GameWorkers.GameWorkerClient.ExactResponseClient, client =>
+                client.MaxResponseContentBufferSize = 8 * 1024 * 1024)
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false })
+            .RemoveAllResilienceHandlers();
+#pragma warning restore EXTEXP0001
 
         return builder;
     }

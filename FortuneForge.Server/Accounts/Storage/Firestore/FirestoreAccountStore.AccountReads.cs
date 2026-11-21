@@ -114,9 +114,7 @@ public sealed partial class FirestoreAccountStore
     }
 
     private static long ReadRandBalanceCents(DocumentSnapshot snapshot) =>
-        RandMoney.CombineCents(
-            ReadLong(snapshot, "available"),
-            ReadLong(snapshot, AvailableFractionalCentsField));
+        FirestoreWalletDocuments.ReadLegacyRandBalanceCents(snapshot);
 
     private static decimal ReadRandBalance(DocumentSnapshot snapshot) =>
         RandMoney.CentsToRand(ReadRandBalanceCents(snapshot));

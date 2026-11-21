@@ -1,9 +1,10 @@
 export type HorseFlightPhase = 'running' | 'obstacle-collision' | 'fell'
 export type HorseFlightRecoveryMode = 'free' | 'paid:daily' | 'paid:weekly'
 export type HorseFlightStatus = Readonly<{ available: boolean; tickMilliseconds: number; balance: number; mode: string; recoveryMode?: HorseFlightRecoveryMode; recoveryScope?: string }>
-export type HorseFlightStart = Readonly<{ runId: string; seed: number; tickMilliseconds: number; recoveryScope?: string }>
+export type HorseFlightStart = Readonly<{ runId: string; seed: number; tickMilliseconds: number; recoveryScope?: string; rulesVersion?: 1 | 2 | 3 | 4 }>
 export type HorseFlightResult = Readonly<{ runId: string; balance: number; score: number; phase: Exclude<HorseFlightPhase, 'running'>; totalTicks: number; jumpTicks: readonly number[]; rightClickTicks?: readonly number[] }>
 export type HorseFlightReplayPayload = Readonly<{ totalTicks: number; jumpTicks: readonly number[]; rightClickTicks: readonly number[] }>
-export type HorseFlightRequestOptions = Readonly<{ signal?: AbortSignal; idempotencyKey?: string; recoveryScope?: string }>
+export type HorseFlightAdmissionWindow = Readonly<{ expectedWindowStartsAtUtc: string; expectedWindowEndsAtUtc: string }>
+export type HorseFlightRequestOptions = Readonly<{ signal?: AbortSignal; idempotencyKey?: string; recoveryScope?: string; admission?: HorseFlightAdmissionWindow; recoverOnly?: boolean }>
 export interface HorseFlightGateway { getStatus(signal?: AbortSignal): Promise<HorseFlightStatus>; start(options?: HorseFlightRequestOptions): Promise<HorseFlightStart>; complete(runId: string, totalTicks: number, jumpTicks: readonly number[], options?: HorseFlightRequestOptions, rightClickTicks?: readonly number[]): Promise<HorseFlightResult> }
 export class HorseFlightGatewayError extends Error { constructor(message: string, readonly code: string, readonly status: number) { super(message); this.name = 'HorseFlightGatewayError' } }

@@ -1,0 +1,6 @@
+{
+  "id": "horse-flight",
+  "backend": {
+    "kind": "packaged-game"
+  }
+}

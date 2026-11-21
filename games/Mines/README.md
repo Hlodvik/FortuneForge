@@ -11,7 +11,7 @@ Old accepted rounds retain their original terms. See [RULES.md](RULES.md) for th
 
 ## Main website
 
-Source integration is complete: authenticated `/games/mines`, account-credit transactions,
+The website integration includes authenticated `/games/mines`, account-credit routing,
 catalogue, shared navigation/reporting, player history and admin history/visibility. There is no
 website practice mode, URL override or paid-to-practice fallback. The main paid-release flag remains
 off until the source, server-only Firestore rules and normal release verification are deployed.
@@ -38,7 +38,7 @@ or debiting again.
 ## Packages
 
 - `src/FortuneForge.Games.Mines`: immutable .NET engine, cryptographic board generation and exact rational math.
-- `server/FortuneForge.Games.Mines.Server`: account API, atomic Firestore wallet/round/history, separate development ledger.
+- `server/FortuneForge.Games.Mines.Server`: game-owned command/round/history persistence, signed wallet lifecycle, separate development ledger.
 - `client/FortuneForge.Games.Mines.Client`: React library, HTTP validation, responsive controls, audio and account-scoped recovery.
 - `samples/FortuneForge.Games.Mines.Web`: isolated non-cash local API.
 - `tests`: engine, HTTP, persistence and concurrency checks.

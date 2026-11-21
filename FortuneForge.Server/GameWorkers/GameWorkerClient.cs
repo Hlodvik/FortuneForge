@@ -15,8 +15,9 @@ public sealed class GameWorkerRequestRejectedException()
 
 /// <summary>Calls a private, independently released game worker on behalf of an authenticated player.</summary>
 public sealed class GameWorkerClient(HttpClient http, IConfiguration configuration, IHostEnvironment environment,
-    TimeProvider clock, ILogger<GameWorkerClient> logger)
+    TimeProvider clock, ILogger<GameWorkerClient> logger, IHttpClientFactory? httpClients = null)
 {
+    internal const string ExactResponseClient = "GameWorkerExactResponse";
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly ConcurrentDictionary<string, OidcToken> IdentityTokens = new(StringComparer.Ordinal);
 
@@ -45,7 +46,7 @@ public sealed class GameWorkerClient(HttpClient http, IConfiguration configurati
 
     internal async Task<HttpResponseMessage> SendAsync(string gameId, string userId, HttpMethod method,
         string route, byte[] body, string? contentType, IReadOnlyDictionary<string, string>? headers,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, bool preserveResponse = false)
     {
         var settings = configuration.GetSection($"GameWorkers:{gameId}");
         if (!Uri.TryCreate(settings["Url"], UriKind.Absolute, out var origin) ||
@@ -80,7 +81,8 @@ public sealed class GameWorkerClient(HttpClient http, IConfiguration configurati
                 GameWorkerAuthentication.CreateAssertion(gameId, userId, method.Method, destination.PathAndQuery,
                     body, key, clock.GetUtcNow(), GameSecurityContext.Current, headers));
 
-            return await http.SendAsync(message, token);
+            using var exactClient = preserveResponse ? httpClients?.CreateClient(ExactResponseClient) : null;
+            return await (exactClient ?? http).SendAsync(message, token);
         }
         catch (Exception error) when (error is HttpRequestException or IOException or JsonException or
             FormatException or ArgumentException or InvalidOperationException or OperationCanceledException)

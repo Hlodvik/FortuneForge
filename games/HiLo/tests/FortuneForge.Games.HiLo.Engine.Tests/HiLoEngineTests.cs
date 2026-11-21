@@ -300,6 +300,19 @@ public sealed class HiLoEngineTests
     }
 
     [Fact]
+    public void RevealedReplayAcceptsHistoricalWagersAndRejectsChangedStateAndHistory()
+    {
+        var round = HiLoEngine.CashOut(HiLoEngine.Guess(HiLoEngine.Skip(LegacyRound(7, 1000m), Card(2)), HiLoDirection.Higher, Card(13)));
+        HiLoEngine.ValidateRevealedHistory(round);
+        Assert.Throws<InvalidOperationException>(() => HiLoEngine.ValidateRevealedHistory(round with { Payout = round.Payout + .01m }));
+        Assert.Throws<InvalidOperationException>(() => HiLoEngine.ValidateRevealedHistory(round with { Version = round.Version + 1 }));
+        var last = round.History[^1];
+        Assert.Throws<InvalidOperationException>(() => HiLoEngine.ValidateRevealedHistory(round with { History = round.History.SetItem(round.History.Length - 1, last with { Streak = 99 }) }));
+        var lost = HiLoEngine.Guess(Start(), HiLoDirection.Higher, Card(1));
+        HiLoEngine.ValidateRevealedHistory(lost);
+    }
+
+    [Fact]
     public void InvalidCardsAndDirectionsReject()
     {
         Assert.Throws<ArgumentException>(() => HiLoEngine.Start(Guid.NewGuid(), 1m, Card(0)));

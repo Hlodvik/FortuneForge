@@ -31,6 +31,17 @@ const settledRound: SicBoRound = {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('HttpSicBoGateway', () => {
+  it('binds historical reads and paid slips to the account that opened the table', async () => {
+    const fetcher = vi.fn().mockImplementation(async () => new Response(JSON.stringify(settledRound), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    }))
+    const gateway = new HttpSicBoGateway(undefined, fetcher, 'original-account')
+    await gateway.getRound(roundId)
+    await gateway.createRound(bets, { idempotencyKey: 'sic-bo-bound-request-0001' })
+    for (const [, init] of fetcher.mock.calls)
+      expect(new Headers(init?.headers).get('X-FortuneForge-Expected-Account')).toBe('original-account')
+  })
+
   it('requests status from the expected route', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
       available: true, minimumStake: 1, maximumStakePerBet: 10, stakeIncrement: 1,

@@ -3,7 +3,7 @@ import { InGameNavbar } from '../../components/InGameNavbar'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { useGameFrameRelease } from '../../features/game-releases/useGameRelease'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
-import { loadJadeSession, spinJade } from './jadeDragonApi'
+import { createJadeGameApi } from './jadeDragonApi'
 import './JadeDragonRoute.css'
 
 export function JadeDragonRoute() {
@@ -21,6 +21,7 @@ export function JadeDragonRoute() {
     if (!account || !frameReady) return
     let mounted = true
     let spinning = false
+    const api = createJadeGameApi(account.userId)
     const responses = new Map<string, Promise<unknown>>()
     const receive = (event: MessageEvent) => {
       const source = frame.current?.contentWindow
@@ -30,14 +31,10 @@ export function JadeDragonRoute() {
       let pending = responses.get(id)
       if (!pending) {
         pending = (async () => {
-          if (method === 'init') {
-            if (spinning) throw new Error('Wait for the current round to settle.')
-            return loadJadeSession()
-          }
-          if (method !== 'spin') throw new Error('Unknown game request.')
+          if (method !== 'init' && method !== 'spin') throw new Error('Unknown game request.')
           if (spinning) throw new Error('A spin is already in progress.')
           spinning = true
-          try { return await spinJade(payload) }
+          try { return await (method === 'init' ? api.loadSession() : api.spin(payload)) }
           finally { spinning = false }
         })()
         responses.set(id, pending)

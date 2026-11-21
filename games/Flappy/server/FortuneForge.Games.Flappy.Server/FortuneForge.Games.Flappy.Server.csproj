@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Arcade.Competition/FortuneForge.Games.Arcade.Competition.csproj" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Firestore/FortuneForge.Games.Firestore.csproj" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Hosting/FortuneForge.Games.Hosting.csproj" />
+    <ProjectReference Include="../../src/FortuneForge.Games.Flappy/FortuneForge.Games.Flappy.csproj" />
+  </ItemGroup>
+</Project>

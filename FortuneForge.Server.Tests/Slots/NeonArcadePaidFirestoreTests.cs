@@ -276,16 +276,21 @@ public sealed class NeonArcadePaidFirestoreTests(MidnightVaultPaidEmulatorFixtur
             playerId, 150, 1m, arcadeRows: false, discoBall: true, cancellationToken: default));
         var state = await store.GetSlotStateAsync(playerId, GameId, 1m, default);
         Assert.Equal(NeonArcadeSlotDefinitions.DiscoPlaySpins, state.NeonDiscoSpinsRemaining);
+        Assert.Equal(150L, state.NeonDiscoWagerPoints);
+        Assert.Equal(0L, state.NeonDiscoRoundWinPoints);
         Assert.Equal(0, state.FreeSpinsRemaining);
         Assert.False(await store.GrantNeonAdminSpecialPlaysAsync(
             playerId, 150, 1m, arcadeRows: false, discoBall: false, cancellationToken: default));
 
-        var admission = await store.BeginSlotSpinAsync(playerId, GameId, 150, 1m,
+        Task<SlotSpinAdmission> Admit(long wager) => store.BeginSlotSpinAsync(playerId, GameId, wager, 1m,
             useFreeSpin: false, useSpecialBoost: false, specialBoostCost: 0,
             startedAtUtc: DateTime.UtcNow.AddSeconds(-5), cooldown: TimeSpan.Zero,
             cancellationToken: default);
+        await Assert.ThrowsAsync<NeonDiscoWagerLockedException>(() => Admit(300));
+        var admission = await Admit(150);
         Assert.True(admission.IsNeonDiscoPlay);
         Assert.Equal(150L, admission.ChargedWagerCents);
+        Assert.NotNull((await Admit(150)).CooldownRemaining);
         var draws = new SeededDraws(73);
         var engine = new SpinService(NeonArcadeTests.Definitions(), new CryptoReelGenerator(draws),
             new CombinationEvaluator(), new PayoutCalculator(), draws);
@@ -310,9 +315,14 @@ public sealed class NeonArcadePaidFirestoreTests(MidnightVaultPaidEmulatorFixtur
         Assert.Equal(expectedRemaining, settled.NeonDiscoSpinsRemaining);
         state = await store.GetSlotStateAsync(playerId, GameId, 1m, default);
         Assert.Equal(expectedRemaining, state.NeonDiscoSpinsRemaining);
+        Assert.Equal(150L, state.NeonDiscoWagerPoints);
+        Assert.Equal(settled.Payout.TotalPoints, state.NeonDiscoRoundWinPoints);
         var wagerReceipt = await database.Collection("balanceTransactions")
             .Document(result.SpinId.ToString("N") + "-wager").GetSnapshotAsync();
         Assert.True(wagerReceipt.Exists);
+        var retry = await store.RecordSlotSpinAsync(playerId, result, admission, DateTime.UtcNow, default);
+        Assert.Equal(settled.SlotsCreditsBalance, retry.SlotsCreditsBalance);
+        Assert.Equal(settled.NeonDiscoRoundWinPoints, retry.NeonDiscoRoundWinPoints);
         await Assert.ThrowsAsync<InvalidOperationException>(() => store.RecordSlotSpinAsync(
             playerId, tampered, admission, DateTime.UtcNow, default));
     }

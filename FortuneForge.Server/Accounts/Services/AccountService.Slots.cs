@@ -1,6 +1,5 @@
 // Edited: 2026-11-18T17:59:35-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T16:30:13-06:00 | Computer: Vinnabok
-using FortuneForge.Games.ArcaneArchives;
 using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
@@ -39,7 +38,9 @@ public sealed partial class AccountService
         DateTime startedAtUtc,
         TimeSpan cooldown,
         CancellationToken cancellationToken,
-        Func<SlotSpinAdmission, CancellationToken, Task<SpinResult>>? resolveOutcome = null)
+        Func<SlotSpinAdmission, CancellationToken, Task<SpinResult>>? resolveOutcome = null,
+        string? operationId = null,
+        bool allowNewPrepared = true)
     {
         return accountStore.BeginSlotSpinAsync(
             userId,
@@ -52,16 +53,14 @@ public sealed partial class AccountService
             startedAtUtc,
             cooldown,
             cancellationToken,
-            resolveOutcome);
+            resolveOutcome,
+            operationId,
+            allowNewPrepared);
     }
 
-    public Task<ArcanePotionState> ActivateArcanePotionAsync(
-        string userId, long potionId, CancellationToken cancellationToken) =>
-        accountStore.ActivateArcanePotionAsync(userId, potionId, DateTime.UtcNow, cancellationToken);
-
-    public Task<ArcaneTomeState> SelectArcaneTomePageAsync(
-        string userId, string page, bool activate, CancellationToken cancellationToken) =>
-        accountStore.SelectArcaneTomePageAsync(userId, page, activate, DateTime.UtcNow, cancellationToken);
+    internal Task<LegacySlotRecoveryResult> ReconcileExpiredLegacySlotAsync(
+        string userId, string gameId, DateTime nowUtc, CancellationToken cancellationToken) =>
+        accountStore.ReconcileExpiredLegacySlotAsync(userId, gameId, nowUtc, cancellationToken);
 
     public Task<SlotStateResponse> GetSlotStateAsync(
         string userId,

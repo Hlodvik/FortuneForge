@@ -50,7 +50,7 @@ public static class NeonOutcomeReplay
             Flag("slot-frequency-stage-mismatch", "Neon's inactive scatter-frequency stage changed the window.");
 
         var usesNitroWild = NeonArcadeSlotDefinitions.SupportsNitroWild(audit.EngineVersion) &&
-            NeonNitroWild.IsCarPlay(result.IsFreeSpin, audit.FreeSpinFeatureMode);
+            NeonCarRoundState.IsCarPlay(result.IsFreeSpin, audit.FreeSpinFeatureMode);
         if (usesNitroWild)
         {
             if (game.Layout.VisibleRows != audit.BaseGame.Layout.VisibleRows + 3 ||

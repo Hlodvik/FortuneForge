@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.Keno;
+using FortuneForge.Games.Keno.Server;
 using FortuneForge.Games.SicBo;
-using FortuneForge.Server.Dice.SicBo;
-using FortuneForge.Server.Numbers.Keno;
+using FortuneForge.Games.SicBo.Server;
 using FortuneForge.Server.SecurityAudit;
 using Xunit;
 

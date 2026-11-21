@@ -18,9 +18,9 @@ public sealed class LiarsDiceController(LiarsDiceGameService games, AccountServi
 
     [HttpPost("matches")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public async Task<ActionResult> Start(StartLiarsDiceMatchRequest? request, CancellationToken cancellationToken) =>
-        await WithAccount(cancellationToken, account => ExecuteAsync(() => games.StartAsync(
-            account.UserId, request ?? new(null, null), cancellationToken)));
+    public Task<ActionResult> Start(StartLiarsDiceMatchRequest? request, CancellationToken cancellationToken) =>
+        WithAccount(cancellationToken, _ => Task.FromResult<ActionResult>(StatusCode(StatusCodes.Status503ServiceUnavailable,
+            new LiarsDiceErrorResponse("liars-dice-worker-unavailable", "Liar's Dice is temporarily unavailable."))));
 
     [HttpGet("matches/{matchId:guid}")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
@@ -62,12 +62,14 @@ public sealed class LiarsDiceController(LiarsDiceGameService games, AccountServi
     {
         if (Disabled() is { } unavailable) return unavailable;
         var account = await accounts.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken);
-        return account.Value is null
-            ? Unauthorized(new LiarsDiceErrorResponse("liars-dice-authentication-required", "Sign in to play Liar's Dice."))
-            : await action(account.Value);
+        if (account.Value is not { } profile)
+            return Unauthorized(new LiarsDiceErrorResponse("liars-dice-authentication-required", "Sign in to play Liar's Dice."));
+        if (!GameAccountBinding.Matches(Request, profile.UserId))
+            return StatusCode(StatusCodes.Status403Forbidden, GameAccountBinding.SessionChanged);
+        return await action(profile);
     }
 
-    private async Task<ActionResult> ExecuteAsync(Func<Task<LiarsDiceMatchResponse>> action)
+    private async Task<ActionResult> ExecuteAsync(Func<Task<FortuneForge.Games.LiarsDice.LiarsDiceMatchResponse>> action)
     {
         try { return Ok(await action()); }
         catch (LiarsDiceAccessException exception) { return NotFound(new LiarsDiceErrorResponse("liars-dice-match-not-found", exception.Message)); }

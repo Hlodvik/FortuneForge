@@ -1,6 +1,7 @@
 // Edited: 2026-11-18T17:59:35-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T16:30:13-06:00 | Computer: Vinnabok
 using FortuneForge.Games.ArcaneArchives;
+using FortuneForge.Games.Abstractions.Auditing;
 using System.Text.Json.Serialization;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Bonuses;
@@ -77,6 +78,7 @@ public sealed record SlotSpinAdmission(
     public ArcanePotionState? ArcanePotionsBefore { get; init; }
     internal bool ArcanePotionWagerTracked { get; init; }
     internal SpinResult? ResolvedOutcome { get; init; }
+    internal GameRequestObservation? PreparedRequestObservation { get; init; }
     internal NeonNitroChoiceOffer? PendingNeonNitroChoice { get; init; }
 }
 

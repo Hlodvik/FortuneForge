@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Google.Cloud.Firestore" Version="4.3.0" />
+    <ProjectReference Include="../../src/FortuneForge.Games.Baccarat/FortuneForge.Games.Baccarat.csproj" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Hosting/FortuneForge.Games.Hosting.csproj" />
+    <InternalsVisibleTo Include="FortuneForge.Server" />
+    <InternalsVisibleTo Include="FortuneForge.Server.Tests" />
+    <InternalsVisibleTo Include="FortuneForge.Games.Baccarat.Tests" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Firestore/FortuneForge.Games.Firestore.csproj" />
+  </ItemGroup>
+</Project>

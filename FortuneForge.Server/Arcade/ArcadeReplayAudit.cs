@@ -4,10 +4,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Asteroids;
 using FortuneForge.Games.Flappy;
 using FortuneForge.Games.HorseFlight;
-using FortuneForge.Server.Arcade.Asteroids;
-using FortuneForge.Server.Arcade.Flappy;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Arcade;
@@ -134,23 +133,16 @@ internal static class ArcadeReplayAudit
         if (data.GetProperty("rulesVersion").GetInt32() != AsteroidsReplayEvaluator.RulesVersion)
             return Error("arcade-rules-version-mismatch", "The saved Asteroids rules version is unsupported.");
         var canonical = data.GetProperty("replayCanonical").GetString() ?? "";
-        var parts = canonical.Split('|');
-        if (parts.Length != 3 || parts[0] != $"v{AsteroidsReplayEvaluator.RulesVersion}" ||
-            !int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out var steps))
+        AsteroidsReplay replay;
+        try
+        {
+            replay = AsteroidsReplayEvaluator.ParseCanonicalReplay(canonical);
+        }
+        catch (ArgumentException)
+        {
             return Error("arcade-replay-evidence-invalid", "The saved Asteroids input timeline has an invalid canonical form.");
-        var commands = new List<AsteroidsInputCommand>();
-        if (parts[2].Length > 0)
-            foreach (var item in parts[2].Split(','))
-            {
-                var pair = item.Split(':');
-                if (pair.Length != 2 || !int.TryParse(pair[0], NumberStyles.None, CultureInfo.InvariantCulture, out var step) ||
-                    !int.TryParse(pair[1], NumberStyles.None, CultureInfo.InvariantCulture, out var input))
-                    return Error("arcade-replay-evidence-invalid", "The saved Asteroids input transition is invalid.");
-                commands.Add(new(step, (AsteroidsInput)input));
-            }
-        var replay = new AsteroidsReplay(steps, commands);
-        if (AsteroidsReplayEvaluator.CanonicalizeReplay(replay) != canonical ||
-            data.GetProperty("replaySha256").GetString() != Hash(canonical))
+        }
+        if (data.GetProperty("replaySha256").GetString() != Hash(canonical))
             return Error("arcade-replay-digest-mismatch", "The saved Asteroids input differs from its canonical fingerprint.");
         var seed = data.GetProperty("seed").GetUInt64();
         var state = AsteroidsReplayEvaluator.Evaluate(new AsteroidsRunIdentity(summary.RoundId, seed), replay);
@@ -177,12 +169,12 @@ internal static class ArcadeReplayAudit
                 flaps.Add(tick);
             }
         var replay = new FlappyReplay(ticks, [.. flaps]);
-        if (FirestoreFlappyFreeRunService.CanonicalizeReplay(replay) != canonical ||
+        if (FlappyRunReplay.CanonicalizeReplay(replay) != canonical ||
             data.GetProperty("replaySha256").GetString() != Hash(canonical))
             return Error("arcade-replay-digest-mismatch", "The saved Flappy input differs from its canonical fingerprint.");
         var result = FlappyReplayEvaluator.Evaluate(data.GetProperty("seed").GetUInt32(), replay);
         return result.Snapshot.Score != data.GetProperty("score").GetInt64() ||
-            FirestoreFlappyFreeRunService.TerminalName(result.Snapshot.Phase) != data.GetProperty("terminal").GetString()
+            FlappyRunReplay.TerminalName(result.Snapshot.Phase) != data.GetProperty("terminal").GetString()
             ? Error("arcade-replay-outcome-mismatch", "The saved Flappy score or terminal state differs from deterministic replay.") : [];
     }
 

@@ -24,14 +24,27 @@ public sealed class BaccaratContractTests
         Assert.True(BaccaratController.IsEnabled(enabled));
     }
 
-    [Fact]
-    public async Task DisabledFeature_ReturnsServiceUnavailableBeforeAccountOrStoreAccess()
+    [Theory]
+    [InlineData(false, false, "baccarat-disabled")]
+    [InlineData(false, true, "baccarat-disabled")]
+    [InlineData(true, false, "baccarat-retry-required")]
+    public async Task HostRoutes_ReturnServiceUnavailableBeforeAccessingAnAccountOrStore(
+        bool enabled, bool practice, string expectedCode)
     {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Features:BaccaratEnabled"] = enabled.ToString(),
+        }).Build();
+        var context = new DefaultHttpContext();
+        if (practice) context.Request.Headers["X-FortuneForge-Practice"] = "true";
         var controller = new BaccaratController(
             null!,
+            configuration,
             null!,
-            new ConfigurationBuilder().Build(),
-            NullLogger<BaccaratController>.Instance);
+            NullLogger<BaccaratController>.Instance)
+        {
+            ControllerContext = new ControllerContext { HttpContext = context },
+        };
 
         var responses = new ActionResult[]
         {
@@ -44,7 +57,7 @@ public sealed class BaccaratContractTests
         {
             var unavailable = Assert.IsType<ObjectResult>(response);
             Assert.Equal(StatusCodes.Status503ServiceUnavailable, unavailable.StatusCode);
-            Assert.Equal("baccarat-disabled", Assert.IsType<BaccaratErrorResponse>(unavailable.Value).Code);
+            Assert.Equal(expectedCode, Assert.IsType<BaccaratErrorResponse>(unavailable.Value).Code);
         });
     }
 
@@ -242,29 +255,24 @@ public sealed class BaccaratContractTests
     }
 
     [Fact]
-    public async Task PracticeStatus_ReportsCurrentPerPlayerBalanceAndLeavesWalletStatusUntouched()
+    public async Task PracticeStatus_ReportsOnlyTheCurrentPracticeBalanceAndStakeTerms()
     {
         var store = new PracticeBaccaratStore();
         var service = new BaccaratService(store, TimeProvider.System, BankerNaturalShoe);
 
-        Assert.Equal(10_000m, BaccaratController.CreateStatusResponse("practice-player", 123m, store).Balance);
+        Assert.Equal(10_000m, BaccaratController.CreatePracticeStatusResponse("practice-player", store).Balance);
         var round = await service.StartAsync(
             "practice-player", new CreateBaccaratRoundRequest("banker", 10m), "baccarat_status_0001", CancellationToken.None);
 
-        var practiceStatus = BaccaratController.CreateStatusResponse("practice-player", 123m, store);
+        var practiceStatus = BaccaratController.CreatePracticeStatusResponse("practice-player", store);
         Assert.True(practiceStatus.SupportsPairBets);
         Assert.Equal(round.Balance, practiceStatus.Balance);
         Assert.Equal(10_009.5m, practiceStatus.Balance);
         Assert.Equal("practice-eight-deck-punto-banco", practiceStatus.Mode);
-        Assert.Equal(10_000m, BaccaratController.CreateStatusResponse("other-player", 123m, store).Balance);
-
-        var walletStatus = BaccaratController.CreateStatusResponse("practice-player", 123m, null);
-        Assert.True(walletStatus.SupportsPairBets);
-        Assert.Equal(123m, walletStatus.Balance);
-        Assert.Equal(0.25m, walletStatus.MinimumStake);
-        Assert.Equal(0.25m, walletStatus.StakeIncrement);
-        Assert.Equal(100m, walletStatus.MaximumStake);
-        Assert.Equal("eight-deck-punto-banco", walletStatus.Mode);
+        Assert.Equal(10_000m, BaccaratController.CreatePracticeStatusResponse("other-player", store).Balance);
+        Assert.Equal(0.25m, practiceStatus.MinimumStake);
+        Assert.Equal(0.25m, practiceStatus.StakeIncrement);
+        Assert.Equal(100m, practiceStatus.MaximumStake);
     }
 
     private static IReadOnlyList<PlayingCard> BankerNaturalShoe() =>

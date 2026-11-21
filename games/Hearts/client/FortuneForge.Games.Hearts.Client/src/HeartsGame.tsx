@@ -106,6 +106,28 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, onParticipat
   const connect = useCallback(async (signal?: AbortSignal) => {
     setConnecting(true)
     setError(null)
+    let restoredPractice = false
+    try {
+      const restored = gateway.recoverSession ? await gateway.recoverSession(signal) : null
+      if (signal?.aborted) return
+      if (restored?.kind === 'practice') {
+        setPractice(restored.match)
+        setMode(restored.match.isTrial ? 'trial' : 'free')
+        setPendingParticipation(null)
+        restoredPractice = true
+      } else if (restored?.kind === 'paid') {
+        publishPaid(restored.session)
+        setMode(restored.session.kind === 'idle' ? 'lobby' : 'paid')
+        setPendingParticipation(null)
+      } else if (restored?.kind === 'closed') {
+        setPractice(null)
+        setMode('lobby')
+        setPendingParticipation(null)
+      }
+    } catch (reason) {
+      if (!signal?.aborted) { setError(errorMessage(reason)); setConnecting(false) }
+      return
+    }
     const paidRequest = gateway.paid?.getSession(signal).then(next => {
       if (!signal?.aborted) {
         publishPaid(next)
@@ -119,7 +141,7 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, onParticipat
     if (results[1].status === 'fulfilled' && results[1].value) {
       const kind = results[1].value.kind
       const accountSetupComplete = !gateway.onboarding || results[2].status === 'fulfilled' && results[2].value?.shouldAskPlayedBefore === false
-      if (kind === 'queue' || kind === 'match' || kind === 'result' && accountSetupComplete) setMode('paid')
+      if (kind === 'queue' || kind === 'match' || kind === 'result' && accountSetupComplete && !restoredPractice) setMode('paid')
     }
     if (results[2].status === 'fulfilled') { setOnboarding(results[2].value); setOnboardingError(null) }
     else setOnboardingError(errorMessage(results[2].reason))
@@ -174,7 +196,9 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, onParticipat
     actionLock.current = true
     setBusy(true)
     try {
-      setPractice(await gateway.advance(practice.matchId))
+      const restored = await gateway.recoverSession?.()
+      if (restored?.kind === 'closed') { setPractice(null); setMode('lobby') }
+      else setPractice(restored?.kind === 'practice' ? restored.match : await gateway.advance(practice.matchId))
       setSelected([]); setPendingCardCode(null); setPracticeRecovery(false); setError(null)
     } catch (reason) { setError(errorMessage(reason)); setPracticeRecovery(true) }
     finally { actionLock.current = false; setBusy(false) }

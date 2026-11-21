@@ -6,6 +6,8 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ARCANE_ARCHIVES_EXPERIENCE_SET } from '@fortuneforge/games-arcane-archives/manifest'
 import { OCEAN_ODYSSEY_SLOT_GAME } from '@fortuneforge/games-ocean-odyssey/manifest'
+import { WUKONG_EXPERIENCE_SET } from '@fortuneforge/games-wukong/manifest'
+import { createPreparedSlotSpinStore } from '@fortuneforge/slot-client-core/preparedSpin'
 import type { SlotTomeState } from '@fortuneforge/slot-game-runtime/experience'
 import { DRAGON_HOARD_SLOT_GAME } from '../../games/slots/dragonHoard/manifest'
 import type { SlotExperienceSet } from './config/slotExperienceSets'
@@ -167,6 +169,38 @@ it('uses the earned potion wager for all three paid spins and restores the selec
   expect(controller.isPotionWagerLocked).toBe(false)
   expect(controller.activeWagerDisplay).toBe(100)
   expect(controller.canAffordSelectedWager).toBe(false)
+})
+
+it('recovers a saved paid round at zero credits and then refreshes the authoritative balance', async () => {
+  const accountId = 'wukong-reloaded-after-charge'
+  const store = createPreparedSlotSpinStore('wukong')
+  const pending = { operationId: 'wukong-spent-final-wager', wagerPoints: 12, useFreeSpin: false, useSpecialBoost: false }
+  const experience = WUKONG_EXPERIENCE_SET
+  const state = {
+    freeSpinsRemaining: 0, freeSpinWagerPoints: null, freeSpinFeatureMode: null,
+    specialPointsBalance: 0, energyBalance: 0, sealCollections: [], slotsCreditsBalance: 0,
+  }
+  store.remember(accountId, pending)
+  try {
+    mocks.slotState.mockResolvedValueOnce(state).mockResolvedValueOnce({ ...state, slotsCreditsBalance: 4.25 })
+    mocks.paidRequest.mockResolvedValueOnce({
+      ...fixture.baseLoss.response, gameId: experience.rules.gameId,
+      symbolSetId: experience.symbols.serverSymbolSetId ?? experience.symbols.id,
+      reels: experience.rules.initialReels.map(reel => [...reel]), slotsCreditsBalance: 0,
+    })
+    await mount(experience, {
+      userId: accountId, playerName: 'Player', email: 'player@example.test', createdAtUtc: '2026-11-20T00:00:00Z',
+      balances: { slotsCredits: 0, freeGames: 0 }, role: 'player',
+      slots: { spinsPlayed: 0, wins: 0, losses: 0, creditsWagered: 0, creditsWon: 0, netCredits: 0 },
+    })
+    expect(controller.canAffordSelectedWager).toBe(true)
+    await spin()
+    expect(mocks.paidRequest.mock.calls[0][0]).toMatchObject({ gameId: experience.rules.gameId, wagerPoints: 12 })
+    expect(mocks.slotState).toHaveBeenLastCalledWith(experience.rules.gameId, accountId)
+    expect(controller.balance).toBe(4.25)
+  } finally {
+    store.forget(accountId, pending.operationId)
+  }
 })
 
 describe('symbol guide pauses slot controls', () => {

@@ -1,3 +1,4 @@
+import { createGameCommandRecovery } from '@fortuneforge/client-presentation/game-command-recovery'
 import { HeartsGame as BundledHeartsGame, HttpHeartsGateway, type HeartsCard, type HeartsParticipation } from '@fortuneforge/games-hearts'
 import bundledStyles from '@fortuneforge/games-hearts/styles.css?inline'
 import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
@@ -24,7 +25,9 @@ export function AuthenticatedHeartsRoute() {
 function HeartsSession({ initialAccount }: Readonly<{ initialAccount: AccountSummary }>) {
   const [account, setAccount] = useState(initialAccount)
   const [participation, setParticipation] = useState<HeartsParticipation>(null)
-  const gateway = useMemo(() => new HttpHeartsGateway('/api/games/hearts', fetchWithAccountSession), [])
+  const gateway = useMemo(() => new HttpHeartsGateway('/api/games/hearts', fetchWithAccountSession,
+    createGameCommandRecovery({ accountId: account.userId, gameId: 'hearts', routePrefix: '/api/games/hearts' }),
+    account.userId), [account.userId])
   useEffect(() => setAccount(initialAccount), [initialAccount])
   const publishBalance = useCallback((balance: number) => setAccount(current => ({ ...current, balances: { ...current.balances, slotsCredits: balance } })), [])
   useGameLeaveGuard(participation === null ? null : {
@@ -36,8 +39,8 @@ function HeartsSession({ initialAccount }: Readonly<{ initialAccount: AccountSum
         : participation === 'paid-match'
           ? 'This match stays active if you leave this page. Missing a turn forfeits your entry and your chance to win the pot. Return before the turn timer expires to keep playing.'
           : participation === 'free-pending' || participation === 'trial-pending'
-            ? 'Your practice hand is still being opened. Leaving this page may lose your progress. No account credits are at stake.'
-            : 'Leaving this page loses your current practice progress. No account credits are at stake.',
+            ? 'Your practice hand is still being opened. Return to confirm it before starting another. No account credits are at stake.'
+            : 'Your practice progress is saved. Close the hand at the table when you are ready to leave. No account credits are at stake.',
   })
   const { Game: HeartsGame, pending } = useReleasedGame('hearts', 'Hearts', BundledHeartsGame, bundledStyles)
   if (HeartsGame === null) return pending

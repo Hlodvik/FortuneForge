@@ -76,15 +76,6 @@ public static class SlotSpecialRoundProfiles
     public const string ReelRichesGameId = ReelRichesEngine.GameId;
     public const string ArcaneArchivesGameId = ArcaneEngine.GameId;
 
-    private static readonly string[] Modes = ["sync", "rows", "paw", "rand", "arcade"];
-    private static readonly IReadOnlyDictionary<string, string> ModesBySeal =
-        new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["SEAL_SYNC"] = "sync",
-            ["SEAL_ROWS"] = "rows",
-            ["SEAL_PAW"] = "paw",
-            ["SEAL_RAND"] = "rand"
-        };
     private static readonly IReadOnlyDictionary<string, SlotSpecialRoundProfile> Profiles =
         new Dictionary<string, SlotSpecialRoundProfile>(StringComparer.Ordinal)
         {
@@ -141,7 +132,7 @@ public static class SlotSpecialRoundProfiles
         if (string.IsNullOrWhiteSpace(value)) return false;
 
         var modes = value.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return modes.Length > 0 && modes.All(mode => Modes.Contains(mode, StringComparer.Ordinal));
+        return modes.Length > 0 && modes.All(mode => ClassicSlotCollections.PracticeTrackIds.Contains(mode, StringComparer.Ordinal));
     }
 
     public static bool HasFeatureMode(string? value, string mode) =>
@@ -168,40 +159,13 @@ public static class SlotSpecialRoundProfiles
             profile.CollectionTarget == PiratesGemBonus.MaximumGems)
             return SettlePiratesDemo(profile, current, awarded, wagerPoints, spinId);
 
-        var states = Modes.ToDictionary(mode => mode, mode => new RoundState(), StringComparer.Ordinal);
-        foreach (var collection in current.Where(collection => states.ContainsKey(collection.SealId)))
-        {
-            states[collection.SealId] = new RoundState(collection.Count, collection.AverageWagerPoints);
-        }
-
-        foreach (var (sealId, count) in awarded)
-        {
-            if (count <= 0 || !ModesBySeal.TryGetValue(sealId, out var mode)) continue;
-            states[mode] = states[mode].Add(count, wagerPoints);
-        }
-
-        if (energyCompleted && profile.UsesEnergy)
-        {
-            var mode = Modes.OrderBy(mode => states[mode].Count).First();
-            states[mode] = states[mode].Add(Math.Max(1, profile.CollectionTarget - states[mode].Count), wagerPoints);
-        }
-
-        var freeSpins = 0;
-        string? featureMode = null;
-        foreach (var mode in Modes)
-        {
-            var state = states[mode];
-            if (state.Count < profile.CollectionTarget) continue;
-
-            freeSpins += profile.CollectionAwardedSpins;
-            featureMode ??= profile.CollectionFeatureMode ?? mode;
-            states[mode] = state with { Count = state.Count % profile.CollectionTarget };
-        }
-
-        return new SlotSpecialRoundProgress(
-            freeSpins,
-            featureMode,
-            Modes.Select(mode => states[mode].ToCollection(mode, profile.CollectionTarget)).ToArray());
+        var practice = ClassicSlotPracticeCollections.Advance(profile.CollectionTarget, profile.CollectionAwardedSpins,
+            profile.CollectionFeatureMode, energyCompleted && profile.UsesEnergy,
+            current.Select(collection => new ClassicSlotPracticeCollection(collection.SealId, collection.Count,
+                collection.AverageWagerPoints)).ToArray(), awarded, wagerPoints);
+        return new(practice.FreeSpinsAwarded, practice.FeatureMode,
+            practice.Collections.Select(collection => new SlotSealCollection(collection.TrackId, collection.Count,
+                collection.AverageWagerPoints, profile.CollectionTarget)).ToArray());
     }
 
     private static SlotSpecialRoundProgress SettlePiratesDemo(
@@ -224,7 +188,7 @@ public static class SlotSpecialRoundProfiles
             StringComparer.Ordinal);
         foreach (var (sealId, count) in awarded)
         {
-            if (count > 0 && ModesBySeal.TryGetValue(sealId, out var mode))
+            if (count > 0 && ClassicSlotCollections.TrackForSymbol(sealId) is { } mode)
                 awardedByMode[mode] = checked(awardedByMode[mode] + count);
         }
 
@@ -254,13 +218,6 @@ public static class SlotSpecialRoundProfiles
 
     private sealed record RoundState(int Count = 0, long AverageWagerPoints = 0)
     {
-        public RoundState Add(int count, long wagerPoints)
-        {
-            var nextCount = checked(Count + count);
-            var total = checked(AverageWagerPoints * Count + wagerPoints * count);
-            return new RoundState(nextCount, nextCount == 0 ? 0 : (long)Math.Round(total / (decimal)nextCount));
-        }
-
         public SlotSealCollection ToCollection(string mode, int target) =>
             new(mode, Math.Min(Count, target), AverageWagerPoints, target);
     }

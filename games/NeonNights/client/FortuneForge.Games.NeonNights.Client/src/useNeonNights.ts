@@ -46,7 +46,8 @@ const hasFallingSymbols = (column: readonly number[]) => column.some(rows => row
 
 /** Owns Neon gameplay sequencing; the host provides identity, wallet display and transport only. */
 export function useNeonNights({ account, demoMode = false, authenticatedFetch, onSpinStateChange }: NeonNightsGameProps) {
-  const api = useMemo(() => createNeonApi(authenticatedFetch), [authenticatedFetch])
+  const accountId = account?.userId
+  const api = useMemo(() => createNeonApi(authenticatedFetch, accountId), [authenticatedFetch, accountId])
   const reducedMotion = usePrefersReducedMotion()
   const audio = useSlotAudio(NEON_NIGHTS_SOUNDS)
   const [balance, setBalance] = useState(demoMode ? 10_000 : account?.balances.slotsCredits ?? 0)
@@ -100,7 +101,9 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
   const stateRevision = useRef(new SlotStateRevisionGuard())
   const selectedWagerPoints = neonRules.wagerOptions[wagerIndex]
   const nitroChoice = state.pendingNeonNitroChoice ?? null
-  const nitroChoiceReels = nitroChoice?.eligibleReels.filter(reel => nitroAttempt?.spinId !== nitroChoice.spinId || reel === nitroAttempt.reelIndex) ?? []
+  const selectedNitroReel = (nitroChoice?.sourceKind === 'spin' ? nitroChoice.selectedReel : null) ??
+    (nitroAttempt?.spinId === nitroChoice?.spinId ? nitroAttempt?.reelIndex : null)
+  const nitroChoiceReels = nitroChoice?.eligibleReels.filter(reel => selectedNitroReel == null || reel === selectedNitroReel) ?? []
   const activeWagerPoints = nitroChoice?.wagerPoints ?? getNeonWager(state, selectedWagerPoints)
   const activeWager = toRand(activeWagerPoints)
   // The seven-row cabinet and its music belong to the round through Nitro,
@@ -131,6 +134,7 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
 
   const restoreState = useCallback((loaded: NeonState) => {
     setState(loaded)
+    if (loaded.slotsCreditsBalance != null) setBalance(loaded.slotsCreditsBalance)
     setDiscoMultiplier(loaded.neonDiscoMultiplier)
     const pendingChoice = loaded.pendingNeonNitroChoice
     const expanded = Boolean(pendingChoice || loaded.neonCarRespinOffer) || getNeonRows(loaded) === 7
@@ -154,18 +158,39 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
     } else if (loaded.neonDiscoSpinsRemaining > 0) setDisplayedReels(discoInitialReels.map(reel => [...reel]))
   }, [])
 
+  const restoreRecoveredSpin = useCallback((loaded: NeonState, recovered?: NeonSpinResult) => {
+    restoreState(loaded)
+    if (recovered && !loaded.pendingNeonNitroChoice && !loaded.neonCarRespinOffer &&
+      loaded.freeSpinsRemaining === recovered.freeSpinsRemaining &&
+      loaded.neonDiscoSpinsRemaining === recovered.neonDiscoSpinsRemaining) {
+      setDisplayedReels(recovered.neonDiscoCascade?.steps.at(-1)?.reels ?? recovered.reels)
+      setHasCompletedSpin(true)
+      setLastWin(toRand(recovered.payout.totalPoints))
+    }
+  }, [restoreState])
+
   useEffect(() => {
     const abort = new AbortController()
     const revision = stateRevision.current.capture()
+    const current = () => !abort.signal.aborted && stateRevision.current.isCurrent(revision)
     setSpinAvailability('checking')
-    const load = demoMode ? api.availability(abort.signal) : api.state().then(loaded => {
-      if (!abort.signal.aborted && stateRevision.current.isCurrent(revision)) restoreState(loaded)
+    const load = demoMode ? api.availability(abort.signal) : api.state().then(async loaded => {
+      if (!current()) return
+      restoreState(loaded)
+      if (loaded.pendingNeonNitroChoice || !api.pendingSpin()) return
+      try {
+        const recovered = await api.resumeSpin()
+        const latest = await api.state()
+        if (current()) restoreRecoveredSpin(latest, recovered && 'reels' in recovered ? recovered : undefined)
+      } catch (error) {
+        if (current()) setSpinError(error instanceof Error ? error.message : 'The saved spin could not be recovered.')
+      }
     })
     void load.then(() => { if (!abort.signal.aborted) setSpinAvailability('available') }, error => {
       if (!abort.signal.aborted) { setSpinAvailability('unavailable'); setSpinError(error instanceof Error ? error.message : 'Neon Nights could not connect.') }
     })
     return () => abort.abort()
-  }, [api, demoMode, restoreState])
+  }, [api, demoMode, restoreRecoveredSpin, restoreState])
 
   const { preloadLoop, startLoop, startSyncedLoop, stopLoop, getLoopPlaybackSeconds, playCue, stopResultCues } = audio
   useEffect(() => {
@@ -406,6 +431,8 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
     setCarCabinetExpanded(true)
     setRoundSummary(null)
     setNitroAttempt(null)
+    if (choice.sourceKind === 'spin' && choice.walletBalanceAfterWagerCents != null)
+      setBalance(toRand(choice.walletBalanceAfterWagerCents))
     setDisplayedReels(choice.initialReels)
     setState(current => ({ ...current, freeSpinsRemaining: choice.freeSpinsRemaining,
       freeSpinFeatureMode: neonCarPlayMode, freeSpinWagerPoints: choice.wagerPoints,
@@ -439,8 +466,9 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
         setDisplayedReels(result.reels); setWinningPaylines(result.payout.paylines)
         setResultKey(current => current + 1); setHasCompletedSpin(true); setLastWin(award)
         playCue(getNeonWinReaction(award, toRand(result.wagerPoints)))
-        const afterWager = result.slotsCreditsBalance == null ? cents(balance - toRand(result.chargedWagerCents ?? result.wagerPoints))
-          : cents(result.slotsCreditsBalance - award)
+        const afterWager = result.slotsCreditsBalance != null ? cents(result.slotsCreditsBalance - award)
+          : nitroChoice.sourceKind === 'spin' && nitroChoice.walletBalanceAfterWagerCents != null
+            ? balance : cents(balance - toRand(result.chargedWagerCents ?? result.wagerPoints))
         setBalance(afterWager)
         await animateAward(result, afterWager, false, abort.signal, true)
         if (mounted.current) {
@@ -513,6 +541,24 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
 
   async function handleSpin() {
     if (busy.current || specialIntro || roundSummary || arcadeExpanding || blocked || nitroChoice || spinAvailability !== 'available') return
+    if (!demoMode && api.pendingSpin()) {
+      busy.current = true
+      stateRevision.current.advance()
+      setIsSpinning(true)
+      setIsAutoSpinning(false)
+      setSpinError(null)
+      try {
+        const recovered = await api.resumeSpin()
+        const latest = await api.state()
+        if (mounted.current) restoreRecoveredSpin(latest, recovered && 'reels' in recovered ? recovered : undefined)
+      } catch (error) {
+        if (mounted.current) setSpinError(error instanceof Error ? error.message : 'The saved spin could not be recovered.')
+      } finally {
+        busy.current = false
+        if (mounted.current) setIsSpinning(false)
+      }
+      return
+    }
     const before = state
     const free = before.freeSpinsRemaining > 0
     const disco = !free && before.neonDiscoSpinsRemaining > 0
@@ -685,13 +731,15 @@ export function useNeonNights({ account, demoMode = false, authenticatedFetch, o
       setIsAutoSpinning(false); setDiscoDealPhase(null); setDisplayedReels(previousReels); setState(before); clearResult()
       setDiscoMultiplier(before.neonDiscoMultiplier)
       setBalance(error instanceof NeonRequestError && error.available !== undefined ? error.available : balanceBefore)
-      if (error instanceof NeonRequestError && error.code === 'insufficient_balance') setIsReloadPromptOpen(true)
-      if (error instanceof NeonRequestError && (error.status === 503 || error.status === 404)) setSpinAvailability('unavailable')
+      if (error instanceof NeonRequestError &&
+        (error.code === 'insufficient_balance' || error.code === 'insufficient-slot-credits')) setIsReloadPromptOpen(true)
+      if (error instanceof NeonRequestError && (error.status === 503 || error.status === 404) && !api.pendingSpin()) setSpinAvailability('unavailable')
       setSpinError(error instanceof Error ? error.message : 'Neon Nights could not complete the spin.')
       const recoverNitro = carPlay && (!(error instanceof NeonRequestError) || error.status >= 500) ||
         error instanceof NeonRequestError && error.code === 'nitro-choice-required'
       if (!demoMode && (recoverNitro || error instanceof NeonRequestError &&
-        (error.code === 'free-spins-required' || error.code === 'neon-disco-wager-locked'))) {
+        (error.code === 'free-spins-required' || error.code === 'free-spins-unavailable' ||
+          error.code === 'neon-disco-wager-locked' || error.code === 'neon-legacy-plays-changed'))) {
         const recovered = await api.state().catch(() => null)
         if (mounted.current && recovered) {
           settledState = recovered

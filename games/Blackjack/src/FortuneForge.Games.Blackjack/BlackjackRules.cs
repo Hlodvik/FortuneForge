@@ -238,7 +238,9 @@ public static class BlackjackRules
         }
         foreach (var card in deck)
         {
-            _ = ParseCard(card);
+            var parsed = ParseCard(card);
+            if (!Ranks.Contains(parsed.Rank, StringComparer.Ordinal) || !Suits.Contains(parsed.Suit, StringComparer.Ordinal))
+                throw new ArgumentException("A Blackjack deck must contain standard card ranks and suits.", nameof(deck));
         }
     }
 }

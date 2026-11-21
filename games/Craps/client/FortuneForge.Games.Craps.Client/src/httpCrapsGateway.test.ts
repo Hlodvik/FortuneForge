@@ -27,6 +27,12 @@ const response = (value: unknown, code = 200) => new Response(JSON.stringify(val
 const gatewayFor = (value: unknown) => new HttpCrapsGateway(undefined, vi.fn().mockResolvedValue(response(value)))
 
 describe('HttpCrapsGateway public recovery contract', () => {
+  it('pins requests to the account that owns the saved game commands', async () => {
+    const fetcher = vi.fn().mockResolvedValue(response(status))
+    await new HttpCrapsGateway(undefined, fetcher, 'alice').getStatus()
+    expect(new Headers(fetcher.mock.calls[0][1].headers).get('X-FortuneForge-Expected-Account')).toBe('alice')
+  })
+
   it('calls the default native transport without binding the gateway as its receiver', async () => {
     const fetcher = vi.fn(function (this: unknown) {
       if (this !== undefined) throw new TypeError('Illegal invocation')

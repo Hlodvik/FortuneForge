@@ -35,6 +35,8 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
 
   if (!Game) return pending
   return <Game
+    key={account.userId}
+    accountId={account.userId}
     startingBalanceCredits={account.balances.slotsCredits}
     fetchWithAccountSession={fetchWithAccountSession}
     isPublicResponse={isPublicBlackjackTableResponse}

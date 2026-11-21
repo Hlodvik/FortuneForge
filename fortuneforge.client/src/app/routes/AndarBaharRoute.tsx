@@ -37,7 +37,7 @@ function AndarBaharSession({ initialAccount }: Readonly<{ initialAccount: Accoun
   const practiceMode = walletPracticeModeEnabled()
   const gateway = useMemo(() => new HttpAndarBaharGateway('/api/games/andar-bahar', practiceMode
     ? practiceAccountFetch(fetchWithAccountSession)
-    : fetchWithAccountSession), [practiceMode])
+    : fetchWithAccountSession, practiceMode ? undefined : initialAccount.userId), [practiceMode, initialAccount.userId])
 
   useEffect(() => { refreshGeneration.current++; setAccount(initialAccount) }, [initialAccount])
   useEffect(() => { active.current = true; return () => { active.current = false } }, [])

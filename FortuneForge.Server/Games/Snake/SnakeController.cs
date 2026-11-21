@@ -1,6 +1,8 @@
+using FortuneForge.Games.Snake.Server;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.SecurityAudit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -18,7 +20,7 @@ public sealed class SnakeController(FirestoreSnakeGameService games, AccountServ
     [HttpPost("games")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> Start(SnakeStartRequest? request, CancellationToken ct) =>
-        await WithAccountAsync(ct, account => ExecuteAsync(() => games.StartAsync(account.UserId, request, ct)));
+        await WithAccountAsync(ct, account => ExecuteAsync(() => games.StartAsync(account.UserId, request, ct, ExactBodyDigest())));
 
     [HttpGet("games/{gameId:guid}")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
@@ -28,24 +30,29 @@ public sealed class SnakeController(FirestoreSnakeGameService games, AccountServ
     [HttpPost("games/{gameId:guid}/turn")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> Turn(Guid gameId, SnakeTurnRequest request, CancellationToken ct) =>
-        await WithAccountAsync(ct, account => ExecuteAsync(() => games.TurnAsync(account.UserId, gameId, request.Direction, ct)));
+        await WithAccountAsync(ct, account => ExecuteAsync(() => games.TurnAsync(account.UserId, gameId, request.Direction, ct, ExactBodyDigest())));
 
     [HttpPost("games/{gameId:guid}/tick")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> Tick(Guid gameId, CancellationToken ct) =>
-        await WithAccountAsync(ct, account => ExecuteAsync(() => games.TickAsync(account.UserId, gameId, ct)));
+        await WithAccountAsync(ct, account => ExecuteAsync(() => games.TickAsync(account.UserId, gameId, ct, ExactBodyDigest())));
 
     [HttpPost("games/{gameId:guid}/reset")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> Reset(Guid gameId, SnakeStartRequest? request, CancellationToken ct) =>
-        await WithAccountAsync(ct, account => ExecuteAsync(() => games.ResetAsync(account.UserId, gameId, request, ct)));
+        await WithAccountAsync(ct, account => ExecuteAsync(() => games.ResetAsync(account.UserId, gameId, request, ct, ExactBodyDigest())));
+
+    private string? ExactBodyDigest() => GameSecurityRequestMiddleware.ReadExactBodyDigest(HttpContext);
 
     private async Task<ActionResult> WithAccountAsync(CancellationToken ct,
         Func<AccountSummary, Task<ActionResult>> action)
     {
         var profile = await accounts.GetProfileAsync(AccountSessionCookie.Read(Request), ct);
-        return profile.Value is { } account ? await action(account)
-            : Unauthorized(new SnakeErrorResponse("snake-authentication-required", "Sign in to play Snake."));
+        if (profile.Value is not { } account)
+            return Unauthorized(new SnakeErrorResponse("snake-authentication-required", "Sign in to play Snake."));
+        if (!GameAccountBinding.Matches(Request, account.UserId))
+            return StatusCode(StatusCodes.Status403Forbidden, GameAccountBinding.SessionChanged);
+        return await action(account);
     }
 
     private async Task<ActionResult> ExecuteAsync(Func<Task<SnakeGameResponse>> action)

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AsteroidsReplayPlay, asteroidsReplayRulesVersion, maximumReplayCommands, maximumReplaySteps, unlockAsteroidsAudio } from '@fortuneforge/games-asteroids'
-import type { AsteroidsReplayDisplayResult, AsteroidsReplayPayload } from '@fortuneforge/games-asteroids'
+import { AsteroidsReplayPlay, asteroidsReplayRulesVersion, createAsteroidsPaidAdmission, maximumReplayCommands, maximumReplaySteps, readAsteroidsPaidAdmission, unlockAsteroidsAudio } from '@fortuneforge/games-asteroids'
+import type { AsteroidsPaidAdmission, AsteroidsReplayDisplayResult, AsteroidsReplayPayload } from '@fortuneforge/games-asteroids'
 import '@fortuneforge/games-asteroids/styles.css'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import { ArcadeCompetitionLeaderboard } from '../../../games/arcade/ArcadeCompetitionLeaderboard'
@@ -14,6 +14,7 @@ import type {
   AsteroidsPaidCompetitionGateway,
 } from '../../../games/arcade/arcadeCompetitionApi'
 import {
+  canDiscardPendingAsteroidsStart,
   createAsteroidsIdempotencyKey,
   createPendingFreeAsteroidsSubmission,
   createPendingPaidAsteroidsSubmission,
@@ -50,7 +51,7 @@ type CompetitionResult = Readonly<{
   officialScore: number
 }>
 
-type PendingStart = Readonly<{ kind: 'free'; idempotencyKey: string }> | Readonly<{ kind: 'paid'; period: ArcadeCompetitionPaidPeriod; idempotencyKey: string }>
+type PendingStart = Readonly<{ kind: 'free'; idempotencyKey: string }> | Readonly<{ kind: 'paid'; period: ArcadeCompetitionPaidPeriod; idempotencyKey: string; admission: AsteroidsPaidAdmission }>
 type StoredAsteroidsState = Readonly<{ state: 'active'; run: ActiveRun }> | Readonly<{ state: 'submitting'; submission: PendingAsteroidsSubmission }> | Readonly<{ state: 'starting'; start: PendingStart }>
 
 const paidChoices: readonly Readonly<{ period: ArcadeCompetitionPaidPeriod, label: string }>[] = [
@@ -148,13 +149,17 @@ export function AsteroidsCompetitionPage({
     const recoverStartFailure = (reason: unknown) => {
       if (!isCurrent) return
       setError(friendlyAsteroidsCompetitionError(reason))
+      if (canDiscardPendingAsteroidsStart(reason)) {
+        clearStoredAsteroidsState(account.userId)
+        pendingStart.current = null
+      }
       setPhase('lobby')
       startingRun.current = false
     }
 
     if (stored.start.kind === 'paid') {
       setLobbyView('ranked')
-      void gateway.startAsteroidsAttempt(stored.start.period, stored.start.idempotencyKey)
+      void gateway.startAsteroidsAttempt(stored.start.period, stored.start.idempotencyKey, undefined, stored.start.admission)
         .then((attempt) => activate({ kind: 'paid', period: attempt.period, runId: attempt.runId, seedHex: attempt.seedHex }))
         .catch(recoverStartFailure)
         .finally(() => { if (isCurrent) startingRun.current = false })
@@ -179,11 +184,18 @@ export function AsteroidsCompetitionPage({
     setLobbyView('ranked')
     setError(null)
     setPhase('starting-paid')
-    const start = pendingStart.current ?? { kind: 'paid' as const, period, idempotencyKey: createAsteroidsIdempotencyKey() }
-    pendingStart.current = start
-    storeAsteroidsState(account.userId, { state: 'starting', start })
     try {
-      const attempt = await gateway.startAsteroidsAttempt(start.period, start.idempotencyKey)
+      let start = pendingStart.current
+      if (start === null) {
+        const intendedWindow = await gateway.getLeaderboard('asteroids', period)
+        if (intendedWindow.period === 'all-time' || intendedWindow.period !== period || !intendedWindow.entriesOpen) {
+          throw new ArcadeCompetitionRequestError(409, 'arcade-competition-settlement-closed')
+        }
+        start = { kind: 'paid' as const, period, idempotencyKey: createAsteroidsIdempotencyKey(), admission: createAsteroidsPaidAdmission(intendedWindow) }
+        pendingStart.current = start
+        storeAsteroidsState(account.userId, { state: 'starting', start })
+      }
+      const attempt = await gateway.startAsteroidsAttempt(start.period, start.idempotencyKey, undefined, start.admission)
       const active: ActiveRun = { kind: 'paid', period: attempt.period, runId: attempt.runId, seedHex: attempt.seedHex }
       pendingStart.current = null
       storeAsteroidsState(account.userId, { state: 'active', run: active })
@@ -192,6 +204,10 @@ export function AsteroidsCompetitionPage({
       void refreshPaidAccount()
     } catch (reason: unknown) {
       setError(friendlyAsteroidsCompetitionError(reason))
+      if (canDiscardPendingAsteroidsStart(reason)) {
+        clearStoredAsteroidsState(account.userId)
+        pendingStart.current = null
+      }
       setLobbyView('ranked')
       setPhase('lobby')
     } finally {
@@ -402,7 +418,7 @@ function readPendingStart(value: unknown): PendingStart | null {
   if (start === null || !isIdempotencyKey(start.idempotencyKey)) return null
   if (start.kind === 'free') return { kind: 'free', idempotencyKey: start.idempotencyKey }
   if (start.kind === 'paid' && isPaidPeriod(start.period)) {
-    return { kind: 'paid', period: start.period, idempotencyKey: start.idempotencyKey }
+    return { kind: 'paid', period: start.period, idempotencyKey: start.idempotencyKey, admission: readAsteroidsPaidAdmission(start.admission) }
   }
   return null
 }

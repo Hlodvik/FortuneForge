@@ -2,9 +2,15 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Google.Cloud.Firestore" Version="4.3.0" />
     <ProjectReference Include="../../../shared/FortuneForge.Games.Hosting/FortuneForge.Games.Hosting.csproj" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Slots.Runtime/FortuneForge.Games.Slots.Runtime.csproj" />
     <ProjectReference Include="../../src/FortuneForge.Games.JadeDragon/FortuneForge.Games.JadeDragon.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="FortuneForge.Games.JadeDragon.Tests" />
   </ItemGroup>
 </Project>

@@ -23,12 +23,19 @@ const pairStatus = { available: true, minimumStake: .25, maximumStake: 100, stak
 afterEach(() => vi.unstubAllGlobals())
 
 describe('HttpBaccaratGateway', () => {
+  it('pins requests to the account that owns the saved game commands', async () => {
+    const fetcher = vi.fn().mockResolvedValue(jsonResponse(pairStatus))
+    await new HttpBaccaratGateway(undefined, fetcher, 'alice').getStatus()
+    expect(new Headers(fetcher.mock.calls[0][1].headers).get('X-FortuneForge-Expected-Account')).toBe('alice')
+  })
+
   it('requests status from the expected route', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ available: true, minimumStake: 1, maximumStake: 100, stakeIncrement: 1, balance: 1_000, mode: 'local-free-play' }))
     vi.stubGlobal('fetch', fetchMock)
 
     await expect(new HttpBaccaratGateway().getStatus()).resolves.toMatchObject({ available: true, balance: 1_000 })
     expect(fetchMock).toHaveBeenCalledWith('/api/games/baccarat/status', { signal: undefined })
+    expect(fetchMock.mock.contexts[0]).toBeUndefined()
   })
 
   it('posts bet side and stake and accepts multi-deck duplicate cards', async () => {
@@ -97,6 +104,7 @@ describe('HttpBaccaratGateway', () => {
       .rejects.toMatchObject({ code: 'baccarat-pair-unavailable', status: 0 })
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(fetchMock).toHaveBeenCalledWith('/api/games/baccarat/status', { signal: undefined })
+    expect(fetchMock.mock.contexts[0]).toBeUndefined()
   })
 
   it('refuses a pair settlement omitted by a mixed-version server', async () => {

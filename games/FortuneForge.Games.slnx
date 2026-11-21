@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/games/JadeDragon/">
     <Project Path="JadeDragon/src/FortuneForge.Games.JadeDragon/FortuneForge.Games.JadeDragon.csproj" />
+    <Project Path="JadeDragon/tests/FortuneForge.Games.JadeDragon.Tests/FortuneForge.Games.JadeDragon.Tests.csproj" />
   </Folder>
   <Folder Name="/games/NeonNights/">
     <Project Path="NeonNights/src/FortuneForge.Games.NeonNights/FortuneForge.Games.NeonNights.csproj" />
@@ -16,27 +17,41 @@
   </Folder>
   <Folder Name="/games/Wukong/">
     <Project Path="Wukong/src/FortuneForge.Games.Wukong/FortuneForge.Games.Wukong.csproj" />
+    <Project Path="Wukong/server/FortuneForge.Games.Wukong.Server/FortuneForge.Games.Wukong.Server.csproj" />
+    <Project Path="Wukong/tests/FortuneForge.Games.Wukong.Tests/FortuneForge.Games.Wukong.Tests.csproj" />
   </Folder>
   <Folder Name="/games/RainbowRealm/">
     <Project Path="RainbowRealm/src/FortuneForge.Games.RainbowRealm/FortuneForge.Games.RainbowRealm.csproj" />
+    <Project Path="RainbowRealm/server/FortuneForge.Games.RainbowRealm.Server/FortuneForge.Games.RainbowRealm.Server.csproj" />
+    <Project Path="RainbowRealm/tests/FortuneForge.Games.RainbowRealm.Tests/FortuneForge.Games.RainbowRealm.Tests.csproj" />
   </Folder>
   <Folder Name="/games/PiratesFortune/">
     <Project Path="PiratesFortune/src/FortuneForge.Games.PiratesFortune/FortuneForge.Games.PiratesFortune.csproj" />
+    <Project Path="PiratesFortune/server/FortuneForge.Games.PiratesFortune.Server/FortuneForge.Games.PiratesFortune.Server.csproj" />
+    <Project Path="PiratesFortune/tests/FortuneForge.Games.PiratesFortune.Tests/FortuneForge.Games.PiratesFortune.Tests.csproj" />
   </Folder>
   <Folder Name="/games/GodsOfOlympus/">
     <Project Path="GodsOfOlympus/src/FortuneForge.Games.GodsOfOlympus/FortuneForge.Games.GodsOfOlympus.csproj" />
+    <Project Path="GodsOfOlympus/server/FortuneForge.Games.GodsOfOlympus.Server/FortuneForge.Games.GodsOfOlympus.Server.csproj" />
+    <Project Path="GodsOfOlympus/tests/FortuneForge.Games.GodsOfOlympus.Tests/FortuneForge.Games.GodsOfOlympus.Tests.csproj" />
   </Folder>
   <Folder Name="/games/ReelRiches/">
     <Project Path="ReelRiches/src/FortuneForge.Games.ReelRiches/FortuneForge.Games.ReelRiches.csproj" />
+    <Project Path="ReelRiches/server/FortuneForge.Games.ReelRiches.Server/FortuneForge.Games.ReelRiches.Server.csproj" />
+    <Project Path="ReelRiches/tests/FortuneForge.Games.ReelRiches.Tests/FortuneForge.Games.ReelRiches.Tests.csproj" />
   </Folder>
   <Folder Name="/games/HighNoonFortune/">
     <Project Path="HighNoonFortune/src/FortuneForge.Games.HighNoonFortune/FortuneForge.Games.HighNoonFortune.csproj" />
+    <Project Path="HighNoonFortune/server/FortuneForge.Games.HighNoonFortune.Server/FortuneForge.Games.HighNoonFortune.Server.csproj" />
+    <Project Path="HighNoonFortune/tests/FortuneForge.Games.HighNoonFortune.Tests/FortuneForge.Games.HighNoonFortune.Tests.csproj" />
   </Folder>
   <Folder Name="/games/RoyalDraw/">
     <Project Path="RoyalDraw/src/FortuneForge.Games.RoyalDraw/FortuneForge.Games.RoyalDraw.csproj" />
   </Folder>
   <Folder Name="/games/ArcaneArchives/">
     <Project Path="ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/FortuneForge.Games.ArcaneArchives.csproj" />
+    <Project Path="ArcaneArchives/server/FortuneForge.Games.ArcaneArchives.Server/FortuneForge.Games.ArcaneArchives.Server.csproj" />
+    <Project Path="ArcaneArchives/tests/FortuneForge.Games.ArcaneArchives.Tests/FortuneForge.Games.ArcaneArchives.Tests.csproj" />
   </Folder>
   <Folder Name="/games/CosmicFortune/">
     <Project Path="CosmicFortune/src/FortuneForge.Games.CosmicFortune/FortuneForge.Games.CosmicFortune.csproj" />
@@ -46,21 +61,33 @@
   </Folder>
   <Folder Name="/games/SamuraiFortune/">
     <Project Path="SamuraiFortune/src/FortuneForge.Games.SamuraiFortune/FortuneForge.Games.SamuraiFortune.csproj" />
+    <Project Path="SamuraiFortune/server/FortuneForge.Games.SamuraiFortune.Server/FortuneForge.Games.SamuraiFortune.Server.csproj" />
+    <Project Path="SamuraiFortune/tests/FortuneForge.Games.SamuraiFortune.Tests/FortuneForge.Games.SamuraiFortune.Tests.csproj" />
   </Folder>
   <Folder Name="/games/CandyCarnival/">
     <Project Path="CandyCarnival/src/FortuneForge.Games.CandyCarnival/FortuneForge.Games.CandyCarnival.csproj" />
+    <Project Path="CandyCarnival/server/FortuneForge.Games.CandyCarnival.Server/FortuneForge.Games.CandyCarnival.Server.csproj" />
+    <Project Path="CandyCarnival/tests/FortuneForge.Games.CandyCarnival.Tests/FortuneForge.Games.CandyCarnival.Tests.csproj" />
   </Folder>
   <Folder Name="/games/PhantomManor/">
     <Project Path="PhantomManor/src/FortuneForge.Games.PhantomManor/FortuneForge.Games.PhantomManor.csproj" />
+    <Project Path="PhantomManor/server/FortuneForge.Games.PhantomManor.Server/FortuneForge.Games.PhantomManor.Server.csproj" />
+    <Project Path="PhantomManor/tests/FortuneForge.Games.PhantomManor.Tests/FortuneForge.Games.PhantomManor.Tests.csproj" />
   </Folder>
   <Folder Name="/games/NordicLegends/">
     <Project Path="NordicLegends/src/FortuneForge.Games.NordicLegends/FortuneForge.Games.NordicLegends.csproj" />
+    <Project Path="NordicLegends/server/FortuneForge.Games.NordicLegends.Server/FortuneForge.Games.NordicLegends.Server.csproj" />
+    <Project Path="NordicLegends/tests/FortuneForge.Games.NordicLegends.Tests/FortuneForge.Games.NordicLegends.Tests.csproj" />
   </Folder>
   <Folder Name="/games/DesertTreasures/">
     <Project Path="DesertTreasures/src/FortuneForge.Games.DesertTreasures/FortuneForge.Games.DesertTreasures.csproj" />
+    <Project Path="DesertTreasures/server/FortuneForge.Games.DesertTreasures.Server/FortuneForge.Games.DesertTreasures.Server.csproj" />
+    <Project Path="DesertTreasures/tests/FortuneForge.Games.DesertTreasures.Tests/FortuneForge.Games.DesertTreasures.Tests.csproj" />
   </Folder>
   <Folder Name="/games/RobotRevolution/">
     <Project Path="RobotRevolution/src/FortuneForge.Games.RobotRevolution/FortuneForge.Games.RobotRevolution.csproj" />
+    <Project Path="RobotRevolution/server/FortuneForge.Games.RobotRevolution.Server/FortuneForge.Games.RobotRevolution.Server.csproj" />
+    <Project Path="RobotRevolution/tests/FortuneForge.Games.RobotRevolution.Tests/FortuneForge.Games.RobotRevolution.Tests.csproj" />
   </Folder>
   <Folder Name="/games/AndarBahar/">
     <Project Path="AndarBahar/src/FortuneForge.Games.AndarBahar/FortuneForge.Games.AndarBahar.csproj" />
@@ -70,6 +97,8 @@
   </Folder>
   <Folder Name="/games/ThreeCardPoker/">
     <Project Path="ThreeCardPoker/src/FortuneForge.Games.ThreeCardPoker/FortuneForge.Games.ThreeCardPoker.csproj" />
+    <Project Path="ThreeCardPoker/server/FortuneForge.Games.ThreeCardPoker.Server/FortuneForge.Games.ThreeCardPoker.Server.csproj" />
+    <Project Path="ThreeCardPoker/tests/FortuneForge.Games.ThreeCardPoker.Tests/FortuneForge.Games.ThreeCardPoker.Tests.csproj" />
   </Folder>
   <Folder Name="/games/HouseHoldem/">
     <Project Path="HouseHoldem/src/FortuneForge.Games.HouseHoldem/FortuneForge.Games.HouseHoldem.csproj" />
@@ -79,6 +108,8 @@
   </Folder>
   <Folder Name="/games/Baccarat/">
     <Project Path="Baccarat/src/FortuneForge.Games.Baccarat/FortuneForge.Games.Baccarat.csproj" />
+    <Project Path="Baccarat/server/FortuneForge.Games.Baccarat.Server/FortuneForge.Games.Baccarat.Server.csproj" />
+    <Project Path="Baccarat/tests/FortuneForge.Games.Baccarat.Tests/FortuneForge.Games.Baccarat.Tests.csproj" />
     <Project Path="Baccarat/samples/FortuneForge.Games.Baccarat.Web/FortuneForge.Games.Baccarat.Web.csproj" />
   </Folder>
   <Folder Name="/games/CasinoWar/">
@@ -91,11 +122,15 @@
   </Folder>
   <Folder Name="/games/Craps/">
     <Project Path="Craps/src/FortuneForge.Games.Craps/FortuneForge.Games.Craps.csproj" />
+    <Project Path="Craps/server/FortuneForge.Games.Craps.Server/FortuneForge.Games.Craps.Server.csproj" />
+    <Project Path="Craps/tests/FortuneForge.Games.Craps.Tests/FortuneForge.Games.Craps.Tests.csproj" />
     <Project Path="Craps/samples/FortuneForge.Games.Craps.Console/FortuneForge.Games.Craps.Console.csproj" />
     <Project Path="Craps/samples/FortuneForge.Games.Craps.Web/FortuneForge.Games.Craps.Web.csproj" />
   </Folder>
   <Folder Name="/games/Hearts/">
     <Project Path="Hearts/src/FortuneForge.Games.Hearts/FortuneForge.Games.Hearts.csproj" />
+    <Project Path="Hearts/server/FortuneForge.Games.Hearts.Server/FortuneForge.Games.Hearts.Server.csproj" />
+    <Project Path="Hearts/tests/FortuneForge.Games.Hearts.Tests/FortuneForge.Games.Hearts.Tests.csproj" />
     <Project Path="Hearts/samples/FortuneForge.Games.Hearts.Web/FortuneForge.Games.Hearts.Web.csproj" />
   </Folder>
   <Folder Name="/games/HiLo/">
@@ -107,6 +142,7 @@
   </Folder>
   <Folder Name="/games/LiarsDice/">
     <Project Path="LiarsDice/src/FortuneForge.Games.LiarsDice/FortuneForge.Games.LiarsDice.csproj" />
+    <Project Path="LiarsDice/server/FortuneForge.Games.LiarsDice.Server/FortuneForge.Games.LiarsDice.Server.csproj" />
     <Project Path="LiarsDice/samples/FortuneForge.Games.LiarsDice.Web/FortuneForge.Games.LiarsDice.Web.csproj" />
   </Folder>
   <Folder Name="/games/Mines/">
@@ -118,6 +154,8 @@
   </Folder>
   <Folder Name="/games/Roulette/">
     <Project Path="Roulette/src/FortuneForge.Games.Roulette/FortuneForge.Games.Roulette.csproj" />
+    <Project Path="Roulette/server/FortuneForge.Games.Roulette.Server/FortuneForge.Games.Roulette.Server.csproj" />
+    <Project Path="Roulette/tests/FortuneForge.Games.Roulette.Tests/FortuneForge.Games.Roulette.Tests.csproj" />
     <Project Path="Roulette/samples/FortuneForge.Games.Roulette.Web/FortuneForge.Games.Roulette.Web.csproj" />
   </Folder>
   <Folder Name="/games/Solitaire/">
@@ -128,10 +166,14 @@
   </Folder>
   <Folder Name="/games/TwentyFortyEight/">
     <Project Path="TwentyFortyEight/src/FortuneForge.Games.TwentyFortyEight/FortuneForge.Games.TwentyFortyEight.csproj" />
+    <Project Path="TwentyFortyEight/server/FortuneForge.Games.TwentyFortyEight.Server/FortuneForge.Games.TwentyFortyEight.Server.csproj" />
+    <Project Path="TwentyFortyEight/tests/FortuneForge.Games.TwentyFortyEight.Tests/FortuneForge.Games.TwentyFortyEight.Tests.csproj" />
     <Project Path="TwentyFortyEight/samples/FortuneForge.Games.TwentyFortyEight.Web/FortuneForge.Games.TwentyFortyEight.Web.csproj" />
   </Folder>
   <Folder Name="/games/DropMerge/">
     <Project Path="DropMerge/src/FortuneForge.Games.DropMerge/FortuneForge.Games.DropMerge.csproj" />
+    <Project Path="DropMerge/server/FortuneForge.Games.DropMerge.Server/FortuneForge.Games.DropMerge.Server.csproj" />
+    <Project Path="DropMerge/tests/FortuneForge.Games.DropMerge.Tests/FortuneForge.Games.DropMerge.Tests.csproj" />
     <Project Path="DropMerge/samples/FortuneForge.Games.DropMerge.Web/FortuneForge.Games.DropMerge.Web.csproj" />
   </Folder>
   <Folder Name="/games/DragonTiger/">
@@ -167,6 +209,10 @@
     <Project Path="shared/FortuneForge.Games.Slots.Runtime/FortuneForge.Games.Slots.Runtime.csproj" />
     <Project Path="shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj" />
     <Project Path="shared/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
+    <Project Path="shared/FortuneForge.Games.Abstractions.Tests/FortuneForge.Games.Abstractions.Tests.csproj" />
+    <Project Path="shared/FortuneForge.Games.Arcade.Competition/FortuneForge.Games.Arcade.Competition.csproj" />
+    <Project Path="shared/FortuneForge.Games.Arcade.Competition.Tests/FortuneForge.Games.Arcade.Competition.Tests.csproj" />
+    <Project Path="shared/FortuneForge.Games.Firestore/FortuneForge.Games.Firestore.csproj" />
     <Project Path="shared/FortuneForge.Games.Cards/FortuneForge.Games.Cards.csproj" />
     <Project Path="shared/FortuneForge.Games.Dice/FortuneForge.Games.Dice.csproj" />
     <Project Path="shared/FortuneForge.Games.TrickTaking/FortuneForge.Games.TrickTaking.csproj" />

@@ -14,7 +14,7 @@ describe('Baccarat route integration', () => {
     expect(pending).toContain('Loading Baccarat…')
     expect(routesSource).toContain("import('./routes/BaccaratRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/games/baccarat')")
-    expect(routeSource).toContain("new HttpBaccaratGateway('/api/games/baccarat', fetchWithAccountSession)")
+    expect(routeSource).toContain("new HttpBaccaratGateway('/api/games/baccarat', fetchWithAccountSession, account.userId)")
   })
 
   it('uses the canonical card faces and a table-only shell without catalogue clouds', () => {

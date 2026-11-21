@@ -210,7 +210,7 @@ describe('Sic Bo restoration and request ownership',()=>{
   it('uses the confirmed GET result on a paid retry without issuing a second POST',async()=>{
     const id=hashId('sic-bo-'+uuid.replaceAll('-',''),'account'),gateway=fakeGateway({createRound:vi.fn().mockRejectedValue(new Error('Response lost')),getRound:vi.fn().mockResolvedValue(roundFor([small],{roundId:id}))},'account')
     render(<SicBoGame roundOwnerId={owner} recoveryMode="account" gateway={gateway}/>);await ready();add('Small');click('Roll dice');clickAfter(await screen.findByRole('button',{name:'Retry roll'}));await screen.findByRole('button',{name:'New round'})
-    expect(gateway.createRound).toHaveBeenCalledTimes(1);expect(gateway.getRound).toHaveBeenCalledExactlyOnceWith(id,expect.any(AbortSignal));expect(screen.getByText(/^Balance/).textContent).toBe('Balance '+money(101))
+    expect(gateway.createRound).toHaveBeenCalledTimes(1);expect(gateway.getRound).toHaveBeenCalledExactlyOnceWith(id,expect.any(AbortSignal));expect(screen.getByText(/^Balance/).textContent).toBe('Balance '+money(100))
   })
   it('retains saved paid identity until the normal-motion reveal finishes',async()=>{
     motion(false);const key='sic-bo-'+uuid.replaceAll('-',''),id=hashId(key,'account'),buffer=Uint8Array.from(id.match(/../g)!,byte=>parseInt(byte,16)).buffer
@@ -242,11 +242,13 @@ describe('Sic Bo restoration and request ownership',()=>{
     const saved=savePending('account'),pending=deferred<SicBoRound>(),gateway=fakeGateway({getRound:vi.fn().mockReturnValue(pending.promise)},'account'),first=vi.fn(),next=vi.fn()
     const view=render(<SicBoGame roundOwnerId={owner} recoveryMode="account" gateway={gateway} onBalanceChange={first}/>);await waitFor(()=>expect(gateway.getRound).toHaveBeenCalledTimes(1))
     view.rerender(<SicBoGame roundOwnerId={owner} recoveryMode="account" gateway={gateway} onBalanceChange={next}/>);await act(async()=>{pending.resolve(roundFor(saved.bets,{roundId:saved.roundId}))})
-    expect(gateway.getRound).toHaveBeenCalledTimes(1);expect(gateway.createRound).not.toHaveBeenCalled();expect(first).not.toHaveBeenCalled();expect(next).toHaveBeenCalledExactlyOnceWith(114)
+    expect(gateway.getRound).toHaveBeenCalledTimes(1);expect(gateway.createRound).not.toHaveBeenCalled();expect(first).not.toHaveBeenCalled();expect(next).toHaveBeenCalledExactlyOnceWith(100)
   })
-  it('ignores a late status balance after restoring a known result',async()=>{
-    const saved=savePending('account'),pending=deferred<SicBoStatus>(),gateway=fakeGateway({getStatus:vi.fn().mockReturnValue(pending.promise),getRound:vi.fn().mockResolvedValue(roundFor(saved.bets,{roundId:saved.roundId,balance:114}))},'account')
-    render(<SicBoGame roundOwnerId={owner} recoveryMode="account" gateway={gateway}/>);await screen.findByRole('button',{name:'New round'});await act(async()=>{pending.resolve({...status,balance:3})});expect(screen.getByText(/^Balance/).textContent).toBe('Balance '+money(114))
+  it('refreshes current funds after immutable history and ignores an older delayed status read',async()=>{
+    const saved=savePending('account'),pending=deferred<SicBoStatus>(),gateway=fakeGateway({getStatus:vi.fn().mockReturnValueOnce(pending.promise).mockResolvedValueOnce({...status,balance:3}),getRound:vi.fn().mockResolvedValue(roundFor(saved.bets,{roundId:saved.roundId,balance:114}))},'account')
+    render(<SicBoGame roundOwnerId={owner} recoveryMode="account" gateway={gateway}/>);await screen.findByRole('button',{name:'New round'});expect(screen.getByText(/^Balance/).textContent).toBe('Balance '+money(3))
+    await act(async()=>{pending.resolve({...status,balance:99})});expect(screen.getByText(/^Balance/).textContent).toBe('Balance '+money(3))
+    expect(JSON.parse(localStorage.getItem(historyStorageKey(saved.scope))!).rounds[0].balance).toBe(114)
   })
   it.each(['account','gateway','mode','owner'] as const)('aborts stale requests when%s ownership changes',async change=>{
     const pending=deferred<SicBoRound>(),oldCallback=vi.fn(),nextCallback=vi.fn(),gateway=fakeGateway({createRound:vi.fn().mockReturnValue(pending.promise)},'account'),other=fakeGateway({getRound:vi.fn().mockReturnValue(deferred<SicBoRound>().promise)},'account')

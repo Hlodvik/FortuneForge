@@ -62,7 +62,40 @@ describe('HorseFlightCompetitionGatewayAdapter', () => {
 
   it('rejects a daily replay scope through a weekly gateway before publication', async () => {
     const shared = gateway(), adapter = new HorseFlightCompetitionGatewayAdapter(shared, { kind: 'paid', period: 'weekly' }, 200)
-    await expect(adapter.complete(paidRunId, 30, [2], { recoveryScope: JSON.stringify(['paid:daily', '2026-10-08T12:00:00.000Z', '2026-10-09T12:00:00.000Z']) }, [8])).rejects.toThrow('window changed')
+    await expect(adapter.complete(paidRunId, 30, [2], { recoveryScope: JSON.stringify(['paid:daily', '2026-10-08T12:00:00.000Z', '2026-10-09T12:00:00.000Z']) }, [8])).rejects.toThrow('selected mode')
+    expect(shared.completeHorseFlightReplay).not.toHaveBeenCalled()
+  })
+
+  it('recovers an uncertain legacy start without a fresh-window admission or leaderboard lookup', async () => {
+    const shared = gateway(), adapter = new HorseFlightCompetitionGatewayAdapter(shared, { kind: 'paid', period: 'weekly' }, 200)
+    vi.mocked(shared.getLeaderboard).mockRejectedValue(new Error('current leaderboard unavailable'))
+    await adapter.start({ idempotencyKey: 'horse-flight-paid-012345', recoveryScope: weeklyScope(), recoverOnly: true })
+    expect(shared.getLeaderboard).not.toHaveBeenCalled()
+    expect(shared.startHorseFlightAttempt).toHaveBeenCalledWith('weekly', 'horse-flight-paid-012345', undefined, { recoverOnly: true })
+  })
+
+  it('reuses frozen admission body terms after rollover without replacing their original window', async () => {
+    const shared = gateway(), adapter = new HorseFlightCompetitionGatewayAdapter(shared, { kind: 'paid', period: 'weekly' }, 200)
+    const admission = { expectedWindowStartsAtUtc: '2026-10-08T12:00:00.000Z', expectedWindowEndsAtUtc: '2026-10-15T12:00:00.000Z' }
+    vi.mocked(shared.getLeaderboard).mockRejectedValue(new Error('current leaderboard unavailable'))
+    await adapter.start({ idempotencyKey: 'horse-flight-paid-012345', recoveryScope: weeklyScope(), admission })
+    await adapter.start({ idempotencyKey: 'horse-flight-paid-012345', recoveryScope: weeklyScope(), admission })
+    expect(shared.getLeaderboard).not.toHaveBeenCalled()
+    expect(vi.mocked(shared.startHorseFlightAttempt).mock.calls.map(call => call[3])).toEqual([admission, admission])
+  })
+
+  it('sends an accepted original-window replay after rollover without consulting the current leaderboard', async () => {
+    const shared = gateway(), adapter = new HorseFlightCompetitionGatewayAdapter(shared, { kind: 'paid', period: 'weekly' }, 200)
+    vi.mocked(shared.getLeaderboard).mockRejectedValue(new Error('current leaderboard unavailable'))
+    await adapter.complete(paidRunId, 30, [2], { recoveryScope: weeklyScope() }, [8])
+    expect(shared.getLeaderboard).not.toHaveBeenCalled()
+    expect(shared.completeHorseFlightReplay).toHaveBeenCalledWith('weekly', paidRunId,
+      { totalTicks: 30, jumpTicks: [2], rightClickTicks: [8] }, undefined)
+  })
+
+  it('rejects a free run through the paid gateway before sending a replay', async () => {
+    const shared = gateway(), adapter = new HorseFlightCompetitionGatewayAdapter(shared, { kind: 'paid', period: 'weekly' }, 200)
+    await expect(adapter.complete(freeRunId, 30, [], { recoveryScope: weeklyScope() })).rejects.toThrow('selected mode')
     expect(shared.completeHorseFlightReplay).not.toHaveBeenCalled()
   })
 

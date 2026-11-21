@@ -14,6 +14,7 @@ public static class MidnightVaultSlotDefinitions
     public const string CollectionFeatureMode = "rows-paw";
     public const long MinimumWagerPoints = 2;
     public const long MaximumWagerPoints = 2000;
+    public const int WagerPointValueInCents = 25;
     public const decimal TargetHitRate = 0.21m;
     public const int BonusRoundSpins = 10;
     public const int LegacyScatterAwardedSpins = 6;
@@ -71,7 +72,7 @@ public static class MidnightVaultSlotDefinitions
             },
             Wagering = new GameWageringDefinition
             {
-                PointValueInCents = 25m,
+                PointValueInCents = WagerPointValueInCents,
                 MinimumWagerPoints = MinimumWagerPoints,
                 MaximumWagerPoints = MaximumWagerPoints,
                 WagerIncrementPoints = 2

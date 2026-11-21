@@ -1,4 +1,10 @@
+using System.Security.Cryptography;
 using System.Text.Json;
+using FortuneForge.Games.Abstractions.Wallet;
+using FortuneForge.Games.Firestore;
+using FortuneForge.Games.Hosting;
+using FortuneForge.Server.Accounts.Storage;
+using FortuneForge.Server.Accounts.Wallet;
 using FortuneForge.Server.Admin.Management;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Cards.Blackjack.Table;
@@ -7,10 +13,13 @@ using FortuneForge.Server.Cards.TexasHoldem.Credit;
 using FortuneForge.Server.Games.Hearts;
 using FortuneForge.Server.Games.Roulette;
 using FortuneForge.Server.Matchmaking;
+using FortuneForge.Server.Tests.Blackjack;
 using FortuneForge.Server.Tests.Blackjack.Table;
+using FortuneForge.Server.Tests.Solitaire;
 using Google.Cloud.Firestore;
 using Microsoft.Extensions.Options;
 using Xunit;
+using Managed = FortuneForge.Games.Abstractions.ManagedPlayers;
 
 namespace FortuneForge.Server.Tests.Admin.Management;
 
@@ -100,6 +109,42 @@ public sealed class AdminManagementFirestoreTests(BlackjackTableFirestoreEmulato
         Assert.Single(results, value => value);
         Assert.Single(await store.AuditAsync(10, null, default));
         Assert.Equal(1, (await store.ReadAsync(default)).Version);
+    }
+
+    [Fact]
+    public async Task Shared_bot_policy_matches_admin_defaults_and_rejects_corrupt_known_switches()
+    {
+        var db = Database();
+        var document = db.Document(FirestoreManagedPlayerPolicy.StatePath);
+        var absent = await document.GetSnapshotAsync();
+        Assert.True(FirestoreManagedPlayerPolicy.AllowsBots(absent, "hearts"));
+        Assert.True(FirestoreAdminManagementStore.ReadState(absent).AllowsBots("hearts"));
+
+        await document.SetAsync(new Dictionary<string, object>
+        {
+            ["version"] = 1L,
+            ["botsEnabled"] = true,
+            ["gameBots"] = new Dictionary<string, object> { ["hearts"] = false, ["unlisted-game"] = "ignore" },
+            ["updatedAt"] = Timestamp.FromDateTime(Now),
+        });
+        var switched = await document.GetSnapshotAsync();
+        Assert.False(FirestoreManagedPlayerPolicy.AllowsBots(switched, "hearts"));
+        Assert.True(FirestoreManagedPlayerPolicy.AllowsBots(switched, "blackjack"));
+        Assert.Equal(FirestoreManagedPlayerPolicy.AllowsBots(switched, "hearts"),
+            FirestoreAdminManagementStore.ReadState(switched).AllowsBots("hearts"));
+
+        await document.UpdateAsync("botsEnabled", false);
+        Assert.False(FirestoreManagedPlayerPolicy.AllowsBots(await document.GetSnapshotAsync(), "blackjack"));
+        await document.UpdateAsync("gameBots.hearts", "disabled");
+        var corrupt = await document.GetSnapshotAsync();
+        Assert.Throws<InvalidOperationException>(() => FirestoreManagedPlayerPolicy.AllowsBots(corrupt, "hearts"));
+        Assert.Throws<InvalidOperationException>(() => FirestoreAdminManagementStore.ReadState(corrupt));
+
+        await document.UpdateAsync("gameBots", FieldValue.Delete);
+        Assert.False(FirestoreManagedPlayerPolicy.AllowsBots(await document.GetSnapshotAsync(), "hearts"));
+        await document.UpdateAsync("botsEnabled", "disabled");
+        var corruptGlobal = await document.GetSnapshotAsync();
+        Assert.Throws<InvalidOperationException>(() => FirestoreManagedPlayerPolicy.AllowsBots(corruptGlobal, "hearts"));
     }
 
     [Fact]
@@ -276,7 +321,8 @@ public sealed class AdminManagementFirestoreTests(BlackjackTableFirestoreEmulato
         var db = Database();
         await Disable(db);
         await SeedBalance(db, "alice");
-        var store = new FirestoreBlackjackTableStore(db, null, () => 1931UL, new MultiplayerMatchmaker(Queuer(db)));
+        var store = BlackjackPlatformTests.Table(db, seedFactory: () => 1931UL,
+            multiplayerMatchmaker: new MultiplayerMatchmaker(Queuer(db)));
         await store.JoinAsync("alice", "Alice", 0, "admin-blackjack-join", Now, default);
         var session = Assert.IsType<BlackjackTablePlaySessionResponse>((await store.GetSessionAsync("alice", Now.AddSeconds(6), default)
             .WaitAsync(TimeSpan.FromSeconds(15))).Session);
@@ -292,7 +338,8 @@ public sealed class AdminManagementFirestoreTests(BlackjackTableFirestoreEmulato
         var db = Database();
         await Disable(db);
         await SeedBalance(db, "alice"); await SeedBalance(db, "bruno"); await SeedBalance(db, "cara");
-        var store = new FirestoreCreditHoldemStore(db, true, new MultiplayerMatchmaker(Queuer(db)));
+        var wallet = new SharedBatchWallet(db, ManagedPlayerGames.TexasHoldem);
+        var store = new FirestoreCreditHoldemStore(db, true, wallet, wallet, new TestManagedPlayerRoster(Queuer(db), ManagedPlayerGames.TexasHoldem));
         await store.JoinAsync("alice", "Alice", 0, "admin-holdem-first", 1931, Now, default);
         Assert.IsType<CreditHoldemQueueSessionResponse>((await store.GetSessionAsync("alice", Now.AddSeconds(6), default)).Session);
         await store.JoinAsync("bruno", "Bruno", 0, "admin-holdem-second", 1942, Now.AddSeconds(7), default);
@@ -307,8 +354,9 @@ public sealed class AdminManagementFirestoreTests(BlackjackTableFirestoreEmulato
     public async Task Solitaire_hourly_admission_is_skipped_and_human_entry_is_not_charged_twice()
     {
         var db = Database();
-        await Disable(db); await SeedBalance(db, "alice");
-        var store = new FirestoreCompetitiveSolitaireStore(db, new CompetitiveSolitaireOptions { AllowSingleHumanBotFill = true });
+        await Disable(db);
+        await CompetitiveSolitaireTestStore.SeedBalanceAsync(db, "alice", Now);
+        var store = CompetitiveSolitaireTestStore.Create(db, allowManagedPlayers: true);
         var started = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync("alice", "Alice", 4, 500, 3,
             "admin-solitaire-start", 1931, Now, default)).Session);
         await store.SweepAsync(Now.AddHours(1), default);
@@ -323,7 +371,9 @@ public sealed class AdminManagementFirestoreTests(BlackjackTableFirestoreEmulato
     {
         var db = Database();
         await Disable(db); await SeedBalance(db, "alice");
-        var store = new FirestorePaidHeartsStore(db, new MultiplayerMatchmaker(Queuer(db)));
+        var wallet = new SharedBatchWallet(db, ManagedPlayerGames.Hearts);
+        var store = new FirestorePaidHeartsStore(db, wallet, wallet,
+            new TestManagedPlayerRoster(Queuer(db), ManagedPlayerGames.Hearts));
         var joined = await store.JoinAsync("alice", "Alice", 1m, "admin-hearts-start", Now, default);
         var later = await store.GetAsync("alice", joined.Queue!.MatchId, Now.AddSeconds(20), default);
         Assert.Equal("queue", later.Kind);
@@ -338,8 +388,9 @@ public sealed class AdminManagementFirestoreTests(BlackjackTableFirestoreEmulato
     {
         var db = Database();
         await Disable(db);
-        var service = new RouletteGameService(new MultiplayerMatchmaker(Queuer(db)));
-        var started = service.Start("alice", "Alice");
+        var roster = new TestManagedPlayerRoster(Queuer(db), ManagedPlayerGames.Roulette);
+        var service = new FirestoreRouletteService(db, new SignedRoulettePopulation(roster, new Managed.ManagedTablePopulationDirector()));
+        var started = await service.StartAsync("alice", "Alice", "admin-roulette-start");
         Assert.Single(started.Players);
         Assert.Equal("open", started.Phase);
         Assert.Empty((await db.Collection("managedPlayerAssignments").GetSnapshotAsync()).Documents);
@@ -358,6 +409,34 @@ public sealed class AdminManagementFirestoreTests(BlackjackTableFirestoreEmulato
     }
     private static string[] AvailableIds(int count) => Enumerable.Range(0, 100).Select(index => $"managed-batch-{index}")
         .Where(id => !ManagedPlayerAvailabilityPolicy.IsSleeping(id, Now)).Take(count).ToArray();
+
+    private sealed class SharedBatchWallet(FirestoreDb database, string gameId) : IGameWalletBatchClient, IGameWalletAccountReader
+    {
+        public Task<GameWalletBatchReceipt> SettleBatchAsync(string account, GameWalletBatchRequest request, CancellationToken token)
+        {
+            var body = JsonSerializer.SerializeToUtf8Bytes(request, GameWalletAuthentication.WireJson);
+            var digest = Convert.ToHexString(SHA256.HashData(body));
+            return new GameWalletBatchFirestoreStore(database).SettleAsync(gameId,
+                account, request, digest, DateTimeOffset.UtcNow, token);
+        }
+
+        public async Task<GameWalletAccountState> GetStateAsync(string account, CancellationToken token) =>
+            new(0, await FirestoreWalletDocuments.ReadSlotsCreditCentsAsync(database, account, false, token));
+    }
+
+    private sealed class TestManagedPlayerRoster(IManagedPlayerQueuer queuer, string gameId) : Managed.IManagedPlayerRosterClient
+    {
+        public async Task<IReadOnlyList<Managed.ManagedPlayerRosterProfile>> ReserveAsync(string assignment, int count,
+            IReadOnlyCollection<string> exclusions, DateTime now, CancellationToken token) =>
+            (await queuer.ReserveAsync(gameId, assignment, count, exclusions, now, token))
+                .Select(profile => new Managed.ManagedPlayerRosterProfile(profile.UserId, profile.PlayerName, profile.SkillLevel)).ToArray();
+        public Task HeartbeatAsync(string assignment, IReadOnlyCollection<string> profiles, DateTime now, CancellationToken token) =>
+            queuer.HeartbeatAsync(gameId, assignment, profiles, now, token);
+        public Task<bool> TryRenewAsync(string assignment, IReadOnlyCollection<string> profiles, DateTime now, CancellationToken token) =>
+            queuer.TryRenewAsync(gameId, assignment, profiles, now, token);
+        public Task ReleaseAsync(string assignment, IReadOnlyCollection<string> profiles, DateTime now, CancellationToken token) =>
+            queuer.ReleaseForGameAsync(gameId, assignment, profiles, now, token);
+    }
 
     private sealed class FailingGenerator(Exception failure) : IManagedPlayerProfileGenerator
     {
@@ -389,7 +468,11 @@ public sealed class AdminManagementFirestoreTests(BlackjackTableFirestoreEmulato
         public Task<bool> ReleaseAsync(string profileId, string assignmentId, DateTime nowUtc, CancellationToken cancellationToken) => inner.ReleaseAsync(profileId, assignmentId, nowUtc, cancellationToken);
     }
     private static Task SeedBalance(FirestoreDb db, string id) => db.Collection("userBalances").Document($"{id}_slotsCredits")
-        .SetAsync(new Dictionary<string, object> { ["available"] = 100L, ["availableFractionalCents"] = 0L, ["reserved"] = 0L, ["version"] = 1L, ["updatedAt"] = Timestamp.FromDateTime(Now) });
+        .SetAsync(new Dictionary<string, object>
+        {
+            ["userId"] = id, ["currencyId"] = "slotsCredits", ["available"] = 100L,
+            ["availableFractionalCents"] = 0L, ["reserved"] = 0L, ["version"] = 1L, ["updatedAt"] = Timestamp.FromDateTime(Now),
+        });
     private static Task SeedManaged(FirestoreDb db, string id) => db.Collection("users").Document(id)
         .SetAsync(new Dictionary<string, object> { ["userId"] = id, ["playerName"] = id, ["authProvider"] = ManagedPlayerProfileSchema.AuthenticationProvider,
             [ManagedPlayerProfileSchema.ProfileTagsField] = new[] { ManagedPlayerProfileSchema.BotTag }, ["skillLevel"] = 3L,

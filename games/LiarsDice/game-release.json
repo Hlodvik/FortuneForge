@@ -1,0 +1,10 @@
+{
+  "id": "liars-dice",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.LiarsDice.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "packaged-game"
+  }
+}

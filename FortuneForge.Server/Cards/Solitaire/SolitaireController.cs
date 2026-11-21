@@ -1,3 +1,6 @@
+using FortuneForge.Games.Abstractions.ManagedPlayers;
+using FortuneForge.Games.Abstractions.Wallet;
+using FortuneForge.Games.FreeSolitaire.Server;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
@@ -7,9 +10,6 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace FortuneForge.Server.Cards.Solitaire;
 
-public sealed record SolitaireForfeitRequest(int ExpectedVersion);
-public sealed record SolitaireFreeRunStartRequest(int DrawCount, string? ReplayRunId = null, string? GameId = null);
-public sealed record SolitaireFreeRunReplayRequest(IReadOnlyList<SolitaireFreeReplayCommand>? Commands);
 
 [ApiController]
 [Route("api/solitaire")]
@@ -17,7 +17,6 @@ public sealed class SolitaireController(
     AccountService accountService,
     IConfiguration configuration,
     FirestoreSolitaireFreeRunService freeRunService,
-    IServiceProvider services,
     ILogger<SolitaireController> logger) : ControllerBase
 {
     [HttpPost("free/runs")]
@@ -93,235 +92,75 @@ public sealed class SolitaireController(
         }
     }
 
+    [HttpGet("free/runs/{runId}")]
+    [EnableRateLimiting(RateLimitPolicies.SlotReads)]
+    public async Task<ActionResult> GetFreeRun(string runId, CancellationToken cancellationToken)
+    {
+        var account = await AccountAsync(cancellationToken);
+        if (account is null) return Unauthorized(new { error = "Sign in to reopen free Solitaire." });
+        try { return Ok(await freeRunService.GetAsync(runId, account.UserId, cancellationToken)); }
+        catch (Exception exception) { return FreeRunHttp(exception); }
+    }
+
     [HttpGet("session")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
-    public async Task<ActionResult> Session(CancellationToken cancellationToken)
-    {
-        if (Disabled() is { } unavailable) return unavailable;
-        var account = await AccountAsync(cancellationToken);
-        if (account is null)
-        {
-            return Unauthorized(new { error = "Sign in to play competitive Solitaire." });
-        }
-        try
-        {
-            return Ok((await Service().GetSessionAsync(account.UserId, cancellationToken)).Session);
-        }
-        catch (Exception exception)
-        {
-            return SolitaireHttp.FromException(this, exception, logger);
-        }
-    }
+    public Task<ActionResult> Session(CancellationToken cancellationToken) => CompetitiveUnavailableAsync();
 
     [HttpPost("queue")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public async Task<ActionResult> Join(
+    public Task<ActionResult> Join(
         JoinSolitaireQueueRequest request,
-        CancellationToken cancellationToken)
-    {
-        if (Disabled() is { } unavailable) return unavailable;
-        var account = await AccountAsync(cancellationToken);
-        if (account is null)
-        {
-            return Unauthorized(new { error = "Sign in to join competitive Solitaire." });
-        }
-        try
-        {
-            return Ok(ToMutation(await Service().JoinAsync(
-                account.UserId,
-                account.PlayerName,
-                request,
-                cancellationToken)));
-        }
-        catch (Exception exception)
-        {
-            return SolitaireHttp.FromException(this, exception, logger);
-        }
-    }
+        CancellationToken cancellationToken) => CompetitiveUnavailableAsync();
 
     [HttpDelete("queue/{ticketId}")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public async Task<ActionResult> Cancel(
+    public Task<ActionResult> Cancel(
         string ticketId,
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
-        CancellationToken cancellationToken)
-    {
-        if (Disabled() is { } unavailable) return unavailable;
-        var account = await AccountAsync(cancellationToken);
-        if (account is null)
-        {
-            return Unauthorized(new { error = "Sign in to cancel a Solitaire queue ticket." });
-        }
-        try
-        {
-            return Ok(ToMutation(await Service().CancelAsync(
-                account.UserId,
-                ticketId,
-                idempotencyKey ?? string.Empty,
-                cancellationToken)));
-        }
-        catch (Exception exception)
-        {
-            return SolitaireHttp.FromException(this, exception, logger);
-        }
-    }
+        CancellationToken cancellationToken) => CompetitiveUnavailableAsync();
 
     [HttpPost("matches/{matchId}/commands")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public async Task<ActionResult> Command(
+    public Task<ActionResult> Command(
         string matchId,
         SolitaireCommandRequest request,
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
-        CancellationToken cancellationToken)
-    {
-        if (Disabled() is { } unavailable) return unavailable;
-        var account = await AccountAsync(cancellationToken);
-        if (account is null)
-        {
-            return Unauthorized(new { error = "Sign in to play competitive Solitaire." });
-        }
-        try
-        {
-            return Ok(ToMutation(await Service().CommandAsync(
-                account.UserId,
-                matchId,
-                request,
-                idempotencyKey ?? string.Empty,
-                cancellationToken)));
-        }
-        catch (Exception exception)
-        {
-            return SolitaireHttp.FromException(this, exception, logger);
-        }
-    }
+        CancellationToken cancellationToken) => CompetitiveUnavailableAsync();
 
     [HttpPost("matches/{matchId}/forfeit")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public async Task<ActionResult> Forfeit(
+    public Task<ActionResult> Forfeit(
         string matchId,
         SolitaireForfeitRequest request,
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
-        CancellationToken cancellationToken)
-    {
-        if (Disabled() is { } unavailable) return unavailable;
-        var account = await AccountAsync(cancellationToken);
-        if (account is null)
-        {
-            return Unauthorized(new { error = "Sign in to forfeit a Solitaire match." });
-        }
-        try
-        {
-            return Ok(ToMutation(await Service().ForfeitAsync(
-                account.UserId,
-                matchId,
-                request.ExpectedVersion,
-                idempotencyKey ?? string.Empty,
-                cancellationToken)));
-        }
-        catch (Exception exception)
-        {
-            return SolitaireHttp.FromException(this, exception, logger);
-        }
-    }
+        CancellationToken cancellationToken) => CompetitiveUnavailableAsync();
 
     [HttpPost("matches/{matchId}/dismiss")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public async Task<ActionResult> Dismiss(
+    public Task<ActionResult> Dismiss(
         string matchId,
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
-        CancellationToken cancellationToken)
-    {
-        if (Disabled() is { } unavailable) return unavailable;
-        var account = await AccountAsync(cancellationToken);
-        if (account is null)
-        {
-            return Unauthorized(new { error = "Sign in to dismiss a Solitaire result." });
-        }
-        try
-        {
-            return Ok(ToMutation(await Service().DismissAsync(
-                account.UserId,
-                matchId,
-                idempotencyKey ?? string.Empty,
-                cancellationToken)));
-        }
-        catch (Exception exception)
-        {
-            return SolitaireHttp.FromException(this, exception, logger);
-        }
-    }
+        CancellationToken cancellationToken) => CompetitiveUnavailableAsync();
 
     [HttpPost("matches/{matchId}/claim")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public async Task<ActionResult> Claim(
+    public Task<ActionResult> Claim(
         string matchId,
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
-        CancellationToken cancellationToken)
-    {
-        if (Disabled() is { } unavailable) return unavailable;
-        var account = await AccountAsync(cancellationToken);
-        if (account is null)
-        {
-            return Unauthorized(new { error = "Sign in to claim a Solitaire result." });
-        }
-        try
-        {
-            return Ok(ToMutation(await Service().ClaimAsync(
-                account.UserId,
-                matchId,
-                idempotencyKey ?? string.Empty,
-                cancellationToken)));
-        }
-        catch (Exception exception)
-        {
-            return SolitaireHttp.FromException(this, exception, logger);
-        }
-    }
+        CancellationToken cancellationToken) => CompetitiveUnavailableAsync();
 
     [HttpGet("history")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
-    public async Task<ActionResult> History(
+    public Task<ActionResult> History(
         [FromQuery] int limit = 30,
-        CancellationToken cancellationToken = default)
-    {
-        if (Disabled() is { } unavailable) return unavailable;
-        var account = await AccountAsync(cancellationToken);
-        if (account is null)
-        {
-            return Unauthorized(new { error = "Sign in to read Solitaire history." });
-        }
-        try
-        {
-            return Ok(await Service().GetHistoryAsync(account.UserId, limit, cancellationToken));
-        }
-        catch (Exception exception)
-        {
-            return SolitaireHttp.FromException(this, exception, logger);
-        }
-    }
+        CancellationToken cancellationToken = default) => CompetitiveUnavailableAsync();
 
     [HttpGet("history-page")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
-    public async Task<ActionResult> HistoryPage(
+    public Task<ActionResult> HistoryPage(
         [FromQuery] int limit = 30,
         [FromQuery] string? cursor = null,
-        CancellationToken cancellationToken = default)
-    {
-        if (Disabled() is { } unavailable) return unavailable;
-        var account = await AccountAsync(cancellationToken);
-        if (account is null)
-            return Unauthorized(new { error = "Sign in to read Solitaire history." });
-        try
-        {
-            return Ok(await Service().GetHistoryPageAsync(account.UserId, limit, cursor, cancellationToken));
-        }
-        catch (Exception exception)
-        {
-            return SolitaireHttp.FromException(this, exception, logger);
-        }
-    }
-
-    private CompetitiveSolitaireService Service() => services.GetRequiredService<CompetitiveSolitaireService>();
+        CancellationToken cancellationToken = default) => CompetitiveUnavailableAsync();
 
     private ActionResult FreeRunHttp(Exception exception) => exception switch
     {
@@ -331,13 +170,17 @@ public sealed class SolitaireController(
         _ => SolitaireHttp.FromException(this, exception, logger),
     };
 
-    private ActionResult? Disabled() => IsEnabled(configuration)
-        ? null
+    private Task<ActionResult> CompetitiveUnavailableAsync() => Task.FromResult<ActionResult>(IsEnabled(configuration)
+        ? StatusCode(StatusCodes.Status503ServiceUnavailable, new
+        {
+            code = "solitaire-worker-required",
+            error = "Competitive Solitaire requires its game backend. Retry the original action when it is available."
+        })
         : StatusCode(StatusCodes.Status503ServiceUnavailable, new
         {
             code = "competitive-solitaire-disabled",
             error = "Competitive Solitaire is still being verified and cannot accept a buy-in yet."
-        });
+        }));
 
     internal static bool IsEnabled(IConfiguration source) =>
         source.GetValue("Features:CompetitiveSolitaireEnabled", false);
@@ -351,9 +194,6 @@ public sealed class SolitaireController(
         (await accountService.GetProfileAsync(
             AccountSessionCookie.Read(Request),
             cancellationToken)).Value;
-
-    private static SolitaireMutationResponse ToMutation(SolitaireStoreSession value) =>
-        new(value.Session, SolitaireMoney.ToCredits(value.BalanceCents));
 
 }
 
@@ -369,6 +209,10 @@ internal static class SolitaireHttp
             case GameWorkerUnavailableException:
                 return controller.StatusCode(StatusCodes.Status503ServiceUnavailable,
                     new { code = "solitaire-unavailable", error = exception.Message });
+            case GameWalletUnavailableException or GameWalletConflictException or ManagedPlayerRosterUnavailableException
+                or SolitaireFinancialPendingException or SolitaireAdmissionPausedException or Grpc.Core.RpcException:
+                return controller.StatusCode(StatusCodes.Status503ServiceUnavailable,
+                    new { code = "solitaire-unavailable", error = "Competitive Solitaire could not confirm the request." });
             case SolitaireNotFoundException:
                 return controller.NotFound(new { error = exception.Message });
             case SolitaireInsufficientCreditsException insufficient:

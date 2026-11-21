@@ -1,0 +1,10 @@
+{
+  "id": "snake",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.Snake.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "packaged-game"
+  }
+}

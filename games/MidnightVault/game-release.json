@@ -5,6 +5,6 @@
     "entry": "src/browser.ts"
   },
   "backend": {
-    "project": "server/FortuneForge.Games.MidnightVault.Server/FortuneForge.Games.MidnightVault.Server.csproj"
+    "kind": "packaged-game"
   }
 }

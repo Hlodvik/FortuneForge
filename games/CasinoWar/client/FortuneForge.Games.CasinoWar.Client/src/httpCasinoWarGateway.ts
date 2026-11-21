@@ -6,6 +6,7 @@ import {
   type CasinoWarOpeningOutcome,
   type CasinoWarPrimarySettlement,
   type CasinoWarRound,
+  type CasinoWarRecovery,
   type CasinoWarRequestOptions,
   type CasinoWarRoundOutcome,
   type CasinoWarSettlementDisposition,
@@ -28,6 +29,16 @@ export class HttpCasinoWarGateway implements CasinoWarGateway {
 
   getRound(roundId: string, signal?: AbortSignal) {
     return this.request(`/rounds/${encodeURIComponent(roundId)}`, { signal }, isRound)
+  }
+
+  recoverPending(signal?: AbortSignal) {
+    return this.request('/rounds/pending', { signal }, isRecovery)
+  }
+
+  getHistory(limit = 20, signal?: AbortSignal) {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100)
+      throw new CasinoWarGatewayError('Choose 1 to 100 Casino War history entries.', 'casino-war-invalid-request')
+    return this.request(`/rounds/history?limit=${limit}`, { signal }, isHistory)
   }
 
   createRound(primaryStake: number, tieStake: number, options: CasinoWarRequestOptions = {}) {
@@ -115,6 +126,15 @@ function isRound(value: unknown): value is CasinoWarRound {
     : warComparison < 0
       ? isPrimarySettlement(value.primarySettlement, value.primaryStake * 2, 'dealer-war-win', 'loss', 0)
       : isPrimarySettlement(value.primarySettlement, value.primaryStake * 2, 'player-war-tie-win', 'win', value.primaryStake * 4)
+}
+
+function isRecovery(value: unknown): value is CasinoWarRecovery {
+  return isRecord(value) && (value.recoveredRound === null || isRound(value.recoveredRound))
+    && Array.isArray(value.openRounds) && value.openRounds.every(round => isRound(round) && round.phase === 'awaiting-tie-decision')
+}
+
+function isHistory(value: unknown): value is readonly CasinoWarRound[] {
+  return Array.isArray(value) && value.every(isRound)
 }
 
 function isPrimarySettlement(

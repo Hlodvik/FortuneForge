@@ -25,6 +25,8 @@ export type TwentyFortyEightGameState = Readonly<{
 
 export interface TwentyFortyEightGateway {
   getStatus(signal?: AbortSignal): Promise<TwentyFortyEightStatus>
+  getGame?(gameId: string, signal?: AbortSignal): Promise<TwentyFortyEightGameState>
+  recoverGame?(signal?: AbortSignal): Promise<TwentyFortyEightGameState>
   startGame(seed?: number, signal?: AbortSignal): Promise<TwentyFortyEightGameState>
   move(gameId: string, direction: TwentyFortyEightDirection, signal?: AbortSignal): Promise<TwentyFortyEightGameState>
   undo(gameId: string, signal?: AbortSignal): Promise<TwentyFortyEightGameState>

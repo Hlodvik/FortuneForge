@@ -11,6 +11,7 @@ export {
   type CasinoWarPhase,
   type CasinoWarPrimarySettlement,
   type CasinoWarRound,
+  type CasinoWarRecovery,
   type CasinoWarRoundOutcome,
   type CasinoWarSettlementDisposition,
   type CasinoWarStatus,

@@ -2,6 +2,7 @@
 // Edited: 2026-11-18T16:30:05-06:00 | Computer: Vinnabok
 using System.Text.Json.Serialization;
 using ArcanePotionBottle = FortuneForge.Games.ArcaneArchives.ArcanePotionBottle;
+using ArcanePotionView = FortuneForge.Games.ArcaneArchives.ArcanePotionView;
 using ArcaneTomeView = FortuneForge.Games.ArcaneArchives.ArcaneTomeView;
 using ArcaneWandCollection = FortuneForge.Games.ArcaneArchives.ArcaneWandCollection;
 using FortuneForge.Games.JadeDragon;

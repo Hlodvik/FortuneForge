@@ -1,9 +1,9 @@
 using FortuneForge.Games.Keno;
+using FortuneForge.Games.Keno.Server;
 using FortuneForge.Server.Numbers.Keno;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Keno;
@@ -20,22 +20,24 @@ public sealed class KenoContractTests
         Assert.True(KenoController.IsEnabled(enabled));
     }
 
-    [Fact]
-    public async Task DisabledFeature_ReturnsServiceUnavailableBeforeAccountOrStoreAccess()
+    [Theory]
+    [InlineData(false, "keno-disabled")]
+    [InlineData(true, "keno-retry-required")]
+    public void LocalRoutes_ReturnServiceUnavailableWithoutTheWorker(bool enabled, string code)
     {
-        var controller = new KenoController(null!, null!, new ConfigurationBuilder().Build(), NullLogger<KenoController>.Instance);
+        var controller = new KenoController(new ConfigurationManager { ["Features:KenoEnabled"] = enabled.ToString() });
         var responses = new ActionResult[]
         {
-            await controller.Status(CancellationToken.None),
-            await controller.Start(new CreateKenoRoundRequest(new KenoTicketRequest([3, 7, 15]), 1m), "keno-start-00001", CancellationToken.None),
-            await controller.Get(new string('a', 64), CancellationToken.None),
+            controller.Status(CancellationToken.None),
+            controller.Start(new CreateKenoRoundRequest(new KenoTicketRequest([3, 7, 15]), 1m), "keno-start-00001", CancellationToken.None),
+            controller.Get(new string('a', 64), CancellationToken.None),
         };
 
         Assert.All(responses, response =>
         {
             var unavailable = Assert.IsType<ObjectResult>(response);
             Assert.Equal(StatusCodes.Status503ServiceUnavailable, unavailable.StatusCode);
-            Assert.Equal("keno-disabled", Assert.IsType<KenoErrorResponse>(unavailable.Value).Code);
+            Assert.Equal(code, Assert.IsType<KenoErrorResponse>(unavailable.Value).Code);
         });
     }
 

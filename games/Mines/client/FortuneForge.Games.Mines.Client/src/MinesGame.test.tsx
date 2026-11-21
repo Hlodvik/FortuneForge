@@ -367,6 +367,20 @@ describe('MinesGame server state and normal play', () => {
 })
 
 describe('MinesGame command recovery', () => {
+  it.each([[403, 'game-session-changed'], [401, 'mines-authentication-required']] as const)('keeps the original pending command after authentication rejection %s', async (status, code) => {
+    const fake = gateway()
+    fake.execute.mockRejectedValueOnce(new MinesGatewayError('Sign in to the original account.', code, status))
+    await open(fake)
+    fireEvent.click(screen.getByRole('button', { name: /Place wager/ })); await flush()
+    const original = fake.execute.mock.calls[0][0]
+    expect(JSON.parse(localStorage.getItem(pendingKey('player-a'))!)).toEqual(original)
+    expect(wager()).toHaveProperty('disabled', true)
+    expect(fake.getSession).toHaveBeenCalledOnce()
+    fake.set({ ...idle, balanceCents: 9900, round: round() })
+    fireEvent.click(screen.getByRole('button', { name: /Restore round/ })); await flush()
+    expect(fake.execute.mock.calls[1][0]).toEqual(original)
+  })
+
   it('preserves the same uncertain wager command, blocks new actions, and restores the latest ledger after replay', async () => {
     const fake = gateway()
     fake.execute.mockRejectedValueOnce(new TypeError('Response lost after wager acceptance'))

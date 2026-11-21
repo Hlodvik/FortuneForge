@@ -131,6 +131,7 @@ describe('Mines production host route', () => {
     expect(state.fetch.mock.calls.map(([url]) => url)).toEqual(['/api/games/mines/session', '/api/games/mines/rounds'])
     for (const [, init] of state.fetch.mock.calls) {
       expect(new Headers(init?.headers).has('X-FortuneForge-Practice')).toBe(false)
+      expect(new Headers(init?.headers).get('X-FortuneForge-Expected-Account')).toBe('first')
       expect(init?.credentials).toBe('same-origin')
     }
     expect(state.fetch.mock.calls[1]![1]?.body).toBe(JSON.stringify({ requestId: 'test-start', wagerCents: 100, mineCount: 3 }))
@@ -146,13 +147,15 @@ describe('Mines production host route', () => {
     expect(state.shellAccounts.at(-1)?.balances.slotsCredits).toBe(1200)
   })
 
-  it('remounts the gateway and recovery scope when the signed-in account changes', () => {
+  it('remounts the gateway and recovery scope when the signed-in account changes', async () => {
     render(); const firstGateway = gateway()
     state.account = account('second', 700); render()
     expect(gateway()).not.toBe(firstGateway)
     expect(game().playerId).toBe('second:account')
     expect(state.shellAccounts.at(-1)?.userId).toBe('second')
     expect(game().onBalanceChange).toBeTypeOf('function')
+    await gateway().getSession()
+    expect(new Headers(state.fetch.mock.calls[0]![1]?.headers).get('X-FortuneForge-Expected-Account')).toBe('second')
   })
 
   it('refreshes the authoritative currency-unit account summary instead of writing callback cents into it', async () => {

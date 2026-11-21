@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { LiarsDiceGatewayError, type LiarsDiceBid, type LiarsDiceGateway, type LiarsDiceMatch, type LiarsDiceStatus } from './contracts'
 import { appendRoundHistory, validBid, type LiarsDiceHistoryEntry } from './liarsDiceHelpers'
 
-/** Writes are never replayed: known private matches can be read after an uncertain response. */
+/** Recovers a durable pending command before displaying the latest private match. */
 export function useLiarsDiceTable(gateway: LiarsDiceGateway, playerId?: string) {
   const [status, setStatus] = useState<LiarsDiceStatus | null>(null)
   const [match, setMatch] = useState<LiarsDiceMatch | null>(null)
@@ -53,6 +53,15 @@ export function useLiarsDiceTable(gateway: LiarsDiceGateway, playerId?: string) 
         }
         mode.current = next.mode; setStatus(next)
         scope.current = playerId && gateway.getMatch ? encodeURIComponent(playerId) + ':' + encodeURIComponent(next.mode) : null
+        if (gateway.recoverMatch) {
+          const restored = await gateway.recoverMatch(controller.signal)
+          if (controller.signal.aborted) return
+          if (restored) {
+            accept(restored, controller.signal); failedId.current = null; setRecovery('ready')
+            if (!next.available) setError('This table is temporarily unavailable.')
+            return
+          }
+        }
         const id = failedId.current ?? read(scope.current)
         if (id) {
           failedId.current = id
@@ -77,7 +86,8 @@ export function useLiarsDiceTable(gateway: LiarsDiceGateway, playerId?: string) 
     failedId.current = id
     try {
       if (!gateway.getMatch) throw new Error('No recovery read')
-      await reveal(await gateway.getMatch(id, signal), signal, animate)
+      const restored = gateway.recoverMatch ? await gateway.recoverMatch(signal) : null
+      await reveal(restored ?? await gateway.getMatch(id, signal), signal, animate)
       if (signal.aborted) return
       failedId.current = null; setRecovery('ready')
       setError(reason instanceof LiarsDiceGatewayError && reason.status >= 400 && reason.status < 500 ? reason.message : 'Connection interrupted. Match refreshed; check the turn.')

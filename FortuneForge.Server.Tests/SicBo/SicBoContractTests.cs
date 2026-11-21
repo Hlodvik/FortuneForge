@@ -1,5 +1,6 @@
 using System.Globalization;
 using FortuneForge.Games.SicBo;
+using FortuneForge.Games.SicBo.Server;
 using FortuneForge.Server.Dice.SicBo;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,10 +22,13 @@ public sealed class SicBoContractTests
         Assert.True(SicBoController.IsEnabled(enabled));
     }
 
-    [Fact]
-    public async Task DisabledFeature_ReturnsServiceUnavailableBeforeAccountOrStoreAccess()
+    [Theory]
+    [InlineData(false, "sic-bo-disabled")]
+    [InlineData(true, "sic-bo-retry-required")]
+    public async Task LocalPaidRoutes_ReturnServiceUnavailableWithoutTheWorker(bool enabled, string code)
     {
-        var controller = new SicBoController(null!, null!, new ConfigurationBuilder().Build(), NullLogger<SicBoController>.Instance);
+        var configuration = new ConfigurationManager { ["Features:SicBoEnabled"] = enabled.ToString() };
+        var controller = new SicBoController(configuration, null!, null!, NullLogger<SicBoController>.Instance);
         var responses = new ActionResult[]
         {
             await controller.Status(CancellationToken.None),
@@ -36,7 +40,7 @@ public sealed class SicBoContractTests
         {
             var unavailable = Assert.IsType<ObjectResult>(response);
             Assert.Equal(StatusCodes.Status503ServiceUnavailable, unavailable.StatusCode);
-            Assert.Equal("sic-bo-disabled", Assert.IsType<SicBoErrorResponse>(unavailable.Value).Code);
+            Assert.Equal(code, Assert.IsType<SicBoErrorResponse>(unavailable.Value).Code);
         });
     }
 
@@ -104,15 +108,16 @@ public sealed class SicBoContractTests
     {
         Assert.Equal(1_000, SicBoMoney.MaximumStakeCents);
         Assert.Equal(1_000, SicBoMoney.ParseBet(Bet("small", 10m)).StakeCents);
-        Assert.Throws<ArgumentOutOfRangeException>(() => SicBoMoney.ParseBet(Bet("small", 11m)));
+        Assert.Equal(1_100, SicBoMoney.ParseBet(Bet("small", 11m)).StakeCents);
+        Assert.Throws<ArgumentOutOfRangeException>(() => Validate(Bet("small", 11m)));
+        Validate(Bet("small", 5m), Bet("small", 5m));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Validate(Bet("small", 5m), Bet("small", 6m)));
+        Validate(Bet("small", 10m), Bet("big", 10m));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            Validate(Bet("two-number-combination", 5m, firstFace: 1, secondFace: 2),
+                Bet("two-number-combination", 6m, firstFace: 2, secondFace: 1)));
 
-        Assert.Equal(2, SicBoMoney.ParseBets([Bet("small", 5m), Bet("small", 5m)]).Count);
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-            SicBoMoney.ParseBets([Bet("small", 5m), Bet("small", 6m)]));
-        Assert.Equal(2, SicBoMoney.ParseBets([Bet("small", 10m), Bet("big", 10m)]).Count);
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-            SicBoMoney.ParseBets([Bet("two-number-combination", 5m, firstFace: 1, secondFace: 2),
-                Bet("two-number-combination", 6m, firstFace: 2, secondFace: 1)]));
+        static void Validate(params SicBoBetRequest[] bets) => SicBoMoney.ValidateNewBets(SicBoMoney.ParseBets(bets));
     }
 
     [Fact]

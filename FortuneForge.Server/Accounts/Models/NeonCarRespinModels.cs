@@ -3,12 +3,6 @@ using FortuneForge.Server.Slots.Models;
 
 namespace FortuneForge.Server.Accounts.Models;
 
-public sealed record NeonCarRespinOffer(
-    Guid SpinId,
-    IReadOnlyList<int> EligibleReels,
-    IReadOnlyList<IReadOnlyList<string>> Reels,
-    long RoundWinPoints);
-
 public sealed record NeonCarRespinSettlement(
     Guid SourceSpinId,
     int ReelIndex,

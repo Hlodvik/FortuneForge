@@ -1,18 +1,20 @@
-import { HeartsGatewayError, type HeartsDifficulty, type HeartsGateway, type HeartsMatch, type HeartsOnboardingGateway, type HeartsOnboardingState, type HeartsPaidGateway, type HeartsPaidRequest, type HeartsPaidSession, type HeartsPaidTable, type HeartsSeat, type HeartsStatus } from './contracts'
+import type { GameCommandRecovery, PendingGameCommand } from '@fortuneforge/client-presentation/game-command-recovery'
+import { HeartsGatewayError, type HeartsDifficulty, type HeartsGateway, type HeartsMatch, type HeartsOnboardingGateway, type HeartsOnboardingState, type HeartsPaidGateway, type HeartsPaidRequest, type HeartsPaidSession, type HeartsPaidTable, type HeartsRecoveredSession, type HeartsSeat, type HeartsStatus } from './contracts'
 
 export class HttpHeartsGateway implements HeartsGateway {
   readonly basePath: string
   readonly paid: HeartsPaidGateway
   readonly onboarding: HeartsOnboardingGateway
-  constructor(basePath = '/api/games/hearts', private readonly requestFn: typeof fetch = fetch) {
+  constructor(basePath = '/api/games/hearts', private readonly requestFn: typeof fetch = fetch,
+    private readonly recovery?: GameCommandRecovery, private readonly expectedAccountId?: string) {
     this.basePath = basePath.replace(/\/$/, '')
     this.onboarding = {
-      getState: signal => this.request('/onboarding', { signal }, isOnboardingState),
+      getState: async signal => { await this.recoverPending(signal); return this.request('/onboarding', { signal }, isOnboardingState) },
       confirmExperience: signal => this.request('/onboarding', jsonPost({ hasPlayedBefore: true }, { signal }), isOnboardingState),
     }
     const mutate = (path: string, payload: object, options: HeartsPaidRequest) => this.request('/paid' + path, jsonPost({ ...payload, expectedVersion: options.expectedVersion }, options), isPaidSession)
     this.paid = {
-      getSession: signal => this.request('/paid/session', { signal }, isPaidSession),
+      getSession: async signal => { await this.recoverPending(signal); return this.request('/paid/session', { signal }, isPaidSession) },
       join: (entryCredits, options) => mutate('/join', { entryCredits }, options),
       playHouse: (id, options) => mutate(`/matches/${encodeURIComponent(id)}/play-house`, {}, options),
       getMatch: (id, signal) => this.request(`/paid/matches/${encodeURIComponent(id)}`, { signal }, isPaidSession),
@@ -28,23 +30,71 @@ export class HttpHeartsGateway implements HeartsGateway {
   startTrial(signal?: AbortSignal) { return this.request('/trial', { method: 'POST', signal }, isTrialMatch) }
   cancelTrial(matchId: string, signal?: AbortSignal) { return this.request(`/trial/${encodeURIComponent(matchId)}/cancel`, { method: 'POST', signal }, isOnboardingState) }
   startMatch(options: { targetScore: number; difficulty?: HeartsDifficulty; seed?: number }, signal?: AbortSignal) { return this.request('/matches', jsonPost(options, { signal }), isMatch) }
-  async leaveMatch(matchId: string, signal?: AbortSignal) {
-    const response = await this.requestFn(`${this.basePath}/matches/${encodeURIComponent(matchId)}/leave`, { method: 'POST', signal })
-    if (response.ok) return
-    const value: unknown = await response.json().catch(() => null)
-    const error = isError(value) ? value : null
-    throw new HeartsGatewayError(error?.message ?? `The Hearts table could not be closed (${response.status}).`, error?.code, response.status)
+  leaveMatch(matchId: string, signal?: AbortSignal) { return this.request(`/matches/${encodeURIComponent(matchId)}/leave`, { method: 'POST', signal }, isEmpty) }
+  pass(matchId: string, cards: readonly string[], signal?: AbortSignal) { return this.request(`/matches/${encodeURIComponent(matchId)}/pass`, jsonPost({ cards }, { signal }), matchingMatch(matchId)) }
+  playCard(matchId: string, card: string, signal?: AbortSignal) { return this.request(`/matches/${encodeURIComponent(matchId)}/card`, jsonPost({ card }, { signal }), matchingMatch(matchId)) }
+  advance(matchId: string, signal?: AbortSignal) { return this.request(`/matches/${encodeURIComponent(matchId)}/advance`, jsonPost({}, { signal }), matchingMatch(matchId)) }
+  nextRound(matchId: string, seed?: number, signal?: AbortSignal) { return this.request(`/matches/${encodeURIComponent(matchId)}/next-round`, jsonPost({ seed }, { signal }), matchingMatch(matchId)) }
+
+  async recoverSession(signal?: AbortSignal): Promise<HeartsRecoveredSession | null> {
+    const recovered = await this.recoverPending(signal)
+    if (recovered?.kind === 'paid') return { kind: 'paid', session: await this.request('/paid/session', { signal }, isPaidSession) }
+    if (recovered?.kind === 'closed') return recovered
+    const matchId = recovered?.kind === 'practice' ? recovered.match.matchId : this.recovery?.read().activeBoardId
+    if (!matchId) return null
+    try {
+      return { kind: 'practice', match: await this.request(`/matches/${encodeURIComponent(matchId)}`, { signal }, matchingMatch(matchId)) }
+    } catch (reason) {
+      if (reason instanceof HeartsGatewayError && reason.status === 404) {
+        this.recovery?.setActiveBoardId(null)
+        return { kind: 'closed' }
+      }
+      throw reason
+    }
   }
-  pass(matchId: string, cards: readonly string[], signal?: AbortSignal) { return this.request(`/matches/${encodeURIComponent(matchId)}/pass`, jsonPost({ cards }, { signal }), isMatch) }
-  playCard(matchId: string, card: string, signal?: AbortSignal) { return this.request(`/matches/${encodeURIComponent(matchId)}/card`, jsonPost({ card }, { signal }), isMatch) }
-  advance(matchId: string, signal?: AbortSignal) { return this.request(`/matches/${encodeURIComponent(matchId)}/advance`, jsonPost({}, { signal }), isMatch) }
-  nextRound(matchId: string, seed?: number, signal?: AbortSignal) { return this.request(`/matches/${encodeURIComponent(matchId)}/next-round`, jsonPost({ seed }, { signal }), isMatch) }
+
+  private async recoverPending(signal?: AbortSignal): Promise<HeartsRecoveredSession | null> {
+    const command = this.recovery?.read().pending
+    if (!command) return null
+    if (!command.path.startsWith(this.basePath + '/')) throw new HeartsGatewayError('The saved command belongs to a different game service.')
+    const path = command.path.slice(this.basePath.length)
+    const init: RequestInit = { method: 'POST', ...(command.body ? { headers: { 'content-type': 'application/json' } } : {}), body: command.body, signal }
+    if (path === '/paid/join' || /^\/paid\/matches\/[^/]+\/(?:play-house|pass|card|advance|next-round|leave)$/u.test(path))
+      return { kind: 'paid', session: await this.request(path, init, isPaidSession) }
+    if (path === '/onboarding') { await this.request(path, init, isOnboardingState); return null }
+    if (/^\/trial\/[^/]+\/cancel$/u.test(path)) { await this.request(path, init, isOnboardingState); return { kind: 'closed' } }
+    if (/^\/matches\/[^/]+\/leave$/u.test(path)) { await this.request(path, init, isEmpty); return { kind: 'closed' } }
+    if (path === '/trial') return { kind: 'practice', match: await this.request(path, init, isTrialMatch) }
+    if (path === '/matches') return { kind: 'practice', match: await this.request(path, init, isMatch) }
+    const action = /^\/matches\/([^/]+)\/(?:pass|card|advance|next-round)$/u.exec(path)
+    if (action) return { kind: 'practice', match: await this.request(path, init, matchingMatch(decodeURIComponent(action[1]))) }
+    throw new HeartsGatewayError('The saved Hearts command cannot be recovered.', 'hearts-invalid-command')
+  }
+
   private async request<T>(path: string, init: RequestInit, validate: (value: unknown) => value is T): Promise<T> {
+    const command = init.method === 'POST' ? this.recovery?.prepare(this.basePath + path, String(init.body ?? ''),
+      new Headers(init.headers).get('Idempotency-Key') ?? undefined) : undefined
+    if (command || this.expectedAccountId) {
+      const headers = new Headers(init.headers)
+      if (command) headers.set('Idempotency-Key', command.idempotencyKey)
+      if (this.expectedAccountId) headers.set('X-FortuneForge-Expected-Account', this.expectedAccountId)
+      init = { ...init, headers, ...(command ? { body: command.body } : {}) }
+    }
     const response = await this.requestFn(`${this.basePath}${path}`, init)
-    const value: unknown = await response.json().catch(() => null)
-    if (!response.ok) { const error = isError(value) ? value : null; throw new HeartsGatewayError(error?.message ?? `The Hearts table request failed (${response.status}).`, error?.code, response.status) }
+    const value: unknown = response.status === 204 ? undefined : await response.json().catch(() => null)
+    if (!response.ok) {
+      if (command && response.status < 500 && ![401, 403, 408, 425, 429].includes(response.status)) this.recovery?.complete(command)
+      const error = isError(value) ? value : null
+      throw new HeartsGatewayError(error?.message ?? `The Hearts table request failed (${response.status}).`, error?.code, response.status)
+    }
     if (!validate(value)) throw new HeartsGatewayError('The Hearts service returned an invalid response.', 'hearts-invalid-response')
+    if (command) this.complete(command, path, value)
     return value
+  }
+
+  private complete(command: PendingGameCommand, path: string, value: unknown) {
+    const closed = path.startsWith('/paid/') || path.endsWith('/leave') || path.endsWith('/cancel')
+    this.recovery?.complete(command, isMatch(value) ? value.matchId : closed ? null : undefined)
   }
 }
 
@@ -55,6 +105,8 @@ function isRecord(value: unknown): value is Record<string, unknown> { return typ
 function isStatus(value: unknown): value is HeartsStatus { return isRecord(value) && typeof value.available === 'boolean' && Number.isInteger(value.defaultTargetScore) && typeof value.mode === 'string' }
 function isOnboardingState(value: unknown): value is HeartsOnboardingState { return isRecord(value) && typeof value.shouldAskPlayedBefore === 'boolean' }
 function isTrialMatch(value: unknown): value is HeartsMatch { return isMatch(value) && value.isTrial === true }
+function isEmpty(value: unknown): value is void { return value === undefined || value === null }
+function matchingMatch(matchId: string): (value: unknown) => value is HeartsMatch { return (value): value is HeartsMatch => isMatch(value) && value.matchId === matchId }
 export function isMatch(value: unknown): value is HeartsMatch { return isRecord(value) && typeof value.matchId === 'string' && Number.isInteger(value.targetScore) && Number.isInteger(value.roundNumber) && isPhase(value.phase) && isDirection(value.passDirection) && isSeat(value.turn) && isSeat(value.humanSeat) && typeof value.yourTurn === 'boolean' && typeof value.opponentsThinking === 'boolean' && typeof value.heartsBroken === 'boolean' && Array.isArray(value.players) && value.players.every(isPlayer) && Array.isArray(value.hand) && value.hand.every(isCard) && Array.isArray(value.legalCards) && value.legalCards.every(isCard) && Array.isArray(value.submittedPasses) && value.submittedPasses.every(isSeat) && isTrick(value.currentTrick) && (value.recentTrick === null || isRecentTrick(value.recentTrick)) && Array.isArray(value.completedTricks) && isScore(value.score) && isScore(value.roundScore) && isDifficulty(value.difficulty) && (value.winner === null || isSeat(value.winner)) && typeof value.message === 'string' && (value.isTrial === undefined || typeof value.isTrial === 'boolean') }
 function isPlayer(value: unknown): boolean { return isRecord(value) && isSeat(value.seat) && typeof value.displayName === 'string' && Number.isInteger(value.handCount) && Number.isInteger(value.roundScore) && Number.isInteger(value.matchScore) && typeof value.hasPassed === 'boolean' }
 function isCard(value: unknown): boolean { return isRecord(value) && typeof value.code === 'string' && typeof value.rank === 'string' && typeof value.label === 'string' && typeof value.suit === 'string' }

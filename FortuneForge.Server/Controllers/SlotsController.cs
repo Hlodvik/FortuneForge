@@ -1,10 +1,14 @@
 // Edited: 2026-11-18T17:59:35-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T16:30:13-06:00 | Computer: Vinnabok
+using System.Text.Json.Serialization;
 using FortuneForge.Games.ArcaneArchives;
+using FortuneForge.Games.ArcaneArchives.Server;
+using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
-using FortuneForge.Games.JadeDragon;
+using FortuneForge.Server.Accounts.Storage;
+using FortuneForge.Games.NeonNights.Server;
 using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
@@ -20,16 +24,7 @@ public sealed record SpinRequest(
     long WagerPoints,
     bool UseFreeSpin,
     bool UseSpecialBoost,
-    string? JadeDragonEngineVersion = null);
-
-public sealed record ArcanePotionActivationRequest(long PotionId);
-
-public sealed record ArcaneTomeRequest(string Page, bool Activate);
-
-public sealed record NeonAdminTriggerRequest(string Symbol, long WagerPoints);
-public sealed record NeonCarRespinRequest(Guid SpinId, int? ReelIndex);
-public sealed record NeonCarRespinDismissRequest(Guid SpinId);
-public sealed record NeonNitroChoiceRequest(Guid SpinId, int? ReelIndex);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? JadeDragonEngineVersion = null);
 
 [ApiController]
 [Route("api/slots")]
@@ -37,98 +32,33 @@ public sealed class SlotsController(
     SpinService spinService,
     AccountService accountService,
     ILogger<SlotsController> logger,
-    GameWorkerClient? workers = null) : ControllerBase
+    GameWorkerClient? workers = null,
+    IConfiguration? configuration = null) : ControllerBase
 {
-    private static readonly TimeSpan SpinCooldown = TimeSpan.FromMilliseconds(500);
+    private bool ArcaneWorkerRoundsEnabled => configuration?.GetValue<bool>("Slots:ArcaneWorkerRoundsEnabled") == true;
+    private bool NeonWorkerRoundsEnabled => GetPreparedWorkerRoute(NeonArcadeSlotDefinitions.GameId) is not null;
 
-    [HttpPost("arcane/potions/activate")]
-    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public async Task<ActionResult> ActivateArcanePotion(
-        ArcanePotionActivationRequest request, CancellationToken cancellationToken)
-    {
-        var account = await accountService.GetProfileAsync(SessionToken(), cancellationToken);
-        if (account.Value is null)
-            return Unauthorized(new { error = "Sign in to use an Arcane potion." });
-        if (request.PotionId <= 0)
-            return BadRequest(new { error = "Choose a bottled Arcane potion." });
+    private PreparedSlotWorkerRoute? GetPreparedWorkerRoute(string gameId) =>
+        PreparedSlotWorkerRegistry.Find(gameId) is { } route && configuration?.GetValue<bool>(route.EnabledSetting) == true
+            ? route : null;
 
-        try
-        {
-            var state = await accountService.ActivateArcanePotionAsync(
-                account.Value.UserId, request.PotionId, cancellationToken);
-            return Ok(ArcanePotionView.FromState(state));
-        }
-        catch (ArcanePotionConflictException exception)
-        {
-            return Conflict(new { code = "arcane-potion-conflict", error = exception.Message });
-        }
-    }
-
-    [HttpPost("arcane/tome")]
-    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public async Task<ActionResult> SelectArcaneTomePage(
-        ArcaneTomeRequest request, CancellationToken cancellationToken)
-    {
-        var account = await accountService.GetProfileAsync(SessionToken(), cancellationToken);
-        if (account.Value is null)
-            return Unauthorized(new { error = "Sign in to use the Arcane Tome." });
-
-        try
-        {
-            var state = await accountService.SelectArcaneTomePageAsync(
-                account.Value.UserId, request.Page, request.Activate, cancellationToken);
-            return Ok(ArcaneTome.ToView(state));
-        }
-        catch (ArcaneTomeConflictException exception)
-        {
-            return Conflict(new { code = "arcane-tome-conflict", error = exception.Message });
-        }
-        catch (ArgumentException exception)
-        {
-            return BadRequest(new { error = exception.Message });
-        }
-    }
-
-    [HttpPost("admin/neon-trigger")]
+    [HttpPost("~" + NeonPrimaryRouteContract.AdminPath)]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> AdminNeonTrigger(
-        NeonAdminTriggerRequest request,
+        NeonPrimaryAdminCommand request,
         CancellationToken cancellationToken)
     {
         var account = await accountService.GetAccessContextAsync(SessionToken(), cancellationToken);
         if (account is null)
             return Unauthorized(new { error = "Sign in to play Fortune Slots." });
+        if (!IsExpectedAccount(account.UserId))
+            return WrongAccount();
         if (!account.IsAdmin)
             return StatusCode(StatusCodes.Status403Forbidden,
                 new { error = "Only administrators can start a Neon preview round." });
 
-        if (request.Symbol is not ("car" or "disco-ball"))
-            return BadRequest(new { error = "Unknown Neon Special Plays symbol." });
-
-        try
-        {
-            var gameId = SlotSpecialRoundProfiles.NeonNightsGameId;
-            spinService.ValidateRequest(gameId, request.WagerPoints, false);
-            NeonArcadeSlotDefinitions.ValidateCarryWager(request.WagerPoints);
-            var pointValueInCents = spinService.GetPointValueInCents(gameId);
-            var granted = await accountService.GrantNeonAdminSpecialPlaysAsync(
-                account.UserId,
-                request.WagerPoints,
-                pointValueInCents,
-                request.Symbol == "car",
-                request.Symbol == "disco-ball",
-                cancellationToken);
-            if (!granted)
-                return Conflict(new { error = "Finish the current Neon spin or Special Plays round first." });
-            logger.LogInformation("Administrator {UserId} started Neon {Symbol} Special Plays.",
-                account.UserId, request.Symbol);
-            return Ok(await accountService.GetSlotStateAsync(
-                account.UserId, gameId, pointValueInCents, cancellationToken));
-        }
-        catch (ArgumentException exception)
-        {
-            return BadRequest(new { error = exception.Message });
-        }
+        return await ForwardNeonCommandAsync(account.UserId, NeonPrimaryRouteContract.AdminPath, request,
+            cancellationToken, GameSecurityContext.Current?.RequestId ?? Guid.NewGuid().ToString("N"));
     }
 
     [HttpGet("state")]
@@ -139,19 +69,38 @@ public sealed class SlotsController(
     {
         try
         {
-            spinService.ValidateGame(gameId);
-            var pointValueInCents = spinService.GetPointValueInCents(gameId);
+            var forwardArcane = gameId == ArcaneArchivesEngine.GameId && ArcaneWorkerRoundsEnabled;
+            var preparedWorker = GetPreparedWorkerRoute(gameId);
+            if (!forwardArcane && preparedWorker is null)
+                spinService.ValidateGame(gameId);
             var accountResult = await accountService.GetProfileAsync(SessionToken(), cancellationToken);
             if (accountResult.Value is null)
             {
                 return Unauthorized(new { error = "Sign in to play Fortune Slots." });
             }
+            if (!IsExpectedAccount(accountResult.Value.UserId))
+                return WrongAccount();
 
+            if (forwardArcane)
+            {
+                Response.Headers["X-FortuneForge-Prepared-Spin"] = "1";
+                return await ArcanePaidWorkerGateway.StateAsync(workers, HttpContext, accountResult.Value.UserId, cancellationToken);
+            }
+            if (preparedWorker is not null)
+            {
+                Response.Headers["X-FortuneForge-Prepared-Spin"] = "1";
+                return await SlotWorkerGateway.ReadStateAsync(workers, HttpContext, gameId, accountResult.Value.UserId,
+                    preparedWorker.StatePath, cancellationToken);
+            }
             return Ok(await accountService.GetSlotStateAsync(
                 accountResult.Value.UserId,
                 gameId,
-                pointValueInCents,
+                spinService.GetPointValueInCents(gameId),
                 cancellationToken));
+        }
+        catch (GameWorkerUnavailableException exception)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = exception.Message });
         }
         catch (KeyNotFoundException exception)
         {
@@ -167,55 +116,48 @@ public sealed class SlotsController(
         }
     }
 
-    [HttpPost("neon/car-respin")]
+    [HttpPost("~" + NeonCarRespinEndpoints.RoutePrefix + NeonCarRespinEndpoints.RespinRoute)]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public async Task<ActionResult> RespinNeonCarReel(NeonCarRespinRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> RespinNeonCarReel(NeonCarReelRequest request, CancellationToken cancellationToken)
     {
         var account = await accountService.GetAccessContextAsync(SessionToken(), cancellationToken);
         if (account is null)
             return Unauthorized(new { error = "Sign in to play Fortune Slots." });
-        if (request.SpinId == Guid.Empty || request.ReelIndex is not { } reelIndex || reelIndex is < 0 or >= 5)
-            return BadRequest(new { error = "Choose an available reel from the latest Car Play." });
-
-        try
-        {
-            var result = await accountService.RespinNeonCarReelAsync(account.UserId, request.SpinId,
-                reelIndex, cancellationToken);
-            return result.PendingNeonNitroChoice is { } pending
-                ? Accepted(new { pendingNeonNitroChoice = pending })
-                : Ok(result);
-        }
-        catch (NeonCarRespinConflictException exception)
-        {
-            return Conflict(new { error = exception.Message });
-        }
+        if (!IsExpectedAccount(account.UserId))
+            return WrongAccount();
+        return await ForwardNeonCommandAsync(account.UserId,
+            NeonCarRespinEndpoints.RoutePrefix + NeonCarRespinEndpoints.RespinRoute, request, cancellationToken);
     }
 
-    [HttpPost("neon/nitro-choice")]
+    [HttpPost("~" + NeonPrimaryRouteContract.NitroPath)]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public Task<ActionResult> ChooseNeonNitroReel(NeonNitroChoiceRequest request, CancellationToken cancellationToken) =>
+    public Task<ActionResult> ChooseNeonNitroReel(NeonPrimaryNitroCommand request, CancellationToken cancellationToken) =>
         ResolveNitroChoice(request, fromRespin: false, cancellationToken);
 
-    [HttpPost("neon/car-respin/nitro-choice")]
+    [HttpPost("~" + NeonCarRespinEndpoints.RoutePrefix + NeonCarRespinEndpoints.RespinNitroRoute)]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public Task<ActionResult> ChooseNeonRespinNitroReel(NeonNitroChoiceRequest request, CancellationToken cancellationToken) =>
+    public Task<ActionResult> ChooseNeonRespinNitroReel(NeonPrimaryNitroCommand request, CancellationToken cancellationToken) =>
         ResolveNitroChoice(request, fromRespin: true, cancellationToken);
 
     private async Task<ActionResult> ResolveNitroChoice(
-        NeonNitroChoiceRequest request, bool fromRespin, CancellationToken cancellationToken)
+        NeonPrimaryNitroCommand request, bool fromRespin, CancellationToken cancellationToken)
     {
         var account = await accountService.GetAccessContextAsync(SessionToken(), cancellationToken);
         if (account is null)
             return Unauthorized(new { error = "Sign in to play Fortune Slots." });
-        if (request.SpinId == Guid.Empty || request.ReelIndex is not { } reelIndex || reelIndex is < 0 or >= 5)
-            return BadRequest(new { error = "Choose one of the five reels for Nitro Wild." });
+        if (!IsExpectedAccount(account.UserId))
+            return WrongAccount();
+        var route = fromRespin
+            ? NeonCarRespinEndpoints.RoutePrefix + NeonCarRespinEndpoints.RespinNitroRoute
+            : NeonPrimaryRouteContract.NitroPath;
+        var forwarded = await ForwardNeonCommandAsync(account.UserId, route, request, cancellationToken);
+        if (fromRespin || !SlotWorkerGateway.IsConflict(forwarded, NeonPrimaryRouteContract.LegacyNitroCode))
+            return forwarded;
 
         try
         {
-            if (fromRespin)
-                return Ok(await accountService.FinalizeNeonCarRespinNitroChoiceAsync(
-                    account.UserId, request.SpinId, reelIndex, cancellationToken));
-
+            if (request.SpinId == Guid.Empty || request.ReelIndex is not { } reelIndex || reelIndex is < 0 or >= 5)
+                return BadRequest(new { error = "Choose one of the five reels for Nitro Wild." });
             var finalized = await accountService.FinalizeNeonNitroChoiceAsync(
                 account.UserId, request.SpinId, reelIndex, cancellationToken);
             return Ok(ApplySettlement(finalized.Result, finalized.Settlement,
@@ -225,32 +167,51 @@ public sealed class SlotsController(
         {
             return Conflict(new { code = "nitro-choice-conflict", error = exception.Message });
         }
-        catch (NeonCarRespinConflictException exception)
-        {
-            return Conflict(new { code = "nitro-choice-conflict", error = exception.Message });
-        }
     }
 
-    [HttpPost("neon/car-respin/dismiss")]
+    [HttpPost("~" + NeonCarRespinEndpoints.RoutePrefix + NeonCarRespinEndpoints.DismissRoute)]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public async Task<ActionResult> DismissNeonCarRespin(NeonCarRespinDismissRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> DismissNeonCarRespin(NeonCarDismissRequest request, CancellationToken cancellationToken)
     {
         var account = await accountService.GetAccessContextAsync(SessionToken(), cancellationToken);
         if (account is null)
             return Unauthorized(new { error = "Sign in to play Fortune Slots." });
-        if (request.SpinId == Guid.Empty)
-            return BadRequest(new { error = "Choose the completed Car Play." });
+        if (!IsExpectedAccount(account.UserId))
+            return WrongAccount();
+        return await ForwardNeonCommandAsync(account.UserId,
+            NeonCarRespinEndpoints.RoutePrefix + NeonCarRespinEndpoints.DismissRoute, request, cancellationToken);
+    }
 
-        await accountService.DismissNeonCarRespinAsync(account.UserId, request.SpinId, cancellationToken);
-        return NoContent();
+    private async Task<ContentResult> ForwardNeonCommandAsync<TCommand>(string accountId, string path, TCommand command,
+        CancellationToken cancellationToken, string? operationId = null)
+    {
+        try
+        {
+            if (!NeonWorkerRoundsEnabled)
+                throw new GameWorkerUnavailableException(NeonArcadeSlotDefinitions.GameId);
+            return await SlotWorkerGateway.PostAsync(workers, HttpContext, NeonArcadeSlotDefinitions.GameId,
+                accountId, path, command, operationId, cancellationToken);
+        }
+        catch (GameWorkerUnavailableException exception)
+        {
+            return new ContentResult
+            {
+                StatusCode = StatusCodes.Status503ServiceUnavailable,
+                ContentType = "application/json",
+                Content = System.Text.Json.JsonSerializer.Serialize(new { error = exception.Message })
+            };
+        }
     }
 
     [HttpPost("spins")]
+    [HttpPost(PreparedSlotWorkerRegistry.PublicSpinRoute)]
+    [HttpPost("arcane" + ArcaneFeatureEndpoints.PreparedSpinRoute)]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> Spin(
         SpinRequest request,
         CancellationToken cancellationToken)
     {
+        var preparedOperationPending = false;
         try
         {
             var accountResult = await accountService.GetProfileAsync(
@@ -265,12 +226,73 @@ public sealed class SlotsController(
             }
 
             var account = accountResult.Value;
-            if (request.GameId == JadeDragonEngine.GameId &&
-                request.JadeDragonEngineVersion != JadeDragonCascadeRules.Version)
-                return BadRequest(new { error = "Reload Jade Dragon to use the current game rules." });
-            FortuneForge.Server.Slots.Games.JadeDragon.JadeDragonWagerPolicy.Validate(
-                request.GameId, request.WagerPoints, request.UseFreeSpin);
-            spinService.ValidateRequest(request.GameId, request.WagerPoints, request.UseFreeSpin);
+            var isArcane = request.GameId == ArcaneArchivesEngine.GameId;
+            var preparedWorker = GetPreparedWorkerRoute(request.GameId);
+            var preparedPath = PreparedSlotWorkerRegistry.IsPreparedPath(Request.Path);
+            if (!IsExpectedAccount(account.UserId))
+                return WrongAccount();
+            if (preparedPath && preparedWorker is null)
+                throw new GameWorkerUnavailableException(request.GameId);
+            string? operationId = null;
+            if ((isArcane || preparedWorker is not null) && Request.Headers.TryGetValue("Idempotency-Key", out var keys))
+            {
+                if (keys.Count != 1 || !SlotPreparedOperationRequest.IsValidId(keys[0]))
+                    return BadRequest(new { code = "invalid-spin-operation", error = "Include one valid spin operation ID." });
+                operationId = keys[0];
+            }
+            if (ArcanePaidWorkerGateway.IsPreparedPath(Request.Path) && (!isArcane || operationId is null))
+                return BadRequest(new { code = "invalid-spin-operation", error = "Include one valid Arcane spin operation ID." });
+            if (preparedPath && operationId is null)
+                return BadRequest(new { code = "invalid-spin-operation", error = "Include one valid spin operation ID." });
+            if (preparedWorker is not null)
+            {
+                var response = await SlotWorkerGateway.PostAsync(workers, HttpContext, request.GameId, account.UserId,
+                    preparedPath ? PreparedSlotWorkerRegistry.PublicSpinPath : preparedWorker.SpinPath, request,
+                    operationId ?? GameSecurityContext.Current?.RequestId ?? Guid.NewGuid().ToString("N"), cancellationToken);
+                if (!SlotWorkerGateway.IsConflict(response, FortuneForge.Games.Abstractions.LegacySlotAdmissionPendingException.Code))
+                    return response;
+
+                var legacy = await accountService.ReconcileExpiredLegacySlotAsync(
+                    account.UserId, request.GameId, DateTime.UtcNow, cancellationToken);
+                if (legacy == LegacySlotRecoveryResult.Active)
+                {
+                    Response.Headers.RetryAfter = "1";
+                    return StatusCode(StatusCodes.Status429TooManyRequests, new
+                    {
+                        code = "legacy-slot-round-active",
+                        error = "Wait for your previous spin to finish.",
+                        retryAfterMilliseconds = 1000
+                    });
+                }
+                if (legacy is LegacySlotRecoveryResult.Reconciled or LegacySlotRecoveryResult.NoLegacyAdmission)
+                    return Conflict(new
+                    {
+                        code = "legacy-slot-round-restored",
+                        error = legacy == LegacySlotRecoveryResult.Reconciled
+                            ? "The interrupted spin was closed and any spent feature credits were restored. You can spin again."
+                            : "Your previous spin has closed. Check the updated game state before spinning again."
+                    });
+                return Conflict(new
+                {
+                    code = "legacy-slot-round-review",
+                    error = "Your previous spin needs to be reconciled before you can spin again."
+                });
+            }
+            if (!isArcane)
+            {
+                if (PreparedSlotWorkerRegistry.Find(request.GameId) is null)
+                    throw new KeyNotFoundException($"Unknown slot game '{request.GameId}'.");
+                throw new GameWorkerUnavailableException(request.GameId);
+            }
+
+            if (!ArcaneWorkerRoundsEnabled)
+                throw new GameWorkerUnavailableException(request.GameId);
+            var forwarded = await ArcanePaidWorkerGateway.SpinAsync(workers, HttpContext, account.UserId,
+                new(request.GameId, request.WagerPoints, request.UseFreeSpin, request.UseSpecialBoost), operationId, cancellationToken);
+            if (forwarded is not null) return forwarded;
+            if (operationId is null)
+                throw new GameWorkerUnavailableException(request.GameId);
+
             var pointValueInCents = spinService.GetPointValueInCents(request.GameId);
             var specialBoostCost = request.UseSpecialBoost
                 ? spinService.GetSpecialBoostCost(request.GameId)
@@ -284,28 +306,13 @@ public sealed class SlotsController(
                 request.UseSpecialBoost,
                 specialBoostCost,
                 DateTime.UtcNow,
-                SpinCooldown,
+                TimeSpan.Zero,
                 cancellationToken,
-                workers?.IsConfigured(request.GameId) == true
-                    ? (pending, token) => PaidSlotWorker.ResolveAsync(workers, request.GameId, account.UserId, pending, token)
-                    : request.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
-                        ? (pending, _) => Task.FromResult(spinService.SpinAdmitted(request.GameId, pending, account.UserId))
-                        : null);
-            if (admission.PendingNeonNitroChoice is { } nitroChoice)
-                return Accepted(new { pendingNeonNitroChoice = nitroChoice });
-            if (admission.CooldownRemaining is { } remaining)
-            {
-                var retryAfterMilliseconds = Math.Max(1, (int)Math.Ceiling(remaining.TotalMilliseconds));
-                Response.Headers.RetryAfter = Math.Max(1, (int)Math.Ceiling(remaining.TotalSeconds))
-                    .ToString(System.Globalization.CultureInfo.InvariantCulture);
-                return StatusCode(StatusCodes.Status429TooManyRequests, new
-                {
-                    error = "Wait for the previous spin to finish.",
-                    retryAfterMilliseconds
-                });
-            }
-
-            var result = admission.ResolvedOutcome ?? spinService.SpinAdmitted(request.GameId, admission, account.UserId);
+                operationId: operationId,
+                allowNewPrepared: false);
+            var result = admission.ResolvedOutcome ??
+                throw new InvalidOperationException("The original Arcane spin outcome is unavailable.");
+            preparedOperationPending = true;
             var settlement = await accountService.RecordSlotSpinAsync(
                 account.UserId,
                 result,
@@ -323,6 +330,14 @@ public sealed class SlotsController(
         {
             return NotFound(new { error = exception.Message });
         }
+        catch (SlotPreparedOperationConflictException exception)
+        {
+            return Conflict(new { code = "slot-operation-conflict", error = exception.Message, pendingOperation = exception.PendingOperation });
+        }
+        catch (SlotPreparedStartPausedException exception)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { code = "slot-prepared-start-paused", error = exception.Message });
+        }
         catch (InvalidOperationException exception)
         {
             return Problem(exception.Message, statusCode: StatusCodes.Status500InternalServerError);
@@ -334,7 +349,8 @@ public sealed class SlotsController(
                 code = "insufficient-slot-credits",
                 error = exception.Message,
                 available = exception.Available,
-                required = exception.Required
+                required = exception.Required,
+                preparedOperationPending
             });
         }
         catch (NoFreeSpinsException exception)
@@ -396,6 +412,11 @@ public sealed class SlotsController(
             return BadRequest(new { error = exception.Message });
         }
     }
+
+    private bool IsExpectedAccount(string accountId) => GameAccountBinding.Matches(Request, accountId);
+
+    private ObjectResult WrongAccount() => StatusCode(StatusCodes.Status403Forbidden,
+        new { code = "slot-session-changed", error = "Sign back in to the account that opened this game." });
 
     private static SpinResult ApplySettlement(
         SpinResult result, SlotSpinSettlement settlement, bool isFreeSpin, long chargedWagerCents) =>

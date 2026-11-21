@@ -6,6 +6,6 @@
     "manifestExport": "OCEAN_ODYSSEY_SLOT_GAME"
   },
   "backend": {
-    "kind": "classic-slot"
+    "kind": "packaged-game"
   }
 }

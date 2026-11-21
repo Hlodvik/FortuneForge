@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { GridPosition, PaylinePayout } from '@fortuneforge/slot-client-core'
+import type { PreparedSlotSpin } from '@fortuneforge/slot-client-core/preparedSpin'
 
 export const NEON_GAME_ID = 'neon-nights-v1'
 export const NEON_CAR_SYMBOL_SET_ID = 'neon-car-symbols-v1'
@@ -37,6 +38,8 @@ export type NeonState = {
   neonCarRespinOffer?: NeonCarRespinOffer | null
   neonCarRoundWinPoints?: number | null
   pendingNeonNitroChoice?: NeonNitroChoice | null
+  pendingOperation?: PreparedSlotSpin | null
+  slotsCreditsBalance?: number | null
 }
 export type NeonCarRespinOffer = {
   spinId: string
@@ -68,7 +71,8 @@ type NitroChoiceBase = {
   neonNitroWild: NeonNitroWild
 }
 export type NeonNitroChoice = NitroChoiceBase & (
-  { sourceKind: 'spin' } | { sourceKind: 'car-respin'; reelIndex: number; roundWinPoints: number }
+  { sourceKind: 'spin'; walletBalanceAfterWagerCents?: number | null; selectedReel?: number | null } |
+  { sourceKind: 'car-respin'; reelIndex: number; roundWinPoints: number }
 )
 export type NeonPendingChoiceResponse = { pendingNeonNitroChoice: NeonNitroChoice }
 export type NeonCarRespinResult = {

@@ -193,9 +193,13 @@ describe('BaccaratGame', () => {
     expect(await screen.findByText('-R10.00')).toBeTruthy()
   })
 
-  it('reuses the original deal key when a failed request is retried', async () => {
+  it.each([
+    ['a lost response', new BaccaratGatewayError('Connection lost.')],
+    ['expired authentication', new BaccaratGatewayError('Sign in again.', 'authentication-required', 401)],
+    ['a changed account', new BaccaratGatewayError('The account changed.', 'game-session-changed', 403)],
+  ])('reuses the original deal key after %s', async (_, failure) => {
     const user = userEvent.setup()
-    const createRound = vi.fn().mockRejectedValueOnce(new BaccaratGatewayError('Connection lost.')).mockResolvedValueOnce(settledRound)
+    const createRound = vi.fn().mockRejectedValueOnce(failure).mockResolvedValueOnce(settledRound)
     const gateway = fakeGateway({ createRound })
     render(<BaccaratGame gateway={gateway} />)
 
@@ -227,7 +231,7 @@ describe('BaccaratGame', () => {
   it('closes the result into a clean board and lets the player place a fresh wager', async () => {
     const user = userEvent.setup()
     const createRound = vi.fn().mockRejectedValueOnce(new BaccaratGatewayError('Table closed.', 'table-closed', 503)).mockResolvedValue(settledRound)
-    const gateway = fakeGateway({ createRound })
+    const gateway = fakeGateway({ createRound, getStatus: vi.fn().mockResolvedValueOnce(status).mockResolvedValue({ ...status, balance: settledRound.balance }) })
     render(<BaccaratGame gateway={gateway} />)
 
     await user.click(await screen.findByRole('button', { name: 'Select R5.00 chip' }))
@@ -257,6 +261,34 @@ describe('BaccaratGame', () => {
     await user.click(screen.getByLabelText('Table amounts'))
     expect(screen.queryByRole('dialog', { name: 'Baccarat result' })).toBeNull()
     expect(screen.getByLabelText('Table amounts').textContent).toContain('Bet R0.00')
+  })
+
+  it('refreshes current funds after an old recovered receipt before allowing a new wager', async () => {
+    sessionStorage.setItem('fortuneforge:baccarat:pending:player-7', JSON.stringify({
+      idempotencyKey: 'baccarat-old-receipt-0001', betSide: 'banker', stake: 10,
+    }))
+    let resolveFunds: ((value: BaccaratStatus) => void) | undefined
+    const currentFunds = new Promise<BaccaratStatus>(resolve => { resolveFunds = resolve })
+    const getStatus = vi.fn().mockResolvedValueOnce({ ...status, balance: 20 }).mockReturnValue(currentFunds)
+    const oldReceipt = { ...settledRound, balance: 1_009.5 }
+    const onBalanceChange = vi.fn()
+    const user = userEvent.setup()
+    render(<BaccaratGame playerId="player-7" onBalanceChange={onBalanceChange} gateway={fakeGateway({ getStatus, createRound: vi.fn().mockResolvedValue(oldReceipt) })} />)
+    const result = await screen.findByRole('dialog', { name: 'Baccarat result' })
+    expect(getStatus).toHaveBeenCalledTimes(2)
+    await user.click(result.querySelector('button')!)
+    const player = screen.getByRole('button', { name: /^Player, / }) as HTMLButtonElement
+    expect(player.disabled).toBe(true)
+    expect(onBalanceChange).not.toHaveBeenCalledWith(oldReceipt.balance)
+    resolveFunds?.({ ...status, balance: .5 })
+    await waitFor(() => expect(player.disabled).toBe(false))
+    expect(screen.getByLabelText('Table amounts').textContent).toContain('Balance R0.50')
+    await user.click(player)
+    await user.click(player)
+    await user.click(player)
+    expect(screen.getByLabelText('Table amounts').textContent).toContain('Bet R0.50')
+    expect(onBalanceChange).toHaveBeenLastCalledWith(.5)
+    expect(oldReceipt.balance).toBe(1_009.5)
   })
 })
 

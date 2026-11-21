@@ -46,18 +46,20 @@ export function DropMergeGame({ gateway, embedded = false }: DropMergeGameProps)
     setMergeStep(null)
     setVisualTiles(null)
     try {
-      setGame(await action())
+      const next = await action()
+      setGame(next)
+      updateTimerRemaining(next.dropTimerMilliseconds)
     } catch (reason) {
       setError(messageForError(reason))
     } finally {
       setBusy(false)
     }
-  }, [busy])
+  }, [busy, updateTimerRemaining])
 
   useEffect(() => {
     const controller = new AbortController()
     void gateway.getStatus(controller.signal)
-      .then(status => status.available ? gateway.startGame(undefined, controller.signal) : Promise.reject(new Error('The Drop Merge service is unavailable.')))
+      .then(status => status.available ? gateway.recoverGame?.(controller.signal) ?? gateway.startGame(undefined, controller.signal) : Promise.reject(new Error('The Drop Merge service is unavailable.')))
       .then(nextGame => {
         setGame(nextGame)
         setTargetColumn(3)
@@ -69,7 +71,7 @@ export function DropMergeGame({ gateway, embedded = false }: DropMergeGameProps)
   }, [gateway])
 
   const drop = useCallback((column: number) => {
-    if (!game || busy || isPaused || game.phase !== 'playing') return
+    if (!game || busy || error || isPaused || game.phase !== 'playing') return
     const value = game.currentTile
     const dropDuration = Math.max(190, Math.round(game.dropDurationMilliseconds * fastDropRatio))
 
@@ -119,7 +121,7 @@ export function DropMergeGame({ gateway, embedded = false }: DropMergeGameProps)
         setBusy(false)
       }
     })()
-  }, [busy, game, gateway, isPaused])
+  }, [busy, error, game, gateway, isPaused])
 
   useEffect(() => {
     if (game) updateTimerRemaining(game.dropTimerMilliseconds)
@@ -132,7 +134,7 @@ export function DropMergeGame({ gateway, embedded = false }: DropMergeGameProps)
   }, [bestTile, game])
 
   useEffect(() => {
-    if (!game || busy || isPaused || game.phase !== 'playing') return
+    if (!game || busy || error || isPaused || game.phase !== 'playing') return
     const duration = timerRemainingRef.current
     if (duration <= 0) {
       drop(targetColumn)
@@ -150,7 +152,7 @@ export function DropMergeGame({ gateway, embedded = false }: DropMergeGameProps)
       window.clearTimeout(timeout)
       update()
     }
-  }, [busy, drop, game?.gameId, game?.moves, game?.phase, isPaused, targetColumn, updateTimerRemaining])
+  }, [busy, drop, error, game?.gameId, game?.moves, game?.phase, isPaused, targetColumn, updateTimerRemaining])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -290,12 +292,12 @@ export function DropMergeGame({ gateway, embedded = false }: DropMergeGameProps)
         </aside>
       </div> : <div className="ff-drop-merge-loading">{error ?? 'Building your columns…'}</div>}
 
-      {error && <div className="ff-drop-merge-error" role="alert"><strong>{error}</strong><button type="button" onClick={newGame} disabled={busy}>Try again</button></div>}
+      {error && <div className="ff-drop-merge-error" role="alert"><strong>{error}</strong><button type="button" onClick={() => { void run(() => gateway.recoverGame?.() ?? (game && gateway.getGame ? gateway.getGame(game.gameId) : gateway.startGame())) }} disabled={busy}>Try again</button></div>}
     </main>
   </div>
 }
 
-function messageForError(reason: unknown): string { return reason instanceof DropMergeGatewayError ? reason.message : 'The Drop Merge table is unavailable. Start a new local run.' }
+function messageForError(reason: unknown): string { return reason instanceof DropMergeGatewayError ? reason.message : 'The Drop Merge table is unavailable. Try again to recover your board.' }
 function wait(milliseconds: number): Promise<void> { return new Promise(resolve => window.setTimeout(resolve, milliseconds)) }
 function fallingPosition(row: number, rows: number, duration: number): CSSProperties { return { '--fall-row': row, '--board-rows': rows, animationDuration: `${duration}ms` } as CSSProperties }
 function previewStyle(game: DropMergeGameState, timerRemaining: number, isPaused: boolean): CSSProperties {

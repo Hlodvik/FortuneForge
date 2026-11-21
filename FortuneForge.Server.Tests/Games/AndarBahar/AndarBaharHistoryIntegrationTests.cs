@@ -1,10 +1,12 @@
 using System.Reflection;
 using System.Text.Json;
+using FortuneForge.Games.Abstractions.Wallet;
 using FortuneForge.Games.AndarBahar.Server;
 using FortuneForge.Games.Cards;
 using FortuneForge.Server.Admin.Operations;
 using FortuneForge.Server.Admin.Players;
 using FortuneForge.Server.Cards.History;
+using FortuneForge.Server.Tests.Accounts;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
@@ -25,13 +27,17 @@ public sealed class AndarBaharHistoryIntegrationTests
             EmulatorDetection = EmulatorDetection.EmulatorOnly,
         }.Build();
         await database.Collection("users").Document("player").SetAsync(new Dictionary<string, object>
-            { ["playerName"] = "Player", ["role"] = "player" });
+            { ["userId"] = "player", ["playerName"] = "Player", ["role"] = "player" });
         await database.Collection("userBalances").Document("player_slotsCredits").SetAsync(new Dictionary<string, object>
-            { ["available"] = 100L, ["availableFractionalCents"] = 13L });
+        {
+            ["userId"] = "player", ["currencyId"] = "slotsCredits", ["available"] = 100L,
+            ["availableFractionalCents"] = 13L, ["reserved"] = 0L, ["version"] = 1L,
+        });
         var joker = new PlayingCard(CardRank.Ace, CardSuit.Spades);
         var match = new PlayingCard(CardRank.Ace, CardSuit.Hearts);
         var deck = new[] { joker, match }.Concat(StandardDeck.Create().Where(card => card != joker && card != match)).ToArray();
-        var service = new AndarBaharService(new AndarBaharFirestoreStore(database), TimeProvider.System, () => deck);
+        var wallet = new GameWalletFirestoreTestClient(database, "andar-bahar");
+        var service = new AndarBaharService(new AndarBaharWalletStore(database, wallet, wallet), TimeProvider.System, () => deck);
         var win = await service.StartAsync("player", new("andar", .50m), "andar_shared_win_00001");
         var loss = await service.StartAsync("player", new("bahar", .50m), "andar_shared_loss_0001");
         Assert.Equal(100.08m, loss.Balance);
@@ -85,6 +91,13 @@ public sealed class AndarBaharHistoryIntegrationTests
         Assert.Equal(seen, updated.GetValue<Timestamp>("seenAt"));
         Assert.False(Assert.IsType<CardRoomHistoryItemResponse>(project.Invoke(null, [updated])).Unseen);
         Assert.Equal(2, (await database.Collection("cardGameResults").GetSnapshotAsync()).Count);
-        Assert.Equal(3, (await database.Collection("balanceTransactions").GetSnapshotAsync()).Count);
+        var ledger = (await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents;
+        Assert.Equal(3, ledger.Count);
+        var scopedWager = Assert.Single(ledger, row => row.GetValue<string>("operationId") == win.RoundId &&
+            row.GetValue<string>("type") == "game-wager");
+        await scopedWager.Reference.UpdateAsync("walletSettlementId", GameWalletSettlementIdentity.CreateId("andar-bahar", "other", win.RoundId));
+        var mismatched = Assert.IsType<AdminPlayerGamingEvent>(FirestoreAdminPlayersStore.Gaming(await scopedWager.Reference.GetSnapshotAsync()));
+        Assert.Null(mismatched.MatchId);
+        Assert.Null(mismatched.WageredCredits);
     }
 }

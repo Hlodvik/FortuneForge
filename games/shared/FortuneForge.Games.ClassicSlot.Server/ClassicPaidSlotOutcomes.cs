@@ -15,8 +15,7 @@ internal sealed class ClassicPaidSlotOutcomes(IGameRandomSource random)
         return new ArcanePaidSlotOutcomes(random).Resolve(request);
 #else
         PaidSlotOutcomeProtocol.ValidateRequest(request, SelectedEngine.GameId);
-        if (request.Arcane is not null || request.IsNeonDiscoPlay || request.NeonDiscoMultiplier is not null ||
-            !request.IsFreeSpin && request.FreeSpinFeatureMode is not null)
+        if (!request.IsFreeSpin && request.FreeSpinFeatureMode is not null)
             throw new ArgumentException("The admission uses an unsupported feature.", nameof(request));
 
         var engine = new SelectedEngine(random);

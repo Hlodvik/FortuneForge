@@ -38,6 +38,7 @@ type DealerPositionStyle = CSSProperties & {
 }
 
 export interface BlackjackTableGameProps {
+  accountId?: string
   startingBalanceCredits: number
   fetchWithAccountSession: typeof fetch
   isPublicResponse?: (value: unknown) => boolean
@@ -59,20 +60,21 @@ export function BlackjackTableGame(props: BlackjackTableGameProps) {
 }
 
 function BlackjackTableController({
-  startingBalanceCredits, fetchWithAccountSession, isPublicResponse, onCardAudioClick, renderShell,
+  accountId, startingBalanceCredits, fetchWithAccountSession, isPublicResponse, onCardAudioClick, renderShell,
 }: BlackjackTableGameProps) {
   const {
     cancelBlackjackTableQueue,
     getBlackjackTableSnapshot,
     getBlackjackTableStatus,
+    recoverBlackjackTableMutation,
     joinBlackjackTableQueue,
     leaveBlackjackTable,
     postBlackjackTableAction,
     postBlackjackTableWager,
     sitOutBlackjackTableRound,
   } = useMemo(
-    () => createBlackjackTableApi(fetchWithAccountSession, isPublicResponse),
-    [fetchWithAccountSession, isPublicResponse],
+    () => createBlackjackTableApi(fetchWithAccountSession, isPublicResponse, accountId ? { accountId } : undefined),
+    [accountId, fetchWithAccountSession, isPublicResponse],
   )
   const { playCardAudio } = useBlackjackTablePresentation()
   const [availability, setAvailability] = useState<Availability>({ kind: 'loading' })
@@ -96,6 +98,7 @@ function BlackjackTableController({
   const load = useCallback(async (quiet = false, signal?: AbortSignal) => {
     if (!quiet) setAvailability({ kind: 'loading' })
     try {
+      await recoverBlackjackTableMutation(signal)
       const [status, snapshot] = await Promise.all([
         getBlackjackTableStatus(signal),
         getBlackjackTableSnapshot(signal),
@@ -112,14 +115,15 @@ function BlackjackTableController({
         setPending(null)
         return
       }
-      if (!quiet) setAvailability({ kind: 'error', message: 'The Blackjack table could not be reached. No wager was accepted.' })
+      if (!quiet) setAvailability({ kind: 'error', message: 'The Blackjack table could not be reached. Retry to recover any pending request.' })
     }
-  }, [applyBalance, getBlackjackTableSnapshot, getBlackjackTableStatus])
+  }, [applyBalance, getBlackjackTableSnapshot, getBlackjackTableStatus, recoverBlackjackTableMutation])
 
   const refreshSession = useCallback(() => {
     if (refreshInFlightRef.current) return refreshInFlightRef.current
     const refresh = (async () => {
       try {
+        await recoverBlackjackTableMutation()
         const snapshot = await getBlackjackTableSnapshot()
         setAvailability((current) => current.kind === 'ready' ? { ...current, session: snapshot.session } : current)
         applyBalance(snapshot.balanceCredits)
@@ -132,7 +136,7 @@ function BlackjackTableController({
     })()
     refreshInFlightRef.current = refresh
     return refresh
-  }, [applyBalance, getBlackjackTableSnapshot])
+  }, [applyBalance, getBlackjackTableSnapshot, recoverBlackjackTableMutation])
 
   useEffect(() => {
     const controller = new AbortController()

@@ -21,42 +21,57 @@ const tickMilliseconds = 20
 export class HorseFlightCompetitionGatewayAdapter implements HorseFlightGateway {
   private readonly gateway: HorseFlightCompetitionGateway
   private readonly mode: HorseFlightPlayMode
-  private readonly balance: number
+  private readonly readBalance: () => number
   private readonly onPaidMutation?: () => void | Promise<void>
   private recoveryScope: string | undefined
 
   constructor(
     gateway: HorseFlightCompetitionGateway,
     mode: HorseFlightPlayMode,
-    balance: number,
+    balance: number | (() => number),
     onPaidMutation?: () => void | Promise<void>,
   ) {
     this.gateway = gateway
     this.mode = mode
-    this.balance = balance
+    this.readBalance = typeof balance === 'function' ? balance : () => balance
     this.onPaidMutation = onPaidMutation
   }
 
   async getStatus(signal?: AbortSignal): Promise<HorseFlightStatus> {
     const window = await this.currentRecoveryWindow(signal)
     this.recoveryScope = window.scope
-    return { available: window.available, tickMilliseconds, balance: this.balance, mode: this.mode.kind,
+    return { available: window.available, tickMilliseconds, balance: this.readBalance(), mode: this.mode.kind,
       recoveryMode: this.mode.kind === 'free' ? 'free' : `paid:${this.mode.period}`, recoveryScope: this.recoveryScope }
   }
 
   async start(options: HorseFlightRequestOptions = {}): Promise<HorseFlightStart> {
     const idempotencyKey = options.idempotencyKey ?? createHorseFlightCompetitionKey()
-    const scope = await this.assertRecoveryScope(options, true)
-    let run: { runId: string; seed: number }, acceptedScope = scope
+    let scope: string
+    if (options.admission !== undefined || options.recoverOnly) {
+      this.assertFrozenRecoveryMode(options)
+      scope = options.recoveryScope ?? this.recoveryScope ?? ''
+      if (options.admission !== undefined && (this.mode.kind !== 'paid' || scope !== this.paidRecoveryScope(this.mode.period,
+        options.admission.expectedWindowStartsAtUtc, options.admission.expectedWindowEndsAtUtc)))
+        throw new Error('The saved Horse Flight admission does not match its original window.')
+    } else scope = await this.assertRecoveryScope(options, true)
+    let run: { runId: string; seed: number; rulesVersion?: 1 | 2 | 3 | 4 }, acceptedScope = scope
     if (this.mode.kind === 'paid') {
-      const accepted = await this.gateway.startHorseFlightAttempt(this.mode.period, idempotencyKey, options.signal)
+      const terms = options.admission ? { ...options.admission, ...(options.recoverOnly ? { recoverOnly: true } : {}) }
+        : options.recoverOnly ? { recoverOnly: true } : undefined
+      const accepted = terms === undefined
+        ? await this.gateway.startHorseFlightAttempt(this.mode.period, idempotencyKey, options.signal)
+        : await this.gateway.startHorseFlightAttempt(this.mode.period, idempotencyKey, options.signal, terms)
       void this.onPaidMutation?.()
       acceptedScope = this.paidRecoveryScope(accepted.period, accepted.startsAtUtc, accepted.endsAtUtc)
-      run = accepted
+      const issuedRules = 'rulesVersion' in accepted ? accepted.rulesVersion : undefined
+      if (issuedRules !== undefined && issuedRules !== 1 && issuedRules !== 2 && issuedRules !== 3 && issuedRules !== 4)
+        throw new Error('The issued Horse Flight rules version is unavailable.')
+      run = { ...accepted, ...(issuedRules === undefined ? {} : { rulesVersion: issuedRules }) }
     } else run = await this.gateway.startFreeHorseFlightRun(idempotencyKey, options.signal)
     // Record the actual accepted window if admission crossed its boundary.
-    // Retrying an unconfirmed request still requires the previously frozen one.
-    return { runId: run.runId, seed: run.seed, tickMilliseconds, recoveryScope: acceptedScope }
+    // Retries retain their immutable admission terms; legacy starts use recover-only lookup.
+    return { runId: run.runId, seed: run.seed, tickMilliseconds, recoveryScope: acceptedScope,
+      ...(run.rulesVersion === undefined ? {} : { rulesVersion: run.rulesVersion }) }
   }
 
   async complete(
@@ -66,7 +81,9 @@ export class HorseFlightCompetitionGatewayAdapter implements HorseFlightGateway 
     options: HorseFlightRequestOptions = {},
     rightClickTicks: readonly number[] = [],
   ): Promise<HorseFlightResult> {
-    await this.assertRecoveryScope(options)
+    this.assertFrozenRecoveryMode(options)
+    const expectedPrefix = this.mode.kind === 'paid' ? /^horse_flight_[0-9a-f]{64}$/ : /^horse_flight_free_[0-9a-f]{64}$/
+    if (!expectedPrefix.test(runId)) throw new Error('The Horse Flight run does not match the selected mode.')
     const replay: HorseFlightReplayPayload = { totalTicks, jumpTicks, rightClickTicks }
     const completion = this.mode.kind === 'paid'
       ? await this.gateway.completeHorseFlightReplay(this.mode.period, runId, replay, options.signal)
@@ -74,13 +91,26 @@ export class HorseFlightCompetitionGatewayAdapter implements HorseFlightGateway 
     if (this.mode.kind === 'paid') void this.onPaidMutation?.()
     return {
       runId: completion.runId,
-      balance: this.balance,
+      balance: this.readBalance(),
       score: completion.score,
       phase: completion.phase,
       totalTicks,
       jumpTicks,
       rightClickTicks,
     }
+  }
+
+  private assertFrozenRecoveryMode(options: HorseFlightRequestOptions): void {
+    const expected = options.recoveryScope ?? this.recoveryScope
+    if (expected === undefined) return
+    try {
+      const parts: unknown = JSON.parse(expected)
+      if (this.mode.kind === 'free' && expected === JSON.stringify(['free'])) return
+      if (this.mode.kind === 'paid' && Array.isArray(parts) && parts.length === 3 && parts[0] === `paid:${this.mode.period}` &&
+        typeof parts[1] === 'string' && typeof parts[2] === 'string' &&
+        expected === this.paidRecoveryScope(this.mode.period, parts[1], parts[2])) return
+    } catch { /* Malformed scopes cannot identify a recorded flight. */ }
+    throw new Error('The saved Horse Flight request does not match the selected mode.')
   }
 
   private async currentRecoveryWindow(signal?: AbortSignal): Promise<{ scope: string; available: boolean }> {

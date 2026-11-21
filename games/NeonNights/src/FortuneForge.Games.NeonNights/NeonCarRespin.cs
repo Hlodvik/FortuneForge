@@ -21,6 +21,10 @@ public sealed class NeonCarRespin(IGameRandomSource random)
     public static IReadOnlyList<int> OfferReels(NeonSpinOutcome original) =>
         original.Payout.TotalPoints == 0 ? EligibleReels(original) : [];
 
+    public static bool MatchesOfferedReel(NeonSpinOutcome original, Guid spinId, int reelIndex, bool usesLegacyRoundReceipt) =>
+        original.SpinId == spinId && original.GameId == NeonArcadeSlotDefinitions.GameId &&
+        (usesLegacyRoundReceipt ? EligibleReels(original) : OfferReels(original)).Contains(reelIndex);
+
     public static IReadOnlyList<int> EligibleReels(NeonSpinOutcome original)
     {
         if (!IsSupportedCarPlay(original)) return [];
@@ -76,7 +80,7 @@ public sealed class NeonCarRespin(IGameRandomSource random)
 
     private static bool IsSupportedCarPlay(NeonSpinOutcome original) =>
         NeonArcadeSlotDefinitions.SupportsNitroWild(original.EngineAudit.EngineVersion) &&
-        NeonNitroWild.IsCarPlay(original.IsFreeSpin, original.EngineAudit.FreeSpinFeatureMode) &&
+        NeonCarRoundState.IsCarPlay(original.IsFreeSpin, original.EngineAudit.FreeSpinFeatureMode) &&
         original.NeonNitroWild?.RequiresChoice != true &&
         original.ReelSetId == NeonArcadeSlotDefinitions.CarReelSetId;
 

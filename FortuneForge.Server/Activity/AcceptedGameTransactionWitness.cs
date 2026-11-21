@@ -1,6 +1,6 @@
 using System.Text.Json;
-using FortuneForge.Games.Abstractions.Analytics;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Firestore;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Activity;
@@ -98,11 +98,7 @@ internal static class AcceptedGameTransactionWitness
     {
         if (!observation.Fields.TryGetValue("occurredAtUtc", out var rawTime) || rawTime is not DateTime at || at.Kind != DateTimeKind.Utc) return;
         foreach (var userId in Players(observation))
-        {
-            var witness = AcceptedGameParticipationDocuments.Create(userId, (string)observation.Fields["gameId"], at);
-            set(database.Collection("catalogPlayerActivity").Document(witness.DocOwnerKey)
-                .Collection("games").Document(witness.GameId), witness.Fields);
-        }
+            FirestoreGameAudit.WriteAcceptedParticipation(database, (string)observation.Fields["gameId"], userId, at, set);
     }
 
     private static IReadOnlyList<string> SelectPlayers(JsonElement state, string[] actors, string idField,

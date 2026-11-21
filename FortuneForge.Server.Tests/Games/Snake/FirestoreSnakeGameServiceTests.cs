@@ -1,3 +1,5 @@
+using SnakeAccessException = FortuneForge.Games.Snake.Server.SnakeAccessException;
+using SnakeRuleException = FortuneForge.Games.Snake.Server.SnakeRuleException;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Games.Snake;
 using FortuneForge.Server.RoundAudit;

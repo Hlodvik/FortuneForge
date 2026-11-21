@@ -55,6 +55,8 @@ export type DropMergeGameState = Readonly<{
 
 export interface DropMergeGateway {
   getStatus(signal?: AbortSignal): Promise<DropMergeStatus>
+  getGame?(gameId: string, signal?: AbortSignal): Promise<DropMergeGameState>
+  recoverGame?(signal?: AbortSignal): Promise<DropMergeGameState>
   startGame(seed?: number, signal?: AbortSignal): Promise<DropMergeGameState>
   drop(gameId: string, column: number, signal?: AbortSignal): Promise<DropMergeGameState>
   undo(gameId: string, signal?: AbortSignal): Promise<DropMergeGameState>

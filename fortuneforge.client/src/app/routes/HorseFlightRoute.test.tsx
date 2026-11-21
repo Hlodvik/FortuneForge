@@ -12,7 +12,7 @@ describe('Horse Flight route integration', () => {
     expect(renderRoute('/games/horse-flight')).toContain('Opening Fortune Forge…')
     expect(routesSource).toContain("import('./routes/HorseFlightRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/games/horse-flight')")
-    expect(routeSource).toContain('new HttpArcadeCompetitionGateway(fetchWithAccountSession)')
+    expect(routeSource).toContain('createAccountBoundGameFetch(initialAccount.userId, fetchWithAccountSession)')
     expect(routeSource).toContain('HorseFlightCompetitionGatewayAdapter')
     expect(routeSource).toContain('Play Free')
     expect(routeSource).toContain('Play Ranked · R1')

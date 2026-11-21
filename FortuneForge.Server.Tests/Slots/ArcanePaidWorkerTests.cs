@@ -2,6 +2,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using FortuneForge.Games.ArcaneArchives;
+using FortuneForge.Games.ArcaneArchives.Server;
 using FortuneForge.Games.Hosting;
 using FortuneForge.Games.Slots;
 using FortuneForge.Games.Slots.Runtime;
@@ -43,7 +44,7 @@ public sealed class ArcanePaidWorkerTests(MidnightVaultPaidEmulatorFixture emula
         await wallet.UpdateAsync("available", 1_000L);
         var walletBefore = await wallet.GetSnapshotAsync();
 
-        await store.SelectArcaneTomePageAsync(UserId, "herbalism", false, DateTime.UtcNow, default);
+        await new ArcaneFeatureStore(database).SelectTomePageAsync(UserId, "herbalism", false, DateTime.UtcNow, default);
         var guard = Assert.Single((await database.Collection("slotSpinGuards").WhereEqualTo("userId", UserId)
             .GetSnapshotAsync()).Documents);
         var tome = ArcaneTome.SelectPage(
@@ -75,8 +76,8 @@ public sealed class ArcanePaidWorkerTests(MidnightVaultPaidEmulatorFixture emula
         PaidArcaneSpinOptions? received = null;
         worker.MapGameAction(PaidSlotOutcomeProtocol.Route, (PaidSlotOutcomeRequest request) =>
         {
-            received = request.Arcane;
-            return resolver.Resolve(legacyWorker ? request with { Arcane = null } : request);
+            received = PaidArcaneSpinOptions.Read(request);
+            return resolver.Resolve(legacyWorker ? request with { GameOptions = new() } : request);
         }, request => request.PlayerId);
         await worker.StartAsync();
 
@@ -128,16 +129,13 @@ public sealed class ArcanePaidWorkerTests(MidnightVaultPaidEmulatorFixture emula
         var arcane = new PaidArcaneSpinOptions(ArcaneArchivesEngine.PreviousBalancedPotionEngineVersion, false,
             new PaidArcanePotion(1, "MANDRAKE_ROOT", 10) { VariantId = ArcanePotions.AstralConvergence });
         var request = new PaidSlotOutcomeRequest(Guid.NewGuid(), GameId, UserId, WagerPoints,
-            false, false, 0, null, 0, null)
-        {
-            Arcane = arcane
-        };
+            false, false, 0, null, 0, null);
         var resolver = new ArcanePaidSlotOutcomes(new SeededRandom());
-        Assert.Throws<ArgumentException>(() => resolver.Resolve(request));
-        var legacy = resolver.Resolve(request with { Arcane = arcane with { Potion = null } });
+        Assert.Throws<ArgumentException>(() => resolver.Resolve(arcane.WriteTo(request)));
+        var legacy = resolver.Resolve((arcane with { Potion = null }).WriteTo(request));
         Assert.Equal(ArcaneArchivesEngine.PreviousBalancedPotionEngineVersion,
             legacy.Outcome.GetProperty("audit").GetProperty("engineVersion").GetString());
-        var current = resolver.Resolve(request with { Arcane = arcane with { EngineVersion = ArcaneArchivesEngine.EngineVersion } });
+        var current = resolver.Resolve((arcane with { EngineVersion = ArcaneArchivesEngine.EngineVersion }).WriteTo(request));
         Assert.Equal(ArcaneArchivesEngine.EngineVersion,
             current.Outcome.GetProperty("audit").GetProperty("engineVersion").GetString());
     }

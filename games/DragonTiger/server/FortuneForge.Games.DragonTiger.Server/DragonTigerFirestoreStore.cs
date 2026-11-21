@@ -4,108 +4,22 @@ using Google.Cloud.Firestore;
 
 namespace FortuneForge.Games.DragonTiger.Server;
 
-/// <summary>One Firestore transaction commits the wager, outcome, payout, wallet, event, and shoe position.</summary>
+/// <summary>Read-only compatibility for historical rounds settled before signed wallet ownership.</summary>
 public sealed class DragonTigerFirestoreStore(FirestoreDb database) : IDragonTigerStore
 {
     private const string CurrencyId = "slotsCredits";
-    private void WriteRoundRecord(Transaction transaction, FortuneForge.Games.Abstractions.Analytics.SinglePlayerRoundRecord record)
-    {
-        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Analytics.GameAnalyticsOutbox.CollectionName).Document(record.Settlement.Id), record.Settlement.Fields);
-        var documents = FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Create(record.Audit);
-        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Summaries).Document(record.Audit.Summary.Id), documents.Summary);
-        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Evidence).Document(record.Audit.Summary.Id), documents.Evidence);
-    }
-
     public Task<DragonTigerStoreResult> StartAsync(string userId, string idempotencyKey, DragonTigerWagers wagers,
-        IReadOnlyList<PlayingCard> shuffledShoe, DateTimeOffset nowUtc, CancellationToken cancellationToken)
-    {
-        DragonTigerMoney.Validate(wagers);
-        DragonTigerShoe.Validate(shuffledShoe);
-        var roundId = DragonTigerService.LookupKey(userId, idempotencyKey);
-        var roundReference = RoundDocument(roundId);
-        var balanceReference = BalanceDocument(userId);
-        var wagerReference = LedgerDocument($"dragon-tiger-{roundId}-wager");
-        var payoutReference = LedgerDocument($"dragon-tiger-{roundId}-payout");
-        var eventReference = EventDocument(roundId);
-        var shoeReference = ShoeDocument(userId);
-        return database.RunTransactionAsync(async transaction =>
-        {
-            var snapshots = await transaction.GetAllSnapshotsAsync(
-                [roundReference, balanceReference, wagerReference, payoutReference, eventReference, shoeReference], cancellationToken);
-            var balanceCents = ReadBalanceCents(snapshots[1]);
-            if (snapshots[0].Exists)
-            {
-                var existing = ReadRound(snapshots[0]);
-                if (existing.UserId != userId || existing.Wagers != wagers) throw new DragonTigerRoundConflictException();
-                var returned = TotalReturn(existing);
-                if (!snapshots[2].Exists || !snapshots[4].Exists || snapshots[3].Exists != (returned > 0))
-                    throw new InvalidOperationException("A recorded Dragon Tiger round is missing its ledger.");
-                VerifyLedger(snapshots[2], userId, -wagers.TotalCents, "dragon-tiger-wager", idempotencyKey, RequiredLong(snapshots[0], "balanceAfterWagerCents"));
-                if (returned > 0) VerifyLedger(snapshots[3], userId, returned, "dragon-tiger-payout", $"{idempotencyKey}-payout", RequiredLong(snapshots[0], "balanceAfterSettlementCents"));
-                if (RequiredString(snapshots[4], "roundId") != roundId || RequiredString(snapshots[4], "userId") != userId ||
-                    RequiredString(snapshots[4], "event") != "settled" || RequiredString(snapshots[4], "idempotencyKey") != idempotencyKey || RequiredLong(snapshots[4], "schemaVersion") != 1)
-                    throw new InvalidOperationException("The Dragon Tiger event is corrupt.");
-                return new DragonTigerStoreResult(existing, balanceCents);
-            }
-            if (snapshots[2].Exists || snapshots[3].Exists || snapshots[4].Exists)
-                throw new InvalidOperationException("A Dragon Tiger ledger exists without its round.");
-            if (balanceCents < wagers.TotalCents) throw new DragonTigerInsufficientCreditsException(balanceCents, wagers.TotalCents);
-            var shoe = snapshots[5].Exists ? ReadShoe(snapshots[5], userId) : new ShoeState(shuffledShoe, 0);
-            if (shoe.NextIndex >= DragonTigerRules.ReshuffleAt) shoe = new(shuffledShoe, 0);
-            var round = DragonTigerRules.Deal(shoe.Cards.Skip(shoe.NextIndex).Take(2).ToArray());
-            var nextIndex = shoe.NextIndex + 2;
-            var stored = new DragonTigerStoredRound(roundId, userId, wagers, round, nextIndex, DragonTigerRules.ShoeSize - nextIndex);
-            var totalReturn = TotalReturn(stored);
-            var afterWager = checked(balanceCents - wagers.TotalCents);
-            var finalBalance = checked(afterWager + totalReturn);
-            var observation = FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.Capture(
-                "dragon-tiger", roundId, nextIndex, nowUtc.UtcDateTime, new { stored, shoe = shoe.Cards, nextIndex }, [userId], "settlement");
-            transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.CollectionName).Document(observation.Id), observation.Fields);
-            transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestCollectionName)
-                .Document(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestId("dragon-tiger", roundId)),
-                new Dictionary<string, object> { ["gameId"] = "dragon-tiger", ["instanceId"] = roundId,
-                    ["eventIds"] = FieldValue.ArrayUnion(observation.Id), ["schemaVersion"] = 1L }, SetOptions.MergeAll);
-            var participation = FortuneForge.Games.Abstractions.Analytics.AcceptedGameParticipationDocuments.Create(userId, "dragon-tiger", nowUtc.UtcDateTime);
-            transaction.Set(database.Collection("catalogPlayerActivity").Document(participation.DocOwnerKey)
-                .Collection("games").Document(participation.GameId), participation.Fields, SetOptions.MergeAll);
-            transaction.Create(roundReference, RoundData(stored, idempotencyKey, nowUtc, afterWager, finalBalance));
-            var analytics = FortuneForge.Games.Abstractions.Analytics.SinglePlayerRoundRecord.Create(
-                "dragon-tiger", roundId, userId, wagers.TotalCents, totalReturn, nowUtc.UtcDateTime, nowUtc.UtcDateTime,
-                "dragonTigerRounds", roundId, stored, "dragon-tiger-cards-and-wagers-v1",
-                DragonTigerOutcomeAudit.Verify(stored, wagers.TotalCents, totalReturn), DragonTigerOutcomeAudit.Version);
-            WriteRoundRecord(transaction, analytics);
-            transaction.Set(shoeReference, new Dictionary<string, object>
-            {
-                ["userId"] = userId, ["cards"] = shoe.Cards.Select(CardCode.Format).ToArray(),
-                ["nextIndex"] = (long)nextIndex, ["latestRoundId"] = roundId,
-                ["updatedAt"] = Timestamp.FromDateTime(nowUtc.UtcDateTime), ["schemaVersion"] = 1L,
-            });
-            transaction.Set(balanceReference, new Dictionary<string, object>
-            {
-                ["available"] = finalBalance / 100, ["availableFractionalCents"] = finalBalance % 100,
-                ["version"] = FieldValue.Increment(1), ["updatedAt"] = Timestamp.FromDateTime(nowUtc.UtcDateTime),
-            }, SetOptions.MergeAll);
-            transaction.Create(wagerReference, LedgerData(wagerReference.Id, userId, -wagers.TotalCents,
-                afterWager, "dragon-tiger-wager", idempotencyKey, nowUtc));
-            if (totalReturn > 0) transaction.Create(payoutReference, LedgerData(payoutReference.Id, userId, totalReturn,
-                finalBalance, "dragon-tiger-payout", $"{idempotencyKey}-payout", nowUtc));
-            transaction.Create(eventReference, new Dictionary<string, object>
-            {
-                ["roundId"] = roundId, ["userId"] = userId, ["event"] = "settled",
-                ["idempotencyKey"] = idempotencyKey, ["createdAt"] = Timestamp.FromDateTime(nowUtc.UtcDateTime), ["schemaVersion"] = 1L,
-            });
-            return new DragonTigerStoreResult(stored, finalBalance);
-        }, options: TransactionOptions.ForMaxAttempts(10), cancellationToken: cancellationToken);
-    }
-
-    public Task<DragonTigerStoreResult?> GetAsync(string userId, string roundId, CancellationToken cancellationToken) =>
+        IReadOnlyList<PlayingCard> shuffledShoe, DateTimeOffset nowUtc, CancellationToken cancellationToken) =>
         database.RunTransactionAsync(async transaction =>
         {
-            var snapshots = await transaction.GetAllSnapshotsAsync([RoundDocument(roundId), BalanceDocument(userId)], cancellationToken);
-            if (!snapshots[0].Exists) return null;
-            var stored = ReadRound(snapshots[0]);
-            return stored.UserId == userId ? new DragonTigerStoreResult(stored, ReadBalanceCents(snapshots[1])) : null;
+            var prior = await ReadOwned(transaction, userId, DragonTigerService.LookupKey(userId, idempotencyKey), cancellationToken)
+                ?? throw new InvalidOperationException("New Dragon Tiger rounds require the signed wallet store.");
+            if (prior.Round.Wagers != wagers) throw new DragonTigerRoundConflictException();
+            return prior;
         }, cancellationToken: cancellationToken);
+
+    public Task<DragonTigerStoreResult?> GetAsync(string userId, string roundId, CancellationToken cancellationToken) =>
+        database.RunTransactionAsync(transaction => ReadOwned(transaction, userId, roundId, cancellationToken), cancellationToken: cancellationToken);
 
     public Task<DragonTigerStoreResult?> LatestAsync(string userId, CancellationToken cancellationToken) =>
         database.RunTransactionAsync(async transaction =>
@@ -113,31 +27,39 @@ public sealed class DragonTigerFirestoreStore(FirestoreDb database) : IDragonTig
             var shoe = await transaction.GetSnapshotAsync(ShoeDocument(userId), cancellationToken);
             if (!shoe.Exists) return null;
             _ = ReadShoe(shoe, userId);
-            var id = RequiredString(shoe, "latestRoundId");
-            var snapshots = await transaction.GetAllSnapshotsAsync([RoundDocument(id), BalanceDocument(userId)], cancellationToken);
-            var stored = ReadRound(snapshots[0]);
-            if (stored.UserId != userId) throw new InvalidOperationException("The Dragon Tiger latest-round record is corrupt.");
-            return new DragonTigerStoreResult(stored, ReadBalanceCents(snapshots[1]));
+            return await ReadOwned(transaction, userId, RequiredString(shoe, "latestRoundId"), cancellationToken)
+                ?? throw new InvalidOperationException("The Dragon Tiger latest-round record is missing.");
         }, cancellationToken: cancellationToken);
 
+    private async Task<DragonTigerStoreResult?> ReadOwned(Transaction transaction, string user, string id, CancellationToken token)
+    {
+        var snapshots = await transaction.GetAllSnapshotsAsync([RoundDocument(id), LedgerDocument($"dragon-tiger-{id}-wager"),
+            LedgerDocument($"dragon-tiger-{id}-payout"), EventDocument(id)], token);
+        if (!snapshots[0].Exists || RequiredString(snapshots[0], "userId") != user) return null;
+        var stored = ReadRound(snapshots[0]);
+        var returned = TotalReturn(stored);
+        var key = RequiredString(snapshots[0], "startIdempotencyKey");
+        if (!snapshots[1].Exists || !snapshots[3].Exists || snapshots[2].Exists != (returned > 0))
+            throw new InvalidOperationException("A recorded Dragon Tiger round is missing its ledger.");
+        VerifyLedger(snapshots[1], user, -stored.Wagers.TotalCents, "dragon-tiger-wager", key, RequiredLong(snapshots[0], "balanceAfterWagerCents"));
+        if (returned > 0) VerifyLedger(snapshots[2], user, returned, "dragon-tiger-payout", key + "-payout", RequiredLong(snapshots[0], "balanceAfterSettlementCents"));
+        if (RequiredString(snapshots[3], "roundId") != id || RequiredString(snapshots[3], "userId") != user ||
+            RequiredString(snapshots[3], "event") != "settled" || RequiredString(snapshots[3], "idempotencyKey") != key || RequiredLong(snapshots[3], "schemaVersion") != 1)
+            throw new InvalidOperationException("The Dragon Tiger event is corrupt.");
+        return new(stored, 0);
+    }
+    internal async Task EnsureNoOrphansAsync(Transaction transaction, string id, CancellationToken token)
+    {
+        var proof = await transaction.GetAllSnapshotsAsync([LedgerDocument($"dragon-tiger-{id}-wager"),
+            LedgerDocument($"dragon-tiger-{id}-payout"), EventDocument(id)], token);
+        if (proof.Any(snapshot => snapshot.Exists))
+            throw new FortuneForge.Games.Abstractions.Wallet.GameWalletUnavailableException();
+    }
     private DocumentReference RoundDocument(string id) => database.Collection("dragonTigerRounds").Document(id);
     private DocumentReference ShoeDocument(string userId) => database.Collection("dragonTigerShoes").Document(DragonTigerService.Hash(userId));
-    private DocumentReference EventDocument(string id) => database.Collection("dragonTigerRoundEvents").Document($"{id}-settled");
-    private DocumentReference BalanceDocument(string userId) => database.Collection("userBalances").Document($"{userId}_{CurrencyId}");
+    private DocumentReference EventDocument(string id) => database.Collection("dragonTigerRoundEvents").Document(id + "-settled");
     private DocumentReference LedgerDocument(string id) => database.Collection("balanceTransactions").Document(id);
     private static long TotalReturn(DragonTigerStoredRound stored) => DragonTigerRules.Settle(stored.Wagers, stored.Round).Sum(value => value.TotalReturnCents);
-    private static Dictionary<string, object> RoundData(DragonTigerStoredRound stored, string key, DateTimeOffset now, long afterWagerCents, long finalBalanceCents) => new()
-    {
-        ["roundId"] = stored.RoundId, ["userId"] = stored.UserId,
-        ["dragonStakeCents"] = stored.Wagers.DragonCents, ["tigerStakeCents"] = stored.Wagers.TigerCents,
-        ["tieStakeCents"] = stored.Wagers.TieCents, ["totalStakeCents"] = stored.Wagers.TotalCents,
-        ["dragonCard"] = CardCode.Format(stored.Round.DragonCard), ["tigerCard"] = CardCode.Format(stored.Round.TigerCard),
-        ["outcome"] = DragonTigerService.Name(stored.Round.Outcome), ["totalReturnCents"] = TotalReturn(stored),
-        ["profitCents"] = TotalReturn(stored) - stored.Wagers.TotalCents,
-        ["balanceAfterWagerCents"] = afterWagerCents, ["balanceAfterSettlementCents"] = finalBalanceCents,
-        ["shoeCardsUsed"] = (long)stored.ShoeCardsUsed, ["shoeCardsRemaining"] = (long)stored.ShoeCardsRemaining,
-        ["startIdempotencyKey"] = key, ["createdAt"] = Timestamp.FromDateTime(now.UtcDateTime), ["schemaVersion"] = 1L,
-    };
     private static DragonTigerStoredRound ReadRound(DocumentSnapshot snapshot)
     {
         try { return ReadRoundCore(snapshot); }
@@ -188,13 +110,6 @@ public sealed class DragonTigerFirestoreStore(FirestoreDb database) : IDragonTig
         DragonTigerShoe.Validate(cards);
         return new(cards, checked((int)nextIndex));
     }
-    private static Dictionary<string, object> LedgerData(string id, string userId, long amountCents, long afterCents,
-        string type, string key, DateTimeOffset now) => new()
-    {
-        ["transactionId"] = id, ["userId"] = userId, ["currencyId"] = CurrencyId,
-        ["amount"] = (double)DragonTigerMoney.ToRand(amountCents), ["balanceAfter"] = (double)DragonTigerMoney.ToRand(afterCents),
-        ["type"] = type, ["idempotencyKey"] = key, ["createdAt"] = Timestamp.FromDateTime(now.UtcDateTime),
-    };
     private static void VerifyLedger(DocumentSnapshot snapshot, string userId, long amountCents, string type, string key, long expectedBalanceAfterCents)
     {
         if (RequiredString(snapshot, "transactionId") != snapshot.Id || RequiredString(snapshot, "idempotencyKey") != key ||
@@ -203,15 +118,6 @@ public sealed class DragonTigerFirestoreStore(FirestoreDb database) : IDragonTig
             amount != (double)DragonTigerMoney.ToRand(amountCents) || !snapshot.TryGetValue<double>("balanceAfter", out var after) ||
             after != (double)DragonTigerMoney.ToRand(expectedBalanceAfterCents))
             throw new InvalidOperationException("The Dragon Tiger wallet ledger is corrupt.");
-    }
-    private static long ReadBalanceCents(DocumentSnapshot snapshot)
-    {
-        if (!snapshot.Exists) return 0;
-        var whole = snapshot.TryGetValue<long>("available", out var value) ? value
-            : throw new InvalidOperationException("The account wallet balance is missing available.");
-        var fractional = snapshot.TryGetValue<long>("availableFractionalCents", out var fraction) ? fraction : 0;
-        if (whole < 0 || fractional is < 0 or > 99) throw new InvalidOperationException("The account wallet balance is corrupt.");
-        return checked(whole * 100 + fractional);
     }
     private static long RequiredLong(DocumentSnapshot snapshot, string field) => snapshot.TryGetValue<long>(field, out var value)
         ? value : throw new InvalidOperationException($"The Dragon Tiger record is missing {field}.");

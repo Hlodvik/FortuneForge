@@ -69,18 +69,31 @@ export function useRecordedFlappy(userId: string, gateway: FlappyCompetitionGate
 
   const start = useCallback(async (mode: FlappyEntryMode = 'free') => {
     if (busy.current || !['lobby', 'result', 'start-failed'].includes(phaseRef.current)) return
-    const prior = recoveryRef.current
+    const previousPhase = phaseRef.current, prior = recoveryRef.current
     const idempotencyKey = prior?.kind === 'start' ? prior.idempotencyKey : `flappy-${crypto.randomUUID().replaceAll('-', '')}`
     const startMode = prior?.kind === 'start' ? prior.mode : mode
-    const storageError = retain({ kind: 'start', idempotencyKey, mode: startMode })
-    if (storageError) { setError(storageError); return }
     const request = new AbortController()
     busy.current = request
-    setError(null); setResult(null); move('starting')
     try {
+      let pending: Extract<FlappyRecovery, { kind: 'start' }> = prior?.kind === 'start'
+        ? prior : { kind: 'start', idempotencyKey, mode: startMode }
+      if (startMode !== 'free' && prior?.kind !== 'start') {
+        setError(null); move('starting')
+        const window = await gateway.getLeaderboard('flappy', startMode, undefined, request.signal)
+        if (!alive.current || busy.current !== request) return
+        if (window.gameId !== 'flappy' || window.period !== startMode || !('startsAtUtc' in window) ||
+          !window.entriesOpen || window.isCompleted) throw new Error('The selected competition is unavailable.')
+        pending = { ...pending, admission: { expectedWindowStartsAtUtc: window.startsAtUtc, expectedWindowEndsAtUtc: window.endsAtUtc } }
+      }
+      const storageError = retain(pending)
+      if (storageError) { recoveryRef.current = prior; setRecovery(prior); setError(storageError); move(previousPhase); return }
+      setError(null); setResult(null); move('starting')
+      const terms = pending.admission ?? (prior?.kind === 'start' ? { recoverOnly: true } : undefined)
       const receipt = startMode === 'free'
         ? await gateway.startFreeFlappyRun(idempotencyKey, request.signal)
-        : await gateway.startFlappyAttempt(startMode, idempotencyKey, request.signal)
+        : terms === undefined
+          ? await gateway.startFlappyAttempt(startMode, idempotencyKey, request.signal)
+          : await gateway.startFlappyAttempt(startMode, idempotencyKey, request.signal, terms)
       if (!alive.current || busy.current !== request) return
       const run: RecordedFlappyRun = { runId: receipt.runId, seed: receipt.seed, wasReplay: receipt.wasReplay, mode: startMode }
       session.current = new FlappyReplaySession(run.runId, run.seed)
@@ -91,7 +104,7 @@ export function useRecordedFlappy(userId: string, gateway: FlappyCompetitionGate
       if (startMode !== 'free') void onPaidAccountRefresh?.()
     } catch (reason) {
       if (!alive.current || busy.current !== request) return
-      setError(friendlyError(reason)); move('start-failed')
+      setError(friendlyError(reason)); move(recoveryRef.current?.kind === 'start' ? 'start-failed' : previousPhase)
     } finally { if (busy.current === request) busy.current = null }
   }, [gateway, move, onPaidAccountRefresh, retain])
 

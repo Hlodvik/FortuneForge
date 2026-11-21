@@ -3,17 +3,18 @@ using FortuneForge.Games.Slots;
 
 namespace FortuneForge.Games.ArcaneArchives;
 
-/// <summary>Produces sealed outcomes for the account host. The host owns all wallet and potion progression.</summary>
+/// <summary>Produces sealed outcomes for the legacy host-admission protocol.</summary>
 public sealed class ArcanePaidSlotOutcomes(IGameRandomSource random)
 {
+    public const string OutcomeKind = "arcane-archives";
+
     public PaidSlotOutcomeResponse Resolve(PaidSlotOutcomeRequest request)
     {
-        PaidSlotOutcomeProtocol.ValidateRequest(request, ArcaneArchivesEngine.GameId);
-        if (request.MathModelId is not null || request.IsNeonDiscoPlay || request.NeonDiscoMultiplier is not null ||
-            !request.IsFreeSpin && request.FreeSpinFeatureMode is not null)
+        var arcane = PaidArcaneSpinOptions.Read(request);
+        if (request.MathModelId is not null || !request.IsFreeSpin && request.FreeSpinFeatureMode is not null)
             throw new ArgumentException("The Arcane admission uses an unsupported feature.", nameof(request));
 
-        if (request.Arcane is not { } arcane)
+        if (arcane is null)
             return PaidSlotOutcomeResponse.Create(request, PaidSlotOutcomeProtocol.ClassicSlotKind,
                 LegacyArcaneWorkerEngine.Spin(random, request));
 
@@ -25,6 +26,6 @@ public sealed class ArcanePaidSlotOutcomes(IGameRandomSource random)
             ? new ArcanePotionBottle(active.Id, active.IngredientId, active.Potency) { VariantId = active.VariantId } : null;
         var outcome = new ArcaneArchivesEngine(random, arcane.EngineVersion).SpinTome(request.WagerPoints, request.PlayerId,
             request.EnergyBalance, request.PityMissesBefore, request.IsFreeSpin, arcane.TomeActive, potion);
-        return PaidSlotOutcomeResponse.Create(request, PaidSlotOutcomeProtocol.ArcaneSlotKind, outcome);
+        return PaidSlotOutcomeResponse.Create(request, OutcomeKind, outcome);
     }
 }

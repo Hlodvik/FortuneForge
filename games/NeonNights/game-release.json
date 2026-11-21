@@ -5,6 +5,6 @@
     "entry": "src/browser.ts"
   },
   "backend": {
-    "project": "server/FortuneForge.Games.NeonNights.Server/FortuneForge.Games.NeonNights.Server.csproj"
+    "kind": "packaged-game"
   }
 }

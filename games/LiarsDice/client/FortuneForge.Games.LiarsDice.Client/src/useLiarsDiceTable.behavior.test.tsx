@@ -685,7 +685,7 @@ function nextHand(match: LiarsDiceMatch): LiarsDiceMatch {
   }
 }
 function fakeServer(tableStatus: LiarsDiceStatus = status) {
-  type TestGateway = Required<LiarsDiceGateway>
+  type TestGateway = Required<Omit<LiarsDiceGateway, 'recoverMatch'>>
   let lost: Operation | null = null
   const server: { state: LiarsDiceMatch; readError: Error | null; loseResponse: (operation: Operation) => void; gateway: Mocked<TestGateway> } = {
     state: opening(), readError: null, loseResponse(operation) { lost = operation }, gateway: {} as Mocked<TestGateway>,

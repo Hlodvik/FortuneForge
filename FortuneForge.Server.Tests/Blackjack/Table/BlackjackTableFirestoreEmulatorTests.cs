@@ -1,3 +1,4 @@
+using FortuneForge.Server.Tests.Blackjack;
 using FortuneForge.Server.Cards.Blackjack;
 using FortuneForge.Server.Cards.Blackjack.Table;
 using FortuneForge.Server.Bots.Blackjack;
@@ -25,8 +26,8 @@ public sealed class BlackjackTableFirestoreEmulatorTests
     {
         var deck = DeckWithPrefix("2|clubs", "3|clubs", "4|clubs", "5|clubs");
         var (database, _, suffix) = CreateStore();
-        var first = new FirestoreBlackjackTableStore(database, () => deck, () => 123UL, multiplayerEnabled: false);
-        var second = new FirestoreBlackjackTableStore(database, () => deck, () => 456UL, multiplayerEnabled: false);
+        var first = BlackjackPlatformTests.Table(database, () => deck, () => 123UL, multiplayerEnabled: false);
+        var second = BlackjackPlatformTests.Table(database, () => deck, () => 456UL, multiplayerEnabled: false);
         var firstUser = $"solo-first-{suffix}";
         var secondUser = $"solo-second-{suffix}";
         await SeedBalanceAsync(database, firstUser, 5_000);
@@ -89,7 +90,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests
     public async Task DuplicateFreeJoinAcrossInstancesReconnectsToTheSameDurableTable()
     {
         var (database, first, suffix) = CreateStore();
-        var second = new FirestoreBlackjackTableStore(database);
+        var second = BlackjackPlatformTests.Table(database);
         var user = $"join-user-{suffix}";
         await SeedBalanceAsync(database, user, 5_000);
         const string key = "same-join-command";
@@ -116,7 +117,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests
         var (database, first, suffix) = CreateStore(DeckWithPrefix(
             "2|clubs", "3|clubs", "4|clubs", "5|clubs",
             "6|clubs", "7|clubs", "8|clubs", "9|clubs"));
-        var second = new FirestoreBlackjackTableStore(database);
+        var second = BlackjackPlatformTests.Table(database);
         var host = $"host-{suffix}";
         var late = $"late-{suffix}";
         await SeedBalanceAsync(database, host, 5_000);
@@ -161,7 +162,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests
     public async Task DurableWorkerLeaseAndRoundSettlementRemainSingleAcrossInstances()
     {
         var (database, first, suffix) = CreateStore();
-        var second = new FirestoreBlackjackTableStore(database);
+        var second = BlackjackPlatformTests.Table(database);
         var user = $"lease-user-{suffix}";
         await SeedBalanceAsync(database, user, 5_000);
         await first.JoinAsync(user, "CopperRobin", 0, Key("lease-join"), Start, default);
@@ -185,7 +186,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests
     public async Task DuplicateDoubleAndPayoutAreSingleAndHouseRevenueExcludesBots()
     {
         var (database, first, suffix) = CreateStore(DoubleDeck());
-        var second = new FirestoreBlackjackTableStore(database);
+        var second = BlackjackPlatformTests.Table(database);
         var user = $"double-user-{suffix}";
         await SeedBalanceAsync(database, user, 10_000);
         await first.JoinAsync(user, "MellowBadger", 0, Key("double-join"), Start, default);
@@ -457,7 +458,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests
     {
         var (database, store, suffix) = CreateStore();
         var stores = Enumerable.Range(0, 8)
-            .Select(_ => new FirestoreBlackjackTableStore(database))
+            .Select(_ => BlackjackPlatformTests.Table(database))
             .ToArray();
         var users = Enumerable.Range(0, 5).Select(index => $"poll-{index}-{suffix}").ToArray();
         foreach (var user in users) await SeedBalanceAsync(database, user, 5_000);
@@ -526,7 +527,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests
             EmulatorDetection = Google.Api.Gax.EmulatorDetection.None
         }.Build();
         var profileStore = ManagedPlayerQueuer(database);
-        var store = new FirestoreBlackjackTableStore(
+        var store = BlackjackPlatformTests.Table(
             database,
             () => DoubleDeck().ToArray(),
             () => 123UL,
@@ -572,7 +573,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests
             profiles, profile => profile.Id == Field<string>(result, "userId")));
         foreach (var profile in profiles)
         {
-            var updated = await profile.Reference.GetSnapshotAsync();
+            var updated = await database.Collection("blackjackManagedPlayerStatistics").Document(profile.Id).GetSnapshotAsync();
             Assert.Equal(1, Field<long>(updated, "cardMatchesPlayed"));
         }
     }
@@ -624,8 +625,8 @@ public sealed class BlackjackTableFirestoreEmulatorTests
             EmulatorDetection = Google.Api.Gax.EmulatorDetection.None
         }.Build();
         return (database, deck is null
-            ? new FirestoreBlackjackTableStore(database)
-            : new FirestoreBlackjackTableStore(database, () => deck.ToArray(), () => 123UL), suffix);
+            ? BlackjackPlatformTests.Table(database)
+            : BlackjackPlatformTests.Table(database, () => deck.ToArray(), () => 123UL), suffix);
     }
 
     private static ManagedPlayerQueuer ManagedPlayerQueuer(FirestoreDb database)
@@ -652,7 +653,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests
     }
 
     private static async Task<IReadOnlyList<DocumentSnapshot>> LedgerAsync(FirestoreDb database, string userId) =>
-        (await database.Collection("balanceTransactions").WhereEqualTo("userId", userId).GetSnapshotAsync()).Documents;
+        (await database.Collection("blackjackTableLedgerEvidence").WhereEqualTo("userId", userId).GetSnapshotAsync()).Documents;
 
     private static async Task<BlackjackTableState> ReadTableAsync(FirestoreDb database, string tableId)
     {

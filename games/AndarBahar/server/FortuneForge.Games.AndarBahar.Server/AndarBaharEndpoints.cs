@@ -1,4 +1,5 @@
 using System.Text.Json;
+using FortuneForge.Games.Abstractions.Wallet;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 using Microsoft.AspNetCore.Builder;
@@ -79,10 +80,17 @@ public static class AndarBaharEndpoints
                 return Error(403, "andar-bahar-practice-disabled", "Practice play is unavailable on this host.");
             var practice = options.ForcePractice || requestedPractice;
             IAndarBaharStore store = practice ? context.RequestServices.GetRequiredService<PracticeAndarBaharStore>()
-                : new AndarBaharFirestoreStore(context.RequestServices.GetRequiredService<FirestoreDb>());
+                : new AndarBaharWalletStore(context.RequestServices.GetRequiredService<FirestoreDb>(),
+                    context.RequestServices.GetRequiredService<IGameWalletClient>(), context.RequestServices.GetRequiredService<IGameWalletAccountReader>());
             // Gate creation inside the store's atomic operation, after an exact-key replay
             // has been checked. A kill switch must never hide an already settled wager.
             return await action(account, store, new AndarBaharService(store, TimeProvider.System, allowNewRounds: Enabled(context)), practice);
+        }
+        catch (GameWalletConflictException exception) { return Error(409, "andar-bahar-round-conflict", exception.Message); }
+        catch (GameWalletUnavailableException exception)
+        {
+            context.Response.Headers.RetryAfter = "1";
+            return Error(503, "andar-bahar-retry-required", exception.Message);
         }
         catch (AndarBaharDisabledException exception) { return Error(503, "andar-bahar-disabled", exception.Message); }
         catch (AndarBaharRoundNotFoundException exception) { return Error(404, "andar-bahar-round-not-found", exception.Message); }

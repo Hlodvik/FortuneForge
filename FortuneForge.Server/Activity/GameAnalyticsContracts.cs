@@ -1,5 +1,4 @@
 using System.Globalization;
-using FortuneForge.Games.Abstractions.Analytics;
 
 namespace FortuneForge.Server.Activity;
 
@@ -17,13 +16,6 @@ public sealed record GameAnalyticsReport(GameAnalyticsPeriod Period, DateTime As
 public interface IGameAnalyticsReader
 {
     Task<GameAnalyticsReport> ReadAsync(string period, string? date, string? userId, CancellationToken ct);
-}
-public interface IGameAnalyticsSink
-{
-    /// <summary>For async free/practice engines. Paid engines MUST use the shared outbox helper in their settlement transaction.</summary>
-    Task RecordAsync(GameAnalyticsSettlement settlement, CancellationToken ct);
-    /// <summary>For synchronous in-memory engines. Returns false if the bounded owned worker queue is full.</summary>
-    bool TryEnqueuePractice(GameAnalyticsSettlement settlement);
 }
 public sealed class GameAnalyticsQueryException(string message) : ArgumentException(message);
 

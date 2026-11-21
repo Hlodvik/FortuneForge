@@ -13,12 +13,12 @@ public sealed partial class FirestoreAccountStore(FirestoreDb database) : IAccou
     private const long LegacySlotsCreditsFallback = 10_000;
     private const long AccountSchemaVersion = 7;
     private const string LegacyLoadedMoneyCurrencyId = "loadedMoney";
-    private const string SlotsCreditsCurrencyId = "slotsCredits";
-    private const string AvailableFractionalCentsField = "availableFractionalCents";
+    private const string SlotsCreditsCurrencyId = FirestoreWalletDocuments.SlotsCreditsCurrencyId;
+    private const string AvailableFractionalCentsField = FirestoreWalletDocuments.AvailableFractionalCentsField;
     private const string FreeGamesCurrencyId = "freeGames";
     private const string SpecialPointsCurrencyId = "specialPoints";
     private const string EnergyCurrencyId = "energy";
-    private const string LegacyWukongGameId = "classic-demo-v1";
+    private const string LegacyWukongGameId = FortuneForge.Games.Wukong.WukongEngine.LegacyStorageGameId;
     private const string SyncedReelsFeatureMode = "sync";
     private const string ExtraRowsFeatureMode = "rows";
     private const string PawBoostFeatureMode = "paw";

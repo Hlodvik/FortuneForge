@@ -6,7 +6,7 @@ const idempotencyKeyPattern = /^[A-Za-z0-9_-]{16,128}$/
 const roundIdPattern = /^[A-Za-z0-9_-]{1,128}$/
 
 export class HttpAndarBaharGateway implements AndarBaharGateway {
-  constructor(readonly basePath = '/api/games/andar-bahar', private readonly requestFn: typeof fetch = fetch) {}
+  constructor(readonly basePath = '/api/games/andar-bahar', private readonly requestFn: typeof fetch = fetch, private readonly expectedAccountId?: string) {}
 
   getStatus(signal?: AbortSignal) {
     return this.request('/status', { signal }, isStatus)
@@ -27,11 +27,24 @@ export class HttpAndarBaharGateway implements AndarBaharGateway {
     if (!isSide(side) || !isStake(stake) || !idempotencyKeyPattern.test(options.idempotencyKey)) {
       throw new AndarBaharGatewayError('Select a side and a valid wager before dealing.', 'andar-bahar-invalid-request')
     }
-    const round = await this.request('/rounds', {
+    const command: RequestInit = {
       method: 'POST', signal: options.signal,
       headers: { 'Content-Type': 'application/json', 'Idempotency-Key': options.idempotencyKey },
       body: JSON.stringify({ side, stake }),
-    }, isRound)
+    }
+    let round: AndarBaharRound
+    try {
+      round = await this.request('/rounds', command, isRound)
+    } catch (error) {
+      if (!(error instanceof AndarBaharGatewayError) || error.status !== 409 || error.code !== 'andar-bahar-round-conflict') throw error
+      // A different tab can leave an accepted intent after this tab loaded its
+      // status. Restore that intent, then replay this frozen command once.
+      try { await this.getLatestRound(options.signal) }
+      catch (recoveryError) {
+        if (!(recoveryError instanceof AndarBaharGatewayError) || !['insufficient-slot-credits', 'andar-bahar-insufficient-credits'].includes(recoveryError.code ?? '')) throw recoveryError
+      }
+      round = await this.request('/rounds', command, isRound)
+    }
     if (round.side !== side || cents(round.stake) !== cents(stake)) {
       throw new AndarBaharGatewayError('The table did not confirm this wager. Restore this deal before playing again.', 'andar-bahar-invalid-response')
     }
@@ -39,6 +52,11 @@ export class HttpAndarBaharGateway implements AndarBaharGateway {
   }
 
   private async request<T>(path: string, init: RequestInit, validate: (value: unknown) => value is T, allowEmpty = false): Promise<T> {
+    if (this.expectedAccountId) {
+      const headers = new Headers(init.headers)
+      headers.set('X-FortuneForge-Expected-Account', this.expectedAccountId)
+      init = { ...init, headers }
+    }
     return withAndarBaharRequestDeadline(async signal => {
       const request = this.requestFn
       // Extracting fetch preserves its native receiver. A response cannot be cached across wallets.

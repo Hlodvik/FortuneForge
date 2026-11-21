@@ -1,3 +1,4 @@
+import { createGameCommandRecovery } from '@fortuneforge/client-presentation/game-command-recovery'
 import { DropMergeGame as BundledDropMergeGame, HttpDropMergeGateway } from '@fortuneforge/games-drop-merge'
 import bundledStyles from '@fortuneforge/games-drop-merge/styles.css?inline'
 import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
@@ -17,7 +18,7 @@ export function AuthenticatedDropMergeRoute() {
 }
 
 function DropMergeSession({ account }: { account: AccountSummary }) {
-  const gateway = useMemo(() => new HttpDropMergeGateway('/api/games/drop-merge', fetchWithAccountSession), [])
+  const gateway = useMemo(() => new HttpDropMergeGateway('/api/games/drop-merge', fetchWithAccountSession, createGameCommandRecovery({ accountId: account.userId, gameId: 'drop-merge', routePrefix: '/api/games/drop-merge' }), account.userId), [account.userId])
   const { Game: DropMergeGame, pending } = useReleasedGame('drop-merge', 'Drop Merge', BundledDropMergeGame, bundledStyles)
   if (DropMergeGame === null) return pending
 

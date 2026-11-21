@@ -1,6 +1,6 @@
 namespace FortuneForge.Games.GoldFoundry;
 
-/// <summary>Pure crucible progression. Persistence and wallet settlement remain host responsibilities.</summary>
+/// <summary>Crucible progression shared by the paid Gold Foundry backend and the nonfinancial demo.</summary>
 public static class GoldFoundryCrucibleRules
 {
     public const string RuleVersion = "gold-foundry-crucible-v2";

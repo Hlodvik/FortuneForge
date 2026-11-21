@@ -1,0 +1,327 @@
+using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.Abstractions.Wallet;
+using FortuneForge.Games.CandyCarnival.Server;
+using FortuneForge.Games.Slots;
+using Google.Api.Gax;
+using Google.Cloud.Firestore;
+using Xunit;
+
+namespace FortuneForge.Games.CandyCarnival.Tests;
+
+public sealed class CandyCarnivalRoundStoreTests
+{
+    private const string Account = "candy-carnival-native-player";
+    private const string GameId = CandyCarnivalEngine.GameId;
+
+    [CandyCarnivalStoreEmulatorFact]
+    public async Task PaidScatterResumesExactlyWithDormantEnergyAndSeals()
+    {
+        var database = Connect();
+        var wallet = new Wallet { LoseNextReply = true };
+        await Guard(database).CreateAsync(new Dictionary<string, object>
+        {
+            ["sealCounts"] = new Dictionary<string, long> { ["rows"] = 12 },
+            ["sealWagerCents"] = new Dictionary<string, long> { ["rows"] = 12 * 10 * 25 },
+            ["consecutiveFiveMisses"] = 5L
+        });
+        await SeedBalance(database, "energy", 100);
+        var operation = new CandyCarnivalRoundRequest("candy-carnival-paid-collector-001", 10, false);
+        var service = Service(database, wallet, ScatterDraws());
+        using var signed = GameSecurityContext.Push(new("candy-carnival-request-1", Account, "private-candy-carnival-session",
+            "203.0.113.19", DateTime.UtcNow, "POST", CandyCarnivalPaidRouteContract.SpinPath, CandyCarnivalPaidRouteContract.AuditGameId,
+            null, operation.OperationId, null, null, "sanitized", "direct"));
+
+        await Assert.ThrowsAsync<GameWalletUnavailableException>(() => service.SpinAsync(Account, operation, true, default));
+        var pending = await service.ReadStateAsync(Account, default);
+        Assert.Equal(operation, pending.PendingOperation);
+        Assert.Equal(100, pending.EnergyBalance);
+        Assert.Empty(pending.SealCollections);
+        Assert.Empty((await database.Collection("slotSpinResults").GetSnapshotAsync()).Documents);
+
+        var restored = Service(database, wallet, new NoDraws());
+        var conflict = await Assert.ThrowsAsync<CandyCarnivalRoundConflictException>(() => restored.SpinAsync(Account,
+            operation with { OperationId = "candy-carnival-unrelated-cash" }, true, default));
+        Assert.Equal(operation, conflict.PendingRequest);
+        await Assert.ThrowsAsync<CandyCarnivalRoundConflictException>(() => restored.SpinAsync(Account,
+            operation with { WagerPoints = 12 }, true, default));
+
+        var result = await restored.SpinAsync(Account, operation, false, default);
+        var round = Assert.IsType<CandyCarnivalPreparedRound>(result.Round);
+        Assert.Equal(23, round.Outcome.Audit.EffectiveGame.Paylines.Count);
+        Assert.Equal(1.179m, round.Outcome.Audit.EffectiveGame.Math.PayoutMultiplier);
+        Assert.Equal(100, round.Outcome.Audit.EnergyBalanceBefore);
+        Assert.Equal(5, round.Outcome.Audit.PityMissesBefore);
+        Assert.Equal(0, round.Outcome.CollectorPoints);
+        Assert.DoesNotContain(round.Outcome.Reels.SelectMany(reel => reel), symbol => symbol.StartsWith("RAND_", StringComparison.Ordinal));
+        Assert.DoesNotContain(round.Outcome.Payout.Paylines, line => line.PaylineId == 901);
+        Assert.Equal(5, round.Outcome.FreeSpinsAwarded);
+        Assert.Empty(round.Outcome.CollectionsAwarded);
+        Assert.Equal(0, result.Features!.EnergyBalance);
+        Assert.Empty(result.Features.SealCollections);
+        Assert.Equal(12, round.Progress.After.SealCounts["rows"]);
+        Assert.Equal(120, round.Progress.After.SealWagerPoints["rows"]);
+        Assert.Equal(5, result.Features.FreeSpinsRemaining);
+        Assert.Equal("rand", result.Features.FreeSpinFeatureMode);
+        Assert.Equal(10, result.Features.FreeSpinWagerPoints);
+        Assert.Equal(250, result.ChargedWagerCents);
+        Assert.Equal(round.Outcome.Payout.TotalPoints * 25, wallet.Last!.PayoutCents);
+        Assert.Equal(round.Outcome.SpinId.ToString("N"), wallet.Last.OperationId);
+        Assert.Equal(1, wallet.Approvals);
+        Assert.Equal(2, wallet.Calls);
+        Assert.Equal(result.Wallet, (await restored.SpinAsync(Account, operation, false, default)).Wallet);
+        Assert.Equal(2, wallet.Calls);
+        Assert.Single((await database.Collection("slotSpinResults").GetSnapshotAsync()).Documents);
+        Assert.Single((await database.Collection(RoundAuditDocuments.Evidence).GetSnapshotAsync()).Documents);
+        var raw = Assert.Single((await database.Collection(CandyCarnivalRoundStore.RawCollectionName).GetSnapshotAsync()).Documents);
+        Assert.DoesNotContain("private-candy-carnival-session", raw.GetValue<string>("preparedJson"), StringComparison.Ordinal);
+        Assert.Equal(GameId, (await Guard(database).GetSnapshotAsync()).GetValue<string>(CandyCarnivalRoundStateCodec.OwnerField));
+    }
+
+    [CandyCarnivalStoreEmulatorFact]
+    public async Task AFreeRetriggerKeepsTheOddSavedRandWagerAndSpendsLegacyBeforeNative()
+    {
+        var database = Connect();
+        var wallet = new Wallet { LegacyRemaining = 2 };
+        var time = new RoundClock();
+        await Guard(database).CreateAsync(new Dictionary<string, object>
+        {
+            ["freeSpinWagerCents"] = 75L, ["freeSpinFeatureMode"] = "rand"
+        });
+        var service = Service(database, wallet, ScatterDraws(rand: true), time);
+        await Assert.ThrowsAsync<CandyCarnivalFreeSpinsRequiredException>(() => service.SpinAsync(Account,
+            new("candy-carnival-cash-blocked", 6, false), true, default));
+        await Assert.ThrowsAsync<CandyCarnivalFreeWagerLockedException>(() => service.SpinAsync(Account,
+            new("candy-carnival-wrong-carry", 4, true), true, default));
+        Assert.Equal(0, wallet.Calls);
+
+        var first = await service.SpinAsync(Account, new("candy-carnival-legacy-retrigger", 3, true), true, default);
+        Assert.Equal(5, first.Round!.Outcome.FreeSpinsAwarded);
+        Assert.Equal(6, first.Features!.FreeSpinsRemaining);
+        Assert.Equal(3, first.Features.FreeSpinWagerPoints);
+        Assert.Equal("rand", first.Features.FreeSpinFeatureMode);
+        Assert.Equal(1, wallet.LegacyRemaining);
+        Assert.True(wallet.Last!.SpendLegacyFreeGame);
+        Assert.Equal(0, first.ChargedWagerCents);
+
+        time.Advance();
+        var lastLegacy = await Service(database, wallet, new HighDraws(), time).SpinAsync(Account,
+            new("candy-carnival-last-legacy", 3, true), true, default);
+        Assert.True(wallet.Last!.SpendLegacyFreeGame);
+        Assert.Equal(0, wallet.LegacyRemaining);
+        Assert.Equal(5, lastLegacy.Features!.FreeSpinsRemaining);
+        Assert.Equal("rand", lastLegacy.Round!.Outcome.Audit.FeatureMode);
+
+        time.Advance();
+        var native = await Service(database, wallet, new HighDraws(), time).SpinAsync(Account,
+            new("candy-carnival-first-native", 3, true), true, default);
+        Assert.False(wallet.Last!.SpendLegacyFreeGame);
+        Assert.Equal(0, wallet.Last.ExpectedLegacyFreeGamesRemaining);
+        Assert.Equal(4, native.Features!.FreeSpinsRemaining);
+        Assert.Null(native.Wallet.WagerTransactionId);
+    }
+
+    [CandyCarnivalStoreEmulatorFact]
+    public async Task BoostConsumesTheExactGamePointsAndLeavesTheOldScopedBalanceArchived()
+    {
+        var database = Connect();
+        var wallet = new Wallet();
+        var service = Service(database, wallet, new HighDraws());
+        await SeedBalance(database, "specialPoints", 9);
+        var result = await service.SpinAsync(Account, new("candy-carnival-boosted-paid", 6, false, true), true, default);
+        var outcome = result.Round!.Outcome;
+        Assert.True(outcome.SpecialBoostApplied);
+        Assert.EndsWith("-power-boost", outcome.ReelSetId, StringComparison.Ordinal);
+        Assert.Equal(1 + outcome.SpecialPointsAwarded, result.Features!.SpecialPointsBalance);
+        Assert.Equal(9, (await LegacyBalance(database, "specialPoints").GetSnapshotAsync()).GetValue<long>("available"));
+        Assert.Equal(1, wallet.Approvals);
+        Assert.Equal(150, result.ChargedWagerCents);
+    }
+
+    [CandyCarnivalStoreEmulatorFact]
+    public async Task LegacyCountChangeDeclinesTheExactCashRoundAndOnlyEvenWagersCanPinAnUnlockedBank()
+    {
+        var database = Connect();
+        var wallet = new Wallet { ChangeBeforeSettle = 2 };
+        var time = new RoundClock();
+        var operation = new CandyCarnivalRoundRequest("candy-carnival-stale-cash-001", 6, false);
+        var service = Service(database, wallet, ScatterDraws(), time);
+        var declined = await service.SpinAsync(Account, operation, true, default);
+        Assert.True(declined.Wallet.LegacyFreeGamesCountMismatch);
+        Assert.Null(declined.Round);
+        Assert.Null(declined.Features);
+        Assert.Empty((await database.Collection("slotSpinResults").GetSnapshotAsync()).Documents);
+        Assert.False((await Guard(database).GetSnapshotAsync()).ContainsField(CandyCarnivalRoundStateCodec.OwnerField));
+        var refreshed = await service.ReadStateAsync(Account, default);
+        Assert.Equal(2, refreshed.FreeSpinsRemaining);
+        Assert.Null(refreshed.FreeSpinWagerPoints);
+        Assert.Equal(declined.Wallet, (await Service(database, wallet, new NoDraws()).SpinAsync(Account, operation, false, default)).Wallet);
+        Assert.Equal(1, wallet.Calls);
+
+        time.Advance();
+        var unpinned = Service(database, wallet, new HighDraws(), time);
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => unpinned.SpinAsync(Account,
+            new("candy-carnival-unpinned-odd", 5, true), true, default));
+        var pinned = await unpinned.SpinAsync(Account, new("candy-carnival-pin-six-001", 6, true), true, default);
+        Assert.Equal(6, pinned.Features!.FreeSpinWagerPoints);
+        Assert.Equal(1, pinned.Features.FreeSpinsRemaining);
+        Assert.True(wallet.Last!.SpendLegacyFreeGame);
+    }
+
+    [CandyCarnivalStoreEmulatorFact]
+    public async Task LegacyAdmissionAlreadyInFlightCannotBeClaimedByNewWorker()
+    {
+        var database = Connect();
+        var wallet = new Wallet();
+        var oldAdmission = Guid.NewGuid().ToString("N");
+        await Guard(database).CreateAsync(new Dictionary<string, object>
+        {
+            [SlotSpinGuard.ActiveAdmissionField] = oldAdmission
+        });
+        await Assert.ThrowsAsync<FortuneForge.Games.Abstractions.LegacySlotAdmissionPendingException>(() =>
+            Service(database, wallet, new NoDraws()).SpinAsync(Account,
+                new("candy-carnival-old-host-admission", 6, false), true, default));
+        var guard = await Guard(database).GetSnapshotAsync();
+        Assert.Equal(oldAdmission, guard.GetValue<string>(SlotSpinGuard.ActiveAdmissionField));
+        Assert.False(guard.ContainsField(CandyCarnivalRoundStateCodec.OwnerField));
+        Assert.Equal(0, wallet.Calls);
+        Assert.Empty((await database.Collection(CandyCarnivalRoundStore.RawCollectionName).GetSnapshotAsync()).Documents);
+    }
+
+    [CandyCarnivalStoreEmulatorFact]
+    public async Task PausedLegacyAdmissionRemainsDiscoverableForHostReconciliation()
+    {
+        var database = Connect();
+        var wallet = new Wallet();
+        var oldAdmission = Guid.NewGuid().ToString("N");
+        await Guard(database).CreateAsync(new Dictionary<string, object>
+        {
+            [SlotSpinGuard.ActiveAdmissionField] = oldAdmission
+        });
+        await Assert.ThrowsAsync<FortuneForge.Games.Abstractions.LegacySlotAdmissionPendingException>(() =>
+            Service(database, wallet, new NoDraws()).SpinAsync(Account,
+                new("candy-carnival-old-host-admission", 6, false), false, default));
+        var guard = await Guard(database).GetSnapshotAsync();
+        Assert.Equal(oldAdmission, guard.GetValue<string>(SlotSpinGuard.ActiveAdmissionField));
+        Assert.False(guard.ContainsField(CandyCarnivalRoundStateCodec.OwnerField));
+        Assert.Equal(0, wallet.Calls);
+        Assert.Empty((await database.Collection(CandyCarnivalRoundStore.RawCollectionName).GetSnapshotAsync()).Documents);
+    }
+
+    private static FirestoreDb Connect() => new FirestoreDbBuilder
+    {
+        ProjectId = $"candy-carnival-native-{Guid.NewGuid():N}"[..29], EmulatorDetection = EmulatorDetection.EmulatorOnly
+    }.Build();
+
+    private static CandyCarnivalRoundService Service(FirestoreDb database, Wallet wallet, IGameRandomSource random, TimeProvider? time = null) =>
+        new(new CandyCarnivalRoundStore(database, random, time ?? TimeProvider.System), wallet, wallet);
+
+    private static DocumentReference Guard(FirestoreDb database) =>
+        database.Collection(SlotSpinGuard.Collection).Document(SlotSpinGuard.DocumentId(Account, GameId));
+
+    private static DocumentReference LegacyBalance(FirestoreDb database, string name) =>
+        database.Collection("userBalances").Document($"{Account}_{name}:{GameId}");
+
+    private static Task SeedBalance(FirestoreDb database, string name, long value) => LegacyBalance(database, name).CreateAsync(
+        new Dictionary<string, object> { ["userId"] = Account, ["currencyId"] = $"{name}:{GameId}", ["available"] = value });
+
+    private static Draws ScatterDraws(bool rand = false)
+    {
+        var strips = CandyCarnivalEngine.CreateReelSet().Reels.Select(strip => strip.Where(symbol => symbol != "BOLT").ToList()).ToArray();
+        var rows = CandyCarnivalEngine.CreateGame().Layout.VisibleRows;
+        IEnumerable<string> Window(IReadOnlyList<string> strip, int stop) =>
+            Enumerable.Range(0, rows).Select(offset => strip[(stop + offset) % strip.Count]);
+        var stops = strips.Select((strip, reel) => rand && reel == 0 || !rand && reel == 4
+            ? Enumerable.Range(0, strip.Count).First(stop => !Window(strip, stop).Contains("FREE"))
+            : strip.IndexOf("FREE")).ToArray();
+        var scatters = stops.Select((stop, reel) => Window(strips[reel], stop).Count(symbol => symbol == "FREE")).Sum();
+        return new Draws([.. stops, .. Enumerable.Repeat(0, scatters), 0, 0]);
+    }
+
+    private sealed class Draws(int[] indexes) : IGameRandomSource
+    {
+        private int cursor;
+        public int Next(int maximumExclusive)
+        {
+            Assert.InRange(cursor, 0, indexes.Length - 1);
+            var draw = indexes[cursor++];
+            Assert.InRange(draw, 0, maximumExclusive - 1);
+            return draw;
+        }
+    }
+
+    private sealed class HighDraws : IGameRandomSource
+    {
+        public int Next(int maximumExclusive) => maximumExclusive - 1;
+    }
+
+    private sealed class NoDraws : IGameRandomSource
+    {
+        public int Next(int maximumExclusive) => throw new InvalidOperationException("A restored spin cannot draw new reels.");
+    }
+
+    private sealed class RoundClock : TimeProvider
+    {
+        private DateTimeOffset now = DateTimeOffset.UtcNow.AddSeconds(-10);
+        public override DateTimeOffset GetUtcNow() => now;
+        public void Advance() => now = now.AddSeconds(1);
+    }
+
+    private sealed class Wallet : IGameWalletClient, IGameWalletAccountReader
+    {
+        private readonly Dictionary<string, (GameWalletSettlementRequest Terms, GameWalletSettlementReceipt Receipt)> receipts = [];
+        private long balance = 100_000;
+        public long LegacyRemaining { get; set; }
+        public int Approvals { get; private set; }
+        public int Calls { get; private set; }
+        public bool LoseNextReply { get; set; }
+        public long? ChangeBeforeSettle { get; init; }
+        public GameWalletSettlementRequest? Last { get; private set; }
+
+        public Task<GameWalletAccountState> GetStateAsync(string accountId, CancellationToken cancellationToken) =>
+            Task.FromResult(new GameWalletAccountState(LegacyRemaining, balance));
+
+        public Task<GameWalletSettlementReceipt> SettleAsync(string accountId, GameWalletSettlementRequest request,
+            CancellationToken cancellationToken)
+        {
+            Last = request;
+            Calls++;
+            if (receipts.TryGetValue(request.OperationId, out var exact))
+            {
+                Assert.Equal(exact.Terms, request);
+                return Task.FromResult(exact.Receipt with { WasAlreadySettled = true });
+            }
+
+            if (ChangeBeforeSettle is { } newCount) LegacyRemaining = newCount;
+            var mismatch = request.ExpectedLegacyFreeGamesRemaining != LegacyRemaining;
+            var startingBalance = balance;
+            if (!mismatch)
+            {
+                balance = startingBalance - request.WagerCents + request.PayoutCents;
+                if (request.SpendLegacyFreeGame) LegacyRemaining--;
+                Approvals++;
+            }
+            var receipt = new GameWalletSettlementReceipt(GameWalletSettlementIdentity.CreateId(GameId, accountId, request.OperationId),
+                !mismatch && request.WagerCents > 0 ? $"{request.OperationId}-wager" : null,
+                !mismatch && request.PayoutCents > 0 ? $"{request.OperationId}-payout" : null,
+                startingBalance, mismatch ? startingBalance : startingBalance - request.WagerCents, balance, DateTimeOffset.UtcNow,
+                false, false, false, !mismatch && request.SpendLegacyFreeGame ? $"{request.OperationId}-free-game-use" : null,
+                LegacyRemaining, mismatch);
+            receipts.Add(request.OperationId, (request, receipt));
+            if (LoseNextReply)
+            {
+                LoseNextReply = false;
+                throw new GameWalletUnavailableException();
+            }
+            return Task.FromResult(receipt);
+        }
+    }
+}
+
+public sealed class CandyCarnivalStoreEmulatorFactAttribute : FactAttribute
+{
+    public CandyCarnivalStoreEmulatorFactAttribute()
+    {
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FIRESTORE_EMULATOR_HOST")))
+            Skip = "A Firestore emulator is required for Candy Carnival paid round persistence checks.";
+    }
+}

@@ -1,0 +1,624 @@
+[
+  {
+    "seed": 1,
+    "policy": "none",
+    "rulesVersion": 1,
+    "initialRandom": 2005365029,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 260.01133103389293,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1160.011331033893,
+        "width": 272.8913542954251,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1432.902685329318,
+        "width": 286.50506486184895,
+        "y": 460
+      }
+    ],
+    "totalTicks": 129,
+    "jumpTicks": [],
+    "rightClickTicks": [],
+    "score": 164,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 1,
+    "policy": "jumps",
+    "rulesVersion": 1,
+    "initialRandom": 2005365029,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 260.01133103389293,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1160.011331033893,
+        "width": 272.8913542954251,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1432.902685329318,
+        "width": 286.50506486184895,
+        "y": 460
+      }
+    ],
+    "totalTicks": 134,
+    "jumpTicks": [
+      0,
+      37,
+      74,
+      111
+    ],
+    "rightClickTicks": [],
+    "score": 167,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 1,
+    "policy": "mixed",
+    "rulesVersion": 1,
+    "initialRandom": 2005365029,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 260.01133103389293,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1160.011331033893,
+        "width": 272.8913542954251,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1432.902685329318,
+        "width": 286.50506486184895,
+        "y": 460
+      }
+    ],
+    "totalTicks": 134,
+    "jumpTicks": [
+      0,
+      37,
+      74,
+      111
+    ],
+    "rightClickTicks": [
+      7,
+      58,
+      109
+    ],
+    "score": 168,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 17,
+    "policy": "none",
+    "rulesVersion": 1,
+    "initialRandom": 1481184789,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 260.1926261931658,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1160.1926261931658,
+        "width": 260.92285780701786,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1421.1154840001836,
+        "width": 415.8558982424438,
+        "y": 460
+      }
+    ],
+    "totalTicks": 124,
+    "jumpTicks": [],
+    "rightClickTicks": [],
+    "score": 162,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 17,
+    "policy": "jumps",
+    "rulesVersion": 1,
+    "initialRandom": 1481184789,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 260.1926261931658,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1160.1926261931658,
+        "width": 260.92285780701786,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1421.1154840001836,
+        "width": 415.8558982424438,
+        "y": 460
+      }
+    ],
+    "totalTicks": 136,
+    "jumpTicks": [
+      0,
+      37,
+      74,
+      111
+    ],
+    "rightClickTicks": [],
+    "score": 168,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 17,
+    "policy": "mixed",
+    "rulesVersion": 1,
+    "initialRandom": 1481184789,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 260.1926261931658,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1160.1926261931658,
+        "width": 260.92285780701786,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1421.1154840001836,
+        "width": 415.8558982424438,
+        "y": 460
+      }
+    ],
+    "totalTicks": 136,
+    "jumpTicks": [
+      0,
+      37,
+      74,
+      111
+    ],
+    "rightClickTicks": [
+      7,
+      58,
+      109
+    ],
+    "score": 169,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 42,
+    "policy": "none",
+    "rulesVersion": 1,
+    "initialRandom": 3120216979,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 260.475900657475,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1160.475900657475,
+        "width": 412.88784235715866,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1573.3637430146337,
+        "width": 415.62959741801023,
+        "y": 460
+      }
+    ],
+    "totalTicks": 103,
+    "jumpTicks": [],
+    "rightClickTicks": [],
+    "score": 51,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 42,
+    "policy": "jumps",
+    "rulesVersion": 1,
+    "initialRandom": 3120216979,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 260.475900657475,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1160.475900657475,
+        "width": 412.88784235715866,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1573.3637430146337,
+        "width": 415.62959741801023,
+        "y": 460
+      }
+    ],
+    "totalTicks": 103,
+    "jumpTicks": [
+      0,
+      37,
+      74
+    ],
+    "rightClickTicks": [],
+    "score": 51,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 42,
+    "policy": "mixed",
+    "rulesVersion": 1,
+    "initialRandom": 3120216979,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 260.475900657475,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1160.475900657475,
+        "width": 412.88784235715866,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1573.3637430146337,
+        "width": 415.62959741801023,
+        "y": 460
+      }
+    ],
+    "totalTicks": 103,
+    "jumpTicks": [
+      0,
+      37,
+      74
+    ],
+    "rightClickTicks": [
+      7,
+      58
+    ],
+    "score": 51,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 99,
+    "policy": "none",
+    "rulesVersion": 1,
+    "initialRandom": 2198336525,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 261.05585447046906,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1161.055854470469,
+        "width": 344.99277962371707,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1506.0486340941861,
+        "width": 360.29521082993597,
+        "y": 460
+      }
+    ],
+    "totalTicks": 119,
+    "jumpTicks": [],
+    "rightClickTicks": [],
+    "score": 159,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 99,
+    "policy": "jumps",
+    "rulesVersion": 1,
+    "initialRandom": 2198336525,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 261.05585447046906,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1161.055854470469,
+        "width": 344.99277962371707,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1506.0486340941861,
+        "width": 360.29521082993597,
+        "y": 460
+      }
+    ],
+    "totalTicks": 137,
+    "jumpTicks": [
+      0,
+      37,
+      74,
+      111
+    ],
+    "rightClickTicks": [],
+    "score": 168,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 99,
+    "policy": "mixed",
+    "rulesVersion": 1,
+    "initialRandom": 2198336525,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 261.05585447046906,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1161.055854470469,
+        "width": 344.99277962371707,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1506.0486340941861,
+        "width": 360.29521082993597,
+        "y": 460
+      }
+    ],
+    "totalTicks": 137,
+    "jumpTicks": [
+      0,
+      37,
+      74,
+      111
+    ],
+    "rightClickTicks": [
+      7,
+      58,
+      109
+    ],
+    "score": 169,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 123456789,
+    "policy": "none",
+    "rulesVersion": 1,
+    "initialRandom": 4242376622,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 373.78298946190625,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1273.7829894619063,
+        "width": 420.09855560958385,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1693.88154507149,
+        "width": 392.0605637039989,
+        "y": 460
+      }
+    ],
+    "totalTicks": 130,
+    "jumpTicks": [],
+    "rightClickTicks": [],
+    "score": 165,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 123456789,
+    "policy": "jumps",
+    "rulesVersion": 1,
+    "initialRandom": 4242376622,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 373.78298946190625,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1273.7829894619063,
+        "width": 420.09855560958385,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1693.88154507149,
+        "width": 392.0605637039989,
+        "y": 460
+      }
+    ],
+    "totalTicks": 137,
+    "jumpTicks": [
+      0,
+      37,
+      74,
+      111
+    ],
+    "rightClickTicks": [],
+    "score": 168,
+    "phase": "obstacle-collision"
+  },
+  {
+    "seed": 123456789,
+    "policy": "mixed",
+    "rulesVersion": 1,
+    "initialRandom": 4242376622,
+    "initialPlatforms": [
+      {
+        "id": 1,
+        "x": 0,
+        "width": 900,
+        "y": 460
+      },
+      {
+        "id": 2,
+        "x": 900,
+        "width": 373.78298946190625,
+        "y": 460
+      },
+      {
+        "id": 3,
+        "x": 1273.7829894619063,
+        "width": 420.09855560958385,
+        "y": 460
+      },
+      {
+        "id": 4,
+        "x": 1693.88154507149,
+        "width": 392.0605637039989,
+        "y": 460
+      }
+    ],
+    "totalTicks": 137,
+    "jumpTicks": [
+      0,
+      37,
+      74,
+      111
+    ],
+    "rightClickTicks": [
+      7,
+      58,
+      109
+    ],
+    "score": 169,
+    "phase": "obstacle-collision"
+  }
+]

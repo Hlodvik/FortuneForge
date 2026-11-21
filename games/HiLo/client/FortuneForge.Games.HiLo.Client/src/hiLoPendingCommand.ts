@@ -77,6 +77,7 @@ export function executeHiLoCommand(gateway: HiLoGateway, command: HiLoPendingCom
 
 /** Unknown transport outcomes and invalid success bodies must retain the exact operation. */
 export function isHiLoRecoverableError(error: unknown): boolean {
+  if (error instanceof HiLoGatewayError && ([401, 408, 429].includes(error.status) || error.code === 'game-session-changed')) return true
   // The server replays an already-accepted key before checking maintenance.
   // This specific rejection therefore proves that no mutation was committed.
   if (error instanceof HiLoGatewayError && error.code === 'hi_lo_disabled' && error.status === 503) return false

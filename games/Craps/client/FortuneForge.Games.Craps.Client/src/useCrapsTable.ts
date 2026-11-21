@@ -252,7 +252,8 @@ export function useCrapsTable(gateway: CrapsGateway, playerId?: string, isYourTu
 }
 function message(reason: unknown) { return reason instanceof CrapsGatewayError ? reason.message : 'Craps is unavailable. Check again.' }
 function definiteRejection(reason: unknown): reason is CrapsGatewayError {
-  return reason instanceof CrapsGatewayError && [400, 401, 403, 404, 409, 422, 429].includes(reason.status)
+  return reason instanceof CrapsGatewayError && [400, 403, 404, 409, 422].includes(reason.status)
+    && !(reason.status === 403 && reason.code === 'game-session-changed')
 }
 function pendingKey(scope: string) { return 'fortuneforge:craps:pending:' + scope }
 function validWallet(value: unknown): value is number { return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 }

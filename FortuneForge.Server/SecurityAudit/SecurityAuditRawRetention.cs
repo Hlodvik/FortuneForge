@@ -1,4 +1,5 @@
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.ArcaneArchives.Server;
 using FortuneForge.Server.RoundAudit;
 using Google.Cloud.Firestore;
 using Microsoft.Extensions.Options;
@@ -12,6 +13,7 @@ internal sealed class SecurityAuditRawRetention(FirestoreDb database, IOptions<G
     TimeProvider clock)
 {
     private const string RequestQueue = "gameSecurityRequestRetentionQueue";
+    private delegate bool SettledInput(DocumentSnapshot record, string spinId, out string? requestId);
 
     internal async Task<int> SweepAsync(CancellationToken ct)
     {
@@ -143,28 +145,30 @@ internal sealed class SecurityAuditRawRetention(FirestoreDb database, IOptions<G
         if (game.StartsWith("slot-", StringComparison.Ordinal) || game == "slots" ||
             FortuneForge.Server.Activity.AcceptedGameActivityReader.SlotIds.Values.Contains(game))
         {
-            var admissions = await database.Collection("slotSpinAdmissions").WhereEqualTo("spinId", instance)
-                .Limit(5).GetSnapshotAsync(ct);
-            foreach (var admission in admissions.Documents)
-                await database.RunTransactionAsync(async tx =>
-                {
-                    var reads = await tx.GetAllSnapshotsAsync([summaryRef, holdRef, admission.Reference], ct);
-                    if (!Eligible(reads[0]) || Held(reads[1]) || !reads[2].Exists ||
-                        FirestoreGameRoundAuditStore.Text(reads[2], "status") != "settled") return false;
-                    var requestId = FirestoreGameRoundAuditStore.Text(reads[2], "requestId");
-                    if (requestId.Length > 0) StageRequest(tx, summaryRef.Id, game, instance, requestId);
-                    tx.Delete(admission.Reference);
-                    return true;
-                }, cancellationToken: ct);
-            if (admissions.Count > 0) return;
+            if (await PurgeSlotInputsAsync("slotSpinAdmissions", summaryRef, holdRef, game, instance, ReadLegacyInput, ct))
+                return;
+            if (game == ArcaneFeatureEndpoints.AuditGameId && await PurgeSlotInputsAsync(ArcaneRoundStore.RawCollectionName,
+                summaryRef, holdRef, game, instance, ArcaneRoundStore.TryGetSettledRequestId, ct))
+                return;
         }
+
+        var manifest = database.Collection(GameSecurityEventDocuments.ManifestCollectionName)
+            .Document(GameSecurityEventDocuments.ManifestId(game, instance));
+        var remainingPages = manifest.Collection(GameSecurityEventDocuments.ManifestPageCollectionName)
+            .OrderBy(FieldPath.DocumentId).Limit(25);
 
         await database.RunTransactionAsync(async tx =>
         {
             var reads = await tx.GetAllSnapshotsAsync([summaryRef, holdRef], ct);
             if (!Eligible(reads[0]) || Held(reads[1])) return false;
-            tx.Delete(database.Collection(GameSecurityEventDocuments.ManifestCollectionName)
-                .Document(GameSecurityEventDocuments.ManifestId(game, instance)));
+            var pages = await tx.GetSnapshotAsync(remainingPages, ct);
+            if (pages.Count > 0)
+            {
+                foreach (var manifestPage in pages.Documents)
+                    tx.Delete(manifestPage.Reference);
+                return true;
+            }
+            tx.Delete(manifest);
             tx.Update(summaryRef, new Dictionary<string, object>
             {
                 ["rawEvidencePurgePending"] = false,
@@ -172,6 +176,30 @@ internal sealed class SecurityAuditRawRetention(FirestoreDb database, IOptions<G
             });
             return true;
         }, cancellationToken: ct);
+    }
+
+    private async Task<bool> PurgeSlotInputsAsync(string collection, DocumentReference summaryRef, DocumentReference holdRef,
+        string game, string instance, SettledInput read, CancellationToken ct)
+    {
+        var inputs = await database.Collection(collection).WhereEqualTo("spinId", instance).Limit(5).GetSnapshotAsync(ct);
+        foreach (var input in inputs.Documents)
+            await database.RunTransactionAsync(async tx =>
+            {
+                var snapshots = await tx.GetAllSnapshotsAsync([summaryRef, holdRef, input.Reference], ct);
+                if (!Eligible(snapshots[0]) || Held(snapshots[1]) || !snapshots[2].Exists ||
+                    !read(snapshots[2], instance, out var requestId)) return false;
+                if (!string.IsNullOrEmpty(requestId)) StageRequest(tx, summaryRef.Id, game, instance, requestId);
+                tx.Delete(input.Reference);
+                return true;
+            }, cancellationToken: ct);
+        return inputs.Count > 0;
+    }
+
+    private static bool ReadLegacyInput(DocumentSnapshot record, string spinId, out string? requestId)
+    {
+        requestId = FirestoreGameRoundAuditStore.Text(record, "requestId");
+        return FirestoreGameRoundAuditStore.Text(record, "status") == "settled" &&
+            FirestoreGameRoundAuditStore.Text(record, "spinId") == spinId;
     }
 
     private void StageRequest(Transaction tx, string auditId, string gameId, string instanceId, string requestId)

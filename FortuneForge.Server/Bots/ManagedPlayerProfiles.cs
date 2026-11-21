@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Shared = FortuneForge.Games.Abstractions.ManagedPlayers;
 
 namespace FortuneForge.Server.Bots;
 
@@ -35,25 +36,14 @@ internal static class ManagedPlayerGames
 
 internal static class ManagedPlayerTableStayPolicy
 {
-    public const int MinimumRounds = 4;
-    public const int MaximumRounds = 20;
+    public const int MinimumRounds = Shared.ManagedPlayerTableStayPolicy.MinimumRounds;
+    public const int MaximumRounds = Shared.ManagedPlayerTableStayPolicy.MaximumRounds;
 
-    public static int DepartureRound(
-        string gameId,
-        string tableId,
-        string profileId,
-        int joinedRound)
-    {
-        if (joinedRound < 0) throw new ArgumentOutOfRangeException(nameof(joinedRound));
-        var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
-            $"managed-table-stay\n{gameId}\n{tableId}\n{profileId}\n{joinedRound}"));
-        var rounds = MinimumRounds + BitConverter.ToUInt16(hash, 0) %
-            (MaximumRounds - MinimumRounds + 1);
-        return checked(joinedRound + rounds);
-    }
+    public static int DepartureRound(string gameId, string tableId, string profileId, int joinedRound) =>
+        Shared.ManagedPlayerTableStayPolicy.DepartureRound(gameId, tableId, profileId, joinedRound);
 
     public static bool ShouldLeave(int currentRound, int departureRound) =>
-        currentRound >= departureRound;
+        Shared.ManagedPlayerTableStayPolicy.ShouldLeave(currentRound, departureRound);
 }
 
 internal interface IManagedPlayerProfileGenerator
@@ -109,6 +99,9 @@ internal interface IManagedPlayerAssignmentStore
         string assignmentId,
         DateTime nowUtc,
         CancellationToken cancellationToken);
+
+    Task<bool> ReleaseForGameAsync(string profileId, string gameId, string assignmentId, DateTime nowUtc,
+        CancellationToken cancellationToken) => Task.FromException<bool>(new NotSupportedException("Game-scoped release is required."));
 }
 
 internal static class ManagedPlayerAvailabilityPolicy
@@ -186,6 +179,9 @@ internal interface IManagedPlayerQueuer
         IReadOnlyCollection<string> profileIds,
         DateTime nowUtc,
         CancellationToken cancellationToken);
+
+    Task ReleaseForGameAsync(string gameId, string assignmentId, IReadOnlyCollection<string> profileIds, DateTime nowUtc,
+        CancellationToken cancellationToken) => Task.FromException(new NotSupportedException("Game-scoped release is required."));
 }
 
 internal static class ManagedPlayerIdentityFactory

@@ -15,10 +15,11 @@ public static class GameWorkerAuthentication
 {
     public const string AssertionHeader = "X-FortuneForge-Worker-Assertion";
     public static IReadOnlyList<string> AssertedHeaderNames { get; } =
-        Array.AsReadOnly(new[] { "Idempotency-Key", "Origin", "X-FortuneForge-Game", "Sec-Fetch-Site" });
+        Array.AsReadOnly(new[] { "Idempotency-Key", "If-Match", "If-None-Match", "Origin", "X-FortuneForge-Game", "Sec-Fetch-Site" });
     private const int AssertionLifetimeSeconds = 60;
     private const int MaximumBodyBytes = 1024 * 1024;
-    private static readonly object AccountKey = new();
+    private static readonly object VerifiedAssertionKey = new();
+    private static readonly object LocalCommandDigestKey = new();
 
     public static byte[] ReadSigningKey(string encodedKey)
     {
@@ -64,7 +65,7 @@ public static class GameWorkerAuthentication
                     ? ReadAssertion(assertions.ToString(), key, gameId, request, DateTimeOffset.UtcNow) : null;
                 if (claims is not null && await BodyMatchesAsync(request, claims.BodySha256, context.RequestAborted))
                 {
-                    context.Items[AccountKey] = claims.PlayerId;
+                    context.Items[VerifiedAssertionKey] = claims;
                     using var scope = claims.Observation is { } observation ? GameSecurityContext.Push(observation) : null;
                     await next();
                     return;
@@ -82,7 +83,49 @@ public static class GameWorkerAuthentication
         });
     }
 
-    public static string? GetAccountId(HttpContext context) => context.Items[AccountKey] as string;
+    public static string? GetAccountId(HttpContext context) => GetVerifiedAssertion(context)?.PlayerId;
+
+    public static string? GetVerifiedBodySha256(HttpContext context) => GetVerifiedAssertion(context)?.BodySha256;
+
+    public static string? GetCommandBodySha256(HttpContext context) =>
+        GetVerifiedBodySha256(context) ?? context.Items[LocalCommandDigestKey] as string;
+
+    public static void UseLocalGameWorkerCommandDigests(this WebApplication app, Func<HttpContext, bool> isLocalRequest)
+    {
+        ArgumentNullException.ThrowIfNull(isLocalRequest);
+        if (app.Configuration["GameWorker:Mode"] == "hosted")
+            throw new InvalidOperationException("Hosted workers require signed request digests.");
+
+        app.Use(async (context, next) =>
+        {
+            var request = context.Request;
+            if ((request.Method is "POST" or "PUT" or "PATCH" or "DELETE") && isLocalRequest(context))
+            {
+                var digest = await ReadBodySha256Async(request, MaximumBodyBytes, context.RequestAborted);
+                if (digest is null)
+                {
+                    context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+                    return;
+                }
+                context.Items[LocalCommandDigestKey] = digest;
+            }
+            await next();
+        });
+    }
+
+    internal static async Task<(string AccountId, string BodySha256)?> VerifySignedAccountAsync(HttpRequest request,
+        string assertionHeader, string scope, byte[] key, DateTimeOffset now, int maximumBodyBytes,
+        CancellationToken cancellationToken)
+    {
+        if (!request.Headers.TryGetValue(assertionHeader, out var assertions) || assertions.Count != 1)
+            return null;
+        var claims = ReadAssertion(assertions.ToString(), key, scope, request, now);
+        return claims is not null && await BodyMatchesAsync(request, claims.BodySha256, cancellationToken, maximumBodyBytes)
+            ? (claims.PlayerId, claims.BodySha256) : null;
+    }
+
+    private static WorkerAssertion? GetVerifiedAssertion(HttpContext context) =>
+        context.Items[VerifiedAssertionKey] as WorkerAssertion;
 
     private static bool IsLoopbackHost(string host) =>
         host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
@@ -129,20 +172,24 @@ public static class GameWorkerAuthentication
         return actual == (signed is not null && signed.TryGetValue(name, out var expected) ? expected : null);
     }
 
-    private static async Task<bool> BodyMatchesAsync(HttpRequest request, string expected, CancellationToken cancellationToken)
+    private static async Task<bool> BodyMatchesAsync(HttpRequest request, string expected, CancellationToken cancellationToken,
+        int maximumBodyBytes = MaximumBodyBytes) =>
+        string.Equals(await ReadBodySha256Async(request, maximumBodyBytes, cancellationToken), expected, StringComparison.Ordinal);
+
+    private static async Task<string?> ReadBodySha256Async(HttpRequest request, int maximumBodyBytes, CancellationToken cancellationToken)
     {
-        if (request.ContentLength > MaximumBodyBytes) return false;
-        request.EnableBuffering(bufferThreshold: 32 * 1024, bufferLimit: MaximumBodyBytes);
+        if (request.ContentLength > maximumBodyBytes) return null;
+        request.EnableBuffering(bufferThreshold: Math.Min(32 * 1024, maximumBodyBytes), bufferLimit: maximumBodyBytes);
         try
         {
             var hash = await SHA256.HashDataAsync(request.Body, cancellationToken);
-            request.Body.Position = 0;
-            return string.Equals(Convert.ToHexString(hash), expected, StringComparison.Ordinal);
+            return Convert.ToHexString(hash);
         }
         catch (IOException)
         {
-            return false;
+            return null;
         }
+        finally { request.Body.Position = 0; }
     }
 
     private sealed record WorkerAssertion(string GameId, string PlayerId, string Method, string Target,

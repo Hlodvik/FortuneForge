@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { GridPosition } from '@fortuneforge/slot-client-core'
+import type { PreparedSlotSpin } from '@fortuneforge/slot-client-core/preparedSpin'
 
 export const MIDNIGHT_GAME_ID = 'dragon-hoard-v1'
 export const MIDNIGHT_SYMBOL_SET_ID = 'midnight-vault-symbols-v1'
@@ -59,6 +60,8 @@ export type MidnightState = {
   specialPointsBalance: number
   energyBalance: number
   sealCollections: MidnightCollection[]
+  pendingOperation?: PreparedSlotSpin
+  slotsCreditsBalance?: number | null
 }
 
 export type MidnightMatch = {

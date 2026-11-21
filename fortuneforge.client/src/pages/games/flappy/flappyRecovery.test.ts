@@ -37,6 +37,14 @@ describe('account-scoped Flappy recovery', () => {
     expect(writeFlappyRecovery(userId, flight)).toBeNull(); expect(readFlappyRecovery('pilot-two').recovery).toBeNull()
     expect(sessionStorage.getItem(recoveryKey('pilot-two'))).toBeNull()
   })
+  it('roundtrips frozen paid admission bytes without replacing them with the current window', () => {
+    const value = { kind: 'start' as const, mode: 'weekly' as const, idempotencyKey: 'flappy-original-paid-key', admission: {
+      expectedWindowStartsAtUtc: '2026-11-02T00:00:00Z', expectedWindowEndsAtUtc: '2026-11-09T00:00:00Z' } }
+    writeFlappyRecovery(userId, value)
+    const restored = readFlappyRecovery(userId)
+    expect(restored.error).toBeNull(); expect(restored.recovery).toEqual(value)
+    expect(JSON.stringify(restored.recovery?.kind === 'start' ? restored.recovery.admission : null)).toBe(JSON.stringify(value.admission))
+  })
   it('reads the prior start receipt without creating new intent', () => {
     sessionStorage.setItem(`fortuneforge:flappy:start:${userId}`, JSON.stringify({ idempotencyKey: 'flappy-legacy-start-key' }))
     expect(readFlappyRecovery(userId).recovery).toEqual({ kind: 'start', idempotencyKey: 'flappy-legacy-start-key', mode: 'free' })

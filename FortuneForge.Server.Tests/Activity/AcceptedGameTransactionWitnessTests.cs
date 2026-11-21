@@ -12,8 +12,10 @@ using FortuneForge.Games.Hearts;
 using FortuneForge.Games.HiLo.Server;
 using FortuneForge.Games.HouseHoldem;
 using FortuneForge.Games.Keno;
+using FortuneForge.Games.Keno.Server;
 using FortuneForge.Games.Mines.Server;
 using FortuneForge.Games.SicBo;
+using FortuneForge.Games.SicBo.Server;
 using FortuneForge.Games.Snake;
 using FortuneForge.Games.Solitaire;
 using FortuneForge.Games.TexasHoldem;
@@ -24,10 +26,10 @@ using FortuneForge.Server.Admin.Management;
 using FortuneForge.Server.Cards.Baccarat;
 using FortuneForge.Server.Cards.CasinoWar;
 using FortuneForge.Server.Cards.Solitaire;
-using FortuneForge.Server.Dice.SicBo;
-using FortuneForge.Server.Numbers.Keno;
 using FortuneForge.Server.SecurityAudit;
+using FortuneForge.Server.Tests.Accounts;
 using FortuneForge.Server.Tests.Blackjack.Table;
+using FortuneForge.Server.Tests.Solitaire;
 using Google.Cloud.Firestore;
 using Xunit;
 
@@ -253,11 +255,11 @@ public sealed class AcceptedGameTransactionWitnessFirestoreTests(BlackjackTableF
     private static DateTime Now => AcceptedGameTransactionWitnessTests.Now;
 
     [Fact]
-    public async Task Competitive_Solitaire_paid_zero_move_join_witness_commits_with_deal_and_debit_and_retry_is_exact()
+    public async Task Competitive_Solitaire_paid_zero_move_join_witness_commits_with_deal_after_wallet_and_retry_is_exact()
     {
         var database = Database(); var wallet = database.Collection("userBalances").Document("alice_slotsCredits");
-        await wallet.SetAsync(new Dictionary<string, object> { ["available"] = 100L, ["availableFractionalCents"] = 0L, ["version"] = 1L });
-        var store = new FirestoreCompetitiveSolitaireStore(database);
+        await CompetitiveSolitaireTestStore.SeedBalanceAsync(database, "alice", Now);
+        var store = CompetitiveSolitaireTestStore.Create(database);
         const string key = "accepted-solitaire-join-0001";
         var result = await store.JoinAsync("alice", "Alice", 4, 500, 3, key, 1001, Now, default);
         var session = Assert.IsType<SolitaireMatchSessionResponse>(result.Session);
@@ -265,18 +267,22 @@ public sealed class AcceptedGameTransactionWitnessFirestoreTests(BlackjackTableF
         Assert.Equal(0, session.Game.Moves);
         var saved = await Witness(database, "alice", "solitaire").GetSnapshotAsync();
         Assert.True(saved.GetValue<bool>("hasPlayed"));
-        Assert.Equal((await wallet.GetSnapshotAsync()).UpdateTime, saved.UpdateTime);
         var debit = Assert.Single((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
-        Assert.Equal("solitaire-buyin", debit.GetValue<string>("type"));
-        Assert.Equal(saved.UpdateTime, debit.UpdateTime);
+        Assert.Equal("game-wager", debit.GetValue<string>("type"));
+        Assert.Equal("solitaire", debit.GetValue<string>("gameId"));
+        Assert.Equal(-500, debit.GetValue<long>("amountCents"));
+        Assert.Equal((await wallet.GetSnapshotAsync()).UpdateTime, debit.UpdateTime);
+        Assert.True(debit.UpdateTime <= saved.UpdateTime);
+        var guard = Assert.Single((await database.Collection("solitaireCommandGuards").GetSnapshotAsync()).Documents);
+        Assert.Equal(debit.GetValue<string>("walletBatchId"), guard.GetValue<string>("walletBatchId"));
+        Assert.Equal(saved.UpdateTime, guard.UpdateTime);
         var dealt = Assert.Single((await database.Collection("solitaireMatchPlayers").GetSnapshotAsync()).Documents);
         Assert.Equal(saved.UpdateTime, dealt.UpdateTime);
         var retried = await store.JoinAsync("alice", "Alice", 4, 500, 3, key, 1001, Now.AddSeconds(1), default);
         Assert.Equal(session.MatchId, Assert.IsType<SolitaireMatchSessionResponse>(retried.Session).MatchId);
         Assert.Single((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
         Assert.False((await Witness(database, "bob", "solitaire").GetSnapshotAsync()).Exists);
-        await database.Collection("userBalances").Document("poor_slotsCredits").SetAsync(new Dictionary<string, object>
-            { ["available"] = 0L, ["availableFractionalCents"] = 0L, ["version"] = 1L });
+        await CompetitiveSolitaireTestStore.SeedBalanceAsync(database, "poor", Now, available: 0);
         await Assert.ThrowsAsync<SolitaireInsufficientCreditsException>(() =>
             store.JoinAsync("poor", "Poor", 4, 500, 3, "accepted-solitaire-poor-0001", 1001, Now, default));
         Assert.False((await Witness(database, "poor", "solitaire").GetSnapshotAsync()).Exists);
@@ -340,31 +346,36 @@ public sealed class AcceptedGameTransactionWitnessFirestoreTests(BlackjackTableF
     [InlineData("andar-bahar", "andarBaharRounds")]
     [InlineData("hi-lo", "hiLoPlayers")]
     [InlineData("mines", "minesRounds")]
-    public async Task Packaged_paid_start_captures_in_the_same_wallet_commit_before_any_later_action(string game, string source)
+    public async Task Packaged_paid_start_captures_with_accepted_game_state_after_wallet_commit(string game, string source)
     {
         var database = Database(); var wallet = database.Collection("userBalances").Document("alice_slotsCredits");
-        await wallet.SetAsync(new Dictionary<string, object> { ["available"] = 100L, ["availableFractionalCents"] = 0L, ["version"] = 1L });
+        await wallet.SetAsync(new Dictionary<string, object>
+        {
+            ["userId"] = "alice", ["currencyId"] = "slotsCredits", ["available"] = 100L,
+            ["availableFractionalCents"] = 0L, ["reserved"] = 0L, ["version"] = 1L,
+        });
+        var walletClient = new GameWalletFirestoreTestClient(database, game);
         switch (game)
         {
             case "dragon-tiger":
-                await new DragonTigerFirestoreStore(database).StartAsync("alice", "accepted-package-start-0001", new(100, 0, 0),
+                await new DragonTigerWalletStore(database, walletClient, walletClient).StartAsync("alice", "accepted-package-start-0001", new(100, 0, 0),
                     Enumerable.Range(0, 8).SelectMany(_ => StandardDeck.Create()).ToArray(), new(Now), default);
                 break;
             case "andar-bahar":
-                await new AndarBaharFirestoreStore(database).StartAsync("alice", "accepted-package-start-0001", AndarBaharSide.Andar,
+                await new AndarBaharWalletStore(database, walletClient, walletClient).StartAsync("alice", "accepted-package-start-0001", AndarBaharSide.Andar,
                     100, StandardDeck.Create(), new(Now), default);
                 break;
             case "hi-lo":
-                await new HiLoService(new HiLoFirestoreStore(database), draw: () => new(CardRank.Seven, CardSuit.Clubs))
+                await new HiLoService(new HiLoFirestoreStore(database, walletClient, walletClient), draw: () => new(CardRank.Seven, CardSuit.Clubs))
                     .StartAsync("alice", new("accepted-package-start-0001", 100));
                 break;
             case "mines":
-                await new MinesService(new FirestoreMinesStore(database)).StartAsync("alice", new("accepted-package-start-0001", 100, 3));
+                await new MinesService(new FirestoreMinesStore(database, walletClient, walletClient)).StartAsync("alice", new("accepted-package-start-0001", 100, 3));
                 break;
         }
         var saved = await Witness(database, "alice", game).GetSnapshotAsync();
         Assert.True(saved.GetValue<bool>("hasPlayed"));
-        Assert.Equal((await wallet.GetSnapshotAsync()).UpdateTime, saved.UpdateTime);
+        Assert.True((await wallet.GetSnapshotAsync()).UpdateTime <= saved.UpdateTime);
         var engine = Assert.Single((await database.Collection(source).GetSnapshotAsync()).Documents);
         Assert.Equal(engine.UpdateTime, saved.UpdateTime);
         Assert.False((await Witness(database, "bob", game).GetSnapshotAsync()).Exists);

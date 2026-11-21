@@ -19,10 +19,11 @@ const dragonWin: DragonTigerRound = {
   ], totalStake: 2, profit: 2, totalReturn: 4, shoeCardsUsed: 2, shoeCardsRemaining: 414,
 }
 function makeGateway(round: DragonTigerRound = dragonWin) {
+  let walletBalance = status.balance
   return {
-    getStatus: vi.fn<DragonTigerGateway['getStatus']>().mockResolvedValue(status),
+    getStatus: vi.fn<DragonTigerGateway['getStatus']>().mockImplementation(async () => ({ ...status, balance: walletBalance })),
     getLatestRound: vi.fn<NonNullable<DragonTigerGateway['getLatestRound']>>().mockResolvedValue(null),
-    createRound: vi.fn<DragonTigerGateway['createRound']>().mockResolvedValue(round),
+    createRound: vi.fn<DragonTigerGateway['createRound']>().mockImplementation(async () => { walletBalance = round.balance; return round }),
   }
 }
 const spot = (side: string) => screen.getByRole('button', { name: new RegExp(`^Bet on ${side},`) })
@@ -614,6 +615,7 @@ describe('DragonTigerGame betting and results', () => {
   it('consumes an outside bet-spot click to reset the result without placing a chip, dealing or changing the settled wallet', async () => {
     const gateway = makeGateway()
     gateway.getLatestRound.mockResolvedValue(dragonWin)
+    gateway.getStatus.mockResolvedValue({ ...status, balance: dragonWin.balance })
     await start(gateway)
     expect(screen.getByText('DRAGON WINS')).toBeTruthy()
     expect(balance()).toBe('R102.00')
@@ -640,6 +642,7 @@ describe('DragonTigerGame betting and results', () => {
   it('persists Escape dismissal per player so a reloaded acknowledged round stays reset', async () => {
     const gateway = makeGateway()
     gateway.getLatestRound.mockResolvedValue(dragonWin)
+    gateway.getStatus.mockResolvedValue({ ...status, balance: dragonWin.balance })
     const first = await start(gateway)
     expect(screen.getByRole('dialog', { name: 'Round result' })).toBeTruthy()
     fireEvent.keyDown(document, { key: 'Escape' })
@@ -720,6 +723,116 @@ describe('DragonTigerGame betting and results', () => {
 })
 
 describe('DragonTigerGame pending deal recovery', () => {
+  it('uses the live wallet after restoring a historical latest result', async () => {
+    const gateway = makeGateway(), changed = vi.fn()
+    gateway.getLatestRound.mockResolvedValue(dragonWin)
+    gateway.getStatus.mockResolvedValueOnce(status).mockResolvedValue({ ...status, balance: .5 })
+    await start(gateway, 'player-a', changed)
+    expect(gateway.getStatus).toHaveBeenCalledTimes(2)
+    expect(balance()).toBe('R0.50')
+    expect(win()).toBe('R2.00')
+    expect(dragonWin.balance).toBe(102)
+    expect(gateway.createRound).not.toHaveBeenCalled()
+    expect(changed).not.toHaveBeenCalled()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    fireEvent.click(spot('Dragon'))
+    expect(total()).toBe('R0.00')
+    expect(screen.getByRole('alert').textContent).toContain('balance is too low')
+  })
+
+  it('finishes an original pending replay with current funds and an unchanged receipt', async () => {
+    const storageKey = 'fortuneforge:dragon-tiger:pending:player-a'
+    const original = { key: 'dragon-tiger-00000000-0000-4000-8000-000000000001',
+      stakes: { dragonStake: 2, tigerStake: 0, tieStake: 0 }, placements: [{ side: 'dragon', value: 2 }] }
+    localStorage.setItem(storageKey, JSON.stringify(original))
+    const gateway = makeGateway(), changed = vi.fn()
+    gateway.getStatus.mockResolvedValueOnce(status).mockResolvedValue({ ...status, balance: .5 })
+    await start(gateway, 'player-a', changed)
+    expect(JSON.parse(localStorage.getItem(storageKey)!)).toEqual(original)
+    await advance(1700)
+    expect(gateway.createRound).toHaveBeenCalledExactlyOnceWith(original.stakes, expect.objectContaining({ idempotencyKey: original.key }))
+    expect(balance()).toBe('R0.50')
+    expect(win()).toBe('R2.00')
+    expect(dragonWin.balance).toBe(102)
+    expect(changed).toHaveBeenCalledExactlyOnceWith(.5)
+    expect(localStorage.getItem(storageKey)).toBeNull()
+  })
+
+  it('retains confirmed pending identity until a live balance refresh succeeds', async () => {
+    const storageKey = 'fortuneforge:dragon-tiger:pending:player-a'
+    const original = { key: 'dragon-tiger-00000000-0000-4000-8000-000000000001',
+      stakes: { dragonStake: 2, tigerStake: 0, tieStake: 0 }, placements: [{ side: 'dragon', value: 2 }] }
+    localStorage.setItem(storageKey, JSON.stringify(original))
+    const gateway = makeGateway(), changed = vi.fn()
+    gateway.getStatus.mockResolvedValueOnce(status).mockRejectedValueOnce(new TypeError('Wallet unavailable')).mockResolvedValue({ ...status, balance: 7 })
+    await start(gateway, 'player-a', changed)
+    expect(JSON.parse(localStorage.getItem(storageKey)!)).toEqual(original)
+    expect(spot('Tiger')).toHaveProperty('disabled', true)
+    expect(changed).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: /Restore deal/ })); await flush(); await advance(1700)
+    expect(gateway.createRound.mock.calls.map(([, options]) => options.idempotencyKey)).toEqual([original.key, original.key])
+    expect(balance()).toBe('R7.00')
+    expect(localStorage.getItem(storageKey)).toBeNull()
+    expect(changed).toHaveBeenCalledExactlyOnceWith(7)
+  })
+
+  it('ignores a previous account’s delayed live wallet after confirming its restored receipt', async () => {
+    let resolveStatus!: (value: DragonTigerStatus) => void
+    const delayed = new Promise<DragonTigerStatus>(resolve => { resolveStatus = resolve })
+    const storageKey = 'fortuneforge:dragon-tiger:pending:old-player'
+    const original = { key: 'dragon-tiger-00000000-0000-4000-8000-000000000001',
+      stakes: { dragonStake: 2, tigerStake: 0, tieStake: 0 }, placements: [{ side: 'dragon', value: 2 }] }
+    localStorage.setItem(storageKey, JSON.stringify(original))
+    const oldGateway = makeGateway(), newGateway = makeGateway(), changed = vi.fn()
+    oldGateway.getStatus.mockResolvedValueOnce(status).mockReturnValueOnce(delayed)
+    newGateway.getStatus.mockResolvedValue({ ...status, balance: 700 })
+    const view = await start(oldGateway, 'old-player', changed)
+    expect(oldGateway.getStatus).toHaveBeenCalledTimes(2)
+    view.rerender(<DragonTigerGame gateway={newGateway} playerId="new-player" onBalanceChange={changed}/>); await flush()
+    await act(async () => { resolveStatus({ ...status, balance: 1 }); await delayed })
+    await advance(1700)
+    expect(balance()).toBe('R700.00')
+    expect(changed).not.toHaveBeenCalled()
+    expect(JSON.parse(localStorage.getItem(storageKey)!)).toEqual(original)
+  })
+
+  it('does not delete another tab’s newer journal when its own response finishes', async () => {
+    const gateway = makeGateway()
+    await start(gateway)
+    fireEvent.click(spot('Dragon')); fireEvent.click(spot('Dragon'))
+    fireEvent.click(screen.getByRole('button', { name: /Deal cards/ })); await flush()
+    const ownKey = gateway.createRound.mock.calls[0][1].idempotencyKey
+    const otherTab = { key: 'dragon-tiger-00000000-0000-4000-8000-000000000002',
+      stakes: { dragonStake: 0, tigerStake: 2, tieStake: 0 }, placements: [{ side: 'tiger', value: 2 }] }
+    expect(otherTab.key).not.toBe(ownKey)
+    const storageKey = 'fortuneforge:dragon-tiger:pending:player-a'
+    localStorage.setItem(storageKey, JSON.stringify(otherTab))
+    await advance(1700)
+    expect(JSON.parse(localStorage.getItem(storageKey)!)).toEqual(otherTab)
+    expect(balance()).toBe('R102.00')
+    expect(gateway.createRound).toHaveBeenCalledOnce()
+  })
+
+  it('keeps a session-changed journal and restores it while new wagers are paused', async () => {
+    const original = { key: 'dragon-tiger-00000000-0000-4000-8000-000000000001',
+      stakes: { dragonStake: 2, tigerStake: 0, tieStake: 0 }, placements: [{ side: 'dragon', value: 2 }] }
+    const storageKey = 'fortuneforge:dragon-tiger:pending:player-a'
+    localStorage.setItem(storageKey, JSON.stringify(original))
+    const gateway = makeGateway()
+    gateway.getStatus.mockResolvedValue({ ...status, available: false })
+    gateway.createRound.mockRejectedValueOnce(new DragonTigerGatewayError('Return to the original account.', 'game-session-changed', 403))
+    await start(gateway)
+    expect(JSON.parse(localStorage.getItem(storageKey)!)).toEqual(original)
+    const restore = screen.getByRole('button', { name: /Restore deal/ })
+    expect(restore).toHaveProperty('disabled', false)
+    expect(spot('Tiger')).toHaveProperty('disabled', true)
+    fireEvent.click(restore); await flush(); await advance(1700)
+    expect(gateway.createRound.mock.calls[1][0]).toEqual(original.stakes)
+    expect(gateway.createRound.mock.calls[1][1].idempotencyKey).toBe(original.key)
+    expect(localStorage.getItem(storageKey)).toBeNull()
+    expect(spot('Tiger')).toHaveProperty('disabled', true)
+  })
+
   it.each([401, 403, 400, 503])('preserves an uncertain pending deal after an HTTP %s response and restores the same key', async httpStatus => {
     const gateway = makeGateway()
     gateway.createRound.mockRejectedValueOnce(new DragonTigerGatewayError('Session must be restored.', httpStatus === 503 ? 'dragon-tiger-disabled' : 'authentication-required', httpStatus))

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using FortuneForge.Games.Abstractions;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Arcade;
 using FortuneForge.Server.Cards.Solitaire;
@@ -16,7 +17,7 @@ internal sealed record GameSecurityIntegrityAssessment(
 /// <summary>Second-pass checks over persisted evidence, independent of a game's settlement path.</summary>
 internal static class GameSecurityIntegrityAuditor
 {
-    internal const string Version = "db-evidence-integrity-v4";
+    internal const string Version = "db-evidence-integrity-v5";
     private const int PageSize = 25;
     private const int MaximumEventsPerInstance = 2_000;
 
@@ -49,48 +50,140 @@ internal static class GameSecurityIntegrityAuditor
         if (summary.GameId == "mines")
             findings.AddRange(await MinesSequenceReplayAudit.InspectFinancialAsync(database, summary, roundPayload, ct));
         if (PaidCrapsReplayAudit.Supports(summary))
-            findings.AddRange(await PaidCrapsReplayAudit.InspectFinancialAsync(database, summary, roundPayload, ct));
+            findings.AddRange(await CrapsWalletFinancialAudit.InspectAsync(database, summary, roundPayload, ct));
         if (summary.GameId is "keno" or "sic-bo")
-            findings.AddRange(await NumericEvidenceReplayAudit.InspectFinancialAsync(database, summary, ct));
+            findings.AddRange(await NumericEvidenceReplayAudit.InspectFinancialAsync(database, summary, ct, roundPayload));
 
-        var summaryDocument = await database.Collection(RoundAuditDocuments.Summaries).Document(summary.Id).GetSnapshotAsync(ct);
-        var manifestExpected = summaryDocument.Exists &&
-            summaryDocument.TryGetValue<bool>("journalManifestExpected", out var expected) && expected;
+        var journal = await InspectJournalAsync(database, summary, MaximumEventsPerInstance, ct, observedAtUtc);
+        findings.AddRange(journal.Findings);
+        if (journal.Coverage == "bounded-scan-exceeded")
+            return new(findings, journal.Count, journal.Coverage);
+        var events = journal.Payloads;
+        findings.AddRange(MinesSequenceReplayAudit.Inspect(summary, roundPayload, events));
+        if (roundPayload is not null)
+        {
+            findings.AddRange(HeartsEvidenceReplayAudit.Inspect(summary, roundPayload, events));
+            if (check.Valid)
+                findings.AddRange(await HeartsEvidenceReplayAudit.InspectFinancialAsync(database, summary, roundPayload, ct));
+        }
+        findings.AddRange(SolitaireEvidenceReplayAudit.Inspect(summary, roundPayload, events));
+        findings.AddRange(await InspectPracticeRunAsync(database, summary, roundPayload, journal, ct, observedAtUtc));
+        findings.AddRange(LiarsDiceEvidenceReplayAudit.Inspect(summary, roundPayload, events));
+        findings.AddRange(CasinoPracticeActionReplayAudit.Inspect(summary, roundPayload, events));
+        findings.AddRange(PaidCrapsReplayAudit.Inspect(summary, roundPayload, events));
+        return new(findings, journal.Count, journal.Coverage);
+    }
+
+    private sealed record JournalInspection(IReadOnlyList<RoundAuditFinding> Findings, IReadOnlyList<string> Payloads,
+        int Count, string Coverage)
+    {
+        public bool CanReplay => Count > 0 && !Findings.Any(finding => finding.Severity == "error" &&
+            finding.Code.StartsWith("engine-journal-", StringComparison.Ordinal));
+    }
+
+    private static async Task<IReadOnlyList<RoundAuditFinding>> InspectPracticeRunAsync(FirestoreDb database,
+        RoundAuditSummary summary, string? payload, JournalInspection current, CancellationToken ct, DateTime? observedAtUtc)
+    {
+        if (!PracticeActionReplayAudit.Supports(summary)) return [];
+        if (payload is null || summary.RoundNumber <= 1 || !PracticeActionReplayAudit.TryReadRunId(summary, out var runId))
+            return PracticeActionReplayAudit.Inspect(summary, payload, current.Payloads);
+
+        var findings = new List<RoundAuditFinding>();
+        var remaining = MaximumEventsPerInstance - current.Count;
+        var canReplay = current.CanReplay;
+        var observations = new List<string>();
+        for (var episode = 1; episode < summary.RoundNumber; episode++)
+        {
+            if (summary.RoundNumber - episode > remaining)
+            {
+                findings.Add(new("practice-action-run-scan-limit", "error",
+                    "The complete puzzle run exceeded the bounded automatic audit. Manual review must inspect its earlier episodes."));
+                canReplay = false;
+                break;
+            }
+
+            var instance = PuzzleSessionIdentity.EpisodeId(runId, episode);
+            var prior = summary with
+            {
+                Id = GameSecurityEventDocuments.Hash($"{summary.GameId}\n{instance}"),
+                RoundId = instance,
+                RoundNumber = episode
+            };
+            var history = await InspectJournalAsync(database, prior, remaining, ct, observedAtUtc, requireManifest: true);
+            findings.AddRange(history.Findings.Select(finding => finding with { Message = $"Puzzle episode {episode}: {finding.Message}" }));
+            remaining -= history.Count;
+            if (!history.CanReplay)
+            {
+                canReplay = false;
+                continue;
+            }
+            observations.AddRange(history.Payloads);
+        }
+
+        if (canReplay)
+        {
+            observations.AddRange(current.Payloads);
+            findings.AddRange(PracticeActionReplayAudit.Inspect(summary, payload, observations, completeHistory: true));
+        }
+        else
+        {
+            findings.AddRange(PracticeActionReplayAudit.Inspect(summary, payload, current.Payloads));
+        }
+        return findings;
+    }
+
+    private static async Task<JournalInspection> InspectJournalAsync(FirestoreDb database, RoundAuditSummary summary,
+        int maximumEvents, CancellationToken ct, DateTime? observedAtUtc, bool requireManifest = false)
+    {
+        var findings = new List<RoundAuditFinding>();
+        var manifestExpected = requireManifest;
+        if (!manifestExpected)
+        {
+            var summaryDocument = await database.Collection(RoundAuditDocuments.Summaries).Document(summary.Id).GetSnapshotAsync(ct);
+            manifestExpected = summaryDocument.Exists && summaryDocument.TryGetValue<bool>("journalManifestExpected", out var expected) && expected;
+        }
         var manifest = await database.Collection(GameSecurityEventDocuments.ManifestCollectionName)
             .Document(GameSecurityEventDocuments.ManifestId(summary.GameId, summary.RoundId)).GetSnapshotAsync(ct);
+        if (requireManifest && !manifest.Exists)
+        {
+            var prior = await database.Collection(RoundAuditDocuments.Summaries).Document(summary.Id).GetSnapshotAsync(ct);
+            var expired = prior.Exists && FirestoreGameRoundAuditStore.Text(prior, "gameId") == summary.GameId &&
+                FirestoreGameRoundAuditStore.Text(prior, "roundId") == summary.RoundId &&
+                FirestoreGameRoundAuditStore.Text(prior, "retentionState") == "deleted" &&
+                prior.TryGetValue<bool>("evidencePresent", out var present) && !present;
+            RoundAuditFinding finding = expired
+                ? new("practice-action-prior-episode-expired", "warning", "The earlier puzzle journal was removed under evidence retention.")
+                : new("engine-journal-manifest-missing", "error", "The committed engine observation manifest is missing for a preceding puzzle episode.");
+            return new([finding], [], 0, "no-engine-journal");
+        }
         var count = 0;
         var cursor = "";
         var observedIds = new HashSet<string>(StringComparer.Ordinal);
-        var minesEvents = new List<string>();
-        var heartsEvents = new List<string>();
-        var solitaireEvents = new List<string>();
-        var practiceActionEvents = new List<string>();
-        var liarsDiceEvents = new List<string>();
-        var casinoPracticeEvents = new List<string>();
+        var observedVersions = new Dictionary<string, long>(StringComparer.Ordinal);
+        var payloads = new List<string>();
+        var capturePayloads = summary.GameId is "mines" or "hearts" or "solitaire" or "2048" or "drop-merge" or "liars-dice" or "craps" or "roulette";
         var eventCollection = database.Collection(GameSecurityEventDocuments.CollectionName);
         while (true)
         {
             Query query = eventCollection.WhereEqualTo("gameId", summary.GameId)
                 .WhereEqualTo("instanceId", summary.RoundId).OrderBy(FieldPath.DocumentId);
             if (cursor.Length > 0) query = query.StartAfter(cursor);
-            var page = await query.Limit(PageSize).GetSnapshotAsync(ct);
+            var pageLimit = Math.Min(PageSize, maximumEvents - count + 1);
+            var page = await query.Limit(pageLimit).GetSnapshotAsync(ct);
             var linkedRequests = new Dictionary<string, List<DocumentSnapshot>>(StringComparer.Ordinal);
             foreach (var item in page.Documents)
             {
                 count++;
                 observedIds.Add(item.Id);
+                if (item.TryGetValue<object>("version", out var rawVersion) && rawVersion is long version)
+                    observedVersions[item.Id] = version;
                 var payload = FirestoreGameRoundAuditStore.Text(item, "payloadJson");
                 if (payload is null)
                 {
                     findings.Add(new("engine-journal-changed", "error", $"Engine observation {item.Id} has no private payload."));
                     continue;
                 }
-                if (summary.GameId == "mines") minesEvents.Add(payload);
-                if (summary.GameId == "hearts") heartsEvents.Add(payload);
-                if (summary.GameId == "solitaire") solitaireEvents.Add(payload);
-                if (summary.GameId is "2048" or "drop-merge") practiceActionEvents.Add(payload);
-                if (summary.GameId == "liars-dice") liarsDiceEvents.Add(payload);
-                if (summary.GameId is "craps" or "roulette") casinoPracticeEvents.Add(payload);
+                if (capturePayloads) payloads.Add(payload);
                 var digest = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(payload)));
                 if (digest != item.Id || digest != FirestoreGameRoundAuditStore.Text(item, "sha256"))
                     findings.Add(new("engine-journal-changed", "error", $"Engine observation {item.Id} differs from its stored fingerprint."));
@@ -140,46 +233,18 @@ internal static class GameSecurityIntegrityAuditor
             }
             if (page.Count == 0) break;
             cursor = page.Documents[^1].Id;
-            if (count > MaximumEventsPerInstance)
+            if (count > maximumEvents)
             {
                 findings.Add(new("engine-journal-scan-limit", "error", "The engine observation stream exceeded the bounded automatic audit; manual review must inspect the full instance."));
-                return new(findings, count, "bounded-scan-exceeded");
+                return new(findings, payloads, count, "bounded-scan-exceeded");
             }
-            if (page.Count < PageSize) break;
+            if (page.Count < pageLimit) break;
         }
         if (count == 0)
             findings.Add(new("engine-journal-missing", "error", "No engine observations were recorded for this instance."));
-        if (!manifest.Exists)
-        {
-            if (manifestExpected)
-                findings.Add(new("engine-journal-manifest-missing", "error", "The committed engine observation manifest is missing for this completed instance."));
-        }
-        else if (FirestoreGameRoundAuditStore.Text(manifest, "gameId") != summary.GameId ||
-            FirestoreGameRoundAuditStore.Text(manifest, "instanceId") != summary.RoundId ||
-            !manifest.TryGetValue<List<string>>("eventIds", out var eventIds) ||
-            eventIds.Count != eventIds.Distinct(StringComparer.Ordinal).Count())
-            findings.Add(new("engine-journal-manifest-invalid", "error", "The engine observation manifest has invalid identity or duplicate/missing event identifiers."));
-        else
-        {
-            var expectedIds = eventIds.ToHashSet(StringComparer.Ordinal);
-            if (expectedIds.Except(observedIds).Any())
-                findings.Add(new("engine-journal-event-missing", "error", "A committed engine observation is absent from this instance's journal."));
-            if (observedIds.Except(expectedIds).Any())
-                findings.Add(new("engine-journal-unmanifested-event", "error", "An engine observation is absent from this instance's committed manifest."));
-        }
-        findings.AddRange(MinesSequenceReplayAudit.Inspect(summary, roundPayload, minesEvents));
-        if (roundPayload is not null)
-        {
-            findings.AddRange(HeartsEvidenceReplayAudit.Inspect(summary, roundPayload, heartsEvents));
-            if (check.Valid)
-                findings.AddRange(await HeartsEvidenceReplayAudit.InspectFinancialAsync(database, summary, roundPayload, ct));
-        }
-        findings.AddRange(SolitaireEvidenceReplayAudit.Inspect(summary, roundPayload, solitaireEvents));
-        findings.AddRange(PracticeActionReplayAudit.Inspect(summary, roundPayload, practiceActionEvents));
-        findings.AddRange(LiarsDiceEvidenceReplayAudit.Inspect(summary, roundPayload, liarsDiceEvents));
-        findings.AddRange(CasinoPracticeActionReplayAudit.Inspect(summary, roundPayload, casinoPracticeEvents));
-        findings.AddRange(PaidCrapsReplayAudit.Inspect(summary, roundPayload, casinoPracticeEvents));
-        return new(findings, count, !manifest.Exists && !manifestExpected ? "legacy-unmanifested" :
+        findings.AddRange(await GameSecurityJournalManifestAudit.InspectAsync(
+            manifest, summary, manifestExpected, observedIds, observedVersions, ct));
+        return new(findings, payloads, count, !manifest.Exists && !manifestExpected ? "legacy-unmanifested" :
             count == 0 ? "no-engine-journal" : "fingerprints-requests-and-manifest-checked");
     }
 

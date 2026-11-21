@@ -29,8 +29,9 @@ function deferred<T>() {
 }
 
 function gateway() {
+  let statusReads = 0
   return {
-    getStatus: vi.fn<AndarBaharGateway['getStatus']>().mockResolvedValue(status),
+    getStatus: vi.fn<AndarBaharGateway['getStatus']>().mockImplementation(async () => ({ ...status, balance: statusReads++ === 0 ? status.balance : settled.balance })),
     getLatestRound: vi.fn<AndarBaharGateway['getLatestRound']>().mockResolvedValue(null),
     getRound: vi.fn<AndarBaharGateway['getRound']>().mockResolvedValue(settled),
     createRound: vi.fn<AndarBaharGateway['createRound']>().mockResolvedValue(settled),
@@ -50,6 +51,99 @@ afterEach(() => {
 })
 
 describe('Andar Bahar wager recovery and response isolation', () => {
+  it('restores latest results without treating historical receipt funds as the live wallet', async () => {
+    const api = gateway()
+    api.getLatestRound.mockResolvedValue(settled)
+    api.getStatus.mockReset().mockResolvedValueOnce(status).mockResolvedValue({ ...status, balance: 1 })
+    const onBalance = vi.fn()
+    const { result } = renderHook(() => useAndarBaharTable(api, player, onBalance))
+    await waitFor(() => expect(result.current.phase).toBe('result'))
+    expect(api.getStatus).toHaveBeenCalledTimes(2)
+    expect(result.current.round).toBe(settled)
+    expect(result.current.round?.balance).toBe(104.5)
+    expect(result.current.status?.balance).toBe(1)
+    act(() => result.current.place('andar'))
+    expect(result.current.error).toContain('balance is too low')
+    expect(api.createRound).not.toHaveBeenCalled()
+    expect(onBalance).not.toHaveBeenCalled()
+  })
+
+  it('finishes an original pending replay using live funds while retaining its historical receipt', async () => {
+    const original: PendingWager = { key: 'andar-bahar-00000000-0000-4000-8000-000000000001', side: 'andar', stake: 5, chips: [5] }
+    writePending(pendingKey(), original)
+    const api = gateway(), onBalance = vi.fn()
+    api.getStatus.mockReset().mockResolvedValueOnce(status).mockResolvedValue({ ...status, balance: 1 })
+    const { result } = renderHook(() => useAndarBaharTable(api, player, onBalance))
+    await waitFor(() => expect(result.current.phase).toBe('dealing'))
+    expect(readPending(pendingKey())).toEqual(original)
+    act(() => result.current.skip())
+    expect(api.createRound.mock.calls[0].slice(0, 2)).toEqual([original.side, original.stake])
+    expect(api.createRound.mock.calls[0][2].idempotencyKey).toBe(original.key)
+    expect(result.current.round).toBe(settled)
+    expect(settled.balance).toBe(104.5)
+    expect(result.current.status?.balance).toBe(1)
+    expect(readPending(pendingKey())).toBeNull()
+    expect(onBalance).toHaveBeenCalledExactlyOnceWith(1)
+  })
+
+  it('retains a confirmed pending command and blocks betting until live funds are available', async () => {
+    const original: PendingWager = { key: 'andar-bahar-00000000-0000-4000-8000-000000000001', side: 'andar', stake: 5, chips: [5] }
+    writePending(pendingKey(), original)
+    const api = gateway(), onBalance = vi.fn()
+    api.getStatus.mockReset().mockResolvedValueOnce(status).mockRejectedValueOnce(new TypeError('Wallet unavailable')).mockResolvedValue({ ...status, balance: 7 })
+    const { result } = renderHook(() => useAndarBaharTable(api, player, onBalance))
+    await waitFor(() => expect(result.current.phase).toBe('recover'))
+    expect(readPending(pendingKey())).toEqual(original)
+    expect(result.current.editable).toBe(false)
+    expect(onBalance).not.toHaveBeenCalled()
+    await act(async () => { await result.current.submit(true) })
+    act(() => result.current.skip())
+    expect(api.createRound.mock.calls.map(([, , options]) => options.idempotencyKey)).toEqual([original.key, original.key])
+    expect(result.current.status?.balance).toBe(7)
+    expect(readPending(pendingKey())).toBeNull()
+    expect(onBalance).toHaveBeenCalledExactlyOnceWith(7)
+  })
+
+  it('ignores an old account live-wallet reply after confirming its restored receipt', async () => {
+    const original: PendingWager = { key: 'andar-bahar-00000000-0000-4000-8000-000000000001', side: 'andar', stake: 5, chips: [5] }
+    writePending(pendingKey('previous-player'), original)
+    const delayed = deferred<AndarBaharStatus>()
+    const previousApi = gateway(), currentApi = gateway(), onBalance = vi.fn()
+    previousApi.getStatus.mockReset().mockResolvedValueOnce(status).mockReturnValueOnce(delayed.promise)
+    currentApi.getStatus.mockReset().mockResolvedValue({ ...status, balance: 700 })
+    const { result, rerender } = renderHook(
+      ({ api, user }) => useAndarBaharTable(api, user, onBalance),
+      { initialProps: { api: previousApi, user: 'previous-player' } },
+    )
+    await waitFor(() => expect(previousApi.getStatus).toHaveBeenCalledTimes(2))
+    rerender({ api: currentApi, user: 'current-player' })
+    await waitFor(() => expect(result.current.phase).toBe('betting'))
+    await act(async () => { delayed.resolve({ ...status, balance: 1 }); await delayed.promise })
+    expect(result.current.status?.balance).toBe(700)
+    expect(result.current.round).toBeNull()
+    expect(onBalance).not.toHaveBeenCalled()
+    expect(readPending(pendingKey('previous-player'))).toEqual(original)
+  })
+
+  it('retains the original journal on session change and restores it while paused', async () => {
+    const original: PendingWager = { key: 'andar-bahar-00000000-0000-4000-8000-000000000001', side: 'andar', stake: 5, chips: [5] }
+    writePending(pendingKey(), original)
+    const api = gateway()
+    api.getStatus.mockResolvedValue({ ...status, available: false })
+    api.createRound.mockRejectedValueOnce(new AndarBaharGatewayError('Return to the original account.', 'game-session-changed', 403))
+    const { result } = renderHook(() => useAndarBaharTable(api, player))
+    await waitFor(() => expect(result.current.phase).toBe('recover'))
+    expect(readPending(pendingKey())).toEqual(original)
+    expect(result.current.editable).toBe(false)
+    await act(async () => { await result.current.submit(true) })
+    expect(api.createRound.mock.calls[1][0]).toBe(original.side)
+    expect(api.createRound.mock.calls[1][1]).toBe(original.stake)
+    expect(api.createRound.mock.calls[1][2].idempotencyKey).toBe(original.key)
+    act(() => result.current.skip())
+    expect(readPending(pendingKey())).toBeNull()
+    expect(result.current.editable).toBe(false)
+  })
+
   it('clears the settled board on result dismissal while retaining balance, history, and rebet', async () => {
     const api = gateway()
     const { result } = renderHook(() => useAndarBaharTable(api, player))
@@ -371,7 +465,9 @@ describe('Andar Bahar wager recovery and response isolation', () => {
     expect(api.createRound.mock.calls.map(([side, stake, options]) => [side, stake, options.idempotencyKey]))
       .toEqual([[request.side, request.stake, request.key], [request.side, request.stake, request.key]])
     act(() => result.current.skip())
-    expect(result.current.status?.balance).toBe(settled.balance)
+    expect(result.current.status?.balance).toBe(status.balance)
+    expect(result.current.round?.balance).toBe(settled.balance)
+    expect(api.getStatus).toHaveBeenCalledTimes(2)
     expect(result.current.editable).toBe(false)
     expect(readPending(pendingKey())).toBeNull()
   })

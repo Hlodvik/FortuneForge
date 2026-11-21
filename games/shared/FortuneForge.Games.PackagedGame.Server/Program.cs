@@ -24,8 +24,11 @@ if (database is not null)
 GameWorkerModule.Configure(builder);
 
 var app = builder.Build();
+app.UseRouting();
 if (hosted)
     app.UseGameWorkerAuthentication(GameWorkerModule.GameId);
+else if (localAccount is not null)
+    app.UseLocalGameWorkerCommandDigests(DemoGameAccount.IsLocalRequest);
 app.MapGet("/healthz", () => Results.Ok(new
 {
     gameId = GameWorkerModule.GameId,
@@ -36,9 +39,16 @@ app.MapGet("/healthz", () => Results.Ok(new
 
 app.Use(async (context, next) =>
 {
-    if (!context.Request.Path.StartsWithSegments("/api/games"))
+    var publicRoute = context.GetEndpoint()?.Metadata.GetMetadata<GameWorkerPublicRoute>();
+    if (!context.Request.Path.StartsWithSegments("/api/games") && publicRoute is null)
     {
         await next(context);
+        return;
+    }
+    if (publicRoute is not null && (publicRoute.WorkerGameId != GameWorkerModule.GameId ||
+        !context.Request.Path.StartsWithSegments(publicRoute.PathPrefix, StringComparison.OrdinalIgnoreCase)))
+    {
+        await Results.NotFound().ExecuteAsync(context);
         return;
     }
 
@@ -73,7 +83,7 @@ app.Use(async (context, next) =>
             app.Configuration.GetValue("GameSecurityRequests:Enabled", true))
         {
             var observation = GameSecurityContext.Current;
-            if (observation is null || observation.GameId != GameWorkerModule.GameId ||
+            if (observation is null || observation.GameId != (publicRoute?.AuditGameId ?? GameWorkerModule.GameId) ||
                 observation.Method != context.Request.Method || observation.Path != context.Request.Path.Value)
             {
                 await Results.Json(new { error = "game-recording-unavailable" },

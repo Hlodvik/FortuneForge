@@ -1,0 +1,6 @@
+{
+  "id": "asteroids",
+  "backend": {
+    "kind": "packaged-game"
+  }
+}

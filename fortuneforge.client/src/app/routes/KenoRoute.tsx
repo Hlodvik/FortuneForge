@@ -12,17 +12,17 @@ export function AuthenticatedKenoRoute() {
   if (isLoading || account === null) {
     return <AuthenticatedRouteState error={error} loadingLabel="Opening Keno…" errorTitle="Keno could not be opened." onRetry={reload} />
   }
-  return <KenoSession initialAccount={account} />
+  return <KenoSession key={account.userId} initialAccount={account} />
 }
 
 function KenoSession({ initialAccount }: Readonly<{ initialAccount: AccountSummary }>) {
   const [account, setAccount] = useState(initialAccount)
-  const gateway = useMemo(() => new HttpKenoGateway('/api/games/keno', fetchWithAccountSession), [])
+  const gateway = useMemo(() => new HttpKenoGateway('/api/games/keno', fetchWithAccountSession, initialAccount.userId), [initialAccount.userId])
 
   useEffect(() => setAccount(initialAccount), [initialAccount])
   const refreshBalance = useCallback(() => {
-    void getCurrentAccount().then(setAccount).catch(() => undefined)
-  }, [])
+    void getCurrentAccount().then(next => { if (next.userId === initialAccount.userId) setAccount(next) }).catch(() => undefined)
+  }, [initialAccount.userId])
 
   const { Game: KenoGame, pending } = useReleasedGame('keno', 'Keno', BundledKenoGame, bundledStyles)
   if (KenoGame === null) return pending

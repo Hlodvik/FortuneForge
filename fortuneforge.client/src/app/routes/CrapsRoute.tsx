@@ -19,7 +19,7 @@ export function AuthenticatedCrapsRoute() {
 
 function CrapsSession({ initialAccount }: Readonly<{ initialAccount: AccountSummary }>) {
   const [account, setAccount] = useState(initialAccount)
-  const gateway = useMemo(() => new HttpCrapsGateway('/api/games/craps', fetchWithAccountSession), [])
+  const gateway = useMemo(() => new HttpCrapsGateway('/api/games/craps', fetchWithAccountSession, account.userId), [account.userId])
   useEffect(() => setAccount(initialAccount), [initialAccount])
   const refreshBalance = useCallback(() => {
     void getCurrentAccount().then(next => {

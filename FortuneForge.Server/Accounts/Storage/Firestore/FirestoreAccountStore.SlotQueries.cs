@@ -2,8 +2,10 @@
 // Edited: 2026-11-18T16:30:13-06:00 | Computer: Vinnabok
 using System.Security.Cryptography;
 using System.Text;
-using ArcaneTome = FortuneForge.Games.ArcaneArchives.ArcaneTome;
+using FortuneForge.Games.ArcaneArchives;
+using FortuneForge.Games.ArcaneArchives.Server;
 using FortuneForge.Server.Accounts.Models;
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
@@ -34,12 +36,16 @@ public sealed partial class FirestoreAccountStore
                 {
                     var foundryState = await transaction.GetAllSnapshotsAsync([
                         guardReference, BalanceDocument(userId, energyCurrencyId)], cancellationToken);
+                    RejectWorkerOwnedSlot(gameId, foundryState[0]);
                     return GoldFoundryCrucible.CreateState(ReadLong(foundryState[0], "crucibleWageredCents"),
                         ReadLong(foundryState[1], "available"));
                 }
                 var state = await transaction.GetAllSnapshotsAsync([
                     guardReference, BalanceDocument(userId, GameCurrencyId(FreeGamesCurrencyId, gameId)),
                     BalanceDocument(userId, specialPointsCurrencyId), BalanceDocument(userId, energyCurrencyId)], cancellationToken);
+                // The old Neon Car worker also uses the owner field. It shares
+                // this legacy state view until the full paid route is enabled.
+                if (!isNeon) RejectWorkerOwnedSlot(gameId, state[0]);
                 if (isJade)
                 {
                     var remaining = checked((int)ReadLong(state[1], "available"));
@@ -57,19 +63,18 @@ public sealed partial class FirestoreAccountStore
                     var remaining = checked((int)ReadLong(state[1], "available"));
                     var wager = remaining > 0 ? ReadNeonCarryWagerPoints(state[0], pointValueInCents) : (long?)null;
                     var mode = remaining > 0 ? ReadString(state[0], "freeSpinFeatureMode") : null;
-                    var discoRemaining = ReadNeonDiscoSpinsRemaining(state[0]);
+                    var disco = ReadNeonDiscoRound(state[0]);
+                    var car = ReadNeonCarRound(state[0]);
                     var pendingNitroChoice = ReadPendingNeonNitroChoice(state[0]);
                     return new SlotStateResponse(remaining, wager, 0, 0, [], mode)
                     {
-                        NeonDiscoSpinsRemaining = discoRemaining,
-                        NeonDiscoWagerPoints = ReadNeonDiscoWagerPoints(state[0], discoRemaining),
-                        NeonDiscoMultiplier = discoRemaining > 0 ? ReadNeonDiscoMultiplier(state[0]) : NeonDiscoCascade.InitialMultiplier,
-                        NeonDiscoRoundWinPoints = discoRemaining > 0
-                            ? ReadLong(state[0], "neonDiscoRoundWinPoints") : null,
+                        NeonDiscoSpinsRemaining = disco.SpinsRemaining,
+                        NeonDiscoWagerPoints = disco.LockedWagerPoints,
+                        NeonDiscoMultiplier = disco.Multiplier,
+                        NeonDiscoRoundWinPoints = disco.ReceiptWinPoints(),
                         NeonCarRespinOffer = pendingNitroChoice is null
-                            ? ReadNeonCarRespinOffer(state[0]) : null,
-                        NeonCarRoundWinPoints = mode == NeonArcadeBonus.PaidCarFeatureMode
-                            ? ReadLong(state[0], "neonCarRoundWinPoints") : null,
+                            ? car.AvailableOffer() : null,
+                        NeonCarRoundWinPoints = car.ActiveWinPoints(mode),
                         PendingNeonNitroChoice = pendingNitroChoice
                     };
                 }
@@ -85,6 +90,7 @@ public sealed partial class FirestoreAccountStore
             BalanceDocument(userId, specialPointsCurrencyId).GetSnapshotAsync(cancellationToken),
             BalanceDocument(userId, energyCurrencyId).GetSnapshotAsync(cancellationToken));
         var guardSnapshot = snapshots[0];
+        RejectWorkerOwnedSlot(gameId, guardSnapshot);
         return new SlotStateResponse(
             0,
             null,
@@ -93,10 +99,16 @@ public sealed partial class FirestoreAccountStore
             CreateSealCollections(guardSnapshot, pointValueInCents, gameId),
             null)
         {
-            ArcaneTome = gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId ? ArcaneTome.ToView(ReadArcaneTome(guardSnapshot)) : null,
+            ArcaneTome = gameId == ArcaneArchivesEngine.GameId ? ArcaneTome.ToView(ArcaneFeatureStore.ReadTome(guardSnapshot)) : null,
             ArcanePotions = gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId
-                ? ArcanePotionView.FromState(ReadArcanePotions(guardSnapshot)) : null
+                ? ArcanePotionView.FromState(ArcaneFeatureStore.ReadPotions(guardSnapshot)) : null
         };
+    }
+
+    private static void RejectWorkerOwnedSlot(string gameId, DocumentSnapshot guard)
+    {
+        if (PreparedSlotWorkerRegistry.Find(gameId) is { } route && ReadString(guard, route.LegacyOwnerField) is not null)
+            throw new GameWorkerUnavailableException(gameId);
     }
 
     public async Task<IReadOnlyList<SlotSpinHistoryItem>> GetSlotSpinHistoryAsync(
@@ -137,29 +149,11 @@ public sealed partial class FirestoreAccountStore
         return wager;
     }
 
-    private static int ReadNeonDiscoSpinsRemaining(DocumentSnapshot guard)
-    {
-        var remaining = ReadLong(guard, "neonDiscoSpinsRemaining");
-        if (remaining < 0 || remaining > NeonArcadeSlotDefinitions.DiscoPlaySpins)
-            throw new InvalidOperationException("The saved Neon Disco play balance is invalid.");
-        return checked((int)remaining);
-    }
+    private static NeonDiscoRoundState ReadNeonDiscoRound(DocumentSnapshot snapshot) =>
+        NeonDiscoRoundState.Read(field => ReadNeonDiscoField(snapshot, field));
 
-    private static int ReadNeonDiscoMultiplier(DocumentSnapshot snapshot, string field = "neonDiscoMultiplier")
-    {
-        if (!snapshot.ContainsField(field))
-            return NeonDiscoCascade.InitialMultiplier;
-        var multiplier = ReadLong(snapshot, field);
-        if (!NeonDiscoCascade.IsValidMultiplier(multiplier))
-            throw new InvalidOperationException("The saved Neon Disco multiplier is invalid.");
-        return (int)multiplier;
-    }
-
-    private static long? ReadNeonDiscoWagerPoints(DocumentSnapshot guard, int spinsRemaining)
-    {
-        var wager = ReadLong(guard, "neonDiscoWagerPoints");
-        return NeonPlayPolicy.DiscoLockedWager(spinsRemaining, wager == 0 ? null : wager);
-    }
+    private static long? ReadNeonDiscoField(DocumentSnapshot snapshot, string field) =>
+        snapshot.Exists && snapshot.ContainsField(field) ? ReadLong(snapshot, field) : null;
 
     private static IReadOnlyList<MidnightVaultBonusRound> ReadMidnightBonusRounds(
         DocumentSnapshot guard, long available, decimal pointValueInCents)

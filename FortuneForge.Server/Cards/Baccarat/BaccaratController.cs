@@ -1,8 +1,6 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
-using FortuneForge.Server.GameWorkers;
-using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -11,31 +9,29 @@ namespace FortuneForge.Server.Cards.Baccarat;
 [ApiController]
 [Route("api/games/baccarat")]
 public sealed class BaccaratController(
-    FirestoreDb database,
     AccountService accountService,
     IConfiguration configuration,
-    ILogger<BaccaratController> logger,
-    GameWorkerClient? workers = null) : ControllerBase
+    PracticeBaccaratStore practiceStore,
+    ILogger<BaccaratController> logger) : ControllerBase
 {
     [HttpGet("status")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
     public async Task<ActionResult> Status(CancellationToken cancellationToken)
     {
-        if (Disabled() is { } unavailable) return unavailable;
+        if (Unavailable() is { } unavailable) return unavailable;
         var account = await AuthenticatedAccountAsync(cancellationToken);
         if (account is null)
             return Unauthorized(new BaccaratErrorResponse("baccarat-authentication-required", "Sign in to play Baccarat."));
-        var practiceStore = IsPractice ? HttpContext.RequestServices.GetRequiredService<PracticeBaccaratStore>() : null;
-        return Ok(CreateStatusResponse(account.UserId, account.Balances.SlotsCredits, practiceStore));
+        return Ok(CreatePracticeStatusResponse(account.UserId, practiceStore));
     }
 
-    internal static BaccaratStatusResponse CreateStatusResponse(string userId, decimal walletBalance, PracticeBaccaratStore? practiceStore) => new(
+    internal static BaccaratStatusResponse CreatePracticeStatusResponse(string userId, PracticeBaccaratStore practiceStore) => new(
         true,
         BaccaratMoney.ToRand(BaccaratMoney.MinimumStakeCents),
         BaccaratMoney.ToRand(BaccaratMoney.MaximumStakeCents),
         BaccaratMoney.ToRand(BaccaratMoney.StakeIncrementCents),
-        practiceStore is null ? walletBalance : BaccaratMoney.ToRand(practiceStore.GetBalanceCents(userId)),
-        practiceStore is null ? "eight-deck-punto-banco" : "practice-eight-deck-punto-banco",
+        BaccaratMoney.ToRand(practiceStore.GetBalanceCents(userId)),
+        "practice-eight-deck-punto-banco",
         true);
 
     [HttpPost("rounds")]
@@ -45,7 +41,7 @@ public sealed class BaccaratController(
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken cancellationToken)
     {
-        if (Disabled() is { } unavailable) return unavailable;
+        if (Unavailable() is { } unavailable) return unavailable;
         var account = await AuthenticatedAccountAsync(cancellationToken);
         if (account is null)
             return Unauthorized(new BaccaratErrorResponse("baccarat-authentication-required", "Sign in to play Baccarat."));
@@ -61,7 +57,7 @@ public sealed class BaccaratController(
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
     public async Task<ActionResult> Get(string roundId, CancellationToken cancellationToken)
     {
-        if (Disabled() is { } unavailable) return unavailable;
+        if (Unavailable() is { } unavailable) return unavailable;
         var account = await AuthenticatedAccountAsync(cancellationToken);
         if (account is null)
             return Unauthorized(new BaccaratErrorResponse("baccarat-authentication-required", "Sign in to play Baccarat."));
@@ -71,20 +67,19 @@ public sealed class BaccaratController(
 
     internal static bool IsEnabled(IConfiguration source) => source.GetValue("Features:BaccaratEnabled", false);
 
-    private BaccaratService Service() => new(
-        IsPractice
-            ? HttpContext.RequestServices.GetRequiredService<PracticeBaccaratStore>()
-            : new BaccaratFirestoreStore(database, workers),
-        TimeProvider.System);
+    private BaccaratService Service() => new(practiceStore, TimeProvider.System);
 
     private bool IsPractice => HttpContext?.Request.Headers.TryGetValue("X-FortuneForge-Practice", out var values) == true &&
         values.Any(value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase));
 
-    private ActionResult? Disabled() => IsEnabled(configuration)
-        ? null
-        : StatusCode(StatusCodes.Status503ServiceUnavailable, new BaccaratErrorResponse(
-            "baccarat-disabled",
-            "Baccarat is still being verified and cannot accept a wager yet."));
+    private ActionResult? Unavailable()
+    {
+        if (!IsEnabled(configuration))
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new BaccaratErrorResponse(
+                "baccarat-disabled", "Baccarat is still being verified and cannot accept a wager yet."));
+        return IsPractice ? null : StatusCode(StatusCodes.Status503ServiceUnavailable, new BaccaratErrorResponse(
+            "baccarat-retry-required", "Retry the original request when the Baccarat worker is available."));
+    }
 
     private async Task<AccountSummary?> AuthenticatedAccountAsync(CancellationToken cancellationToken) =>
         (await accountService.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken)).Value;
@@ -97,8 +92,6 @@ internal static class BaccaratHttp
         BaccaratRoundNotFoundException => controller.NotFound(new BaccaratErrorResponse("baccarat-round-not-found", exception.Message)),
         BaccaratInsufficientCreditsException => controller.Conflict(new BaccaratErrorResponse("insufficient-slot-credits", exception.Message)),
         BaccaratRoundConflictException => controller.Conflict(new BaccaratErrorResponse("baccarat-round-conflict", exception.Message)),
-        GameWorkerUnavailableException => controller.StatusCode(StatusCodes.Status503ServiceUnavailable,
-            new BaccaratErrorResponse("baccarat-unavailable", exception.Message)),
         ArgumentException => controller.BadRequest(new BaccaratErrorResponse("baccarat-invalid-request", exception.Message)),
         _ => Unexpected(controller, exception, logger),
     };

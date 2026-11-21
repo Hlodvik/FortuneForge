@@ -46,9 +46,18 @@ export function paidOfficialScoreText(score: number): string {
   return `Official score: ${score}`
 }
 
+export function canDiscardPendingAsteroidsStart(reason: unknown): boolean {
+  return reason instanceof ArcadeCompetitionRequestError && (
+    reason.code === 'arcade-competition-entry-not-recorded' ||
+    reason.code === 'arcade-competition-insufficient-credits' ||
+    reason.code === 'arcade-competition-settlement-closed'
+  )
+}
+
 
 export function friendlyAsteroidsCompetitionError(reason: unknown): string {
   if (reason instanceof ArcadeCompetitionRequestError) {
+    if (reason.code === 'arcade-competition-entry-not-recorded') return 'That earlier entry was never accepted. Choose a new competition entry.'
     if (reason.status === 401 || reason.status === 403) return 'Your session needs to be refreshed before you can enter a competition.'
     if (reason.status === 402 || reason.code?.includes('insufficient') === true) return 'You need at least R1 in your balance to enter this competition.'
     if (reason.code?.includes('closed') === true || reason.code?.includes('cutoff') === true || reason.status === 410) return 'That competition has just closed. Please choose another available competition.'

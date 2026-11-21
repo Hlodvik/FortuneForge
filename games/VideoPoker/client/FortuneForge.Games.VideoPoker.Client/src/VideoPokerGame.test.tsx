@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, configure, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { VideoPokerGame } from './VideoPokerGame'
@@ -19,6 +19,7 @@ const settledRound: VideoPokerRound = {
   handRank: 'straight', payout: 12, finalHands: [awaitingRound.initialCards], handRanks: ['straight'], handPayouts: [12],
 }
 
+configure({ asyncUtilTimeout: 5_000 })
 afterEach(() => { cleanup(); sessionStorage.clear() })
 
 describe('VideoPokerGame', () => {

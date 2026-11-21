@@ -6,6 +6,7 @@ namespace FortuneForge.Games.Wukong;
 public sealed class WukongEngine
 {
     public const string GameId = "wukong-journey-v1";
+    public const string LegacyStorageGameId = "classic-demo-v1";
     public const string EngineVersion = "wukong-journey-engine-v1";
     public const string ReelSetId = "wukong-reels-v1";
     public static SlotProfile Profile { get; } = new(GameId, 3, 0, 40, 10,
@@ -14,7 +15,12 @@ public sealed class WukongEngine
     private readonly ClassicSlotEngine engine;
 
     public WukongEngine(IGameRandomSource random) => engine = new(Definitions, Profile,
-        random, EngineVersion, new ClassicSlotEngineOptions { HeavyPawFeature = true });
+        random, EngineVersion, new ClassicSlotEngineOptions { HeavyPawFeature = true, AllowFreeSpinCarryWager = true });
+
+    public static decimal WagerPointValueInCents => Definitions.Game.Wagering.PointValueInCents;
+
+    public static void ValidateWager(long wagerPoints, bool isFreeSpin) =>
+        ClassicSlotEngine.ValidateWager(Definitions.Game, wagerPoints, allowCarryWager: isFreeSpin);
 
     public ClassicSlotSpinOutcome Spin(long wagerPoints, string playerId,
         bool specialBoostApplied = false, long currentEnergyBalance = 0,

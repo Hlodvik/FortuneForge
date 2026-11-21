@@ -154,3 +154,15 @@ describe("Liar's Dice match-and-round history", () => {
     expect(appendRoundHistory([], resolved(), limit)).toEqual([])
   })
 })
+
+
+it('restores earlier server outcomes when reconnecting during a later bidding round', () => {
+  const restored: LiarsDiceMatch = { ...table, roundNumber: 3, resolvedRounds: [
+    { roundNumber: 1, outcome: resolved().outcome! },
+    { roundNumber: 2, outcome: { ...resolved().outcome!, loserId: 'opponent-1', matchingDice: 0 } },
+  ] }
+  expect(appendRoundHistory([], restored)).toEqual([
+    { matchId, round: 2, text: 'Liar · 0 matching 4s · Amber Badger loses a die' },
+    { matchId, round: 1, text: 'Liar · 3 matching 4s · You lose a die' },
+  ])
+})

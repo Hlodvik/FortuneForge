@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><IsPackable>false</IsPackable><IsTestProject>true</IsTestProject></PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <Compile Include="../../server/GameWorkerModule.cs" Link="Worker/GameWorkerModule.cs" />
+    <Compile Include="../../../shared/FortuneForge.Games.PackagedGame.Server/GameWorkerAccountResolver.cs" Link="Worker/GameWorkerAccountResolver.cs" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.10" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2"><PrivateAssets>all</PrivateAssets></PackageReference>
+    <ProjectReference Include="../../server/FortuneForge.Games.Baccarat.Server/FortuneForge.Games.Baccarat.Server.csproj" />
+    <Compile Include="../../../tests/FortuneForge.Games.Tests/Baccarat/*.cs" Link="EngineTests/%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup><Using Include="Xunit" /><Using Include="Microsoft.AspNetCore.Builder" /><Using Include="Microsoft.AspNetCore.Http" /><Using Include="Microsoft.Extensions.Configuration" /><Using Include="Microsoft.Extensions.DependencyInjection" /></ItemGroup>
+</Project>

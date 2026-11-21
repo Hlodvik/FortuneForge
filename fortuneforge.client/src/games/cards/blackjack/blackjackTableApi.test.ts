@@ -8,8 +8,74 @@ import {
   postBlackjackTableAction,
   sitOutBlackjackTableRound,
   stableBlackjackTableMutation,
+  createBlackjackTableApi,
+  BlackjackTableRequestError,
+  isUncertainBlackjackTableFailure,
   type BlackjackTableMutationResponse,
 } from './blackjackTableApi'
+import { createGameCommandRecovery } from '@fortuneforge/client-presentation/game-command-recovery'
+
+describe('Blackjack table command recovery', () => {
+  function storage() {
+    const values = new Map<string, string>()
+    return { getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value) },
+      removeItem: (key: string) => { values.delete(key) } }
+  }
+
+  it('recovers the exact paid action after reload before allowing a changed wager', async () => {
+    const saved = storage()
+    const fetchMock = vi.fn<typeof fetch>().mockRejectedValueOnce(new TypeError('reply lost'))
+      .mockResolvedValueOnce(new Response(JSON.stringify(idleMutation), { status: 200 }))
+    const options = { accountId: 'alice', storage: saved, createIdempotencyKey: () => 'original-paid-key' }
+    const first = createBlackjackTableApi(fetchMock, undefined, options)
+    await expect(first.postBlackjackTableWager('table-1', 5, 8, 'ignored-caller-key')).rejects.toThrow('reply lost')
+    expect(() => first.postBlackjackTableWager('table-1', 10, 8, 'new-key')).toThrow('pending game command')
+    const reloaded = createBlackjackTableApi(fetchMock, undefined, options)
+    await expect(reloaded.recoverBlackjackTableMutation()).resolves.toEqual(idleMutation)
+    const calls = fetchMock.mock.calls
+    expect(calls[1]?.[0]).toBe(calls[0]?.[0])
+    expect(calls[1]?.[1]?.body).toBe(calls[0]?.[1]?.body)
+    expect(new Headers(calls[1]?.[1]?.headers).get('Idempotency-Key')).toBe('original-paid-key')
+    expect(new Headers(calls[1]?.[1]?.headers).get('X-FortuneForge-Expected-Account')).toBe('alice')
+    expect(createGameCommandRecovery({ ...options, gameId: 'blackjack', routePrefix: '/api/cards/blackjack/table' }).read().pending).toBeNull()
+  })
+
+  it('preserves DELETE method and original queue cancellation body on recovery', async () => {
+    const saved = storage()
+    const fetchMock = vi.fn<typeof fetch>().mockRejectedValueOnce(new TypeError('reply lost'))
+      .mockResolvedValueOnce(new Response(JSON.stringify(idleMutation), { status: 200 }))
+    const options = { accountId: 'alice', storage: saved, createIdempotencyKey: () => 'original-cancel-key' }
+    await expect(createBlackjackTableApi(fetchMock, undefined, options).cancelBlackjackTableQueue('ticket-1', 8, 'caller-key')).rejects.toThrow()
+    await createBlackjackTableApi(fetchMock, undefined, options).recoverBlackjackTableMutation()
+    expect(fetchMock.mock.calls[1]?.[1]?.method).toBe('DELETE')
+    expect(fetchMock.mock.calls[1]?.[1]?.body).toBe('{"expectedVersion":8}')
+  })
+
+  it('retains uncertain commands across authentication expiry and isolates another account', async () => {
+    const saved = storage()
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response('{}', { status: 401 }))
+    const alice = { accountId: 'alice', storage: saved, createIdempotencyKey: () => 'original-key' }
+    await expect(createBlackjackTableApi(fetchMock, undefined, alice).postBlackjackTableAction('table-1', 'double', 8, 'caller-key')).rejects.toThrow()
+    const before = fetchMock.mock.calls.length
+    expect(await createBlackjackTableApi(fetchMock, undefined, { accountId: 'bob', storage: saved }).recoverBlackjackTableMutation()).toBeNull()
+    expect(fetchMock.mock.calls).toHaveLength(before)
+    expect(createGameCommandRecovery({ ...alice, gameId: 'blackjack', routePrefix: '/api/cards/blackjack/table' }).read().pending?.idempotencyKey).toBe('original-key')
+  })
+
+  it('allows leaving after a definitive paused-admission reply', async () => {
+    const saved = storage()
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ code: 'blackjack-table-disabled', error: 'New hands are paused.' }), { status: 503 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(idleMutation), { status: 200 }))
+    const options = { accountId: 'alice', storage: saved, createIdempotencyKey: () => crypto.randomUUID() }
+    const api = createBlackjackTableApi(fetchMock, undefined, options)
+    await expect(api.postBlackjackTableWager('table-1', 5, 8, 'wager-key')).rejects.toThrow('paused')
+    expect(createGameCommandRecovery({ ...options, gameId: 'blackjack', routePrefix: '/api/cards/blackjack/table' }).read().pending).toBeNull()
+    expect(isUncertainBlackjackTableFailure(new BlackjackTableRequestError('paused', 503, { code: 'blackjack-table-disabled' }))).toBe(false)
+    await expect(api.leaveBlackjackTable('table-1', 8, 'leave-key')).resolves.toEqual(idleMutation)
+  })
+})
 
 describe('Blackjack table API boundary', () => {
   afterEach(() => vi.unstubAllGlobals())

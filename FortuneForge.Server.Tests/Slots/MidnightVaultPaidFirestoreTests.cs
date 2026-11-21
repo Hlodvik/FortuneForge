@@ -4,12 +4,9 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using FortuneForge.Games.Abstractions.Auditing;
-using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
-using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Accounts.Storage;
 using FortuneForge.Server.Admin.Operations;
-using FortuneForge.Server.Controllers;
 using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.SecurityAudit;
 using FortuneForge.Server.Slots.Bonuses;
@@ -20,9 +17,6 @@ using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
 using FortuneForge.Server.Slots.Spins;
 using Google.Cloud.Firestore;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
 
@@ -63,7 +57,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     }
 
     [Fact]
-    public async Task EveryAdmittedCashStakeSettlesThroughTheAuthenticatedControllerInExactQuarterRandUnits()
+    public async Task EveryAdmittedCashStakeSettlesThroughTheLegacyStoreInExactQuarterRandUnits()
     {
         var database = emulator.Database();
         var player = await Player(database, "every-stake", initialRand: 1_000_000);
@@ -75,20 +69,20 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
             // Advance only the stored cooldown fixture clock; never reset money,
             // admissions, pity, results or ledger between these real paid requests.
             if (stake > 2) await ReadyForNextRequest(player);
-            var response = Success(await player.Spin(new(GameId, stake, false, false)));
+            var (response, settlement) = await player.Legacy.SpinAsync(stake, false, false);
             Assert.False(response.IsFreeSpin);
             Assert.Equal(stake, response.WagerPoints);
             Assert.Equal(Active, response.PaytableId);
-            Assert.True(response.Payout.TotalPoints > 0);
-            Assert.All(response.Payout.Paylines.SelectMany(line => line.Matches), match =>
+            Assert.True(settlement.Payout.TotalPoints > 0);
+            Assert.All(settlement.Payout.Paylines.SelectMany(line => line.Matches), match =>
                 Assert.Equal(checked(stake * match.Multiplier), match.AmountPoints));
-            Assert.Equal(response.Payout.Paylines.Sum(line => line.AmountPoints), response.Payout.TotalPoints);
+            Assert.Equal(settlement.Payout.Paylines.Sum(line => line.AmountPoints), settlement.Payout.TotalPoints);
             var chargedCents = checked(stake * 25);
-            var payoutCents = checked(response.Payout.TotalPoints * 25);
+            var payoutCents = checked(settlement.Payout.TotalPoints * 25);
             expectedCents = checked(expectedCents - chargedCents + payoutCents);
             totalChargedCents += chargedCents;
             totalPayoutCents += payoutCents;
-            Assert.Equal(expectedCents / 100m, response.SlotsCreditsBalance);
+            Assert.Equal(expectedCents / 100m, settlement.SlotsCreditsBalance);
             Assert.Equal(expectedCents, await WalletCents(player));
             var ledger = database.Collection("balanceTransactions");
             var wager = await ledger.Document(response.SpinId.ToString("N") + "-wager").GetSnapshotAsync();
@@ -106,7 +100,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task OddCashWagerIsRejectedBeforeAnyAdmissionOrWalletMutation()
     {
         var player = await Player(emulator.Database(), "odd-cash");
-        Assert.IsType<BadRequestObjectResult>(await player.Spin(new(GameId, 3, false, false)));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => player.Legacy.SpinAsync(3, false, false));
         Assert.Equal(100_000, await WalletCents(player));
         Assert.Empty((await player.Database.Collection("slotSpinAdmissions").GetSnapshotAsync()).Documents);
         Assert.Empty((await player.Database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
@@ -119,8 +113,8 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task LosingPaidSpinChargesTheExactStakeAndCreatesNoPayoutLedgerEntry(long stake)
     {
         var player = await Player(emulator.Database(), "paid-loss-" + stake, stopsOverride: FindLosingStops());
-        var response = Success(await player.Spin(new(GameId, stake, false, false)));
-        Assert.Equal(0, response.Payout.TotalPoints);
+        var (response, settlement) = await player.Legacy.SpinAsync(stake, false, false);
+        Assert.Equal(0, settlement.Payout.TotalPoints);
         Assert.Equal(100_000 - stake * 25, await WalletCents(player));
         var wager = Assert.Single((await player.Database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
         Assert.Equal("slot-wager", wager.GetValue<string>("type"));
@@ -133,7 +127,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task InsufficientCashIsRejectedWithoutAnAdmissionOrLedgerWrite()
     {
         var player = await Player(emulator.Database(), "insufficient-cash", initialRand: 0);
-        Assert.IsType<ConflictObjectResult>(await player.Spin(new(GameId, 2, false, false)));
+        await Assert.ThrowsAsync<InsufficientSlotCreditsException>(() => player.Legacy.SpinAsync(2, false, false));
         Assert.Equal(0, await WalletCents(player));
         Assert.Empty((await player.Database.Collection("slotSpinAdmissions").GetSnapshotAsync()).Documents);
         Assert.Empty((await player.Database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
@@ -144,7 +138,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     {
         var player = await Player(emulator.Database(), "insufficient-boost");
         await SeedBank(player, 3, 2, Active);
-        Assert.IsType<ConflictObjectResult>(await player.Spin(new(GameId, 3, true, true)));
+        await Assert.ThrowsAsync<InsufficientSpecialPointsException>(() => player.Legacy.SpinAsync(3, true, true));
         Assert.Equal(2, (await FreeGames(player).GetSnapshotAsync()).GetValue<long>("available"));
         Assert.Equal(100_000, await WalletCents(player));
         Assert.Empty((await player.Database.Collection("slotSpinAdmissions").GetSnapshotAsync()).Documents);
@@ -155,7 +149,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task MissingFreeSpinCannotChargeCashOrCreateAnAdmission()
     {
         var player = await Player(emulator.Database(), "no-free-spin");
-        Assert.IsType<ConflictObjectResult>(await player.Spin(new(GameId, 2, true, false)));
+        await Assert.ThrowsAsync<NoFreeSpinsException>(() => player.Legacy.SpinAsync(2, true, false));
         Assert.Equal(100_000, await WalletCents(player));
         Assert.Empty((await player.Database.Collection("slotSpinAdmissions").GetSnapshotAsync()).Documents);
         Assert.Empty((await player.Database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
@@ -167,12 +161,12 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         var player = await Player(emulator.Database(), "valid-boost", boosted: true);
         var cost = player.Engine.GetSpecialBoostCost(GameId);
         await SpecialPoints(player).SetAsync(new Dictionary<string, object> { ["available"] = cost + 11L });
-        var response = Success(await player.Spin(new(GameId, 2, false, true)));
+        var (response, settlement) = await player.Legacy.SpinAsync(2, false, true);
         Assert.True(response.SpecialBoostApplied);
         Assert.EndsWith("-power-boost", response.ReelSetId);
         Assert.Equal(Active, response.PaytableId);
-        Assert.Equal(11 + response.SpecialPointsAwarded, response.SpecialPointsBalance);
-        Assert.Equal(100_000 - 50 + response.Payout.TotalPoints * 25, await WalletCents(player));
+        Assert.Equal(11 + response.SpecialPointsAwarded, settlement.SpecialPointsBalance);
+        Assert.Equal(100_000 - 50 + settlement.Payout.TotalPoints * 25, await WalletCents(player));
         var uses = (await player.Database.Collection("balanceTransactions").WhereEqualTo("type", "special-boost-use").GetSnapshotAsync()).Documents;
         var use = Assert.Single(uses);
         Assert.Equal(-cost, use.GetValue<long>("amount"));
@@ -192,7 +186,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
             // gem:90points/30gems =3points, exactlyR0.75.
             ["sealWagerCents"] = Modes((15 * 2 + 14 * 4) * 25)
         });
-        var trigger = Success(await player.Spin(new(GameId, 4, false, false)));
+        var (_, trigger) = await player.Legacy.SpinAsync(4, false, false);
         Assert.Equal(10, trigger.FreeSpinsRemaining);
         Assert.Equal(3, trigger.FreeSpinWagerPoints);
         Assert.Equal(10, trigger.BonusRound!.TotalSpins);
@@ -201,11 +195,11 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         Assert.Equal(75, (await player.Guard.GetSnapshotAsync()).GetValue<long>("freeSpinWagerCents"));
         var before = await WalletCents(player);
         await ReadyForNextRequest(player);
-        var bonus = Success(await player.Spin(new(GameId, 3, true, false)));
+        var (bonus, bonusSettlement) = await player.Legacy.SpinAsync(3, true, false);
         Assert.True(bonus.IsFreeSpin);
         Assert.Equal(3, bonus.WagerPoints);
         Assert.Equal(Active, bonus.PaytableId);
-        Assert.Equal(before + bonus.Payout.TotalPoints * 25, await WalletCents(player));
+        Assert.Equal(before + bonusSettlement.Payout.TotalPoints * 25, await WalletCents(player));
         Assert.False((await player.Database.Collection("balanceTransactions").Document(bonus.SpinId.ToString("N") + "-wager").GetSnapshotAsync()).Exists);
         await AssertSavedAudit(player.Database, bonus, derived: true);
     }
@@ -219,7 +213,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         {
             ["sealCounts"] = Modes(29), ["sealWagerCents"] = Modes((15 * 2 + 14 * 4) * 25)
         });
-        var first = Success(await player.Spin(new(GameId, 4, true, false)));
+        var (_, first) = await player.Legacy.SpinAsync(4, true, false);
         Assert.Equal(1, first.FreeSpinsRemaining);
         Assert.Equal(4, first.FreeSpinWagerPoints);
         Assert.Single(first.QueuedBonusRounds);
@@ -228,24 +222,24 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         Assert.Equal(10, first.QueuedBonusRounds[0].RemainingSpins);
         Assert.Equal(Active, first.QueuedBonusRounds[0].MathModelId);
         var queuedId = first.QueuedBonusRounds[0].Id;
-        var reconnected = Assert.IsType<SlotStateResponse>(Assert.IsType<OkObjectResult>(await player.State()).Value);
+        var reconnected = await player.State();
         Assert.Equal(1, reconnected.FreeSpinsRemaining);
         Assert.Equal(4, reconnected.FreeSpinWagerPoints);
         Assert.Equal(queuedId, Assert.Single(reconnected.QueuedBonusRounds).Id);
         await ReadyForNextRequest(player);
-        var lastOldSpin = Success(await player.Spin(new(GameId, 4, true, false)));
+        var (lastOldSpin, lastOldSettlement) = await player.Legacy.SpinAsync(4, true, false);
         Assert.Equal(4, lastOldSpin.WagerPoints);
-        Assert.Equal(10, lastOldSpin.FreeSpinsRemaining);
-        Assert.Equal(3, lastOldSpin.FreeSpinWagerPoints);
-        Assert.Equal(queuedId, lastOldSpin.BonusRound!.Id);
-        Assert.Empty(lastOldSpin.QueuedBonusRounds);
+        Assert.Equal(10, lastOldSettlement.FreeSpinsRemaining);
+        Assert.Equal(3, lastOldSettlement.FreeSpinWagerPoints);
+        Assert.Equal(queuedId, lastOldSettlement.BonusRound!.Id);
+        Assert.Empty(lastOldSettlement.QueuedBonusRounds);
         await ReadyForNextRequest(player);
-        var firstQueuedSpin = Success(await player.Spin(new(GameId, 3, true, false)));
+        var (firstQueuedSpin, firstQueuedSettlement) = await player.Legacy.SpinAsync(3, true, false);
         Assert.Equal(3, firstQueuedSpin.WagerPoints);
-        Assert.Equal(9, firstQueuedSpin.FreeSpinsRemaining);
+        Assert.Equal(9, firstQueuedSettlement.FreeSpinsRemaining);
         Assert.Equal(Active, firstQueuedSpin.PaytableId);
-        Assert.Equal(queuedId, firstQueuedSpin.BonusRound!.Id);
-        Assert.Equal(10, firstQueuedSpin.BonusRound.TotalSpins);
+        Assert.Equal(queuedId, firstQueuedSettlement.BonusRound!.Id);
+        Assert.Equal(10, firstQueuedSettlement.BonusRound.TotalSpins);
     }
 
     [Theory]
@@ -256,7 +250,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         var player = await Player(emulator.Database(), "bad-carry-" + carry);
         await SeedBank(player, carry, 2, Active);
         await SpecialPoints(player).SetAsync(new Dictionary<string, object> { ["available"] = 100L });
-        Assert.IsType<BadRequestObjectResult>(await player.Spin(new(GameId, 2, true, true)));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => player.Legacy.SpinAsync(2, true, true));
         Assert.Equal(2, (await FreeGames(player).GetSnapshotAsync()).GetValue<long>("available"));
         Assert.Equal(100, (await SpecialPoints(player).GetSnapshotAsync()).GetValue<long>("available"));
         Assert.Equal(100_000, await WalletCents(player));
@@ -268,7 +262,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     {
         var player = await Player(emulator.Database(), "bad-model");
         await SeedBank(player, 3, 2, "unrecognized-midnight-model");
-        Assert.Equal(500, Assert.IsType<ObjectResult>(await player.Spin(new(GameId, 2, true, false))).StatusCode);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => player.Legacy.SpinAsync(2, true, false));
         Assert.Equal(2, (await FreeGames(player).GetSnapshotAsync()).GetValue<long>("available"));
         Assert.Empty((await player.Database.Collection("slotSpinAdmissions").GetSnapshotAsync()).Documents);
     }
@@ -278,7 +272,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     {
         var player = await Player(emulator.Database(), "unpriced-bank");
         await FreeGames(player).SetAsync(new Dictionary<string, object> { ["available"] = 1L });
-        Assert.IsType<BadRequestObjectResult>(await player.Spin(new(GameId, 3, true, false)));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => player.Legacy.SpinAsync(3, true, false));
         Assert.Equal(1, (await FreeGames(player).GetSnapshotAsync()).GetValue<long>("available"));
         Assert.Empty((await player.Database.Collection("slotSpinAdmissions").GetSnapshotAsync()).Documents);
     }
@@ -288,7 +282,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     {
         var player = await Player(emulator.Database(), "preserve-bank");
         await SeedBank(player, 3, 2, Active);
-        Assert.IsType<BadRequestObjectResult>(await player.Spin(new(GameId, 2, false, false)));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => player.Legacy.SpinAsync(2, false, false));
         Assert.Equal(2, (await FreeGames(player).GetSnapshotAsync()).GetValue<long>("available"));
         Assert.Equal(100_000, await WalletCents(player));
         Assert.Empty((await player.Database.Collection("slotSpinAdmissions").GetSnapshotAsync()).Documents);
@@ -300,7 +294,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         var player = await Player(emulator.Database(), "v1-bonus", stopModel: V1);
         await RestoreFrozenV1Bank(player);
         Assert.False((await player.Guard.GetSnapshotAsync()).ContainsField("freeSpinMathModelId"));
-        var state = Assert.IsType<SlotStateResponse>(Assert.IsType<OkObjectResult>(await player.State()).Value);
+        var state = await player.State();
         Assert.Equal(6, state.FreeSpinsRemaining);
         Assert.Equal(4, state.FreeSpinWagerPoints);
         Assert.Equal(6, state.BonusRound!.TotalSpins);
@@ -308,15 +302,15 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         for (var remaining = 5; remaining >= 0; remaining--)
         {
             await ReadyForNextRequest(player);
-            var free = Success(await player.Spin(new(GameId, 4, true, false)));
+            var (free, freeSettlement) = await player.Legacy.SpinAsync(4, true, false);
             Assert.Equal(V1, free.PaytableId);
             Assert.True(free.IsFreeSpin);
-            Assert.Equal(remaining, free.FreeSpinsRemaining);
-            if (remaining > 0) Assert.Equal(6, free.BonusRound!.TotalSpins);
+            Assert.Equal(remaining, freeSettlement.FreeSpinsRemaining);
+            if (remaining > 0) Assert.Equal(6, freeSettlement.BonusRound!.TotalSpins);
             await AssertSavedAudit(player.Database, free, derived: true);
         }
         await ReadyForNextRequest(player);
-        var cash = Success(await player.Spin(new(GameId, 2, false, false)));
+        var (cash, _) = await player.Legacy.SpinAsync(2, false, false);
         Assert.Equal(Active, cash.PaytableId);
         Assert.Equal("midnight-vault-reels-v2", cash.ReelSetId);
         Assert.False(cash.IsFreeSpin);
@@ -330,12 +324,12 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     {
         var player = await Player(emulator.Database(), "retrigger-" + model[^2..], scatter: true, stopModel: model);
         await SeedBank(player, 4, 1, model);
-        var response = Success(await player.Spin(new(GameId, 4, true, false)));
+        var (response, settlement) = await player.Legacy.SpinAsync(4, true, false);
         Assert.Equal(model, response.PaytableId);
-        Assert.Equal(awardedSpins, response.FreeSpinsRemaining);
-        Assert.Equal(awardedSpins, response.BonusRound!.TotalSpins);
+        Assert.Equal(awardedSpins, settlement.FreeSpinsRemaining);
+        Assert.Equal(awardedSpins, settlement.BonusRound!.TotalSpins);
         Assert.Equal(model, (await player.Guard.GetSnapshotAsync()).GetValue<string>("freeSpinMathModelId"));
-        Assert.Equal(4, response.FreeSpinWagerPoints);
+        Assert.Equal(4, settlement.FreeSpinWagerPoints);
         var audit = await EngineAudit(player.Database, response);
         if (model is V1 or V2) MidnightVaultHistoricalFixtures.AssertHistoricalReels(audit.ReelSet);
     }
@@ -354,12 +348,12 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
             await SpecialPoints(player).SetAsync(new Dictionary<string, object> { ["available"] = player.Engine.GetSpecialBoostCost(GameId) + 5L });
         var before = await WalletCents(player);
         // The request cannot reprice an awarded3point stake to a cash-menu2.
-        var response = Success(await player.Spin(new(GameId, 2, true, boosted)));
+        var (response, settlement) = await player.Legacy.SpinAsync(2, true, boosted);
         Assert.Equal(3, response.WagerPoints);
         Assert.Equal(model, response.PaytableId);
         Assert.True(response.IsFreeSpin);
         Assert.Equal(boosted, response.SpecialBoostApplied);
-        Assert.Equal(before + response.Payout.TotalPoints * 25, await WalletCents(player));
+        Assert.Equal(before + settlement.Payout.TotalPoints * 25, await WalletCents(player));
         Assert.False((await player.Database.Collection("balanceTransactions").Document(response.SpinId.ToString("N") + "-wager").GetSnapshotAsync()).Exists);
         var audit = await EngineAudit(player.Database, response);
         MidnightVaultHistoricalFixtures.AssertHistoricalReels(audit.ReelSet, boosted);
@@ -383,13 +377,13 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         for (var remaining = 1; remaining >= 0; remaining--)
         {
             if (remaining == 0) await ReadyForNextRequest(player);
-            var response = Success(await player.Spin(new(GameId, 3, true, false)));
+            var (response, settlement) = await player.Legacy.SpinAsync(3, true, false);
             Assert.Equal(V2, response.PaytableId);
-            Assert.Equal(remaining, response.FreeSpinsRemaining);
+            Assert.Equal(remaining, settlement.FreeSpinsRemaining);
             MidnightVaultHistoricalFixtures.AssertHistoricalReels((await EngineAudit(player.Database, response)).ReelSet);
         }
         await ReadyForNextRequest(player);
-        var cash = Success(await player.Spin(new(GameId, 2, false, false)));
+        var (cash, _) = await player.Legacy.SpinAsync(2, false, false);
         Assert.Equal(Active, cash.PaytableId);
         Assert.Equal("midnight-vault-reels-v2", cash.ReelSetId);
     }
@@ -433,7 +427,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         var result = player.Engine.SpinAdmitted(GameId, admission, player.UserId);
         var first = await player.Store.RecordSlotSpinAsync(player.UserId, result, admission, DateTime.UtcNow, default);
         await ReadyForNextRequest(player);
-        var later = Success(await player.Spin(new(GameId, 4, false, false)));
+        var (_, later) = await player.Legacy.SpinAsync(4, false, false);
         Assert.NotEqual(first.SlotsCreditsBalance, later.SlotsCreditsBalance);
         var versions = await FinancialVersions(player.Database);
         var retry = await player.Store.RecordSlotSpinAsync(player.UserId, result, admission, DateTime.UtcNow, default);
@@ -455,7 +449,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         Assert.Empty(first.QueuedBonusRounds);
         Assert.Single(first.AwardedBonusRounds);
         await ReadyForNextRequest(player);
-        var later = Success(await player.Spin(new(GameId, 4, true, false)));
+        var (_, later) = await player.Legacy.SpinAsync(4, true, false);
         Assert.Equal(9, later.FreeSpinsRemaining);
         Assert.Single(later.QueuedBonusRounds);
         var versions = await FinancialVersions(player.Database);
@@ -480,7 +474,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         rounds[0][field] = fractional;
         await player.Guard.UpdateAsync("midnightBonusRounds", rounds);
         var versions = await FinancialVersions(player.Database);
-        Assert.Equal(500, Assert.IsType<ObjectResult>(await player.Spin(new(GameId, 3, true, false))).StatusCode);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => player.Legacy.SpinAsync(3, true, false));
         Assert.Equal(versions, await FinancialVersions(player.Database));
         Assert.Equal(2, (await FreeGames(player).GetSnapshotAsync()).GetValue<long>("available"));
         Assert.Empty((await player.Database.Collection("slotSpinAdmissions").GetSnapshotAsync()).Documents);
@@ -532,9 +526,9 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     {
         using var aborted = new CancellationTokenSource();
         var player = await Player(emulator.Database(), "aborted-request", onGenerate: aborted.Cancel);
-        var response = Success(await player.Spin(new(GameId, 2, false, false), aborted.Token));
+        var (response, settlement) = await player.Legacy.SpinAsync(2, false, false, aborted.Token);
         Assert.True(aborted.IsCancellationRequested);
-        Assert.Equal(100_000 - 50 + response.Payout.TotalPoints * 25, await WalletCents(player));
+        Assert.Equal(100_000 - 50 + settlement.Payout.TotalPoints * 25, await WalletCents(player));
         var admission = Assert.Single((await player.Database.Collection("slotSpinAdmissions").GetSnapshotAsync()).Documents);
         Assert.Equal("settled", admission.GetValue<string>("status"));
         Assert.Single((await player.Database.Collection("slotSpinResults").GetSnapshotAsync()).Documents);
@@ -615,7 +609,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     {
         var player = await Player(emulator.Database(), "tampered-metadata");
         await SeedBank(player, 3, 1, Active);
-        var response = Success(await player.Spin(new(GameId, 3, true, false)));
+        var (response, _) = await player.Legacy.SpinAsync(3, true, false);
         var detail = await Audit(player.Database, response);
         Assert.Empty(SlotEvidenceReplayAudit.Inspect(detail.Summary, detail.PayloadJson!));
         var changed = JsonNode.Parse(detail.PayloadJson!)!;
@@ -627,10 +621,13 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task ActualCooldownRejectsASecondRequestWithoutDuplicatingACharge()
     {
         var player = await Player(emulator.Database(), "cooldown");
-        Success(await player.Spin(new(GameId, 2, false, false)));
+        await player.Legacy.SpinAsync(2, false, false);
         var before = await WalletCents(player);
-        await player.Guard.UpdateAsync("lastSpinStartedAt", Timestamp.FromDateTime(DateTime.UtcNow));
-        Assert.Equal(429, Assert.IsType<ObjectResult>(await player.Spin(new(GameId, 2, false, false))).StatusCode);
+        var startedAtUtc = DateTime.UtcNow.Date;
+        await player.Guard.UpdateAsync("lastSpinStartedAt", Timestamp.FromDateTime(startedAtUtc));
+        var blocked = await player.Legacy.AdmitAsync(2, false, false, startedAtUtc: startedAtUtc);
+        Assert.Equal(TimeSpan.FromMilliseconds(500), blocked.CooldownRemaining);
+        Assert.Equal(Guid.Empty, blocked.AdmissionId);
         Assert.Equal(before, await WalletCents(player));
         Assert.Single((await player.Database.Collection("slotSpinAdmissions").GetSnapshotAsync()).Documents);
     }
@@ -650,10 +647,6 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         Assert.NotNull((await store.CreateAsync(userId, userId, userId.ToUpperInvariant(), userId + "@example.test", "unused-local-test", "active", default)).Value);
         await database.Collection("userBalances").Document(userId + "_slotsCredits").UpdateAsync(new Dictionary<string, object>
         { ["available"] = initialRand, ["availableFractionalCents"] = 0L });
-        var token = Hash("local-midnight-" + userId);
-        await store.CreateSessionAsync(Hash(token), userId, DateTime.UtcNow, DateTime.UtcNow.AddHours(1), null, default);
-        var accessor = new HttpContextAccessor();
-        var accountService = new AccountService(store, null!, null!, accessor);
         var game = provider.GetGame(GameId)!;
         if (stopModel is not null) game = MidnightVaultSlotDefinitions.CreateGameForPaytable(game, stopModel);
         var reels = provider.GetReelSet(game.Math.ReelSetId)!;
@@ -664,27 +657,17 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
                 Enumerable.Range(0, 4).All(row => strip[(stop + row) % strip.Count] != "FREE"))).ToArray();
         Assert.All(stops, stop => Assert.True(stop >= 0));
         var engine = new SpinService(provider, new CryptoReelGenerator(new FixedStops(stops, onGenerate)), new CombinationEvaluator(), new PayoutCalculator(), featureRandom ?? new QuietFeatures());
-        return new(database, userId, token, accessor, store, engine,
-            new SlotsController(engine, accountService, NullLogger<SlotsController>.Instance));
+        return new(database, userId, store, engine, new LegacySlotSettlementHarness(store, engine, userId, GameId));
     }
 
-    private sealed record PaidPlayer(FirestoreDb Database, string UserId, string Token, HttpContextAccessor Accessor,
-        FirestoreAccountStore Store, SpinService Engine, SlotsController Controller)
+    private sealed record PaidPlayer(FirestoreDb Database, string UserId, FirestoreAccountStore Store, SpinService Engine,
+        LegacySlotSettlementHarness Legacy)
     {
         public DocumentReference Guard => Database.Collection("slotSpinGuards").Document(UserId + "_" + Hash(GameId));
-        private void NewRequest()
-        {
-            var context = new DefaultHttpContext();
-            context.Request.Headers.Cookie = AccountSessionCookie.Name + "=" + Token;
-            Accessor.HttpContext = context;
-            Controller.ControllerContext = new ControllerContext { HttpContext = context };
-        }
-        public Task<ActionResult> Spin(SpinRequest request, CancellationToken cancellationToken = default)
-        { NewRequest(); return Controller.Spin(request, cancellationToken); }
-        public Task<ActionResult> State() { NewRequest(); return Controller.State(GameId, default); }
+
+        public Task<SlotStateResponse> State() => Store.GetSlotStateAsync(UserId, GameId, Engine.GetPointValueInCents(GameId), default);
     }
 
-    private static SpinResult Success(ActionResult result) => Assert.IsType<SpinResult>(Assert.IsType<OkObjectResult>(result).Value);
     private static void AssertPayoutEqual(SpinPayout expected, SpinPayout actual) =>
         Assert.Equal(JsonSerializer.Serialize(expected, Json), JsonSerializer.Serialize(actual, Json));
     private static Task<SlotSpinAdmission> CashAdmission(PaidPlayer player, long stake) =>

@@ -458,3 +458,23 @@ describe('Snake serial setup, error recovery and lifecycle leases', () => {
     expect(notified).toHaveBeenCalledTimes(prior)
   })
 })
+
+
+describe('Snake durable cabinet recovery', () => {
+  it('restores the saved run on mount and recovers an interrupted step without a reset', async () => {
+    const { gateway } = fixture()
+    const recoverGame = vi.fn().mockResolvedValueOnce(state({ moves: 3 })).mockResolvedValueOnce(state({ moves: 4 }))
+    const controller = new SnakeRunController({ ...gateway, recoverGame }, () => true)
+    active.add(controller)
+    controller.activate(); await settle()
+    expect(controller.getSnapshot()).toMatchObject({ phase: 'ready', game: { moves: 3 } })
+    expect(gateway.startGame).not.toHaveBeenCalled()
+    gateway.tick.mockRejectedValueOnce(new Error('lost response'))
+    controller.play(); await vi.advanceTimersByTimeAsync(115)
+    expect(controller.getSnapshot().phase).toBe('error')
+    controller.retry(); await settle()
+    expect(controller.getSnapshot()).toMatchObject({ phase: 'paused', game: { moves: 4 }, busy: false })
+    expect(gateway.reset).not.toHaveBeenCalled()
+    expect(recoverGame).toHaveBeenCalledTimes(2)
+  })
+})

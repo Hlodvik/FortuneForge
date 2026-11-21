@@ -44,7 +44,7 @@ public sealed partial class ClassicSlotEngine
                 nameof(alternateReelSets));
     }
 
-    public void ValidateWager(long wagerPoints) => ValidateWager(definitions.Game, wagerPoints);
+    public void ValidateWager(long wagerPoints) => ValidateWager(definitions.Game, wagerPoints, allowCarryWager: false);
 
     public ClassicSlotSpinOutcome Spin(long wagerPoints, string playerId,
         bool specialBoostApplied = false, long currentEnergyBalance = 0,
@@ -53,10 +53,7 @@ public sealed partial class ClassicSlotEngine
         Func<ReelSetDefinition, ReelSetDefinition>? prepareReels = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(playerId);
-        if (isFreeSpin && options.AllowFreeSpinCarryWager)
-            ValidateCarryWager(definitions.Game, wagerPoints);
-        else
-            ValidateWager(wagerPoints);
+        ValidateWager(definitions.Game, wagerPoints, allowCarryWager: isFreeSpin && options.AllowFreeSpinCarryWager);
         ArgumentOutOfRangeException.ThrowIfNegative(currentEnergyBalance);
         if (featureMode is not null && !SlotProfile.IsFeatureMode(featureMode))
             throw new ArgumentException("The feature mode is not recognized by the classic slot runtime.",
@@ -200,11 +197,11 @@ public sealed partial class ClassicSlotEngine
             throw new ArgumentException("The frozen slot bundle is internally inconsistent.", nameof(value));
     }
 
-    private static void ValidateWager(GameDefinition game, long wagerPoints)
+    public static void ValidateWager(GameDefinition game, long wagerPoints, bool allowCarryWager)
     {
-        if (wagerPoints < game.Wagering.MinimumWagerPoints ||
-            game.Wagering.MaximumWagerPoints is { } maximum && wagerPoints > maximum)
+        if (!IsCarryWager(game.Wagering, wagerPoints))
             throw new ArgumentOutOfRangeException(nameof(wagerPoints));
+        if (allowCarryWager) return;
         var allowed = game.Wagering.AllowedWagerPoints;
         var increment = game.Wagering.WagerIncrementPoints;
         if (allowed.Count > 0 ? !allowed.Contains(wagerPoints) :
@@ -212,12 +209,9 @@ public sealed partial class ClassicSlotEngine
             throw new ArgumentOutOfRangeException(nameof(wagerPoints));
     }
 
-    private static void ValidateCarryWager(GameDefinition game, long wagerPoints)
-    {
-        if (wagerPoints < game.Wagering.MinimumWagerPoints ||
-            game.Wagering.MaximumWagerPoints is { } maximum && wagerPoints > maximum)
-            throw new ArgumentOutOfRangeException(nameof(wagerPoints));
-    }
+    public static bool IsCarryWager(GameWageringDefinition wagering, long wagerPoints) =>
+        wagerPoints >= wagering.MinimumWagerPoints &&
+        (wagering.MaximumWagerPoints is not { } maximum || wagerPoints <= maximum);
 
     private static IReadOnlyList<IReadOnlyList<string>> Freeze(
         IReadOnlyList<IReadOnlyList<string>> reels) =>

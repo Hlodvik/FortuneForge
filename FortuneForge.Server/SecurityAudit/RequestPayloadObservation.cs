@@ -1,6 +1,9 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using FortuneForge.Games.ArcaneArchives.Server;
+using FortuneForge.Games.NeonNights.Server;
 using FortuneForge.Server.Activity;
+using FortuneForge.Server.GameWorkers;
 
 namespace FortuneForge.Server.SecurityAudit;
 
@@ -14,7 +17,7 @@ internal static class GameRequestPayloadObservation
     private static readonly HashSet<string> Fields = new(StringComparer.OrdinalIgnoreCase)
     {
         "requestId", "operationId", "commandId", "idempotencyKey", "expectedVersion", "expectedRevision", "stateVersion", "version",
-        "gameId", "roundId", "matchId", "runId", "tableId", "ticketId", "replayRunId", "competitionId", "entryId",
+        "gameId", "roundId", "matchId", "runId", "tableId", "ticketId", "replayRunId", "competitionId", "entryId", "spinId",
         "type", "action", "kind", "choice", "decision", "direction", "column", "tile", "quantity", "face", "total", "firstFace", "secondFace",
         "wager", "wagerCents", "wagerPoints", "pointValueInCents", "stake", "ante", "trips", "pairPlus", "primaryStake", "tieStake", "dragonStake", "tigerStake",
         "buyInCents", "entryCredits", "entryFee", "coinsWagered", "handCount", "betSide", "side", "bets", "extraBets", "ticket", "numbers", "number",
@@ -24,6 +27,7 @@ internal static class GameRequestPayloadObservation
         "draw", "mode", "seat", "position", "pile", "pileIndex", "tableauIndex", "foundationIndex", "cardCount", "expectedMoves", "expectedScore",
         "zone", "startIndex", "useFreeSpin", "useSpecialBoost", "freeSpinsRemaining", "freeSpinWagerPoints",
         "energyBalance", "crucibleWageredCents", "sealCollections", "sealId", "averageWagerPoints", "requiredCount", "freeSpinFeatureMode",
+        "potionId", "page", "activate", "reelIndex", "symbol",
         "period", "competition", "entry", "variant", "tableRuleId",
         "raiseTo", "buyInCredits", "stakeCents", "amountCents", "amount", "claim", "elapsedMilliseconds", "elapsedTicks", "commandIndex", "tick", "timestamp"
     };
@@ -32,13 +36,19 @@ internal static class GameRequestPayloadObservation
     internal static GameRequestRoute? Route(string method, string path)
     {
         if (method is not ("POST" or "PUT" or "PATCH" or "DELETE") || path.Length > 512) return null;
+        if (method == "POST" && string.Equals(path.TrimEnd('/'), ArcaneFeatureEndpoints.RoutePrefix + ArcaneFeatureEndpoints.PreparedSpinRoute,
+            StringComparison.OrdinalIgnoreCase))
+            return new(ArcaneFeatureEndpoints.AuditGameId, null);
+        if (method == "POST" && IsNeonAction(path.TrimEnd('/')))
+            return new(NeonCarRespinEndpoints.AuditGameId, null);
         var parts = path.Trim('/').Split('/');
         if (parts.Length < 3 || !parts[0].Equals("api", StringComparison.OrdinalIgnoreCase)) return null;
         var section = parts[1].ToLowerInvariant();
         var game = section switch
         {
             "solitaire" => "solitaire",
-            "slots" when parts[2].Equals("spins", StringComparison.OrdinalIgnoreCase) => "slots",
+            "slots" when parts[2].Equals("spins", StringComparison.OrdinalIgnoreCase) ||
+                         parts[2].Equals(PreparedSlotWorkerRegistry.PublicSpinRoute, StringComparison.OrdinalIgnoreCase) => "slots",
             "slots" when parts.Length == 4 && parts[2].Equals("demo", StringComparison.OrdinalIgnoreCase) &&
                          parts[3].Equals("spins", StringComparison.OrdinalIgnoreCase) => "slots",
             "cards" or "games" or "arcade" or "arcade-competitions" => parts[2].ToLowerInvariant(),
@@ -54,6 +64,13 @@ internal static class GameRequestPayloadObservation
         return new(game, instance, section == "slots" && parts.Length == 4 &&
             parts[2].Equals("demo", StringComparison.OrdinalIgnoreCase));
     }
+
+    private static bool IsNeonAction(string path) =>
+        path.Equals(NeonPrimaryRouteContract.NitroPath, StringComparison.OrdinalIgnoreCase) ||
+        path.Equals(NeonPrimaryRouteContract.AdminPath, StringComparison.OrdinalIgnoreCase) ||
+        path.Equals(NeonCarRespinEndpoints.RoutePrefix + NeonCarRespinEndpoints.RespinRoute, StringComparison.OrdinalIgnoreCase) ||
+        path.Equals(NeonCarRespinEndpoints.RoutePrefix + NeonCarRespinEndpoints.RespinNitroRoute, StringComparison.OrdinalIgnoreCase) ||
+        path.Equals(NeonCarRespinEndpoints.RoutePrefix + NeonCarRespinEndpoints.DismissRoute, StringComparison.OrdinalIgnoreCase);
 
     private static readonly HashSet<string> KnownGames = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -77,7 +94,7 @@ internal static class GameRequestPayloadObservation
                 if (root.TryGetProperty(key, out var field) && field.ValueKind == JsonValueKind.Number && field.TryGetInt64(out var number)) { version = number; break; }
             var gameId = Text(root, "gameId");
             if (gameId is not null && AcceptedGameActivityReader.SlotIds.TryGetValue(gameId, out var catalogue)) gameId = catalogue;
-            var instanceId = new[] { "roundId", "matchId", "tableId", "runId", "entryId" }.Select(key => Text(root, key)).FirstOrDefault(id => id is not null);
+            var instanceId = new[] { "roundId", "matchId", "tableId", "runId", "entryId", "spinId" }.Select(key => Text(root, key)).FirstOrDefault(id => id is not null);
             var partial = false;
             var nodes = 0;
             using var stream = new MemoryStream();

@@ -1,16 +1,16 @@
 using System.Text.Json;
+using FortuneForge.Games.Keno.Server;
+using FortuneForge.Games.SicBo.Server;
 using FortuneForge.Server.Activity;
 using FortuneForge.Server.Cards.Blackjack;
 using FortuneForge.Server.Cards.HouseHoldem;
 using FortuneForge.Server.Cards.ThreeCardPoker.Table;
-using FortuneForge.Server.Dice.SicBo;
 using FortuneForge.Server.Games.Craps;
 using FortuneForge.Server.Games.DropMerge;
 using FortuneForge.Server.Games.Hearts;
 using FortuneForge.Server.Games.LiarsDice;
 using FortuneForge.Server.Games.Roulette;
 using FortuneForge.Server.Games.TwentyFortyEight;
-using FortuneForge.Server.Numbers.Keno;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Activity;

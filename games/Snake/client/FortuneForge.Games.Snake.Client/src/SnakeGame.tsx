@@ -93,9 +93,9 @@ export function SnakeGame({ gateway }: SnakeGameProps) {
           </div>
           {(!started || gameEnded || paused) && <div className="ff-snake-overlay">
             <small>{paused ? 'Run paused' : run.phase === 'error' ? 'Run interrupted' : gameEnded ? (game.phase === 'won' ? 'Board cleared' : 'Run ended') : 'Snake is ready'}</small>
-            <strong>{paused ? 'Take a breath' : run.phase === 'error' ? 'Start a new run' : gameEnded ? (game.phase === 'won' ? 'You win!' : 'Snake crashed') : 'Play'}</strong>
+            <strong>{paused ? 'Take a breath' : run.phase === 'error' ? 'Recover your run' : gameEnded ? (game.phase === 'won' ? 'You win!' : 'Snake crashed') : 'Play'}</strong>
             <span>{paused ? 'Press P, Start, or Resume when you are ready.' : gameEnded ? game.message : 'Swipe, use a controller, arrow keys, WASD, or the controls.'}</span>
-            <button type="button" onClick={() => paused ? resume() : gameEnded ? newGame() : play()} disabled={busy}>{paused ? 'Resume' : gameEnded ? 'Play again' : 'Play'}</button>
+            <button type="button" onClick={() => run.phase === 'error' ? controller.retry() : paused ? resume() : gameEnded ? newGame() : play()} disabled={busy}>{run.phase === 'error' ? 'Check again' : paused ? 'Resume' : gameEnded ? 'Play again' : 'Play'}</button>
           </div>}
         </div>
       </section>
@@ -115,7 +115,7 @@ export function SnakeGame({ gateway }: SnakeGameProps) {
         <section className="ff-snake-controls" aria-label="Snake direction controls">
           {directions.map(direction => <button type="button" key={direction} onClick={() => turn(direction)} disabled={busy || gameEnded || paused} aria-label={`Turn ${directionLabel(direction)}`}><b aria-hidden="true">{direction === 'up' ? '↑' : direction === 'right' ? '→' : direction === 'down' ? '↓' : '←'}</b><span>{directionLabel(direction)}</span></button>)}
         </section>
-        {error && <button className="ff-snake-retry" type="button" onClick={() => newGame()} disabled={busy}>Try again</button>}
+        {error && <button className="ff-snake-retry" type="button" onClick={() => controller.retry()} disabled={busy}>Try again</button>}
       </aside>
     </div>
   </main>

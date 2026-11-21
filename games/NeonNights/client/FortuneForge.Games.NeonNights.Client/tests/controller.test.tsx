@@ -8,9 +8,10 @@ import { emptyNeonState } from '../src/roundState'
 import { NEON_CAR_SYMBOL_SET_ID, NEON_DISCO_SYMBOL_SET_ID, NEON_GAME_ID, type NeonCarRespinOffer, type NeonCarRespinResult, type NeonNitroChoice, type NeonSpinResult } from '../src/types'
 
 const mocks = vi.hoisted(() => ({ state: vi.fn(), spin: vi.fn(), respin: vi.fn(), chooseNitro: vi.fn(), dismissRespin: vi.fn(), trigger: vi.fn(),
-  availability: vi.fn(), startSyncedLoop: vi.fn(), stopLoop: vi.fn(), noop: vi.fn() }))
+  availability: vi.fn(), pendingSpin: vi.fn(), resumeSpin: vi.fn(), startSyncedLoop: vi.fn(), stopLoop: vi.fn(), noop: vi.fn() }))
 vi.mock('../src/api.js', async importOriginal => ({ ...await importOriginal<typeof import('../src/api')>(),
-  createNeonApi: () => ({ state: mocks.state, spin: mocks.spin, respin: mocks.respin, chooseNitro: mocks.chooseNitro, dismissRespin: mocks.dismissRespin, trigger: mocks.trigger, availability: mocks.availability }) }))
+  createNeonApi: () => ({ state: mocks.state, spin: mocks.spin, respin: mocks.respin, chooseNitro: mocks.chooseNitro, dismissRespin: mocks.dismissRespin,
+    trigger: mocks.trigger, availability: mocks.availability, pendingSpin: mocks.pendingSpin, resumeSpin: mocks.resumeSpin }) }))
 vi.mock('@fortuneforge/slot-client-core', async importOriginal => ({ ...await importOriginal<typeof import('@fortuneforge/slot-client-core')>(),
   usePrefersReducedMotion: () => true,
   useSlotAudio: () => ({ preferences: { mode: 'all', volume: 50 }, getLoopPlaybackSeconds: mocks.noop,
@@ -20,6 +21,29 @@ vi.mock('@fortuneforge/slot-client-core', async importOriginal => ({ ...await im
 }))
 const account = { userId: 'neon-test', role: 'admin', balances: { slotsCredits: 20 } }
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.clearAllMocks() })
+
+it('recovers the saved transaction on load and displays the current signed balance', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  const root = createRoot(document.createElement('div'))
+  let c!: NeonNightsController
+  function Harness() { c = useNeonNights({ account }); return null }
+  const result: NeonSpinResult = {
+    ...emptyNeonState, spinId: 'recovered-spin', gameId: NEON_GAME_ID, symbolSetId: 'neon-arcade-symbols-v3',
+    wagerPoints: 300, pointValueInCents: 1, reels: Array.from({ length: 5 }, () => ['2', '4', '5', '7']),
+    isFreeSpin: false, freeSpinsAwarded: 0, slotsCreditsBalance: 17, payout: { totalPoints: 0, paylines: [] },
+    bananaBonusPoints: 0, neonArcade: { featureGamesEnabled: true, bonusSymbolCount: 0, activators: [] },
+  }
+  mocks.state.mockResolvedValueOnce(emptyNeonState).mockResolvedValueOnce({ ...emptyNeonState, slotsCreditsBalance: 21 })
+  mocks.pendingSpin.mockReturnValueOnce({ operationId: 'saved-neon-spin-key', wagerPoints: 300, useFreeSpin: false, useSpecialBoost: false })
+  mocks.resumeSpin.mockResolvedValueOnce(result)
+  try {
+    await act(async () => root.render(<Harness />))
+    expect(mocks.resumeSpin).toHaveBeenCalledTimes(1)
+    expect(mocks.spin).not.toHaveBeenCalled()
+    expect(c.displayedReels).toEqual(result.reels)
+    expect(c.balance).toBe(21)
+  } finally { act(() => root.unmount()) }
+})
 
 it('adds the drum layer after four completed base spins', async () => {
   vi.useFakeTimers()
@@ -173,7 +197,7 @@ it('keeps the Car cabinet and soundtrack active while the final respin settles i
   }
 })
 
-it.each(['landed', 'reloaded'] as const)('holds a %s final Car spin until the required Nitro reel is settled', async mode => {
+it.each(['landed', 'reloaded', 'reserved', 'reserved and reloaded'] as const)('holds a %s final Car spin until the required Nitro reel is settled', async mode => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   const root = createRoot(document.createElement('div'))
   let c!: NeonNightsController
@@ -182,8 +206,11 @@ it.each(['landed', 'reloaded'] as const)('holds a %s final Car spin until the re
   initialReels[3][2] = 'NITRO'
   initialReels[4][1] = 'NITRO'
   const evidence = { trigger: { reel: 3, row: 2 }, secondNitro: { reel: 4, row: 1 }, eligibleReel: 4, initialReels }
+  const justLanded = mode === 'landed' || mode === 'reserved'
+  const reserved = mode.startsWith('reserved')
   const choice: NeonNitroChoice = {
     sourceKind: 'spin', spinId: 'nitro-final-spin', wagerPoints: 50, freeSpinsRemaining: 0,
+    ...(reserved ? { walletBalanceAfterWagerCents: 1950, selectedReel: justLanded ? null : 1 } : {}),
     initialReels, eligibleReels: [0, 1, 2, 3, 4], neonNitroWild: { ...evidence, expandedReel: null, requiresChoice: true },
   }
   const reels = initialReels.map((reel, index) => index === 1 ? reel.map(() => 'ACE' as const) : reel)
@@ -197,18 +224,20 @@ it.each(['landed', 'reloaded'] as const)('holds a %s final Car spin until the re
   }
   const starting = { ...emptyNeonState, freeSpinsRemaining: 1, freeSpinWagerPoints: 50, freeSpinFeatureMode: 'car-rows',
     neonDiscoSpinsRemaining: 12, neonDiscoWagerPoints: 700 }
-  mocks.state.mockResolvedValueOnce(mode === 'landed' ? starting : { ...starting, pendingNeonNitroChoice: choice })
-  if (mode === 'landed') mocks.spin.mockResolvedValueOnce({ pendingNeonNitroChoice: choice })
+  mocks.state.mockResolvedValueOnce(justLanded ? starting : { ...starting, pendingNeonNitroChoice: choice,
+    slotsCreditsBalance: reserved ? 19.75 : undefined })
+  if (justLanded) mocks.spin.mockResolvedValueOnce({ pendingNeonNitroChoice: choice })
   mocks.chooseNitro.mockRejectedValueOnce(new TypeError('Connection dropped')).mockResolvedValueOnce(settled)
   try {
     await act(async () => root.render(<Harness />))
-    if (mode === 'landed') await act(async () => c.handleSpinButtonClick())
+    if (justLanded) await act(async () => c.handleSpinButtonClick())
     expect(c.nitroChoice).toEqual(choice)
     expect(c.displayedReels).toEqual(initialReels)
-    expect(c.balance).toBe(20)
+    expect(c.balance).toBe(reserved ? justLanded ? 19.5 : 19.75 : 20)
+    if (reserved && !justLanded) expect(c.nitroChoiceReels).toEqual([1])
     expect(c.roundSummary).toBeNull()
     await act(async () => c.handleSpinButtonClick())
-    expect(mocks.spin).toHaveBeenCalledTimes(mode === 'landed' ? 1 : 0)
+    expect(mocks.spin).toHaveBeenCalledTimes(justLanded ? 1 : 0)
     await act(async () => c.chooseNitroReel(1))
     expect(c.nitroChoiceReels).toEqual([1])
     await act(async () => c.chooseNitroReel(2))

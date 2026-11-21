@@ -20,6 +20,35 @@ const makeGateway = (value: unknown) => {
 }
 
 describe('HttpAndarBaharGateway', () => {
+  it.each([false, true])('restores an abandoned tab intent before replaying the original command (earlier decline: %s)', async earlierDeclined => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(json({ code: 'andar-bahar-round-conflict', message: 'Another deal is pending.' }, 409))
+      .mockResolvedValueOnce(earlierDeclined ? json({ code: 'insufficient-slot-credits', message: 'Earlier intent declined.' }, 409) : json({ ...settled, roundId: 'earlier-tab-round' }))
+      .mockResolvedValueOnce(json(settled))
+    const gateway = new HttpAndarBaharGateway(undefined, fetcher, 'opened-account')
+    await expect(gateway.createRound('andar', .5, { idempotencyKey: key })).resolves.toEqual(settled)
+    expect(fetcher.mock.calls.map(call => call[0])).toEqual(['/api/games/andar-bahar/rounds', '/api/games/andar-bahar/rounds/latest', '/api/games/andar-bahar/rounds'])
+    const first = fetcher.mock.calls[0][1]!, retry = fetcher.mock.calls[2][1]!
+    expect(retry.body).toBe(first.body)
+    expect(new Headers(retry.headers).get('Idempotency-Key')).toBe(new Headers(first.headers).get('Idempotency-Key'))
+    for (const [, init] of fetcher.mock.calls) expect(new Headers(init?.headers).get('X-FortuneForge-Expected-Account')).toBe('opened-account')
+  })
+
+  it('binds paid status, history, replay and wager requests to the opened account', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async input => String(input).endsWith('/status')
+      ? json(status) : String(input).endsWith('/latest') ? new Response(null, { status: 204 }) : json(settled))
+    const gateway = new HttpAndarBaharGateway(undefined, fetcher, 'opened-account')
+    await gateway.getStatus()
+    await gateway.getLatestRound()
+    await gateway.getRound(settled.roundId)
+    await gateway.createRound('andar', .5, { idempotencyKey: key })
+    expect(fetcher).toHaveBeenCalledTimes(4)
+    for (const [, init] of fetcher.mock.calls) expect(new Headers(init?.headers).get('X-FortuneForge-Expected-Account')).toBe('opened-account')
+    const command = fetcher.mock.calls[3][1]!
+    expect(new Headers(command.headers).get('Idempotency-Key')).toBe(key)
+    expect(command.body).toBe(JSON.stringify({ side: 'andar', stake: .5 }))
+  })
+
   it('posts only the wager with its original key, cookies, no cache and abort support', async () => {
     const { gateway, fetcher } = makeGateway(settled)
     const signal = new AbortController().signal

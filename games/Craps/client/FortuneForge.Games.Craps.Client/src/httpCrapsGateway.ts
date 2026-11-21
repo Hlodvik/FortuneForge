@@ -16,7 +16,7 @@ export class HttpCrapsGateway implements CrapsGateway {
   readonly basePath: string
   private readonly fetcher: typeof fetch
 
-  constructor(basePath = '/api/games/craps', fetcher: typeof fetch = (...args) => fetch(...args)) {
+  constructor(basePath = '/api/games/craps', fetcher: typeof fetch = (...args) => fetch(...args), private readonly expectedAccountId?: string) {
     this.basePath = basePath.replace(/\/$/, '')
     this.fetcher = fetcher
   }
@@ -26,7 +26,7 @@ export class HttpCrapsGateway implements CrapsGateway {
   }
 
   async getActiveRound(signal?: AbortSignal): Promise<CrapsRound | null> {
-    const response = await this.fetcher(`${this.basePath}/rounds/active`, { signal })
+    const response = await this.fetcher(`${this.basePath}/rounds/active`, this.scoped({ signal }))
     if (response.status === 204) return null
     const value: unknown = await response.json().catch(() => null)
     if (!response.ok) {
@@ -75,12 +75,19 @@ export class HttpCrapsGateway implements CrapsGateway {
     }, matchingRound(roundId))
   }
 
+  private scoped(init: RequestInit): RequestInit {
+    if (!this.expectedAccountId) return init
+    const headers = new Headers(init.headers)
+    headers.set('X-FortuneForge-Expected-Account', this.expectedAccountId)
+    return { ...init, headers }
+  }
+
   private async request<T>(
     path: string,
     init: RequestInit,
     validate: (value: unknown) => value is T,
   ): Promise<T> {
-    const response = await this.fetcher(`${this.basePath}${path}`, init)
+    const response = await this.fetcher(`${this.basePath}${path}`, this.scoped(init))
     const value: unknown = await response.json().catch(() => null)
     if (!response.ok) {
       const error = isErrorResponse(value) ? value : null

@@ -54,6 +54,55 @@ it('restores a Disco wager independently from queued Car and accepts legacy roun
     expect(isNeonState({ ...queued, neonDiscoWagerPoints: invalid })).toBe(false)
 })
 
+it('resumes the original paid wager and operation after a lost worker response', async () => {
+  const posts: { operation: string | null; account: string | null; body: unknown }[] = []
+  const transport = async (_path: string, init?: RequestInit) => {
+    if (init?.method === 'GET') {
+      return Response.json(baseResult(), { headers: { 'X-FortuneForge-Prepared-Spin': '1' } })
+    }
+    const headers = new Headers(init?.headers)
+    posts.push({
+      operation: headers.get('Idempotency-Key'),
+      account: headers.get('X-FortuneForge-Expected-Account'),
+      body: JSON.parse(init?.body as string),
+    })
+    return posts.length === 1 ? Response.json({ code: 'retry-required' }, { status: 503 }) : Response.json(baseResult())
+  }
+  const api = createNeonApi(transport, 'neon-recovery-player')
+  await api.state()
+  await expect(api.spin({ wagerPoints: 50, useFreeSpin: false, state: await api.state() }, false)).rejects.toMatchObject({ status: 503 })
+  expect(api.pendingSpin()?.operationId).toBe(posts[0].operation)
+  expect(posts[0].operation).toMatch(/^[A-Za-z0-9_-]{16,128}$/)
+  expect(posts[0].account).toBe('neon-recovery-player')
+
+  const replaced = createNeonApi(transport, 'neon-recovery-player')
+  await replaced.state()
+  await expect(replaced.resumeSpin()).resolves.toEqual(baseResult())
+  expect(posts[1]).toEqual(posts[0])
+  expect(posts[1].body).toEqual({ gameId: NEON_GAME_ID, wagerPoints: 50, useFreeSpin: false, useSpecialBoost: false })
+  expect(replaced.pendingSpin()).toBeUndefined()
+})
+
+it('recovers a server-reported pending spin only with the prepared-spin capability', async () => {
+  const pendingOperation = { operationId: 'neon-server-recovery', wagerPoints: 50, useFreeSpin: false, useSpecialBoost: false }
+  const state = { ...baseResult(), pendingOperation }
+  let posts = 0
+  const transport = async (_path: string, init?: RequestInit) => {
+    if (init?.method === 'GET') return Response.json(state, { headers: { 'X-FortuneForge-Prepared-Spin': '1' } })
+    posts++
+    expect(new Headers(init?.headers).get('Idempotency-Key')).toBe(pendingOperation.operationId)
+    return Response.json(baseResult())
+  }
+  const api = createNeonApi(transport, 'neon-server-recovery-player')
+  await api.state()
+  const legacy = createNeonApi(async () => Response.json(baseResult()), 'neon-server-recovery-player')
+  await legacy.state()
+  await expect(legacy.resumeSpin()).rejects.toMatchObject({ status: 503 })
+  expect(legacy.pendingSpin()).toEqual(pendingOperation)
+  await api.resumeSpin()
+  expect(posts).toBe(1)
+})
+
 function wildDiscoResult() {
   const value = discoResult()
   value.reels[0][0] = value.neonDiscoCascade.initialReels[0][0] = 'DISCO_WILD'

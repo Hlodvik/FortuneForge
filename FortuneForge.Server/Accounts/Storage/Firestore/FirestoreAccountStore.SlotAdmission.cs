@@ -10,20 +10,15 @@ using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.ArcaneArchives;
+using FortuneForge.Games.ArcaneArchives.Server;
 using FortuneForge.Games.JadeDragon;
+using FortuneForge.Games.Slots;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Accounts.Storage;
 
 public sealed partial class FirestoreAccountStore
 {
-    private static readonly TimeSpan ActiveSpinAdmissionTimeout = TimeSpan.FromSeconds(30);
-
-    private static bool HasActiveSlotSpinAdmission(DocumentSnapshot guard, DateTime nowUtc) =>
-        ReadString(guard, "activeAdmissionId") is not null &&
-        guard.TryGetValue<Timestamp>("lastSpinStartedAt", out var startedAt) &&
-        startedAt.ToDateTime().Add(ActiveSpinAdmissionTimeout) > nowUtc;
-
     public Task<SlotSpinAdmission> BeginSlotSpinAsync(
         string userId,
         string gameId,
@@ -35,12 +30,18 @@ public sealed partial class FirestoreAccountStore
         DateTime startedAtUtc,
         TimeSpan cooldown,
         CancellationToken cancellationToken,
-        Func<SlotSpinAdmission, CancellationToken, Task<SpinResult>>? resolveOutcome = null)
+        Func<SlotSpinAdmission, CancellationToken, Task<SpinResult>>? resolveOutcome = null,
+        string? operationId = null,
+        bool allowNewPrepared = true)
     {
         if (gameId == GoldFoundrySlotDefinitions.GameId)
             GoldFoundrySlotDefinitions.ValidateSpinRequest(useFreeSpin);
 
         var admissionId = Guid.NewGuid();
+        var isArcane = gameId == ArcaneArchivesEngine.GameId;
+        var preparedOperation = isArcane && operationId is not null
+            ? PrepareOperation(userId, gameId, operationId, wagerPoints, pointValueInCents, useFreeSpin, useSpecialBoost, specialBoostCost)
+            : null;
         var isJade = gameId == JadeDragonEngine.GameId;
         var isOlympusTumble = gameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId && !useFreeSpin;
         if (isOlympusTumble && useSpecialBoost)
@@ -70,6 +71,19 @@ public sealed partial class FirestoreAccountStore
                     transaction.GetSnapshotAsync(specialPointsReference, cancellationToken),
                     transaction.GetSnapshotAsync(energyReference, cancellationToken));
                 var guardSnapshot = snapshots[0];
+                RejectWorkerOwnedSlot(gameId, guardSnapshot);
+                if (preparedOperation is not null)
+                {
+                    var index = await transaction.GetSnapshotAsync(preparedOperation.Reference, cancellationToken);
+                    if (index.Exists)
+                        return await ReadPreparedOperationAsync(transaction, preparedOperation, index, guardSnapshot,
+                            userId, gameId, cancellationToken);
+                }
+                if (isArcane && ReadActivePreparedAdmission(guardSnapshot) is { } activePrepared)
+                    throw await PendingPreparedOperationAsync(transaction, activePrepared, userId, gameId, cancellationToken);
+                if (preparedOperation is not null && !allowNewPrepared)
+                    throw new SlotPreparedStartPausedException();
+
                 var pityMissesBefore = checked((int)ReadLong(guardSnapshot, "consecutiveFiveMisses"));
                 if (pityMissesBefore < 0)
                     throw new InvalidOperationException("Slot pity state is invalid.");
@@ -82,21 +96,19 @@ public sealed partial class FirestoreAccountStore
                 var isNeon = gameId == SlotSpecialRoundProfiles.NeonNightsGameId;
                 if (isNeon && ReadString(guardSnapshot, "pendingNeonNitroChoiceJson") is not null)
                     throw new NeonNitroChoiceConflictException("Finish the pending Nitro reel choice before spinning again.");
-                var neonDiscoSpinsBefore = isNeon ? ReadNeonDiscoSpinsRemaining(guardSnapshot) : 0;
-                var neonDiscoMultiplierBefore = neonDiscoSpinsBefore > 0
-                    ? ReadNeonDiscoMultiplier(guardSnapshot) : NeonDiscoCascade.InitialMultiplier;
+                var neonDiscoBefore = isNeon ? ReadNeonDiscoRound(guardSnapshot) : NeonDiscoRoundState.Inactive;
                 var energyBalance = isNeon || gameId == SlotSpecialRoundProfiles.RainbowRealmGameId
                     ? 0 : ReadLong(energySnapshot, "available");
                 var isMidnight = gameId == SlotSpecialRoundProfiles.DragonHoardGameId;
                 IReadOnlyList<MidnightVaultBonusRound> roundsBefore = isMidnight
                     ? ReadMidnightBonusRounds(guardSnapshot, freeGamesAvailable, pointValueInCents) : [];
                 if (guardSnapshot.Exists &&
-                    guardSnapshot.TryGetValue<Timestamp>("lastSpinStartedAt", out var lastStartedAt))
+                    guardSnapshot.TryGetValue<Timestamp>(SlotSpinGuard.LastSpinStartedField, out var lastStartedAt))
                 {
                     var nextAllowedAtUtc = lastStartedAt.ToDateTime().Add(cooldown);
-                    var pendingAdmission = ReadString(guardSnapshot, "activeAdmissionId");
+                    var pendingAdmission = ReadString(guardSnapshot, SlotSpinGuard.ActiveAdmissionField);
                     if (!string.IsNullOrEmpty(pendingAdmission))
-                        nextAllowedAtUtc = lastStartedAt.ToDateTime().Add(ActiveSpinAdmissionTimeout);
+                        nextAllowedAtUtc = lastStartedAt.ToDateTime().Add(SlotSpinGuard.ActiveAdmissionTimeout);
                     if (nextAllowedAtUtc > startedAtUtc)
                     {
                         return new SlotSpinAdmission(
@@ -158,14 +170,8 @@ public sealed partial class FirestoreAccountStore
                     }
                 }
 
-                var arcaneTome = gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId
-                    ? ReadArcaneTome(guardSnapshot) : null;
-                if (arcaneTome is not null)
-                    ArcaneTome.EnsureSpinAllowed(arcaneTome);
-                var arcanePotions = arcaneTome is not null ? ReadArcanePotions(guardSnapshot) : null;
-                if (ArcanePotions.LockedWagerForSpin(arcanePotions, useFreeSpin) is { } lockedWager &&
-                    wagerPoints != lockedWager)
-                    throw new ArcanePotionWagerLockedException(lockedWager);
+                var arcaneFeatures = isArcane
+                    ? ArcaneFeatureStore.Admit(guardSnapshot, wagerPoints, useFreeSpin) : null;
 
                 var availableCents = ReadRandBalanceCents(slotsCreditsSnapshot);
                 var storedFreeSpinWagerCents = ReadLong(guardSnapshot, "freeSpinWagerCents");
@@ -183,14 +189,7 @@ public sealed partial class FirestoreAccountStore
                     throw new SlotFreeSpinsRequiredException();
                 if ((isNeon || isJade) && !useFreeSpin && freeGamesAvailable > 0)
                     throw new SlotFreeSpinsRequiredException();
-                var isNeonDiscoPlay = isNeon && !useFreeSpin && neonDiscoSpinsBefore > 0;
-                var neonDiscoWagerBefore = isNeon
-                    ? ReadNeonDiscoWagerPoints(guardSnapshot, neonDiscoSpinsBefore) : null;
-                if (isNeonDiscoPlay)
-                {
-                    NeonPlayPolicy.ValidateDiscoWager(neonDiscoSpinsBefore, neonDiscoWagerBefore, wagerPoints);
-                    neonDiscoWagerBefore ??= wagerPoints;
-                }
+                var (isNeonDiscoPlay, admittedNeonDisco) = neonDiscoBefore.Admit(useFreeSpin, wagerPoints);
                 if (useSpecialBoost && specialBoostCost <= 0)
                 {
                     throw new ArgumentOutOfRangeException(
@@ -285,22 +284,25 @@ public sealed partial class FirestoreAccountStore
                     RequestId = requestObservation?.RequestId,
                     PityMissesBefore = pityMissesBefore,
                     IsNeonDiscoPlay = isNeonDiscoPlay,
-                    NeonDiscoMultiplier = neonDiscoMultiplierBefore,
+                    NeonDiscoMultiplier = admittedNeonDisco.Multiplier,
                     MathModelId = mathModelId,
                     BonusRound = admittedRound,
                     BonusRoundsBeforeAdmission = roundsBefore,
-                    ArcaneTomeBefore = arcaneTome,
-                    ArcanePotionsBefore = arcanePotions,
-                    ArcanePotionWagerTracked = arcanePotions is not null
+                    ArcaneTomeBefore = arcaneFeatures?.Tome,
+                    ArcanePotionsBefore = arcaneFeatures?.Potions,
+                    ArcanePotionWagerTracked = arcaneFeatures?.TracksIngredientWagers == true,
+                    PreparedRequestObservation = preparedOperation is null ? null : requestObservation,
                 };
                 // The worker only computes outcomes. Failure aborts this transaction before
                 // any admission, wallet, or entitlement change can become durable.
+                if (preparedOperation is not null && resolveOutcome is null)
+                    throw new InvalidOperationException("Preparing an Arcane Archives spin requires an authoritative outcome resolver.");
                 if (resolveOutcome is not null)
                     admission = admission with { ResolvedOutcome = await resolveOutcome(admission, cancellationToken) };
                 var pendingNitroResult = isNeon && admission.ResolvedOutcome?.NeonNitroWild?.RequiresChoice == true
                     ? admission.ResolvedOutcome : null;
-                var pendingNitroOffer = pendingNitroResult is null ? null : CreateNeonNitroChoiceOffer(
-                    pendingNitroResult.SpinId, "spin", pendingNitroResult.WagerPoints,
+                var pendingNitroOffer = pendingNitroResult is null ? null : NeonNitroChoice.CreateSpinOffer(
+                    pendingNitroResult.SpinId, pendingNitroResult.WagerPoints,
                     checked((int)remainingAfterAdmission), pendingNitroResult.NeonNitroWild!);
                 if (pendingNitroOffer is not null)
                     admission = admission with { PendingNeonNitroChoice = pendingNitroOffer };
@@ -363,8 +365,8 @@ public sealed partial class FirestoreAccountStore
                 var guardData = new Dictionary<string, object>
                 {
                     ["userId"] = userId,
-                    ["lastSpinStartedAt"] = Timestamp.FromDateTime(startedAtUtc),
-                    ["activeAdmissionId"] = admissionId.ToString("N"),
+                    [SlotSpinGuard.LastSpinStartedField] = Timestamp.FromDateTime(startedAtUtc),
+                    [SlotSpinGuard.ActiveAdmissionField] = admissionId.ToString("N"),
                     ["freeSpinWagerPoints"] = remainingAfterAdmission > 0
                         ? effectiveWagerPoints
                         : 0,
@@ -377,13 +379,13 @@ public sealed partial class FirestoreAccountStore
                     ["freeSpinMathModelId"] = remainingAfterAdmission > 0 ? mathModelId ?? string.Empty : string.Empty,
                     ["updatedAt"] = Timestamp.FromDateTime(startedAtUtc)
                 };
+                if (preparedOperation is not null)
+                    guardData[SlotSpinGuard.PreparedAdmissionField] = admissionId.ToString("N");
                 if (isMidnight)
                     foreach (var pair in MidnightBonusGuardData(roundsAfter, pointValueInCents)) guardData[pair.Key] = pair.Value;
                 if (isNeon)
                 {
-                    guardData["neonDiscoSpinsRemaining"] = neonDiscoSpinsBefore;
-                    guardData["neonDiscoWagerPoints"] = neonDiscoWagerBefore ?? 0L;
-                    guardData["neonDiscoMultiplier"] = neonDiscoMultiplierBefore;
+                    admittedNeonDisco.WriteGuard(guardData, includeRoundWin: false);
                     if (pendingNitroOffer is not null)
                     {
                         guardData["pendingNeonNitroChoiceJson"] = JsonSerializer.Serialize(pendingNitroOffer);
@@ -401,8 +403,6 @@ public sealed partial class FirestoreAccountStore
                     ["effectiveWagerPoints"] = effectiveWagerPoints,
                     ["chargedWagerCents"] = chargedWagerCents,
                     ["isFreeSpin"] = useFreeSpin,
-                    ["isNeonDiscoPlay"] = isNeonDiscoPlay,
-                    ["neonDiscoSpinsBefore"] = neonDiscoSpinsBefore,
                     ["specialBoostApplied"] = useSpecialBoost,
                     ["specialBoostCost"] = useSpecialBoost ? specialBoostCost : 0,
                     ["freeGameUseTransactionId"] = useFreeSpin
@@ -425,10 +425,9 @@ public sealed partial class FirestoreAccountStore
                     ["auditNextAttemptAtUtc"] = Timestamp.FromDateTime(startedAtUtc.AddMinutes(2)),
                     ["startedAtUtc"] = Timestamp.FromDateTime(startedAtUtc)
                 };
+                admittedNeonDisco.WriteAdmission(admissionData, isNeonDiscoPlay, includeNeonDetails: isNeon);
                 if (isNeon)
                 {
-                    admissionData["neonDiscoMultiplierBefore"] = neonDiscoMultiplierBefore;
-                    admissionData["neonDiscoWagerPointsBefore"] = neonDiscoWagerBefore ?? 0L;
                     if (pendingNitroResult is not null)
                     {
                         admissionData["pendingNeonNitroSpinId"] = pendingNitroResult.SpinId.ToString("N");
@@ -445,13 +444,10 @@ public sealed partial class FirestoreAccountStore
                     admissionData["midnightBonusRoundsAfter"] = MidnightRoundsData(roundsAfter);
                     admissionData["midnightAdmittedRound"] = admittedRound is null ? null! : MidnightRoundData(admittedRound);
                 }
-                if (admission.ArcaneTomeBefore is not null)
-                    admissionData[ArcaneTomeBeforeField] = JsonSerializer.Serialize(admission.ArcaneTomeBefore);
-                if (admission.ArcanePotionsBefore is not null)
-                {
-                    admissionData[ArcanePotionsBeforeField] = JsonSerializer.Serialize(admission.ArcanePotionsBefore);
-                    admissionData[ArcanePotionWagerTrackedField] = admission.ArcanePotionWagerTracked;
-                }
+                if (arcaneFeatures is not null)
+                    ArcaneFeatureStore.WriteAdmission(admissionData, arcaneFeatures);
+                if (preparedOperation is not null)
+                    WritePreparedOperation(transaction, preparedOperation, admission, admissionData);
                 transaction.Create(admissionReference, admissionData);
                 return admission;
             },

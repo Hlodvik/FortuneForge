@@ -6,9 +6,6 @@ internal static class NeonNitroWild
 {
     internal const string SymbolId = "NITRO";
 
-    internal static bool IsCarPlay(bool usesAwardedPlay, string? featureMode) =>
-        usesAwardedPlay && featureMode == NeonArcadeBonus.PaidCarFeatureMode;
-
     internal static (IReadOnlyList<IReadOnlyList<string>> Reels, NeonNitroWildOutcome? Evidence) Resolve(
         IReadOnlyList<IReadOnlyList<string>> initialReels, string wildSymbolId, string engineVersion,
         int? selectedReel = null)

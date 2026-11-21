@@ -1,11 +1,15 @@
 namespace FortuneForge.Server.Games.LiarsDice;
 
-public sealed record StartLiarsDiceMatchRequest(uint? Seed, int? DicePerPlayer);
-public sealed record PlaceLiarsDiceBidRequest(int Quantity, int Face);
-public sealed record NextLiarsDiceRoundRequest(uint? Seed);
-public sealed record LiarsDiceStatusResponse(bool Available, int StartingDicePerPlayer, string Mode);
-public sealed record LiarsDiceMatchResponse(Guid MatchId, string Phase, int RoundNumber, string CurrentPlayerId, LiarsDiceBidResponse? CurrentBid, string? CurrentBidderId, int TotalDice, IReadOnlyList<int> Hand, IReadOnlyList<LiarsDicePlayerResponse> Players, LiarsDiceOutcomeResponse? Outcome, string? Winner, bool OpponentsThinking, string Message);
-public sealed record LiarsDicePlayerResponse(string Id, string DisplayName, int DiceCount, bool Active, bool IsHuman);
-public sealed record LiarsDiceBidResponse(int Quantity, int Face);
-public sealed record LiarsDiceOutcomeResponse(string ChallengerId, string BidderId, string LoserId, int Quantity, int Face, int MatchingDice, string CallType);
-public sealed record LiarsDiceErrorResponse(string Code, string Message);
+// Source compatibility for integrations that imported the former host contracts.
+public sealed record StartLiarsDiceMatchRequest(uint? Seed, int? DicePerPlayer)
+    : FortuneForge.Games.LiarsDice.StartLiarsDiceMatchRequest(Seed, DicePerPlayer);
+public sealed record PlaceLiarsDiceBidRequest(int Quantity, int Face)
+    : FortuneForge.Games.LiarsDice.PlaceLiarsDiceBidRequest(Quantity, Face);
+public sealed record NextLiarsDiceRoundRequest(uint? Seed) : FortuneForge.Games.LiarsDice.NextLiarsDiceRoundRequest(Seed);
+public sealed record LiarsDiceErrorResponse(string Code, string Message) : FortuneForge.Games.LiarsDice.LiarsDiceErrorResponse(Code, Message);
+public sealed record LiarsDiceMatchResponse(Guid MatchId, string Phase, int RoundNumber, string CurrentPlayerId,
+    FortuneForge.Games.LiarsDice.LiarsDiceBidResponse? CurrentBid, string? CurrentBidderId, int TotalDice,
+    IReadOnlyList<int> Hand, IReadOnlyList<FortuneForge.Games.LiarsDice.LiarsDicePlayerResponse> Players,
+    FortuneForge.Games.LiarsDice.LiarsDiceOutcomeResponse? Outcome, string? Winner, bool OpponentsThinking, string Message)
+    : FortuneForge.Games.LiarsDice.LiarsDiceMatchResponse(MatchId, Phase, RoundNumber, CurrentPlayerId, CurrentBid,
+        CurrentBidderId, TotalDice, Hand, Players, Outcome, Winner, OpponentsThinking, Message);

@@ -18,9 +18,15 @@ public sealed class PiratesFortuneEngine
     public PiratesFortuneEngine(IGameRandomSource random) => engine = new(Definitions,
         Profile, random, EngineVersion, new ClassicSlotEngineOptions
         {
+            AllowFreeSpinCarryWager = true,
             DirectValueCountFromRoll = roll => roll switch { < 91 => 0, < 99 => 1, _ => 2 },
             CollectionAppearanceChance = _ => 50
         });
+
+    public static decimal WagerPointValueInCents => Definitions.Game.Wagering.PointValueInCents;
+
+    public static void ValidateWager(long wagerPoints, bool isFreeSpin) =>
+        ClassicSlotEngine.ValidateWager(Definitions.Game, wagerPoints, allowCarryWager: isFreeSpin);
 
     public ClassicSlotSpinOutcome Spin(long wagerPoints, string playerId,
         bool specialBoostApplied = false, long currentEnergyBalance = 0,

@@ -14,7 +14,7 @@ describe('Keno route integration', () => {
     expect(pending).toContain('Loading Keno…')
     expect(routesSource).toContain("import('./routes/KenoRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/games/keno')")
-    expect(routeSource).toContain("new HttpKenoGateway('/api/games/keno', fetchWithAccountSession)")
+    expect(routeSource).toContain("new HttpKenoGateway('/api/games/keno', fetchWithAccountSession, initialAccount.userId)")
   })
 })
 

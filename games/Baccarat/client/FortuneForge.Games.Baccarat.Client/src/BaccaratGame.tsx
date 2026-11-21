@@ -99,7 +99,6 @@ function BaccaratTable({ gateway = defaultGateway, playerId, currencySymbol = 'R
   const [shoeUsed, setShoeUsed] = useState(initial?.shoeUsed ?? 0)
   const [shoeRemaining, setShoeRemaining] = useState(initial?.shoeRemaining ?? 416)
   const [shoeVerified, setShoeVerified] = useState(initial?.shoeVerified ?? false)
-  const [lastBalance, setLastBalance] = useState<number | null>(null)
   const [activePanel, setActivePanel] = useState<string | null>(initial?.activePanel ?? null)
   const dealRequestKey = useRef<string | null>(null)
   const pendingBet = useRef<Readonly<{ side: BaccaratBetSide; stake: number; playerPairStake: number; bankerPairStake: number }> | null>(null)
@@ -154,11 +153,13 @@ function BaccaratTable({ gateway = defaultGateway, playerId, currencySymbol = 'R
   useEffect(() => {
     const controller = new AbortController()
     void gateway.getStatus(controller.signal).then(nextStatus => {
+      if (controller.signal.aborted) return
       setStatus(nextStatus)
       setStake(current => current === 0 || current >= nextStatus.minimumStake && current <= nextStatus.maximumStake && isIncrementAligned(current, nextStatus.minimumStake, nextStatus.stakeIncrement) ? current : 0)
       setTableUnavailable(!nextStatus.available)
       setStatusError(nextStatus.available ? null : 'This table is temporarily unavailable. Please choose another game.')
     }).catch(reason => {
+      if (controller.signal.aborted) return
       if (reason instanceof DOMException && reason.name === 'AbortError') return
       const unavailable = isTableUnavailable(reason)
       setTableUnavailable(unavailable)
@@ -166,6 +167,17 @@ function BaccaratTable({ gateway = defaultGateway, playerId, currencySymbol = 'R
     })
     return () => controller.abort()
   }, [gateway, statusLoadAttempt])
+
+  useEffect(() => {
+    if (status) onBalanceChange?.(status.balance)
+  }, [status, onBalanceChange])
+
+  const acceptRound = (nextRound: BaccaratRound) => {
+    setRound(nextRound)
+    setStatus(null)
+    setStatusError(null)
+    setStatusLoadAttempt(attempt => attempt + 1)
+  }
 
   useEffect(() => {
     const pendingDeal = playerId ? readPendingDeal(playerId) : null
@@ -181,7 +193,8 @@ function BaccaratTable({ gateway = defaultGateway, playerId, currencySymbol = 'R
       signal: controller.signal, idempotencyKey: pendingDeal.idempotencyKey,
       playerPairStake: pendingDeal.playerPairStake ?? 0, bankerPairStake: pendingDeal.bankerPairStake ?? 0,
     }).then(nextRound => {
-      setRound(nextRound)
+      if (controller.signal.aborted) return
+      acceptRound(nextRound)
       setRecovery('ready')
       setError(null)
     }).catch(reason => {
@@ -190,7 +203,7 @@ function BaccaratTable({ gateway = defaultGateway, playerId, currencySymbol = 'R
         clearPendingDeal(playerId)
         setRecovery('ready')
         setError(messageForError(reason))
-        setLastBalance(null); setStatus(null)
+        setStatus(null)
         setStatusLoadAttempt(attempt => attempt + 1)
         return
       }
@@ -239,10 +252,6 @@ function BaccaratTable({ gateway = defaultGateway, playerId, currencySymbol = 'R
   useEffect(() => {
     if (!round || !completed) return
     clearPendingDeal(playerId)
-    if (round.roundId !== opening.round?.roundId) {
-      setLastBalance(round.balance)
-      onBalanceChange?.(round.balance)
-    }
     const alreadyRecorded = recordedRounds.current.has(round.roundId)
     const cardsUsed = round.playerCards.length + round.bankerCards.length
     const serverShoeUsed = round.shoeCardsUsed ?? (round.shoeCardsRemaining === undefined ? undefined : 416 - round.shoeCardsRemaining)
@@ -258,9 +267,9 @@ function BaccaratTable({ gateway = defaultGateway, playerId, currencySymbol = 'R
     const next = [{ roundId: round.roundId, outcome: round.outcome, cardsUsed, natural: round.endedOnNatural }, ...historyRef.current].slice(0, 120)
     historyRef.current = next
     setHistory(next)
-  }, [completed, round, onBalanceChange, playerId])
-  const balance = round?.balance ?? lastBalance ?? status?.balance ?? null
-  const displayedBalance = lastBalance ?? status?.balance ?? null
+  }, [completed, round, playerId])
+  const balance = status?.balance ?? null
+  const displayedBalance = balance
   const totalStake = round?.totalStake ?? centsToMoney(moneyToCents(Number.isFinite(stake) ? stake : 0) + moneyToCents(playerPairStake) + moneyToCents(bankerPairStake))
   const stakeIsValid = status !== null && stake >= status.minimumStake && stake <= status.maximumStake &&
     isIncrementAligned(stake, status.minimumStake, status.stakeIncrement) &&
@@ -306,7 +315,7 @@ function BaccaratTable({ gateway = defaultGateway, playerId, currencySymbol = 'R
         clearPendingDeal(playerId)
         pendingBet.current = null
         dealRequestKey.current = null
-        setLastBalance(null); setStatus(null)
+        setStatus(null)
         setStatusLoadAttempt(attempt => attempt + 1)
       }
       setError(messageForError(reason))
@@ -319,7 +328,7 @@ function BaccaratTable({ gateway = defaultGateway, playerId, currencySymbol = 'R
       const nextRound = await gateway.createRound(bet.side, bet.stake, { idempotencyKey, playerPairStake: bet.playerPairStake, bankerPairStake: bet.bankerPairStake })
       dealRequestKey.current = null
       pendingBet.current = null
-      setRound(nextRound)
+      acceptRound(nextRound)
     })
   }
   const deal = () => {
@@ -329,7 +338,6 @@ function BaccaratTable({ gateway = defaultGateway, playerId, currencySymbol = 'R
   }
   const closeResult = () => {
     if (!round || !completed || busy || recovery !== 'ready') return
-    setLastBalance(round.roundId === opening.round?.roundId ? status?.balance ?? null : round.balance)
     setActivePanel(null)
     setRound(null); setError(null); setBetSide('player'); setStake(0); setPlayerPairStake(0); setBankerPairStake(0)
     setPlacedChips(emptyPlacedChips())

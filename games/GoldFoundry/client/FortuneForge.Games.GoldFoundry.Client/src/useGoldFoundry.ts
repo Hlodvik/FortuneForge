@@ -126,7 +126,8 @@ function resultSound(result: GoldFoundrySpinResult, best: GoldFoundryPaylinePayo
 
 /** Owns all Gold Foundry gameplay and presentation state. The app supplies transport and shared chrome only. */
 export function useGoldFoundry({ account, demoMode = false, authenticatedFetch, onSpinStateChange }: GoldFoundryGameProps) {
-  const api = useMemo(() => createGoldFoundryApi(authenticatedFetch), [authenticatedFetch])
+  const accountId = account?.userId
+  const api = useMemo(() => createGoldFoundryApi(authenticatedFetch, accountId), [authenticatedFetch, accountId])
   const reducedMotion = usePrefersReducedMotion()
   const reducedMotionRef = useRef(reducedMotion)
   reducedMotionRef.current = reducedMotion
@@ -185,20 +186,40 @@ export function useGoldFoundry({ account, demoMode = false, authenticatedFetch, 
   }, [])
   useEffect(() => { onSpinStateChange?.(isSpinning); return () => onSpinStateChange?.(false) }, [isSpinning, onSpinStateChange])
 
+  const restoreState = useCallback((loaded: GoldFoundryState, result?: GoldFoundrySpinResult) => {
+    setState(loaded)
+    if (loaded.slotsCreditsBalance !== undefined) setBalance(loaded.slotsCreditsBalance)
+    setCrucibleAward({ crucibleWageredCents: loaded.crucibleWageredCents,
+      valueCents: loaded.cruciblePourValueCents, payoutCents: 0, completed: false })
+    const recoveredAward = result ? decodeCrucibleAward(result) : null
+    if (result && recoveredAward && loaded.energyBalance === result.energyBalance &&
+      loaded.crucibleWageredCents === recoveredAward.crucibleWageredCents) {
+      setDisplayedReels(result.reels.map(reel => [...reel]))
+      setLastCollectorAward(money(result.moneyGrabPoints))
+      setLastWin(money(result.payout.totalPoints) + recoveredAward.payoutCents / 100)
+      setWinningPaylines(result.payout.paylines)
+      setHasCompletedSpin(true)
+    }
+  }, [])
+
   useEffect(() => {
     const abort = new AbortController()
     setSpinAvailability('checking')
-    const load = demoMode ? api.availability(abort.signal) : api.state().then(loaded => {
+    const load = demoMode ? api.availability(abort.signal) : api.state().then(async loaded => {
       if (abort.signal.aborted) return
-      setState(loaded)
-      setCrucibleAward({ crucibleWageredCents: loaded.crucibleWageredCents,
-        valueCents: loaded.cruciblePourValueCents, payoutCents: 0, completed: false })
+      restoreState(loaded)
+      try {
+        const recovered = await api.resumeSpin()
+        if (recovered && !abort.signal.aborted) restoreState(recovered.state, recovered.result)
+      } catch (error) {
+        if (!abort.signal.aborted) setSpinError(error instanceof Error ? error.message : 'The saved spin could not be recovered.')
+      }
     })
     void load.then(() => { if (!abort.signal.aborted) setSpinAvailability('available') }, () => {
       if (!abort.signal.aborted) { setSpinAvailability('unavailable'); setIsAutoSpinning(false) }
     })
     return () => abort.abort()
-  }, [api, demoMode])
+  }, [api, demoMode, restoreState])
 
   const { playCue, playSequence, startLoop, stopLoop, stopResultCues, toggleMuted } = audio
   useEffect(() => {
@@ -459,6 +480,22 @@ export function useGoldFoundry({ account, demoMode = false, authenticatedFetch, 
 
   async function handleSpin() {
     if (blocked || busy.current || isSpinning || spinAvailability !== 'available') return
+    if (!demoMode && api.pendingSpin()) {
+      busy.current = true
+      setIsSpinning(true)
+      setIsAutoSpinning(false)
+      setSpinError(null)
+      try {
+        const recovered = await api.resumeSpin()
+        if (recovered && mounted.current) restoreState(recovered.state, recovered.result)
+      } catch (error) {
+        if (mounted.current) setSpinError(error instanceof Error ? error.message : 'The saved spin could not be recovered.')
+      } finally {
+        busy.current = false
+        if (mounted.current) setIsSpinning(false)
+      }
+      return
+    }
     const wagerRand = activeWagerDisplay
     if (balance < wagerRand) { setIsAutoSpinning(false); setSpinError(null); setIsReloadPromptOpen(true); return }
     const fast = isAutoSpinning

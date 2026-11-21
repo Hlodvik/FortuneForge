@@ -3,20 +3,12 @@ using FortuneForge.Games.Cards;
 
 namespace FortuneForge.Games.AndarBahar.Server;
 
-/// <summary>One transaction durably settles the round, wallet, ledger, shared history, and recovery pointer.</summary>
+/// <summary>Read-only compatibility for historical settlements and their audit records.</summary>
 public sealed class AndarBaharFirestoreStore(FirestoreDb database) : IAndarBaharStore
 {
     private const string Currency = "slotsCredits";
-    private void WriteRoundRecord(Transaction transaction, FortuneForge.Games.Abstractions.Analytics.SinglePlayerRoundRecord record)
-    {
-        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Analytics.GameAnalyticsOutbox.CollectionName).Document(record.Settlement.Id), record.Settlement.Fields);
-        var documents = FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Create(record.Audit);
-        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Summaries).Document(record.Audit.Summary.Id), documents.Summary);
-        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Evidence).Document(record.Audit.Summary.Id), documents.Evidence);
-    }
-
-    public async Task<long> BalanceAsync(string userId, CancellationToken cancellationToken) =>
-        ReadBalance(await BalanceDocument(userId).GetSnapshotAsync(cancellationToken));
+    public Task<long> BalanceAsync(string userId, CancellationToken cancellationToken) =>
+        throw new InvalidOperationException("Use the signed wallet account reader.");
 
     public Task<AndarBaharStoreResult> StartAsync(string userId, string key, AndarBaharSide side, long stakeCents,
         IReadOnlyList<PlayingCard> shuffledDeck, DateTimeOffset nowUtc, CancellationToken cancellationToken, bool allowNewRounds = true)
@@ -24,69 +16,22 @@ public sealed class AndarBaharFirestoreStore(FirestoreDb database) : IAndarBahar
         AndarBaharMoney.Validate(side, stakeCents);
         var id = AndarBaharService.LookupKey(userId, key);
         var roundRef = RoundDocument(id);
-        var balanceRef = BalanceDocument(userId);
         var wagerRef = LedgerDocument(id, "wager");
         var payoutRef = LedgerDocument(id, "payout");
         var eventRef = EventDocument(id);
         var historyRef = HistoryDocument(id);
         return database.RunTransactionAsync(async transaction =>
         {
-            var snapshots = await transaction.GetAllSnapshotsAsync([roundRef, balanceRef, wagerRef, payoutRef, eventRef, historyRef], cancellationToken);
-            var balance = ReadBalance(snapshots[1]);
+            var snapshots = await transaction.GetAllSnapshotsAsync([roundRef, wagerRef, payoutRef, eventRef, historyRef], cancellationToken);
+            var balance = 0L;
             if (snapshots[0].Exists)
             {
                 var prior = ReadRound(snapshots[0]);
                 if (prior.UserId != userId || prior.Side != side || prior.StakeCents != stakeCents) throw new AndarBaharRoundConflictException();
-                VerifyRecords(prior, snapshots[0], snapshots[2], snapshots[3], snapshots[4], snapshots[5]);
+                VerifyRecords(prior, snapshots[0], snapshots[1], snapshots[2], snapshots[3], snapshots[4]);
                 return new AndarBaharStoreResult(prior, balance);
             }
-            if (snapshots[2].Exists || snapshots[3].Exists || snapshots[4].Exists || snapshots[5].Exists) throw new InvalidOperationException("An audit record exists without its Andar Bahar round.");
-            if (!allowNewRounds) throw new AndarBaharDisabledException();
-            AndarBaharMoney.ValidateNewStake(stakeCents);
-            if (balance < stakeCents) throw new AndarBaharInsufficientCreditsException(balance, stakeCents);
-            var round = AndarBaharRules.Deal(shuffledDeck);
-            var returned = AndarBaharRules.Settle(side, stakeCents, round).TotalReturnCents;
-            var afterWager = checked(balance - stakeCents);
-            var finalBalance = checked(afterWager + returned);
-            var stored = new AndarBaharStoredRound(id, userId, key, side, stakeCents, round, afterWager, finalBalance, nowUtc);
-            var observation = FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.Capture(
-                "andar-bahar", id, 1, nowUtc.UtcDateTime, new { stored, deck = shuffledDeck }, [userId], "settlement");
-            transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.CollectionName).Document(observation.Id), observation.Fields);
-            transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestCollectionName)
-                .Document(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestId("andar-bahar", id)),
-                new Dictionary<string, object> { ["gameId"] = "andar-bahar", ["instanceId"] = id,
-                    ["eventIds"] = FieldValue.ArrayUnion(observation.Id), ["schemaVersion"] = 1L }, SetOptions.MergeAll);
-            var participation = FortuneForge.Games.Abstractions.Analytics.AcceptedGameParticipationDocuments.Create(userId, "andar-bahar", nowUtc.UtcDateTime);
-            transaction.Set(database.Collection("catalogPlayerActivity").Document(participation.DocOwnerKey)
-                .Collection("games").Document(participation.GameId), participation.Fields, SetOptions.MergeAll);
-            transaction.Create(roundRef, new Dictionary<string, object>
-            {
-                ["roundId"] = id, ["userId"] = userId, ["schemaVersion"] = 2L,
-                ["recordJson"] = AndarBaharPersistence.Serialize(stored), ["createdAt"] = Timestamp.FromDateTime(nowUtc.UtcDateTime),
-            });
-            transaction.Set(balanceRef, new Dictionary<string, object>
-            {
-                ["available"] = finalBalance / 100, ["availableFractionalCents"] = finalBalance % 100,
-                ["version"] = FieldValue.Increment(1), ["updatedAt"] = Timestamp.FromDateTime(nowUtc.UtcDateTime),
-            }, SetOptions.MergeAll);
-            transaction.Create(wagerRef, Ledger(wagerRef.Id, userId, id, -stakeCents, afterWager, "wager", key, nowUtc));
-            if (returned > 0) transaction.Create(payoutRef, Ledger(payoutRef.Id, userId, id, returned, finalBalance, "payout", $"{key}-payout", nowUtc));
-            transaction.Create(historyRef, History(historyRef.Id, stored));
-            var analytics = FortuneForge.Games.Abstractions.Analytics.SinglePlayerRoundRecord.Create(
-                "andar-bahar", id, userId, stakeCents, returned, nowUtc.UtcDateTime, nowUtc.UtcDateTime,
-                "andarBaharRounds", id, stored, "andar-bahar-deal-sequence-v1",
-                AndarBaharOutcomeAudit.Verify(stored, returned), AndarBaharOutcomeAudit.Version);
-            WriteRoundRecord(transaction, analytics);
-            transaction.Create(eventRef, new Dictionary<string, object>
-            {
-                ["roundId"] = id, ["userId"] = userId, ["event"] = "settled", ["idempotencyKey"] = key,
-                ["schemaVersion"] = 1L, ["createdAt"] = Timestamp.FromDateTime(nowUtc.UtcDateTime),
-            });
-            transaction.Set(LatestDocument(userId), new Dictionary<string, object>
-            {
-                ["userId"] = userId, ["roundId"] = id, ["schemaVersion"] = 1L, ["updatedAt"] = Timestamp.FromDateTime(nowUtc.UtcDateTime),
-            });
-            return new AndarBaharStoreResult(stored, finalBalance);
+            throw new InvalidOperationException("New Andar Bahar rounds require the signed wallet store.");
         }, options: TransactionOptions.ForMaxAttempts(10), cancellationToken: cancellationToken);
     }
 
@@ -105,11 +50,11 @@ public sealed class AndarBaharFirestoreStore(FirestoreDb database) : IAndarBahar
 
     private async Task<AndarBaharStoreResult?> ReadOwned(Transaction transaction, string user, string id, CancellationToken token)
     {
-        var snapshots = await transaction.GetAllSnapshotsAsync([RoundDocument(id), BalanceDocument(user), LedgerDocument(id, "wager"), LedgerDocument(id, "payout"), EventDocument(id), HistoryDocument(id)], token);
+        var snapshots = await transaction.GetAllSnapshotsAsync([RoundDocument(id), LedgerDocument(id, "wager"), LedgerDocument(id, "payout"), EventDocument(id), HistoryDocument(id)], token);
         if (!snapshots[0].Exists || RequiredString(snapshots[0], "userId") != user) return null;
         var stored = ReadRound(snapshots[0]);
-        VerifyRecords(stored, snapshots[0], snapshots[2], snapshots[3], snapshots[4], snapshots[5]);
-        return new(stored, ReadBalance(snapshots[1]));
+        VerifyRecords(stored, snapshots[0], snapshots[1], snapshots[2], snapshots[3], snapshots[4]);
+        return new(stored, 0);
     }
     private static AndarBaharStoredRound ReadRound(DocumentSnapshot snapshot)
     {
@@ -133,14 +78,6 @@ public sealed class AndarBaharFirestoreStore(FirestoreDb database) : IAndarBahar
             throw new InvalidOperationException("The Andar Bahar settlement event is corrupt.");
         if (linkedHistory || history.Exists) VerifyHistory(history, stored);
     }
-    private static Dictionary<string, object> Ledger(string id, string user, string roundId, long cents, long after, string kind, string key, DateTimeOffset now) => new()
-    {
-        ["transactionId"] = id, ["userId"] = user, ["currencyId"] = Currency,
-        ["roundId"] = roundId, ["gameId"] = "andar-bahar",
-        ["amount"] = (double)AndarBaharMoney.ToRand(cents), ["balanceAfter"] = (double)AndarBaharMoney.ToRand(after),
-        ["amountCents"] = cents, ["balanceAfterCents"] = after, ["type"] = $"andar-bahar-{kind}",
-        ["idempotencyKey"] = key, ["createdAt"] = Timestamp.FromDateTime(now.UtcDateTime),
-    };
     private static void VerifyLedger(DocumentSnapshot entry, string user, string roundId, long cents, long after, string kind, string key, bool linkedHistory)
     {
         if (RequiredString(entry, "transactionId") != entry.Id || RequiredString(entry, "userId") != user ||
@@ -152,7 +89,7 @@ public sealed class AndarBaharFirestoreStore(FirestoreDb database) : IAndarBahar
             ((linkedHistory || entry.ContainsField("gameId")) && RequiredString(entry, "gameId") != "andar-bahar"))
             throw new InvalidOperationException("The Andar Bahar wallet ledger is corrupt.");
     }
-    private static Dictionary<string, object> History(string id, AndarBaharStoredRound stored)
+    internal static Dictionary<string, object> History(string id, AndarBaharStoredRound stored)
     {
         var settlement = AndarBaharRules.Settle(stored.Side, stored.StakeCents, stored.Round);
         // Firestore stores microseconds, whereas a .NET clock can include 100ns ticks.
@@ -178,19 +115,16 @@ public sealed class AndarBaharFirestoreStore(FirestoreDb database) : IAndarBahar
                 throw new InvalidOperationException("The Andar Bahar shared history is corrupt.");
         }
     }
-    private static long ReadBalance(DocumentSnapshot snapshot)
+    internal async Task EnsureNoOrphansAsync(Transaction transaction, string id, CancellationToken token)
     {
-        if (!snapshot.Exists) return 0;
-        var whole = RequiredLong(snapshot, "available");
-        var fraction = snapshot.TryGetValue<long>("availableFractionalCents", out var value) ? value : 0;
-        if (whole < 0 || fraction is < 0 or > 99) throw new InvalidOperationException("The account wallet balance is corrupt.");
-        return checked(whole * 100 + fraction);
+        var proof = await transaction.GetAllSnapshotsAsync([LedgerDocument(id, "wager"), LedgerDocument(id, "payout"), EventDocument(id), HistoryDocument(id)], token);
+        if (proof.Any(snapshot => snapshot.Exists))
+            throw new FortuneForge.Games.Abstractions.Wallet.GameWalletUnavailableException();
     }
     private DocumentReference RoundDocument(string id) => database.Collection("andarBaharRounds").Document(id);
     private DocumentReference LatestDocument(string user) => database.Collection("andarBaharAccounts").Document(AndarBaharService.Hash(user));
     private DocumentReference EventDocument(string id) => database.Collection("andarBaharRoundEvents").Document($"{id}-settled");
     private DocumentReference HistoryDocument(string id) => database.Collection("cardGameResults").Document($"andar-bahar-{id}");
-    private DocumentReference BalanceDocument(string user) => database.Collection("userBalances").Document($"{user}_{Currency}");
     private DocumentReference LedgerDocument(string id, string kind) => database.Collection("balanceTransactions").Document($"andar-bahar-{id}-{kind}");
     private static string RequiredString(DocumentSnapshot snapshot, string field) => snapshot.TryGetValue<string>(field, out var value) && !string.IsNullOrWhiteSpace(value)
         ? value : throw new InvalidOperationException($"The Andar Bahar record is missing {field}.");

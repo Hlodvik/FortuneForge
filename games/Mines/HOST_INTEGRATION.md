@@ -18,12 +18,11 @@ This document does not claim a live deployment or authorize production test wage
 
 ## Wallet and history
 
-The Firestore transaction commits integer-cent changes to the existing
-`userBalances/{userId}_slotsCredits` wallet, financial ledger, private round state, session pointer
-and immutable receipt together. Missing wallets start at zero, never auto-funded.
-Terminal settlement creates exactly one `cardGameResults` entry in the same transaction; a
-positive late-mine return follows the same single-payment path as cash-out/full-clear.
-Replaying or racing a command cannot pay twice or reset an existing history acknowledgement.
+The authoritative paid lifecycle and required signing/account-read/reservation settings are in
+[the Mines server package README](server/FortuneForge.Games.Mines.Server/README.md).
+The package journals game commands around the signed wallet API; the shared API owns account
+balance and ledger writes. Existing accepted rounds and immutable receipts retain their original
+wagers and rules. Gateway routing must keep recovery on the same worker when new wagers pause.
 
 New wagers are R1–R5, payout policy 2, 90% nominal RTP and maximum 50× (R250 at R5).
 The full board remains playable; late-game mine returns preserve the expected RTP.
@@ -61,5 +60,5 @@ Before enabling paid play in a release:
 2. Deploy the matching API and client from one reviewed commit; perform normal release checks.
 3. Enable paid wagering only after those gates pass. Do not use production money for automation.
 
-The current work changes no live flag, rule, wallet, commit or deployment. The manifest remains
-`rules-pilot` until the paid release gates are met.
+The current work changes no live flag, rule, wallet, commit or deployment. The packaged-game
+manifest identifies the worker artifact; it does not establish a deployed or enabled paid release.

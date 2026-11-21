@@ -133,6 +133,17 @@ public sealed class ArcaneArchivesEngine
 
     public static bool UsesLegacyMandrake(string? version) => version == PreviousPotionEngineVersion;
 
+    internal static int ReplayLayoutIndex(string version, string reelSetId, bool tomeActive)
+    {
+        var model = FindPotionModel(version) ?? throw new InvalidOperationException("The saved Arcane engine version is unavailable.");
+        var definitions = tomeActive ? model.TomeDefinitions : model.Definitions;
+        if (definitions.ReelSet.Id == reelSetId) return 0;
+
+        var alternatives = tomeActive ? model.AlternateTomeReelSets : model.AlternateReelSets;
+        var index = Array.FindIndex(alternatives, reels => reels.Id == reelSetId);
+        return index >= 0 ? index + 1 : throw new InvalidOperationException("The Arcane reel layout differs from the admitted Tome.");
+    }
+
     public static bool PotionReelsMatch(ReelSetDefinition effective, ArcanePotionBottle? potion)
     {
         ArgumentNullException.ThrowIfNull(effective);

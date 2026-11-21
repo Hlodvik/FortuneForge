@@ -8,6 +8,6 @@
   "clientRoute": "/games/asteroids",
   "clientPackage": "@fortuneforge/games-asteroids",
   "apiBasePath": "/api/games/asteroids",
-  "capabilities": ["free-play"],
+  "capabilities": ["credits", "free-play"],
   "migrationState": "package-backed"
 }

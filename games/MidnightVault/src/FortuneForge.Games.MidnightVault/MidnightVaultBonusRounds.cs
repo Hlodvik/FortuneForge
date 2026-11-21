@@ -21,6 +21,9 @@ public static class MidnightVaultBonusRounds
                 MidnightVaultSlotDefinitions.BonusRoundSpins, [MidnightVaultSlotDefinitions.CollectionFeatureMode])
         ]);
 
+    public static IReadOnlyList<string> CollectionTrackIds { get; } =
+        Array.AsReadOnly(Rules.Tracks.Select(track => track.Id).ToArray());
+
     public static void Validate(IReadOnlyList<MidnightVaultBonusRound> rounds) =>
         SlotBonusRounds.Validate(Rules, ToGeneric(rounds));
 

@@ -60,11 +60,56 @@ describe('recorded Flappy flight intent and recovery', () => {
     expect(saved().cursor).toEqual({ totalTicks: 1, flapTicks: [0] }); expect(tick()).toBe(1)
   })
   it('enters the daily R1 pool, submits its verified replay there and refreshes the debited balance', async () => {
+    gateway.getLeaderboard.mockResolvedValue({ gameId: 'flappy', period: 'daily', startsAtUtc: paidRun.startsAtUtc, endsAtUtc: paidRun.endsAtUtc, entriesOpen: true, isCompleted: false, totalUniquePlayers: 0, leaderboard: [], solePlayerRefund: null, visibleJackpotCents: 0 })
     const refresh = vi.fn(); await mount(account, refresh); await click('Start daily flight'); await time(2000)
-    expect(gateway.startFlappyAttempt).toHaveBeenCalledWith('daily', expect.any(String), expect.any(AbortSignal))
+    expect(gateway.startFlappyAttempt).toHaveBeenCalledWith('daily', expect.any(String), expect.any(AbortSignal),
+      { expectedWindowStartsAtUtc: paidRun.startsAtUtc, expectedWindowEndsAtUtc: paidRun.endsAtUtc })
     expect(gateway.startFreeFlappyRun).not.toHaveBeenCalled()
     expect(gateway.completeFlappyReplay).toHaveBeenCalledWith('daily', paidRunId, expect.objectContaining({ totalTicks: expect.any(Number), flapTicks: expect.any(Array) }), expect.any(AbortSignal))
     expect(refresh).toHaveBeenCalledTimes(2)
+  })
+  it('recovers a legacy uncertain paid start without fetching or entering the current window', async () => {
+    sessionStorage.setItem(recoveryKey(account.userId), JSON.stringify({ kind: 'start', idempotencyKey: 'flappy-original-paid-key', mode: 'daily' }))
+    gateway.getLeaderboard.mockRejectedValue(new Error('current window unavailable'))
+    await mount(); expect(gateway.startFlappyAttempt).not.toHaveBeenCalled()
+    await click('Retry flight start')
+    expect(gateway.getLeaderboard).not.toHaveBeenCalled()
+    expect(gateway.startFlappyAttempt).toHaveBeenCalledWith('daily', 'flappy-original-paid-key', expect.any(AbortSignal), { recoverOnly: true })
+  })
+  it('keeps the original paid start body and key after a lost reply and window rollover', async () => {
+    const admission = { expectedWindowStartsAtUtc: paidRun.startsAtUtc, expectedWindowEndsAtUtc: paidRun.endsAtUtc }
+    gateway.getLeaderboard.mockResolvedValue({ gameId: 'flappy', period: 'daily', startsAtUtc: paidRun.startsAtUtc, endsAtUtc: paidRun.endsAtUtc,
+      entriesOpen: true, isCompleted: false, totalUniquePlayers: 0, leaderboard: [], solePlayerRefund: null, visibleJackpotCents: 0 })
+    gateway.startFlappyAttempt.mockRejectedValueOnce(new Error('lost reply'))
+    await mount(); await click('Start daily flight')
+    const pending = saved(), key = gateway.startFlappyAttempt.mock.calls[0]![1]
+    expect(pending.admission).toEqual(admission)
+    await act(async () => root!.unmount()); root = null
+    gateway.getLeaderboard.mockRejectedValue(new Error('new window must not replace the original intent'))
+    await mount(); await click('Retry flight start')
+    expect(gateway.startFlappyAttempt.mock.calls[1]).toEqual(['daily', key, expect.any(AbortSignal), admission])
+    expect(gateway.getLeaderboard).toHaveBeenCalledTimes(1)
+  })
+  it('retains an uncertain paid start after an account-session change instead of creating another intent', async () => {
+    const pending = { kind: 'start', idempotencyKey: 'flappy-original-paid-key', mode: 'daily' }
+    sessionStorage.setItem(recoveryKey(account.userId), JSON.stringify(pending))
+    gateway.startFlappyAttempt.mockRejectedValue(new ArcadeCompetitionRequestError(403, 'game-session-changed'))
+    await mount(); await click('Retry flight start')
+    expect(phase()).toBe('start-failed'); expect(saved()).toEqual(pending)
+    expect(gateway.startFlappyAttempt).toHaveBeenCalledWith('daily', pending.idempotencyKey, expect.any(AbortSignal), { recoverOnly: true })
+    expect(gateway.startFreeFlappyRun).not.toHaveBeenCalled()
+  })
+  it('retains the exact paid terminal replay when a changed session rejects its save', async () => {
+    const session = new FlappyReplaySession(paidRunId, paidRun.seed)
+    while (session.view.status === 'running') session.advanceFrame()
+    const completion = session.takeCompletion()!
+    const pending = { kind: 'submission', submission: { run: { runId: paidRunId, seed: paidRun.seed, wasReplay: false, mode: 'daily' }, runId: paidRunId, ...completion } }
+    sessionStorage.setItem(recoveryKey(account.userId), JSON.stringify(pending))
+    gateway.completeFlappyReplay.mockRejectedValue(new ArcadeCompetitionRequestError(403, 'game-session-changed'))
+    await mount(); await click('Retry recording')
+    expect(phase()).toBe('submit-failed'); expect(saved()).toEqual(pending)
+    expect(gateway.startFlappyAttempt).not.toHaveBeenCalled()
+    expect(gateway.completeFlappyReplay).toHaveBeenCalledWith('daily', paidRunId, completion.replay, expect.any(AbortSignal))
   })
   it('saves the exact start key before its transport and passes an abort signal', async () => {
     gateway.startFreeFlappyRun.mockImplementation((key: string, signal: AbortSignal) => {

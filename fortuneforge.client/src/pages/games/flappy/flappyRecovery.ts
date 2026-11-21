@@ -1,12 +1,13 @@
 import { FlappyReplaySession, maximumFlappyReplayFlaps, maximumFlappyReplayTicks,
   type FlappyReplayPayload, type FlappyReplayCompletion as LocalCompletion } from '@fortuneforge/games-flappy'
-import type { ArcadeCompetitionPaidPeriod } from '../../../games/arcade/arcadeCompetitionApi'
+import type { ArcadeCompetitionPaidPeriod, ArcadeCompetitionStartOptions } from '../../../games/arcade/arcadeCompetitionApi'
 
 export type FlightCursor = Readonly<{ totalTicks: number; flapTicks: readonly number[] }>
 export type FlappyEntryMode = 'free' | ArcadeCompetitionPaidPeriod
 export type RecordedFlappyRun = Readonly<{ runId: string; seed: number; wasReplay: boolean; mode: FlappyEntryMode }>
 export type FlightSubmission = Readonly<{ run: RecordedFlappyRun | null; runId: string; replay: FlappyReplayPayload; display: LocalCompletion['display'] }>
-export type FlappyRecovery = Readonly<{ kind: 'start'; idempotencyKey: string; mode: FlappyEntryMode }>
+export type FlappyFrozenAdmission = Required<Pick<ArcadeCompetitionStartOptions, 'expectedWindowStartsAtUtc' | 'expectedWindowEndsAtUtc'>>
+export type FlappyRecovery = Readonly<{ kind: 'start'; idempotencyKey: string; mode: FlappyEntryMode; admission?: FlappyFrozenAdmission }>
   | Readonly<{ kind: 'flight'; run: RecordedFlappyRun; cursor: FlightCursor }>
   | Readonly<{ kind: 'submission'; submission: FlightSubmission }>
 
@@ -63,7 +64,10 @@ function parseRecovery(value: unknown): FlappyRecovery {
   if (!record(value)) throw new Error('Invalid saved flight.')
   if (value.kind === 'start' && typeof value.idempotencyKey === 'string' && /^[A-Za-z0-9_-]{16,128}$/.test(value.idempotencyKey)
     && (value.mode === undefined || isMode(value.mode))) {
-    return { kind: 'start', idempotencyKey: value.idempotencyKey, mode: value.mode === undefined ? 'free' : value.mode }
+    const mode = value.mode === undefined ? 'free' : value.mode
+    const admission = value.admission === undefined ? undefined : parseAdmission(value.admission)
+    if (value.admission !== undefined && (mode === 'free' || !admission)) throw new Error('Invalid paid admission window.')
+    return { kind: 'start', idempotencyKey: value.idempotencyKey, mode, ...(admission ? { admission } : {}) }
   }
   const recoveredRun = parseRun(value.kind === 'flight' ? value.run : null)
   if (value.kind === 'flight' && recoveredRun !== null && isCursor(value.cursor, true)) {
@@ -85,6 +89,12 @@ function parseRecovery(value: unknown): FlappyRecovery {
     return { kind: 'submission', submission: { run: submissionRun, runId: s.runId, replay: s.replay, display: s.display } }
   }
   throw new Error('Invalid saved flight.')
+}
+function parseAdmission(value: unknown): FlappyFrozenAdmission | null {
+  if (!record(value) || typeof value.expectedWindowStartsAtUtc !== 'string' || typeof value.expectedWindowEndsAtUtc !== 'string' ||
+    !Number.isFinite(Date.parse(value.expectedWindowStartsAtUtc)) || !Number.isFinite(Date.parse(value.expectedWindowEndsAtUtc)) ||
+    Date.parse(value.expectedWindowStartsAtUtc) >= Date.parse(value.expectedWindowEndsAtUtc)) return null
+  return { expectedWindowStartsAtUtc: value.expectedWindowStartsAtUtc, expectedWindowEndsAtUtc: value.expectedWindowEndsAtUtc }
 }
 function isRunId(value: unknown): value is string { return typeof value === 'string' && /^flappy_(?:free_)?[0-9a-f]{64}$/.test(value) }
 function parseRun(value: unknown): RecordedFlappyRun | null {

@@ -64,6 +64,7 @@ $fullCommands = @(Get-ReleaseVerificationCommands -Plan (New-ReleaseVerification
 Assert-ScopeEqual @($fullCommands | Where-Object { $_.Executable -ceq 'dotnet' }).Count 1 'full suite retains the server test project'
 $fullText = ($fullCommands | ForEach-Object { $_.Arguments -join ' ' }) -join "`n"
 Assert-ScopeEqual $fullText.Contains('FortuneForge.Server.Tests.csproj') $true 'full suite retains the server test project'
+Assert-ScopeEqual $fullText.Contains('game-worker-release.test.mjs') $true 'full suite retains private worker publication policy tests'
 foreach ($project in @('FortuneForge.Games.DragonTiger.Tests.csproj', 'FortuneForge.Games.HiLo.Engine.Tests.csproj',
     'FortuneForge.Games.HiLo.Server.Tests.csproj', 'FortuneForge.Games.AndarBahar.Tests.csproj')) {
     Assert-ScopeEqual $fullText.Contains($project) $false "full suite omits stale hardcoded game project $project"
@@ -163,6 +164,7 @@ Assert-ScopeEqual @($playtestCommands | Where-Object { $_.Executable -ceq 'npm.c
 $testFreeCommands = @(Get-ReleaseVerificationCommands -Plan (New-ReleaseVerificationPlan -FullReason 'test-free') `
     -Repository $scopeRepoRoot -Target all -TestFree -TestWaiverReason 'Owner requested the explicit test-free route.')
 $testFreeText = ($testFreeCommands | ForEach-Object { $_.Executable + ' ' + ($_.Arguments -join ' ') }) -join "`n"
+Assert-ScopeEqual $testFreeText.Contains('game-worker-release.test.mjs') $false 'test-free waiver excludes worker publication policy tests'
 Assert-ScopeEqual @($testFreeCommands | Where-Object {
     ($_.Executable -ceq 'dotnet' -and $_.Arguments[0] -ceq 'test') -or
     ($_.Executable -ceq 'npm.cmd' -and $_.Arguments[0] -ceq 'run' -and
@@ -215,6 +217,9 @@ foreach ($required in @("(Join-Path `$repoRoot 'scripts/verify-release.ps1')", "
     Assert-ScopeEqual $scopeDeploySource.Contains($required) $true "deployment retains $required"
 }
 Assert-ScopeEqual ((Get-ReleaseToolPaths) -contains 'scripts/tests/release-scope.tests.ps1') $true 'scope tests protected from dirty-tooling bypass'
+foreach ($path in @('scripts/game-worker-release.mjs', 'scripts/tests/game-worker-release.test.mjs')) {
+    Assert-ScopeEqual ((Get-ReleaseToolPaths) -ccontains $path) $true "worker publication tooling protected from dirty-tooling bypass: $path"
+}
 foreach ($path in @('scripts/publish-site-hosting.mjs', 'scripts/tests/site-hosting-release.test.mjs', 'scripts/site-release-contract.json',
     'fortuneforge.client/scripts/verify-site-build.mjs', 'fortuneforge.client/scripts/check-site-types.mjs')) {
     Assert-ScopeEqual ((Get-ReleaseToolPaths) -ccontains $path) $true "site release tool protected from dirty-tooling bypass: $path"

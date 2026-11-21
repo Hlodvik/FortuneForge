@@ -19,7 +19,8 @@ param(
     [switch]$LivePlaytest,
     [switch]$TestFree,
     [string]$TestWaiverReason = '',
-    [string]$GameWorkerBindingsFile
+    [string]$GameWorkerBindingsFile,
+    [string]$HostRuntimeConfigurationFile
 )
 
 $ErrorActionPreference = 'Stop'
@@ -33,6 +34,9 @@ Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWa
 if ($ContinuousAudit -and $Target -in @('hosting', 'site')) { throw '-ContinuousAudit applies only to an API release.' }
 if ($PSBoundParameters.ContainsKey('GameWorkerBindingsFile') -and $Target -in @('hosting', 'site')) {
     throw '-GameWorkerBindingsFile applies only to a release that includes the API.'
+}
+if ($PSBoundParameters.ContainsKey('HostRuntimeConfigurationFile') -and ($Target -in @('hosting', 'site') -or $InspectLive)) {
+    throw '-HostRuntimeConfigurationFile applies only to an API release, not live inspection.'
 }
 
 function Read-GameWorkerBindings {
@@ -84,8 +88,132 @@ function Read-GameWorkerBindings {
     }
 }
 
+function ConvertFrom-HostRuntimeConfiguration {
+    param([string]$Json, [object[]]$Bindings, [string]$Repository)
+
+    try { $document = ConvertFrom-Json -InputObject $Json -ErrorAction Stop }
+    catch { throw 'Host runtime configuration must be a valid JSON object.' }
+    $names = @($document.PSObject.Properties.Name)
+    if ($document -isnot [pscustomobject] -or $names.Count -ne 2 -or
+        $names -cnotcontains 'environment' -or $names -cnotcontains 'secrets' -or
+        $document.environment -isnot [pscustomobject] -or $document.secrets -isnot [pscustomobject]) {
+        throw 'Host runtime configuration requires only environment and secrets objects.'
+    }
+    $properties = @($document.environment.PSObject.Properties) + @($document.secrets.PSObject.Properties)
+    # ConvertFrom-Json can collapse duplicate names. This flat, scalar schema
+    # accepts only literal ASCII property names, so count the raw JSON names too.
+    $rawNames = [regex]::Matches($Json, '"(?<name>(?:[^"\\]|\\.)*)"\s*:')
+    if ($rawNames.Count -ne 2 + $properties.Count -or
+        @($rawNames | Where-Object { $_.Groups['name'].Value -cnotmatch '\A[A-Za-z0-9_-]+\z' }).Count -gt 0 -or
+        $properties.Count -eq 0 -or $Bindings.Count -eq 0) {
+        throw 'Host runtime configuration requires unique literal setting names and reviewed worker bindings.'
+    }
+    $ids = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $secretNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($binding in $Bindings) {
+        [void]$ids.Add($binding.gameId)
+        if (-not $secretNames.Add(($binding.signingSecret -split ':', 2)[0])) {
+            throw 'Worker, wallet, batch and roster signing secrets must use separate secret names.'
+        }
+    }
+    # The host owns these setting names. Read the registry and Arcane's explicit
+    # route switch rather than maintaining a second list of slot identifiers.
+    $slotSettings = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($source in @('FortuneForge.Server/GameWorkers/PreparedSlotWorkerRegistry.cs', 'FortuneForge.Server/Controllers/SlotsController.cs')) {
+        $text = [System.IO.File]::ReadAllText((Join-Path $Repository $source))
+        foreach ($match in [regex]::Matches($text, '"(?<setting>Slots:[A-Za-z]+WorkerRoundsEnabled)"')) {
+            [void]$slotSettings.Add($match.Groups['setting'].Value.Replace(':', '__'))
+        }
+    }
+    if ($slotSettings.Count -eq 0) { throw 'Cannot read the authoritative host slot switches.' }
+    $environment = [ordered]@{}
+    $secrets = [ordered]@{}
+    $used = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $gamePattern = '[a-z0-9]+(?:-[a-z0-9]+)*'
+    foreach ($property in $document.environment.PSObject.Properties) {
+        $name = $property.Name
+        $id = $null
+        $allowed = $slotSettings.Contains($name)
+        if ($name -cmatch "\AGameWorkers__(?<id>$gamePattern)__(?<flag>ForwardPublicRoutes|ForwardFreeRoutes|ForwardPaidCompetitionRoutes)\z") {
+            $id = $Matches.id
+            $allowed = $Matches.flag -ceq 'ForwardPublicRoutes' -or $id -cin @('asteroids', 'flappy', 'horse-flight')
+        }
+        elseif ($name -cmatch "\AGameWallet__Games__(?<id>$gamePattern)__(LegacySlotLedger|AllowLegacyFreeGames|AllowAccountBalanceRead|AllowCashWagerWithLegacyFreeGame|AllowWagerReservations|AllowPlayerNameRead|AllowMultiAccountBatch|AllowArcadeCompetition)\z" -or
+            $name -cmatch "\AManagedPlayerRoster__Games__(?<id>$gamePattern)__Enabled\z") {
+            $id = $Matches.id
+            $allowed = $true
+        }
+        if (-not $allowed -or ($id -and -not $ids.Contains($id)) -or $property.Value -isnot [bool] -or -not $used.Add($name)) {
+            throw 'Host runtime environment settings must be unique, approved boolean switches for bound runtime game IDs.'
+        }
+        $environment[$name] = $property.Value.ToString().ToLowerInvariant()
+    }
+    foreach ($property in $document.secrets.PSObject.Properties) {
+        $name = $property.Name
+        $allowed = $name -cmatch "\AGameWallet__Games__(?<id>$gamePattern)__(SigningKey|BatchSigningKey)\z" -or
+            $name -cmatch "\AManagedPlayerRoster__Games__(?<id>$gamePattern)__SigningKey\z"
+        if (-not $allowed -or -not $ids.Contains($Matches.id) -or -not $used.Add($name) -or
+            $property.Value -isnot [string] -or $property.Value -cnotmatch '\A[A-Za-z0-9_-]{1,255}:[1-9][0-9]{0,18}\z') {
+            throw 'Host runtime secrets require approved per-game names and same-project pinned numeric secret references.'
+        }
+        if (-not $secretNames.Add(($property.Value -split ':', 2)[0])) {
+            throw 'Worker, wallet, batch and roster signing secrets must use separate secret names.'
+        }
+        $secrets[$name] = $property.Value
+    }
+    [pscustomobject]@{ Environment = $environment; Secrets = $secrets }
+}
+
+function Get-DeploymentInputHash {
+    param([System.IO.Stream]$Stream)
+    $hash = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $Stream.Position = 0
+        ([BitConverter]::ToString($hash.ComputeHash($Stream))).Replace('-', '').ToLowerInvariant()
+    }
+    finally { $Stream.Position = 0; $hash.Dispose() }
+}
+
+function Read-HostRuntimeConfiguration {
+    param([string]$Path, [object[]]$Bindings, [string]$Repository)
+    $file = Get-Item -LiteralPath $Path -ErrorAction Stop
+    if ($file -isnot [System.IO.FileInfo] -or $file.Length -gt 262144 -or
+        ($file.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+        throw 'Host runtime configuration requires a regular JSON file of at most 256 KiB.'
+    }
+    $stream = [System.IO.File]::Open($file.FullName, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+    try {
+        if ($stream.Length -gt 262144) { throw 'Host runtime configuration exceeds 256 KiB.' }
+        $digest = Get-DeploymentInputHash $stream
+        $reader = [System.IO.StreamReader]::new($stream, [System.Text.UTF8Encoding]::new($false, $true), $true, 4096, $true)
+        try { $json = $reader.ReadToEnd() } finally { $reader.Dispose() }
+        $configuration = ConvertFrom-HostRuntimeConfiguration -Json $json -Bindings $Bindings -Repository $Repository
+        $configuration | Add-Member -NotePropertyName Path -NotePropertyValue $file.FullName
+        $configuration | Add-Member -NotePropertyName Sha256 -NotePropertyValue $digest
+        return $configuration
+    }
+    finally { $stream.Dispose() }
+}
+
+function Assert-HostRuntimeConfigurationUnchanged {
+    param($Configuration, [System.IO.Stream]$LockedStream)
+    if ($Configuration -and ((Get-DeploymentInputHash $LockedStream) -cne $Configuration.Sha256 -or
+        (Get-FileHash -LiteralPath $Configuration.Path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $Configuration.Sha256)) {
+        throw 'Host runtime configuration changed after preflight; publication is blocked.'
+    }
+}
+
+function Enter-HostRuntimeConfigurationLock {
+    param($Configuration)
+    $file = Get-Item -LiteralPath $Configuration.Path -ErrorAction Stop
+    if ($file.Attributes -band [System.IO.FileAttributes]::ReparsePoint) { throw 'Host runtime configuration cannot be a reparse point.' }
+    $stream = [System.IO.File]::Open($Configuration.Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+    try { Assert-HostRuntimeConfigurationUnchanged -Configuration $Configuration -LockedStream $stream; return $stream }
+    catch { $stream.Dispose(); throw }
+}
+
 function Get-ApiWorkerDeployFlags {
-    param([string]$SourceSha, [object[]]$Bindings)
+    param([string]$SourceSha, [object[]]$Bindings, $RuntimeConfiguration)
 
     $variables = @("FF_RELEASE_SHA=$SourceSha")
     $secretReferences = @()
@@ -94,8 +222,54 @@ function Get-ApiWorkerDeployFlags {
         $variables += "${prefix}Url=$($binding.url)"
         $secretReferences += "${prefix}SigningKey=$($binding.signingSecret)"
     }
+    if ($RuntimeConfiguration) {
+        foreach ($name in $RuntimeConfiguration.Environment.Keys) { $variables += "$name=$($RuntimeConfiguration.Environment[$name])" }
+        foreach ($name in $RuntimeConfiguration.Secrets.Keys) { $secretReferences += "$name=$($RuntimeConfiguration.Secrets[$name])" }
+    }
     "--update-env-vars=$($variables -join ',')"
     if ($secretReferences.Count -gt 0) { "--update-secrets=$($secretReferences -join ',')" }
+}
+
+function New-ApiRuntimeFlagsContext {
+    param([string]$SourceSha, [object[]]$Bindings, $RuntimeConfiguration, [string]$RecordPath)
+    # A catalogue-sized update exceeds cmd.exe's command-line limit. gcloud's
+    # JSON flags file carries the same validated dictionary values without
+    # exposing raw signing keys or relying on shell quoting/argument length.
+    $flags = [ordered]@{}
+    foreach ($argument in @(Get-ApiWorkerDeployFlags -SourceSha $SourceSha -Bindings $Bindings -RuntimeConfiguration $RuntimeConfiguration)) {
+        $name, $value = $argument -split '=', 2
+        $flags[$name] = $value
+    }
+    $path = $RecordPath + '.api-runtime.flags.json'
+    $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes(($flags | ConvertTo-Json -Depth 4))
+    $writer = [System.IO.File]::Open($path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+    try { $writer.Write($bytes, 0, $bytes.Length) } finally { $writer.Dispose() }
+    $expected = [System.IO.MemoryStream]::new($bytes, $false)
+    try { $digest = Get-DeploymentInputHash $expected } finally { $expected.Dispose() }
+    $stream = [System.IO.File]::Open($path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+    $context = [pscustomobject]@{ Path = $path; Sha256 = $digest; Stream = $stream }
+    try { Assert-HostRuntimeConfigurationUnchanged -Configuration $context -LockedStream $stream; return $context }
+    catch { $stream.Dispose(); throw }
+}
+
+function Assert-ApiHostRuntimeConfiguration {
+    param($Revision, $Configuration)
+    if (-not $Configuration) { return }
+    $variables = @($Revision.spec.containers[0].env)
+    foreach ($name in $Configuration.Environment.Keys) {
+        $found = @($variables | Where-Object { $_.name -ieq $name })
+        if ($found.Count -ne 1 -or $found[0].name -cne $name -or $found[0].value -cne $Configuration.Environment[$name] -or $found[0].valueFrom) {
+            throw 'Candidate API revision does not match the reviewed runtime switches. Traffic was not changed.'
+        }
+    }
+    foreach ($name in $Configuration.Secrets.Keys) {
+        $found = @($variables | Where-Object { $_.name -ieq $name })
+        $secretName, $version = $Configuration.Secrets[$name] -split ':', 2
+        if ($found.Count -ne 1 -or $found[0].name -cne $name -or $found[0].value -or
+            $found[0].valueFrom.secretKeyRef.name -cne $secretName -or [string]$found[0].valueFrom.secretKeyRef.key -cne $version) {
+            throw 'Candidate API revision does not match the reviewed signing secret references. Traffic was not changed.'
+        }
+    }
 }
 
 function Assert-ApiWorkerBindings {
@@ -119,28 +293,36 @@ $gameWorkerBindings = @()
 if ($PSBoundParameters.ContainsKey('GameWorkerBindingsFile')) {
     $gameWorkerBindings = @(Read-GameWorkerBindings -Path $GameWorkerBindingsFile)
 }
+$hostRuntimeConfiguration = $null
+if ($PSBoundParameters.ContainsKey('HostRuntimeConfigurationFile')) {
+    $hostRuntimeConfiguration = Read-HostRuntimeConfiguration -Path $HostRuntimeConfigurationFile -Bindings $gameWorkerBindings -Repository $repoRoot
+}
 
 function Invoke-Checked {
     param([string]$Executable, [string[]]$Arguments, [string]$WorkingDirectory)
     Push-Location $WorkingDirectory
     try {
+        if ($hostRuntimeConfigurationLock) { Assert-HostRuntimeConfigurationUnchanged -Configuration $hostRuntimeConfiguration -LockedStream $hostRuntimeConfigurationLock }
         if ($sourceLock) { Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha }
         Write-Host "`n> $Executable $($Arguments -join ' ')" -ForegroundColor Cyan
         & $Executable @Arguments
         if ($LASTEXITCODE -ne 0) { throw "$Executable exited with code $LASTEXITCODE." }
         if ($sourceLock) { Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha }
+        if ($hostRuntimeConfigurationLock) { Assert-HostRuntimeConfigurationUnchanged -Configuration $hostRuntimeConfiguration -LockedStream $hostRuntimeConfigurationLock }
     }
     finally { Pop-Location }
 }
 
 function Invoke-JsonCommand {
     param([string]$Executable, [string[]]$Arguments)
+    if ($hostRuntimeConfigurationLock) { Assert-HostRuntimeConfigurationUnchanged -Configuration $hostRuntimeConfiguration -LockedStream $hostRuntimeConfigurationLock }
     if ($sourceLock) { Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha }
     $output = & $Executable @Arguments
     if ($LASTEXITCODE -ne 0) { throw "$Executable $($Arguments -join ' ') failed with code $LASTEXITCODE." }
     try { $result = (($output -join "`n") | ConvertFrom-Json -ErrorAction Stop) }
     catch { throw "$Executable returned invalid JSON for $($Arguments -join ' ')." }
     if ($sourceLock) { Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha }
+    if ($hostRuntimeConfigurationLock) { Assert-HostRuntimeConfigurationUnchanged -Configuration $hostRuntimeConfiguration -LockedStream $hostRuntimeConfigurationLock }
     return $result
 }
 
@@ -612,6 +794,9 @@ if (-not $InspectLive) {
         if ($gameWorkerBindings.Count -gt 0) {
             $localPreflight | Add-Member -NotePropertyName GameWorkerBindings -NotePropertyValue $gameWorkerBindings
         }
+        if ($hostRuntimeConfiguration) {
+            $localPreflight | Add-Member -NotePropertyName HostRuntimeConfiguration -NotePropertyValue $hostRuntimeConfiguration
+        }
         $localPreflight
         return
     }
@@ -668,6 +853,8 @@ $verificationPlan = Get-ReleaseVerificationPlan -Repository $repoRoot -Candidate
 $releaseCheckout = $repoRoot
 $workspaceLock = $null
 $sourceLock = $null
+$hostRuntimeConfigurationLock = $null
+$apiRuntimeFlagsContext = $null
 $hostingContext = $null
 $recordPath = ''
 $record = [ordered]@{
@@ -684,6 +871,9 @@ $record = [ordered]@{
     apiImageDigest = ''
     apiImageReference = ''
     gameWorkerBindings = $gameWorkerBindings
+    hostRuntimeConfiguration = $hostRuntimeConfiguration
+    apiRuntimeFlagsSha256 = ''
+    apiRuntimeFlagsPath = ''
     firestoreIndexPublicationSha256 = ''
     firestoreIndexConfigSha256 = ''
     firestorePublishedIndexCount = 0
@@ -723,6 +913,7 @@ $record = [ordered]@{
 try {
     $workspaceLock = Enter-ReleaseWorkspaceLock -Repository $releaseCheckout
     $sourceLock = Enter-ReleaseSourceLock -Repository $releaseCheckout -Sha $candidateSha
+    if ($hostRuntimeConfiguration) { $hostRuntimeConfigurationLock = Enter-HostRuntimeConfigurationLock -Configuration $hostRuntimeConfiguration }
     Assert-ReleaseToolingMatchesCommit -Repository $repoRoot -Sha $candidateSha -Paths $releaseToolPaths
     $record.sourceManifestSha256 = $sourceLock.ManifestSha256
     $record.sourceFileCount = $sourceLock.FileCount
@@ -885,7 +1076,12 @@ try {
             "--update-labels=ff-source-sha=$candidateSha",
             '--quiet'
         )
-        $apiDeployArguments += @(Get-ApiWorkerDeployFlags -SourceSha $candidateSha -Bindings $gameWorkerBindings)
+        $apiRuntimeFlagsContext = New-ApiRuntimeFlagsContext -SourceSha $candidateSha -Bindings $gameWorkerBindings -RuntimeConfiguration $hostRuntimeConfiguration -RecordPath $recordPath
+        $record.apiRuntimeFlagsSha256 = $apiRuntimeFlagsContext.Sha256
+        $record.apiRuntimeFlagsPath = $apiRuntimeFlagsContext.Path
+        Write-ReleaseRecord -Record $record -Path $recordPath
+        Assert-HostRuntimeConfigurationUnchanged -Configuration $apiRuntimeFlagsContext -LockedStream $apiRuntimeFlagsContext.Stream
+        $apiDeployArguments += "--flags-file=$($apiRuntimeFlagsContext.Path)"
         if ($ContinuousAudit) { $apiDeployArguments += @('--min-instances', '1', '--no-cpu-throttling') }
         Invoke-Checked -Executable 'gcloud.cmd' -Arguments $apiDeployArguments -WorkingDirectory $releaseCheckout
 
@@ -900,6 +1096,7 @@ try {
         }
         Assert-ApiRevisionImage -Revision $newRevision -ExpectedImage $builtImage.Image
         Assert-ApiWorkerBindings -Revision $newRevision -Bindings $gameWorkerBindings
+        Assert-ApiHostRuntimeConfiguration -Revision $newRevision -Configuration $hostRuntimeConfiguration
         $record.newApiRevision = $newApiRevision
         Write-ReleaseRecord -Record $record -Path $recordPath
 
@@ -914,6 +1111,11 @@ try {
         }
         $apiAtTrafficSwitch = Get-LiveApi
         Assert-ServingApiUnchanged -Before $apiBefore -Now $apiAtTrafficSwitch
+        $candidateAtTrafficSwitch = Get-ApiRevision $newApiRevision
+        Assert-ApiRevisionImage -Revision $candidateAtTrafficSwitch -ExpectedImage $builtImage.Image
+        if ((Get-ApiRevisionSourceSha $candidateAtTrafficSwitch) -cne $candidateSha) { throw 'Candidate API source stamp changed before traffic switch.' }
+        Assert-ApiWorkerBindings -Revision $candidateAtTrafficSwitch -Bindings $gameWorkerBindings
+        Assert-ApiHostRuntimeConfiguration -Revision $candidateAtTrafficSwitch -Configuration $hostRuntimeConfiguration
 
         Invoke-Checked -Executable 'gcloud.cmd' -Arguments @(
             'run', 'services', 'update-traffic', $serviceName,
@@ -1011,6 +1213,8 @@ catch {
     throw
 }
 finally {
+    if ($apiRuntimeFlagsContext) { $apiRuntimeFlagsContext.Stream.Dispose() }
+    if ($hostRuntimeConfigurationLock) { $hostRuntimeConfigurationLock.Dispose() }
     if ($hostingContext) { Exit-ReleaseSourceLock -Lock $hostingContext.Lock }
     Exit-ReleaseSourceLock -Lock $sourceLock
     if ($workspaceLock) { $workspaceLock.Dispose() }

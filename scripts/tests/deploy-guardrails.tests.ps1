@@ -268,6 +268,103 @@ Assert-Throws {
 # checks supplement the policy tests above; they do not call a live service.
 $deploySource = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/deploy.ps1') -Raw
 $verifySource = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/verify-release.ps1') -Raw
+# Import only pure validation/flag functions and input locks, never execute the
+# deployment entry point. Fixtures stay in ignored artifacts, not repositories.
+$runtimeFunctions = @('ConvertFrom-HostRuntimeConfiguration', 'Get-DeploymentInputHash', 'Read-HostRuntimeConfiguration',
+    'Assert-HostRuntimeConfigurationUnchanged', 'Enter-HostRuntimeConfigurationLock', 'Get-ApiWorkerDeployFlags', 'New-ApiRuntimeFlagsContext', 'Assert-ApiHostRuntimeConfiguration')
+$runtimeAst = [System.Management.Automation.Language.Parser]::ParseInput($deploySource, [ref]$null, [ref]$null)
+foreach ($definition in $runtimeAst.FindAll({ param($node)
+    $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -cin $runtimeFunctions
+}, $false)) { . ([scriptblock]::Create($definition.Extent.Text)) }
+$runtimeBindings = @(
+    [pscustomobject]@{ gameId = 'hearts'; url = 'https://hearts.example.run.app'; signingSecret = 'hearts-worker:1' },
+    [pscustomobject]@{ gameId = 'horse-flight'; url = 'https://horse.example.run.app'; signingSecret = 'horse-worker:1' }
+)
+$runtimeJson = '{"environment":{"GameWorkers__hearts__ForwardPublicRoutes":true,"GameWorkers__horse-flight__ForwardFreeRoutes":true,"Slots__ArcaneWorkerRoundsEnabled":true,"Slots__NeonWorkerRoundsEnabled":false,"GameWallet__Games__hearts__AllowMultiAccountBatch":true,"ManagedPlayerRoster__Games__hearts__Enabled":true},"secrets":{"GameWallet__Games__hearts__SigningKey":"hearts-wallet:2","GameWallet__Games__hearts__BatchSigningKey":"hearts-batch:3","ManagedPlayerRoster__Games__hearts__SigningKey":"hearts-roster:4"}}'
+$runtimeConfiguration = ConvertFrom-HostRuntimeConfiguration -Json $runtimeJson -Bindings $runtimeBindings -Repository $repoRoot
+Assert-Equal $runtimeConfiguration.Environment['GameWorkers__hearts__ForwardPublicRoutes'] 'true' 'runtime JSON booleans normalize for Cloud Run'
+Assert-Equal $runtimeConfiguration.Environment['Slots__NeonWorkerRoundsEnabled'] 'false' 'runtime JSON false is preserved'
+$runtimeFlags = @(Get-ApiWorkerDeployFlags -SourceSha $head -Bindings $runtimeBindings -RuntimeConfiguration $runtimeConfiguration)
+Assert-Equal $runtimeFlags.Count 2 'one combined environment flag and one secret flag'
+Assert-Equal $runtimeFlags[0].Contains('GameWorkers__hearts__ForwardPublicRoutes=true') $true 'runtime switches reach candidate deployment'
+Assert-Equal $runtimeFlags[0].Contains("FF_RELEASE_SHA=$head") $true 'runtime deployment retains source stamp'
+Assert-Equal $runtimeFlags[1].Contains('GameWallet__Games__hearts__BatchSigningKey=hearts-batch:3') $true 'separate batch reference reaches candidate deployment'
+foreach ($invalid in @(
+    '{"environment":{"FF_RELEASE_SHA":true},"secrets":{}}',
+    '{"environment":{"GameWorkers__hearts__Url":true},"secrets":{}}',
+    '{"environment":{"GameWorkers__hearts__SigningKey":true},"secrets":{}}',
+    '{"environment":{"GameWorkers__missing__ForwardPublicRoutes":true},"secrets":{}}',
+    '{"environment":{"GameWorkers__hearts__ForwardFreeRoutes":true},"secrets":{}}',
+    '{"environment":{"GameWorkers__hearts__ForwardPublicRoutes":"true"},"secrets":{}}',
+    '{"environment":{"gameworkers__hearts__ForwardPublicRoutes":true},"secrets":{}}',
+    '{"environment":{"Slots__TypoWorkerRoundsEnabled":true},"secrets":{}}',
+    '{"environment":{"GameWallet__Games__hearts__AllowAnything":true},"secrets":{}}',
+    '{"environment":{"GameWorkers__hearts__ForwardPublicRoutes":true,"GameWorkers__hearts__ForwardPublicRoutes":false},"secrets":{}}',
+    '{"environment":{"GameWorkers__hearts__ForwardPublicRoutes":true},"environment":{"GameWorkers__hearts__ForwardPublicRoutes":false},"secrets":{}}',
+    '{"environment":{"GameWorkers__hearts__ForwardPublicRout\u0065s":true},"secrets":{}}',
+    '{"environment":{},"secrets":{}}',
+    '{"environment":[],"secrets":{}}',
+    '{"environment":{},"secrets":{"GameWallet__Games__hearts__SigningKey":"private-key-value"}}',
+    '{"environment":{},"secrets":{"GameWallet__Games__hearts__SigningKey":"wallet:latest"}}',
+    '{"environment":{},"secrets":{"GameWallet__Games__hearts__SigningKey":"wallet:0"}}',
+    '{"environment":{},"secrets":{"GameWallet__Games__hearts__SigningKey":"projects/other/secrets/wallet:1"}}',
+    '{"environment":{},"secrets":{"GameWallet__Games__hearts__SigningKey":"hearts-worker:2"}}',
+    '{"environment":{},"secrets":{"GameWallet__Games__hearts__SigningKey":"shared:1","GameWallet__Games__hearts__BatchSigningKey":"shared:2"}}',
+    '{"environment":{},"secrets":{"ManagedPlayerRoster__Games__missing__SigningKey":"roster:1"}}',
+    '{"environment":{},"secrets":{"GameWorkers__hearts__SigningKey":"override:1"}}',
+    '{"environment":{"GameWorkers__hearts__ForwardPublicRoutes":true},"secrets":{},"extra":{}}'
+)) {
+    Assert-Throws { ConvertFrom-HostRuntimeConfiguration -Json $invalid -Bindings $runtimeBindings -Repository $repoRoot } 'unsafe host runtime configuration'
+}
+Assert-Throws { ConvertFrom-HostRuntimeConfiguration -Json $runtimeJson -Bindings @() -Repository $repoRoot } 'runtime configuration without reviewed bindings'
+foreach ($grant in @('LegacySlotLedger', 'AllowLegacyFreeGames', 'AllowAccountBalanceRead', 'AllowCashWagerWithLegacyFreeGame',
+    'AllowWagerReservations', 'AllowPlayerNameRead', 'AllowMultiAccountBatch', 'AllowArcadeCompetition')) {
+    $grantJson = '{"environment":{"GameWallet__Games__hearts__' + $grant + '":true},"secrets":{}}'
+    $grantConfiguration = ConvertFrom-HostRuntimeConfiguration -Json $grantJson -Bindings $runtimeBindings -Repository $repoRoot
+    Assert-Equal $grantConfiguration.Environment.Count 1 'real wallet grant is accepted'
+}
+$runtimeEnv = @()
+foreach ($name in $runtimeConfiguration.Environment.Keys) { $runtimeEnv += [pscustomobject]@{ name = $name; value = $runtimeConfiguration.Environment[$name] } }
+foreach ($name in $runtimeConfiguration.Secrets.Keys) {
+    $secretName, $secretVersion = $runtimeConfiguration.Secrets[$name] -split ':', 2
+    $runtimeEnv += [pscustomobject]@{ name = $name; valueFrom = [pscustomobject]@{ secretKeyRef = [pscustomobject]@{ name = $secretName; key = $secretVersion } } }
+}
+$runtimeRevision = [pscustomobject]@{ spec = [pscustomobject]@{ containers = @([pscustomobject]@{ env = $runtimeEnv }) } }
+Assert-ApiHostRuntimeConfiguration -Revision $runtimeRevision -Configuration $runtimeConfiguration
+$runtimeEnv[0].value = 'false'
+Assert-Throws { Assert-ApiHostRuntimeConfiguration -Revision $runtimeRevision -Configuration $runtimeConfiguration } 'wrong candidate runtime switch'
+$runtimeEnv[0].value = 'true'
+$runtimeEnv[-1].valueFrom.secretKeyRef.key = 'latest'
+Assert-Throws { Assert-ApiHostRuntimeConfiguration -Revision $runtimeRevision -Configuration $runtimeConfiguration } 'wrong candidate runtime secret version'
+$runtimeEnv[-1].valueFrom.secretKeyRef.key = '4'
+$runtimeRevision.spec.containers[0].env += [pscustomobject]@{ name = $runtimeEnv[0].name.ToLowerInvariant(); value = 'true' }
+Assert-Throws { Assert-ApiHostRuntimeConfiguration -Revision $runtimeRevision -Configuration $runtimeConfiguration } 'case-conflicting candidate runtime setting'
+$runtimeFixtureDirectory = Join-Path $repoRoot 'artifacts/releases'
+[System.IO.Directory]::CreateDirectory($runtimeFixtureDirectory) | Out-Null
+$runtimeFixture = Join-Path $runtimeFixtureDirectory ('runtime-guard-test-' + [guid]::NewGuid().ToString('N') + '.json')
+[System.IO.File]::WriteAllText($runtimeFixture, $runtimeJson, [System.Text.UTF8Encoding]::new($false))
+$runtimeFileLock = $null
+$runtimeFlagsContext = $null
+try {
+    $runtimeFileConfiguration = Read-HostRuntimeConfiguration -Path $runtimeFixture -Bindings $runtimeBindings -Repository $repoRoot
+    $runtimeFileLock = Enter-HostRuntimeConfigurationLock -Configuration $runtimeFileConfiguration
+    Assert-HostRuntimeConfigurationUnchanged -Configuration $runtimeFileConfiguration -LockedStream $runtimeFileLock
+    Assert-Throws { [System.IO.File]::WriteAllText($runtimeFixture, '{}') } 'runtime config denies concurrent writes'
+    $runtimeFlagsContext = New-ApiRuntimeFlagsContext -SourceSha $head -Bindings $runtimeBindings -RuntimeConfiguration $runtimeFileConfiguration -RecordPath $runtimeFixture
+    $flagsDocument = Get-Content -LiteralPath $runtimeFlagsContext.Path -Raw | ConvertFrom-Json
+    Assert-Equal $flagsDocument.'--update-env-vars' ($runtimeFlags[0] -split '=', 2)[1] 'JSON flags preserve the complete environment dictionary'
+    Assert-Equal $flagsDocument.'--update-secrets' ($runtimeFlags[1] -split '=', 2)[1] 'JSON flags preserve every pinned secret reference'
+    Assert-Throws { [System.IO.File]::WriteAllText($runtimeFlagsContext.Path, '{}') } 'generated API flags deny concurrent writes'
+    $runtimeFileLock.Dispose(); $runtimeFileLock = $null
+    [System.IO.File]::WriteAllText($runtimeFixture, $runtimeJson + ' ')
+    Assert-Throws { Enter-HostRuntimeConfigurationLock -Configuration $runtimeFileConfiguration } 'runtime config byte changes after preflight'
+}
+finally {
+    if ($runtimeFlagsContext) { $runtimeFlagsContext.Stream.Dispose(); Remove-Item -LiteralPath $runtimeFlagsContext.Path -Force }
+    if ($runtimeFileLock) { $runtimeFileLock.Dispose() }
+    Remove-Item -LiteralPath $runtimeFixture -Force
+}
+Assert-Equal $deploySource.Contains('$apiDeployArguments += "--flags-file=$($apiRuntimeFlagsContext.Path)"') $true 'catalogue configuration uses a locked flags file instead of a long shell argument'
 foreach ($source in @($deploySource, $verifySource)) {
     Assert-Equal $source.Contains('[switch]$LivePlaytest') $true 'both release entry points expose explicit live-playtest mode'
     Assert-Equal $source.Contains('-LivePlaytest:$LivePlaytest') $true 'both release entry points independently bind playtest policy'
@@ -301,6 +398,11 @@ if ($indexPublication -lt 0 -or $indexConfig -le $indexPublication -or
 }
 $trafficCommand = $deploySource.LastIndexOf("'run', 'services', 'update-traffic'")
 if ($trafficCommand -lt 0) { throw 'API traffic command is missing from the deploy script.' }
+$runtimeRevisionRead = $deploySource.LastIndexOf('$candidateAtTrafficSwitch = Get-ApiRevision $newApiRevision', $trafficCommand)
+$runtimeRevisionGuard = $deploySource.LastIndexOf('Assert-ApiHostRuntimeConfiguration -Revision $candidateAtTrafficSwitch -Configuration $hostRuntimeConfiguration', $trafficCommand)
+if ($runtimeRevisionRead -lt 0 -or $runtimeRevisionGuard -le $runtimeRevisionRead -or $runtimeRevisionGuard -ge $trafficCommand) {
+    throw 'Candidate runtime configuration must be read and verified before the API traffic switch.'
+}
 $readinessCheck = $deploySource.LastIndexOf('Wait-FirestoreIndexesReady -Expected $expectedIndexes', $trafficCommand)
 $fieldReadinessCheck = $deploySource.LastIndexOf('Wait-FirestoreFieldOverridesReady -Expected $expectedFieldOverrides', $trafficCommand)
 $rulesPublication = $deploySource.IndexOf("'--only', 'firestore:rules'")

@@ -82,6 +82,55 @@ npm run deploy:game -- @workerArgs --enroll-worker --worker-plan
 `artifacts/game-worker-contexts` and prints the destination, identities, and
 secret reference.
 
+Use `--worker-service fortuneforge-game-<game-id>-v2` to enroll a separate
+candidate service while the existing gateway continues using its current
+worker. The default remains `fortuneforge-game-<game-id>`. Explicit service
+names must be lowercase Cloud Run identifiers of at most 49 characters;
+existing services still require the matching game label, runtime identity,
+private IAM policy, and signing-secret reference. Enrollment serves the new
+private service immediately, so inspect any game background processing before
+enrolling against production data. A separate service name does not pause it.
+
+Supply `--worker-settings <path>` for wallet, batch settlement, roster, and
+game admission configuration. Keep this reviewed JSON file outside the source
+checkout. It contains only public configuration and pinned Secret Manager
+references, never signing-key values. For example, a Hearts worker can use:
+
+```json
+{
+  "environment": {
+    "Features__HeartsEnabled": true,
+    "GameWallet__Url": "https://wallet.example.run.app",
+    "ManagedPlayerRoster__Url": "https://wallet.example.run.app"
+  },
+  "secrets": {
+    "GameWallet__SigningKey": "hearts-wallet-signing:1",
+    "GameWallet__BatchSigningKey": "hearts-batch-signing:1",
+    "ManagedPlayerRoster__SigningKey": "hearts-roster-signing:1"
+  }
+}
+```
+
+Both objects are required, even when empty. Connection URLs must be HTTPS
+origins, and supplied connections require their corresponding pinned secrets.
+The worker request, wallet, batch, and roster keys must use separate Secret
+Manager secrets. Wallet, batch, and roster settings are accepted only for games
+that register those clients. The optional admission settings are the selected
+game's feature flags and `AllowNewPaidRounds` flag, plus the Texas Hold'em or
+Competitive Solitaire `AllowSingleHumanBotFill` policy. Boolean settings accept
+JSON booleans or the strings `"true"` and `"false"`. Explicit feature settings
+can preserve a disabled production admission gate; omitted features retain the
+publisher's defaults. Hosted mode, Firestore project, allowed origins, and the
+worker request signing key cannot be overridden by this file.
+
+The publisher captures the settings once and checks that the file remains
+unchanged before deployment, access grants, traffic activation, and completion.
+Enrollment applies the settings to the first revision. Later publishes require
+the existing service to match the same settings before building, and verify
+the candidate revision's runtime identity, environment, and pinned secrets
+before granting access or switching traffic. Local plans print only the secret
+references. Configure secret access for the runtime identity before enrollment.
+
 For first-time enrollment only, run
 `npm run deploy:game -- @workerArgs --enroll-worker`. Enrollment requires the
 service name to be unused, creates an IAM-authenticated service, and grants the

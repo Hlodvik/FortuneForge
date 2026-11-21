@@ -397,6 +397,7 @@ function Get-ReleaseToolPaths {
       'scripts/verify-release.ps1', 'scripts/verify-game-navbar.mjs',
       'scripts/tests/game-navbar-boundary.test.mjs', 'scripts/verify-ci-emulator-order.mjs',
       'scripts/tests/ci-emulator-order.test.mjs', 'scripts/publish-site-hosting.mjs',
+      'scripts/game-worker-release.mjs', 'scripts/tests/game-worker-release.test.mjs',
       'scripts/tests/site-hosting-release.test.mjs', 'fortuneforge.client/scripts/verify-site-build.mjs',
       'fortuneforge.client/scripts/check-site-types.mjs',
       'scripts/site-release-contract.mjs', 'scripts/site-release-contract.json', 'scripts/smoke-site.mjs',
@@ -993,6 +994,7 @@ function Get-ReleaseVerificationCommands {
         }
     }
     else {
+        $commands.Add([pscustomobject]@{ Executable = 'node.exe'; Arguments = @('--test', (Join-Path $Repository 'scripts/tests/game-worker-release.test.mjs')) })
         foreach ($script in @('verify:game-navbar', 'verify:ci-emulator')) {
             $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', $script) })
         }

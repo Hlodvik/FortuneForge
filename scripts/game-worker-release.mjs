@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import { cp, mkdir, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import { assertArtifactPath, isReleaseId } from './game-release-activation.mjs'
+import { join, resolve } from 'node:path'
+import { assertArtifactPath, isGameId, isReleaseId } from './game-release-activation.mjs'
 
 export const gameWorkerOptions = {
   'publish-worker': { type: 'string' },
@@ -11,6 +11,8 @@ export const gameWorkerOptions = {
   'worker-service-account': { type: 'string' },
   'worker-caller-service-account': { type: 'string' },
   'worker-secret': { type: 'string' },
+  'worker-service': { type: 'string' },
+  'worker-settings': { type: 'string' },
   'worker-plan': { type: 'boolean' },
   'enroll-worker': { type: 'boolean' },
   'activate-worker': { type: 'boolean' },
@@ -21,6 +23,27 @@ const signingVariable = 'GameWorker__SigningKey'
 const gameLabel = 'fortuneforge-game-worker'
 const serviceAccount = /^[a-z0-9][a-z0-9-]*@[a-z0-9][a-z0-9.-]*\.gserviceaccount\.com$/
 const digestPattern = /^sha256:[a-f0-9]{64}$/
+const secretReference = /^[a-zA-Z0-9_-]{1,255}:[1-9][0-9]*$/
+const paidRoundSettings = new Map([
+  ['arcane-archives', 'Arcane'], ['neon-nights', 'Neon'], ['jade-dragon', 'JadeDragon'],
+  ['gold-foundry', 'GoldFoundry'], ['midnight-vault', 'MidnightVault'], ['wukong', 'Wukong'],
+  ['rainbow-realm', 'RainbowRealm'], ['pirates-fortune', 'PiratesFortune'],
+  ['gods-of-olympus', 'GodsOfOlympus'], ['high-noon-fortune', 'HighNoonFortune'],
+  ['reel-riches', 'ReelRiches'], ['royal-draw', 'RoyalDraw'], ['cosmic-fortune', 'CosmicFortune'],
+  ['ocean-odyssey', 'OceanOdyssey'], ['samurai-fortune', 'SamuraiFortune'],
+  ['candy-carnival', 'CandyCarnival'], ['phantom-manor', 'PhantomManor'],
+  ['nordic-legends', 'NordicLegends'], ['desert-treasures', 'DesertTreasures'],
+  ['robot-revolution', 'RobotRevolution'], ['solitaire', 'Solitaire'], ['casino-war', 'CasinoWar'],
+])
+const walletGames = new Set([...paidRoundSettings.keys(), 'andar-bahar', 'baccarat', 'blackjack', 'craps',
+  'asteroids', 'dragon-tiger', 'flappy', 'hearts', 'hi-lo', 'horse-flight', 'house-holdem', 'keno', 'mines', 'roulette',
+  'sic-bo', 'texas-holdem', 'three-card-poker', 'video-poker'])
+const batchWalletGames = new Set(['hearts', 'solitaire', 'texas-holdem'])
+const rosterGames = new Set(['blackjack', 'hearts', 'liars-dice', 'roulette', 'solitaire', 'texas-holdem', 'three-card-poker'])
+const workerPolicies = new Map([
+  ['texas-holdem', ['Cards__CreditTexasHoldem__AllowSingleHumanBotFill']],
+  ['solitaire', ['Cards__CompetitiveSolitaire__AllowSingleHumanBotFill']],
+])
 const packagedWorkerFeatures = new Map([
   ['2048', []],
   ['andar-bahar', ['AndarBaharEnabled']],
@@ -77,12 +100,12 @@ function workerSettings(gameId, options) {
   const runtimeAccount = options['worker-service-account']
   const callerAccount = options['worker-caller-service-account']
   const secret = options['worker-secret']
-  const service = 'fortuneforge-game-' + gameId
-  if (!isReleaseId(releaseId) || !/^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(project ?? '') ||
+  const service = options['worker-service'] ?? 'fortuneforge-game-' + gameId
+  if (!isGameId(gameId) || gameId.length > 63 || !isReleaseId(releaseId) || !/^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(project ?? '') ||
     !/^[a-z][a-z0-9-]{1,28}[0-9]$/.test(region ?? '') ||
     !/^[a-z][a-z0-9-]{0,62}$/.test(repositoryName ?? '') ||
     !serviceAccount.test(runtimeAccount ?? '') || !serviceAccount.test(callerAccount ?? '') ||
-    !/^[a-zA-Z0-9_-]{1,255}:[1-9][0-9]*$/.test(secret ?? '') || service.length > 49 ||
+    !secretReference.test(secret ?? '') || !/^[a-z](?:[a-z0-9-]{0,47}[a-z0-9])?$/.test(service) ||
     options['enroll-worker'] && options['activate-worker']) {
     throw new Error('Worker publication requires a staged release ID, project, region, repository, runtime and caller service accounts, and a same-project secret name with a numeric version. Enrollment and explicit activation are separate modes.')
   }
@@ -90,6 +113,65 @@ function workerSettings(gameId, options) {
   const image = `${region}-docker.pkg.dev/${project}/${repositoryName}/${service}`
   return { releaseId, project, region, runtimeAccount, callerAccount, secret, service, revisionSuffix, image,
     revision: `${service}-${revisionSuffix}`, tag: `${image}:${releaseId}` }
+}
+
+async function readRuntimeSettings(gameId, options, signingSecret) {
+  const path = options['worker-settings'] === undefined ? undefined : resolve(options['worker-settings'])
+  if (path === undefined) return { environment: {}, secrets: {}, assertUnchanged: async () => {} }
+  await assertArtifactPath(path)
+  const snapshot = await readFile(path)
+  if (snapshot.length > 64 * 1024) throw new Error('Worker settings must fit within 64 KiB')
+  let document
+  try { document = JSON.parse(snapshot.toString('utf8')) }
+  catch { throw new Error('Worker settings must be a JSON object with environment and secrets objects') }
+  const record = value => value !== null && typeof value === 'object' && !Array.isArray(value)
+  if (!record(document) || Object.keys(document).sort().join(',') !== 'environment,secrets' ||
+    !record(document.environment) || !record(document.secrets)) {
+    throw new Error('Worker settings require only environment and secrets objects')
+  }
+  const environment = {}
+  const paidVariable = paidRoundSettings.has(gameId) ? paidRoundSettings.get(gameId) + '__AllowNewPaidRounds' : undefined
+  const booleanVariables = new Set([
+    ...(packagedWorkerFeatures.get(gameId) ?? []).map(feature => 'Features__' + feature),
+    ...(workerPolicies.get(gameId) ?? []), ...(paidVariable ? [paidVariable] : []),
+  ])
+  for (const [name, value] of Object.entries(document.environment)) {
+    if (name === 'GameWallet__Url' && walletGames.has(gameId) || name === 'ManagedPlayerRoster__Url' && rosterGames.has(gameId)) {
+      if (typeof value !== 'string' || value.length > 261 ||
+        !/^https:\/\/(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\/?$/.test(value)) {
+        throw new Error(`Worker setting ${name} requires an HTTPS origin`)
+      }
+    } else if (!booleanVariables.has(name) || ![true, false, 'true', 'false'].includes(value)) {
+      throw new Error(`Worker environment setting is not allowed: ${name}`)
+    }
+    environment[name] = String(value)
+  }
+  const secrets = {}
+  const allowedSecrets = new Set([
+    ...(walletGames.has(gameId) ? ['GameWallet__SigningKey'] : []),
+    ...(batchWalletGames.has(gameId) ? ['GameWallet__BatchSigningKey'] : []),
+    ...(rosterGames.has(gameId) ? ['ManagedPlayerRoster__SigningKey'] : []),
+  ])
+  const secretNames = new Set([signingSecret.split(':')[0]])
+  for (const [name, value] of Object.entries(document.secrets)) {
+    if (!allowedSecrets.has(name) || typeof value !== 'string' || !secretReference.test(value)) {
+      throw new Error(`Worker secret setting requires an allowed name and pinned same-project reference: ${name}`)
+    }
+    const secretName = value.split(':')[0]
+    if (secretNames.has(secretName)) throw new Error('Worker, wallet, batch, and roster signing secrets must be separate secrets')
+    secretNames.add(secretName)
+    secrets[name] = value
+  }
+  const hasWalletKey = secrets.GameWallet__SigningKey !== undefined || secrets.GameWallet__BatchSigningKey !== undefined
+  if ((environment.GameWallet__Url !== undefined) !== hasWalletKey ||
+    (environment.ManagedPlayerRoster__Url !== undefined) !== (secrets.ManagedPlayerRoster__SigningKey !== undefined)) {
+    throw new Error('Worker wallet and roster origins require their corresponding signing-secret references')
+  }
+  const assertUnchanged = async () => {
+    await assertArtifactPath(path)
+    if (!(await readFile(path)).equals(snapshot)) throw new Error('Worker settings changed during publication')
+  }
+  return { environment, secrets, assertUnchanged }
 }
 
 async function createContext({ repository, backendRoot, gameId, expectedEntry }, releaseId) {
@@ -163,24 +245,32 @@ function workerEnvironment({ expectedEntry, gameId }, project) {
   }
 }
 
-function checkWorker(service, settings, gameId, environment) {
-  const template = service.spec?.template?.spec
-  const containers = template?.containers ?? []
+function checkRuntime(runtime, settings, environment, secrets) {
+  const containers = runtime?.containers ?? []
   const variables = containers[0]?.env ?? []
-  const secret = variables.find(variable => variable.name === signingVariable)?.valueFrom?.secretKeyRef
-  const annotations = service.metadata?.annotations ?? {}
-  if (service.metadata?.name !== settings.service || service.metadata?.labels?.[gameLabel] !== gameId ||
-    template?.serviceAccountName !== settings.runtimeAccount || containers.length !== 1 ||
-    `${secret?.name}:${secret?.key}` !== settings.secret || annotations['run.googleapis.com/invoker-iam-disabled'] === 'true') {
-    throw new Error('Cloud Run service is not the expected private game worker with the configured runtime identity and signing secret')
-  }
-  if (Object.entries(environment).some(([name, value]) => variables.find(variable => variable.name === name)?.value !== value)) {
-    throw new Error('The packaged worker hosted-mode environment differs from the required configuration')
+  if (runtime?.serviceAccountName !== settings.runtimeAccount || containers.length !== 1 ||
+    Object.entries(environment).some(([name, value]) => variables.filter(variable => variable.name === name).length !== 1 ||
+      variables.find(variable => variable.name === name)?.value !== value) ||
+    Object.entries({ [signingVariable]: settings.secret, ...secrets }).some(([name, reference]) => {
+      const matches = variables.filter(variable => variable.name === name)
+      const secret = matches[0]?.valueFrom?.secretKeyRef
+      return matches.length !== 1 || matches[0].value !== undefined || `${secret?.name}:${secret?.key}` !== reference
+    })) {
+    throw new Error('The worker runtime identity, environment, or pinned signing-secret configuration differs from the required configuration')
   }
 }
 
-function checkPrivatePolicy(settings, requireCaller = true) {
-  const policy = cloud(['run', 'services', 'get-iam-policy', settings.service], settings, { json: true })
+function checkWorker(service, settings, gameId, environment, secrets) {
+  const annotations = service.metadata?.annotations ?? {}
+  if (service.metadata?.name !== settings.service || service.metadata?.labels?.[gameLabel] !== gameId ||
+    annotations['run.googleapis.com/invoker-iam-disabled'] === 'true') {
+    throw new Error('Cloud Run service is not the expected private game worker with the configured runtime identity and signing secret')
+  }
+  checkRuntime(service.spec?.template?.spec, settings, environment, secrets)
+}
+
+function checkPrivatePolicy(settings, requireCaller = true, runCloud = cloud) {
+  const policy = runCloud(['run', 'services', 'get-iam-policy', settings.service], settings, { json: true })
   const bindings = policy.bindings ?? []
   if (bindings.some(binding => binding.members?.some(member => member === 'allUsers' || member === 'allAuthenticatedUsers'))) {
     throw new Error('Refusing to publish to a service with a public IAM binding')
@@ -191,65 +281,73 @@ function checkPrivatePolicy(settings, requireCaller = true) {
   }
 }
 
-export async function publishGameWorker(target, options) {
+export async function publishGameWorker(target, options, { runCloud = cloud, log = console.log } = {}) {
   const { gameId } = target
   const settings = workerSettings(gameId, options)
-  const environment = workerEnvironment(target, settings.project)
+  const runtimeSettings = await readRuntimeSettings(gameId, options, settings.secret)
+  const { secrets } = runtimeSettings
+  const environment = { ...workerEnvironment(target, settings.project), ...runtimeSettings.environment }
   const environmentFlags = Object.entries(environment).map(([name, value]) => `${name}=${value}`)
+  const secretFlags = Object.entries({ [signingVariable]: settings.secret, ...secrets }).map(([name, value]) => `${name}=${value}`)
   const enroll = options['enroll-worker'] === true
   const activate = options['activate-worker'] === true
   const directory = await createContext(target, settings.releaseId)
+  await runtimeSettings.assertUnchanged()
   if (options['worker-plan']) {
-    console.log(JSON.stringify({ ...settings, directory, enroll, activate, environment, mode: 'local worker plan' }, null, 2))
+    log(JSON.stringify({ ...settings, directory, enroll, activate, environment, secrets, mode: 'local worker plan' }, null, 2))
     return
   }
 
-  const describe = () => cloud(['run', 'services', 'describe', settings.service], settings, { json: true })
+  const describe = () => runCloud(['run', 'services', 'describe', settings.service], settings, { json: true })
   const preflight = () => {
     if (enroll) {
-      const existing = cloud(['run', 'services', 'list', `--filter=metadata.name=${settings.service}`], settings, { json: true })
+      const existing = runCloud(['run', 'services', 'list', `--filter=metadata.name=${settings.service}`], settings, { json: true })
       if (!Array.isArray(existing) || existing.length !== 0) throw new Error('Enrollment requires a new worker service name')
     } else {
-      checkWorker(describe(), settings, gameId, environment)
-      checkPrivatePolicy(settings)
+      checkWorker(describe(), settings, gameId, environment, secrets)
+      checkPrivatePolicy(settings, true, runCloud)
     }
   }
   preflight()
 
-  const build = cloud(['builds', 'submit', '.', `--tag=${settings.tag}`, '--suppress-logs'], settings, { directory, json: true })
+  const build = runCloud(['builds', 'submit', '.', `--tag=${settings.tag}`, '--suppress-logs'], settings, { directory, json: true })
   const digest = build.results?.images?.find(image => image.name === settings.tag)?.digest
   if (build.status !== 'SUCCESS' || !digestPattern.test(digest ?? '')) throw new Error('Cloud Build did not return the expected worker image digest')
   const image = settings.image + '@' + digest
+  await runtimeSettings.assertUnchanged()
   preflight()
-  cloud(['run', 'deploy', settings.service, `--image=${image}`, `--revision-suffix=${settings.revisionSuffix}`,
+  runCloud(['run', 'deploy', settings.service, `--image=${image}`, `--revision-suffix=${settings.revisionSuffix}`,
     ...(enroll ? ['--no-allow-unauthenticated', '--invoker-iam-check', '--port=8080',
       `--service-account=${settings.runtimeAccount}`, `--update-labels=${gameLabel}=${gameId}`,
       ...(environmentFlags.length ? [`--update-env-vars=${environmentFlags.join(',')}`] : []),
-      `--update-secrets=${signingVariable}=${settings.secret}`] : ['--no-traffic'])], settings)
+      `--update-secrets=${secretFlags.join(',')}`] : ['--no-traffic'])], settings)
 
-  const revision = cloud(['run', 'revisions', 'describe', settings.revision], settings, { json: true })
+  const revision = runCloud(['run', 'revisions', 'describe', settings.revision], settings, { json: true })
   if (revision.metadata?.name !== settings.revision || revision.spec?.containers?.[0]?.image !== image ||
     !revision.status?.conditions?.some(condition => condition.type === 'Ready' && condition.status === 'True')) {
     throw new Error('The worker revision did not become ready with the pinned image')
   }
+  checkRuntime(revision.spec, settings, environment, secrets)
   const service = describe()
-  checkWorker(service, settings, gameId, environment)
-  checkPrivatePolicy(settings, !enroll)
+  checkWorker(service, settings, gameId, environment, secrets)
+  checkPrivatePolicy(settings, !enroll, runCloud)
   if (!/^https:\/\/[a-z0-9.-]+\.run\.app\/?$/.test(service.status?.url ?? '')) {
     throw new Error('The ready worker did not report a Cloud Run HTTPS origin')
   }
+  await runtimeSettings.assertUnchanged()
   if (enroll) {
-    cloud(['run', 'services', 'add-iam-policy-binding', settings.service,
+    runCloud(['run', 'services', 'add-iam-policy-binding', settings.service,
       `--member=serviceAccount:${settings.callerAccount}`, '--role=roles/run.invoker'], settings)
-    checkPrivatePolicy(settings)
+    checkPrivatePolicy(settings, true, runCloud)
   } else if (activate) {
-    cloud(['run', 'services', 'update-traffic', settings.service, `--to-revisions=${settings.revision}=100`], settings)
+    runCloud(['run', 'services', 'update-traffic', settings.service, `--to-revisions=${settings.revision}=100`], settings)
   }
   const serving = enroll || activate ? describe() : service
   const candidatePercent = (serving.status?.traffic ?? []).filter(traffic => traffic.revisionName === settings.revision ||
     traffic.latestRevision && serving.status?.latestReadyRevisionName === settings.revision)
     .reduce((sum, traffic) => sum + (traffic.percent ?? 0), 0)
   if (candidatePercent !== (enroll || activate ? 100 : 0)) throw new Error('Worker traffic does not match the requested release mode')
-  console.log(JSON.stringify({ gameId, releaseId: settings.releaseId, service: settings.service, url: serving.status?.url,
+  await runtimeSettings.assertUnchanged()
+  log(JSON.stringify({ gameId, releaseId: settings.releaseId, service: settings.service, url: serving.status?.url,
     revision: settings.revision, image, traffic: enroll || activate ? 'active' : 'staged' }, null, 2))
 }

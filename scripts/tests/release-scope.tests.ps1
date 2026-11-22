@@ -534,7 +534,7 @@ try {
     Assert-ScopeThrows { [System.IO.File]::WriteAllText($context.IgnoreFile, '**') } 'generated ignored manifest is write-locked during upload'
 }
 finally { foreach ($stream in $uploadLock.Streams) { $stream.Dispose() }; Remove-Item Function:Invoke-JsonCommand; Remove-Item Function:New-ApiUploadContext }
-foreach ($required in @("'builds', 'submit'", "'--ignore-file', `$uploadContext.IgnoreFile", "'--suppress-logs'", "'--image', `$builtImage.Image", "'--no-traffic'", 'apiBuildId', 'apiImageDigest', 'apiUploadManifestSha256', 'apiUploadIgnoreSha256', 'Assert-ApiRevisionImage')) {
+foreach ($required in @("'builds', 'submit'", '$uploadArchive.ArchivePath', "'--suppress-logs'", "'--image', `$builtImage.Image", "'--no-traffic'", 'apiBuildId', 'apiImageDigest', 'apiUploadManifestSha256', 'apiUploadIgnoreSha256', 'Assert-ApiRevisionImage')) {
     Assert-ScopeEqual $scopeDeploySource.Contains($required) $true "safe build/deployment retains $required"
 }
 Assert-ScopeEqual $scopeDeploySource.Contains("'--source', `$releaseCheckout") $false 'unsupported Cloud Run source ignore path cannot be used'

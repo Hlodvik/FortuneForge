@@ -65,6 +65,11 @@ if (requestedGameId == NeonArcadeSlotDefinitions.GameId)
     NeonSlotSimulation.Run(paidSpinCount, seed, releaseRtpCeiling, args);
     return;
 }
+if (requestedGameId == FortuneForge.Games.RobotRevolution.RobotRevolutionEngine.GameId)
+{
+    SunstoneEclipseSimulation.Run(paidSpinCount, seed, releaseRtpCeiling, args);
+    return;
+}
 
 var root = JsonSerializer.Deserialize<RootConfiguration>(
     File.ReadAllText(configurationPath),

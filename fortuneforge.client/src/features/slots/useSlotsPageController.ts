@@ -284,6 +284,7 @@ export function useSlotsPageController({
     demoMode ? demoStartingBalance : account?.balances.slotsCredits ?? 0,
   )
   const [lastSpinOutcome, setLastSpinOutcome] = useState<SlotSpinOutcome | null>(null)
+  const [lastSpinFeature, setLastSpinFeature] = useState<unknown | null>(null)
   const [resultAtmosphereId, setResultAtmosphereId] = useState(0)
   const [lastEnergyAwarded, setLastEnergyAwarded] = useState(0)
   const [lastEnergyMultiplierApplied, setLastEnergyMultiplierApplied] = useState(false)
@@ -373,6 +374,7 @@ export function useSlotsPageController({
     rainbowBonusSummaryPendingRef.current = false
     setRainbowBonusSummary(null)
     setLastSpinOutcome(null)
+    setLastSpinFeature(null)
     setHasCompletedSpin(false)
     setWinningPaylines([])
     setFreeSpinFeatureMode(null)
@@ -727,6 +729,7 @@ export function useSlotsPageController({
     setLightningCollection(null)
     setLastFreeSpinsAwarded(0)
     setLastSpinOutcome(null)
+    setLastSpinFeature(null)
     setWinningPaylineCount(0)
     setWinningPaylines([])
     setHasCompletedSpin(false)
@@ -1594,6 +1597,7 @@ export function useSlotsPageController({
       setIsSpecialSpinInProgress(true)
     }
     setLastSpinOutcome(null)
+    setLastSpinFeature(null)
     setLastWin(0)
     setWinningPaylines([])
     setLastCollectorAward(0)
@@ -1840,6 +1844,7 @@ export function useSlotsPageController({
       })
       const wand = result.arcaneWandCollection
       const lineWins = result.payout.paylines.filter(({ paylineId }) =>
+        !presentation?.featurePaylineIds?.includes(paylineId) &&
         !(result.lightningCollection && paylineId === lightningCollectionPayoutId) &&
         !(wand && paylineId === arcaneWandPaylineId))
       if (result.arcaneTome !== undefined) applyTomeState(result.arcaneTome)
@@ -1867,6 +1872,7 @@ export function useSlotsPageController({
       setWinningPaylines(lineWins)
       setBonusPositions(triggeredBonusPositions)
       setLastSpinOutcome(spinOutcome)
+      setLastSpinFeature(result.spinFeature ?? null)
       setResultAtmosphereId((current) => current + 1)
       const spinWinnings = awardedRand
       setLastWin(spinWinnings)
@@ -2019,6 +2025,7 @@ export function useSlotsPageController({
       setLastEnergyAwarded(0)
       setLastEnergyMultiplierApplied(false)
       setLastSpinOutcome(null)
+    setLastSpinFeature(null)
       setEnergyFlyover(null)
       setSealFlyover(null)
       setSealImpactId(null)
@@ -2273,6 +2280,7 @@ export function useSlotsPageController({
     lastSpinOutcomeKey,
     lastWin,
     lastSpinOutcome,
+    lastSpinFeature,
     lightningCollection,
     tomeState,
     potions,

@@ -54,7 +54,7 @@ public sealed class RobotRevolutionRoundConflictException(string message, RobotR
     public RobotRevolutionRoundRequest? PendingRequest { get; } = pendingRequest;
 }
 
-public sealed class RobotRevolutionRoundPausedException() : InvalidOperationException("New Robot Revolution rounds are temporarily paused.");
+public sealed class RobotRevolutionRoundPausedException() : InvalidOperationException("New Sunstone Eclipse rounds are temporarily paused.");
 
 public sealed class RobotRevolutionRoundCooldownException(TimeSpan remaining) : InvalidOperationException("Wait for the previous spin to finish.")
 {
@@ -65,7 +65,7 @@ public sealed class RobotRevolutionFreeSpinsRequiredException() :
     InvalidOperationException("Finish the active bonus spins before placing another cash bet.");
 
 public sealed class RobotRevolutionFreeSpinsUnavailableException() :
-    InvalidOperationException("No Robot Revolution free games are available.");
+    InvalidOperationException("No Sunstone Eclipse free games are available.");
 
 public sealed class RobotRevolutionFreeWagerLockedException(long wagerPoints) :
     InvalidOperationException("Bonus spins use the wager saved on the active round.")

@@ -1,6 +1,7 @@
 // Edited: 2026-11-18T22:59:30-06:00 | Computer: Vinnabok
 import { useEffect, useState } from 'react'
 import { findSlotRoute } from '../games/slots'
+import { canonicalSlotPath } from '../games/slots/routeMetadata'
 import { AppRoutes } from './AppRoutes'
 import { siteShellClasses } from './siteShellClasses'
 import { usePageTitle } from './usePageTitle'
@@ -9,8 +10,17 @@ import { AccountAccessBoundary } from '../features/account/AccountAccessBoundary
 import { GameLeaveGuardProvider } from '../features/navigation/GameLeaveGuard'
 import './styles/index.css'
 
+function readCurrentPathname() {
+  const current = window.location.pathname.replace(/\/+$/, '') || '/'
+  const canonical = canonicalSlotPath(current)
+  if (canonical !== current) {
+    window.history.replaceState(window.history.state, '', canonical + window.location.search + window.location.hash)
+  }
+  return canonical
+}
+
 export default function App() {
-  const [pathname, setPathname] = useState(() => window.location.pathname.replace(/\/+$/, '') || '/')
+  const [pathname, setPathname] = useState(readCurrentPathname)
   const matchedSlotRoute = findSlotRoute(pathname)
   const slotRoute = matchedSlotRoute?.playPath === pathname ? matchedSlotRoute : null
   const isPlayableGameRoute = slotRoute !== null || (
@@ -35,7 +45,7 @@ export default function App() {
   useGamePresence(pathname)
 
   useEffect(() => {
-    const syncPathname = () => setPathname(window.location.pathname.replace(/\/+$/, '') || '/')
+    const syncPathname = () => setPathname(readCurrentPathname())
     const openSlotFromCatalogue = (event: MouseEvent) => {
       if (isPlayableGameRoute || event.defaultPrevented || event.button !== 0 ||
         event.metaKey || event.ctrlKey || event.shiftKey || event.altKey ||

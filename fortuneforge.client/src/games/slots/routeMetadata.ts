@@ -8,6 +8,7 @@ export type SlotRouteMetadata = Readonly<{
   demoPath: string
   serverGameIds: readonly string[]
   shellBackdrop: 'default-clouds' | 'theme'
+  legacyPaths?: Readonly<Record<string, string>>
 }>
 
 export const SLOT_ROUTE_METADATA = [
@@ -80,8 +81,9 @@ export const SLOT_ROUTE_METADATA = [
     playPath: '/slots/desert-treasures', demoPath: '/slots/desert-treasures/demo', serverGameIds: ['desert-treasures-v1'], shellBackdrop: 'theme',
   },
   {
-    id: 'robot-revolution', title: 'Robot Revolution', shortTitle: 'Robot Revolution',
-    playPath: '/slots/robot-revolution', demoPath: '/slots/robot-revolution/demo', serverGameIds: ['robot-revolution-v1'], shellBackdrop: 'theme',
+    id: 'robot-revolution', title: 'Sunstone Eclipse', shortTitle: 'Sunstone Eclipse',
+    playPath: '/slots/sunstone-eclipse', demoPath: '/slots/sunstone-eclipse/demo', serverGameIds: ['robot-revolution-v1'], shellBackdrop: 'theme',
+    legacyPaths: { '/slots/robot-revolution': '/slots/sunstone-eclipse', '/slots/robot-revolution/demo': '/slots/sunstone-eclipse/demo' },
   },
   {
     id: 'dragon-hoard', title: 'Midnight Vault', shortTitle: 'Midnight Vault',
@@ -106,4 +108,14 @@ export function findSlotRouteMetadata(pathname: string): SlotRouteMetadata | nul
 
 export function findSlotRouteMetadataByServerId(gameId: string): SlotRouteMetadata | null {
   return SLOT_ROUTE_METADATA.find((definition) => (definition.serverGameIds as readonly string[]).includes(gameId)) ?? null
+}
+
+/** Rethemes keep old bookmarks while publishing only the current game route. */
+export function canonicalSlotPath(pathname: string): string {
+  for (const definition of SLOT_ROUTE_METADATA) {
+    if ('legacyPaths' in definition && Object.hasOwn(definition.legacyPaths, pathname)) {
+      return definition.legacyPaths[pathname as keyof typeof definition.legacyPaths]
+    }
+  }
+  return pathname
 }

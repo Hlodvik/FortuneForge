@@ -1,6 +1,6 @@
 import type { SlotSoundCue, SlotSoundSet } from '@fortuneforge/slot-client-core'
 
-const source = (file: string) => new URL(`./assets/audio/${file}`, import.meta.url).href
+const source = (file: string) => new URL(`./assets/audio/sunstone-eclipse/${file}`, import.meta.url).href
 const effect = (file: string, baseVolume: number, loop = false): SlotSoundCue => ({
   source: source(file), baseVolume, category: 'effect', loop, enabled: true,
 })
@@ -12,29 +12,29 @@ const results: SlotSoundSet['events']['results'] = {
   'single-three': ['low-win'], 'no-win': ['soft-miss'],
 }
 
-export const ROBOT_REVOLUTION_SOUNDS: SlotSoundSet = {
-  id: 'robot-revolution-audio-v1',
+export const SUNSTONE_ECLIPSE_SOUNDS: SlotSoundSet = {
+  id: 'sunstone-eclipse-audio-v1',
   cues: {
-    ambience: effect('night-drive.ogg', 0.28, true),
-    'special-ambience': effect('midnight-mix.ogg', 0.24, true),
-    'button-click': effect('button-click.ogg', 0.58),
-    'bet-step': effect('bet-step.ogg', 0.54),
-    'lever-pull': effect('spin-launch.ogg', 0.65),
-    'reel-spin': effect('reel-roll.ogg', 0.4, true),
-    'reel-stop': effect('reel-land.ogg', 0.62),
-    'special-reel-spin': effect('bonus-reel-roll.ogg', 0.4, true),
-    'special-reel-stop': effect('bonus-reel-land.ogg', 0.6),
-    'collect-sync': effect('collect-flamingo.ogg', 0.58),
-    'collect-rows': effect('collect-dice.ogg', 0.58),
-    'collect-paw': effect('collect-sunset.ogg', 0.58),
-    'collect-rand': effect('collect-arcade.ogg', 0.58),
-    'low-win': result('win-small.ogg', 0.65),
-    'premium-win': result('win-medium.ogg', 0.65),
-    'five-casino-win': result('win-big.ogg', 0.7),
-    'triple-sevens': result('triple-sevens.ogg', 0.67),
-    'soft-miss': result('no-win.ogg', 0.3),
-    'bonus-entry': result('bonus-entry.ogg', 0.68),
-    'bonus-complete': result('bonus-complete.ogg', 0.66),
+    ambience: effect('temple-dawn.wav', 0.28, true),
+    'special-ambience': effect('eclipse-procession.wav', 0.24, true),
+    'button-click': effect('stone-touch.wav', 0.48),
+    'bet-step': effect('jade-step.wav', 0.45),
+    'lever-pull': effect('wheel-release.wav', 0.62),
+    'reel-spin': effect('calendar-turn.wav', 0.32, true),
+    'reel-stop': effect('ring-lock.wav', 0.55),
+    'special-reel-spin': effect('calendar-turn.wav', 0.38, true),
+    'special-reel-stop': effect('ring-lock.wav', 0.62),
+    'collect-sync': effect('sun-glint.wav', 0.5),
+    'collect-rows': effect('sun-glint.wav', 0.5),
+    'collect-paw': effect('guardian-awakens.wav', 0.5),
+    'collect-rand': effect('guardian-awakens.wav', 0.5),
+    'low-win': result('sun-glint.wav', 0.58),
+    'premium-win': result('guardian-awakens.wav', 0.62),
+    'five-casino-win': result('fifth-sun.wav', 0.66),
+    'triple-sevens': result('guardian-awakens.wav', 0.58),
+    'soft-miss': result('temple-breath.wav', 0.22),
+    'bonus-entry': result('eclipse-opens.wav', 0.64),
+    'bonus-complete': result('sunrise-returns.wav', 0.58),
   },
   events: {
     themeSuite: true, ambience: 'ambience', specialAmbience: 'special-ambience',
@@ -46,4 +46,6 @@ export const ROBOT_REVOLUTION_SOUNDS: SlotSoundSet = {
     results, specialResults: results,
   },
 }
+
+export const ROBOT_REVOLUTION_SOUNDS = SUNSTONE_ECLIPSE_SOUNDS
 

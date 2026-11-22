@@ -112,6 +112,16 @@ export type SlotWinHelpContentProps = {
   onClose: () => void
 }
 
+/** Settled, game-owned feature data; the game validates and presents its contract. */
+export type SlotSpinFeaturePanelProps = Readonly<{
+  feature: unknown | null
+  spinKey: number | null
+  isSpinning: boolean
+  reducedMotion: boolean
+  pointValueInCents: number
+  cabinetRef?: RefObject<HTMLDivElement | null>
+}>
+
 export type SlotPotionWagerReadoutProps = Readonly<{
   wager: number
   selectedWager: number
@@ -121,6 +131,9 @@ export type SlotPotionWagerReadoutProps = Readonly<{
 }>
 
 export type SlotExperiencePresentation = {
+  SpinFeaturePanel?: ComponentType<SlotSpinFeaturePanelProps>
+  /** Synthetic awards are shown by the game's panel rather than reel paylines. */
+  featurePaylineIds?: readonly number[]
   winHelp?: Readonly<{
     Content: ComponentType<SlotWinHelpContentProps>
     title: string

@@ -734,8 +734,42 @@ function New-ApiUploadContext {
     finally { $hash.Dispose() }
     $reader.Position = 0
     if ($actualHash -cne (Get-ReleaseTextHash $text)) { throw 'Generated source allowlist changed before its immutable handle was acquired.' }
-    return [pscustomobject]@{ IgnoreFile = $path; IgnoreSha256 = $actualHash;
+    return [pscustomobject]@{ IgnoreFile = $path; IgnoreSha256 = $actualHash; Paths = $upload.Paths;
         ManifestSha256 = $upload.ManifestSha256; FileCount = $upload.FileCount }
+}
+
+function New-ApiUploadArchive {
+    param([string]$Checkout, $LockedSource, [string]$RecordPath, $Packages, $UploadContext)
+    $upload = $UploadContext
+    $streams = [Collections.Generic.Dictionary[string, IO.FileStream]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($stream in @($LockedSource.Streams) + @($Packages.Lock.Streams)) {
+        if ($stream -and -not $streams.ContainsKey($stream.Name)) { $streams.Add($stream.Name, $stream) }
+    }
+    $files = @($upload.Paths | ForEach-Object {
+        $absolute = [IO.Path]::GetFullPath((Join-Path $Checkout $_))
+        if (-not $streams.ContainsKey($absolute)) { throw 'An approved upload source has no immutable file handle.' }
+        $stream = $streams[$absolute]
+        [ordered]@{ path = $_; size = $stream.Length; sha256 = Get-DeploymentInputHash $stream }
+    })
+    $manifestPath = $RecordPath + '.source.files.json'
+    $manifestText = [ordered]@{ schemaVersion = 1; files = $files } | ConvertTo-Json -Depth 5
+    $manifestBytes = [Text.UTF8Encoding]::new($false).GetBytes($manifestText)
+    $manifestWriter = [IO.File]::Open($manifestPath, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+    try { $manifestWriter.Write($manifestBytes, 0, $manifestBytes.Length) } finally { $manifestWriter.Dispose() }
+    $manifestReader = [IO.File]::Open($manifestPath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    $LockedSource.Streams.Add($manifestReader)
+    $manifestHash = Get-DeploymentInputHash $manifestReader
+    if ($manifestHash -cne (Get-ReleaseTextHash $manifestText)) { throw 'Exact archive manifest changed before its immutable handle was acquired.' }
+    $archivePath = $RecordPath + '.source.tar.gz'
+    $archive = Invoke-JsonCommand 'python.exe' @((Join-Path $Checkout 'scripts/create-release-upload-archive.py'),
+        '--root', $Checkout, '--manifest', $manifestPath, '--output', $archivePath)
+    if ($archive.fileCount -ne $upload.FileCount -or $archive.manifestSha256 -cne $manifestHash -or
+        $archive.archiveSha256 -cnotmatch '\A[a-f0-9]{64}\z') { throw 'Source archive verification does not match the approved upload manifest.' }
+    $archiveReader = [IO.File]::Open($archivePath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    $LockedSource.Streams.Add($archiveReader)
+    if ((Get-DeploymentInputHash $archiveReader) -cne $archive.archiveSha256) { throw 'Verified source archive changed before its immutable handle was acquired.' }
+    return [pscustomobject]@{ FileCount = $upload.FileCount;
+        ArchivePath = $archivePath; ArchiveSha256 = $archive.archiveSha256; ArchiveManifestSha256 = $manifestHash }
 }
 
 function Assert-ApiBuildRepository {
@@ -1267,6 +1301,9 @@ $record = [ordered]@{
     apiUploadManifestSha256 = ''
     apiUploadIgnoreSha256 = ''
     apiUploadFileCount = 0
+    apiUploadArchiveSha256 = ''
+    apiUploadArchiveManifestSha256 = ''
+    apiUploadArchivePath = ''
     apiBaseUploadFileCount = 0
     apiBaseUploadManifestSha256 = ''
     apiBuildId = ''
@@ -1385,6 +1422,10 @@ try {
             '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
             (Join-Path $repoRoot 'scripts/tests/shared-backend-candidate-activation.tests.ps1')
         ) -WorkingDirectory $repoRoot
+        Invoke-Checked -Executable 'powershell.exe' -Arguments @(
+            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+            (Join-Path $repoRoot 'scripts/tests/release-upload-archive.tests.ps1')
+        ) -WorkingDirectory $repoRoot
     }
     $sourceChanges = & git -C $releaseCheckout status --porcelain=v1 --untracked-files=normal
     if ($LASTEXITCODE -ne 0 -or $sourceChanges) {
@@ -1478,17 +1519,21 @@ try {
 
         Assert-ApiBuildRepository
         $uploadContext = New-ApiUploadContext -Checkout $releaseCheckout -LockedSource $sourceLock -RecordPath $recordPath -Packages $sharedBackendPackages
+        $uploadArchive = New-ApiUploadArchive -Checkout $releaseCheckout -LockedSource $sourceLock -RecordPath $recordPath -Packages $sharedBackendPackages -UploadContext $uploadContext
         $imageTag = "$region-docker.pkg.dev/$project/$ArtifactRepository/${serviceName}:ff-$($candidateSha.Substring(0, 12))-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
         $record.apiUploadManifestSha256 = $uploadContext.ManifestSha256
         $record.apiUploadIgnoreSha256 = $uploadContext.IgnoreSha256
         $record.apiUploadFileCount = $uploadContext.FileCount
+        $record.apiUploadArchiveSha256 = $uploadArchive.ArchiveSha256
+        $record.apiUploadArchiveManifestSha256 = $uploadArchive.ArchiveManifestSha256
+        $record.apiUploadArchivePath = $uploadArchive.ArchivePath
         $record.apiBuildTag = $imageTag
         Write-ReleaseRecord -Record $record -Path $recordPath
         Write-Host "`nBuilding the locked committed API source with an exact upload allowlist..." -ForegroundColor Yellow
-        # run deploy --source in the installed SDK cannot override its ignore
-        # file. builds submit supports this explicit, locked allowlist instead.
-        $build = Invoke-JsonCommand 'gcloud.cmd' @('builds', 'submit', $releaseCheckout,
-            '--ignore-file', $uploadContext.IgnoreFile, '--tag', $imageTag,
+        # A verified archive skips the SDK's costly directory/ignore traversal.
+        # Every member's bytes and the archive itself remain locked through upload.
+        $build = Invoke-JsonCommand 'gcloud.cmd' @('builds', 'submit', $uploadArchive.ArchivePath,
+            '--tag', $imageTag,
             '--project', $project, '--format=json', '--suppress-logs', '--quiet')
         Assert-SharedBackendUploadUnchanged $sharedBackendPackages
         $builtImage = Get-ReleaseBuiltImage -Build $build -ExpectedTag $imageTag

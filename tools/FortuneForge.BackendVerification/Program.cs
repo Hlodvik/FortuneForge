@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.Abstractions.Wallet;
 using FortuneForge.Games.Hosting;
@@ -46,10 +47,13 @@ internal static class BackendVerification
 
     internal static async Task<object> RunAsync(string[] args)
     {
-        Require(args is ["--packages", var path] && !string.IsNullOrWhiteSpace(path),
-            "Usage: FortuneForge.BackendVerification --packages <materialized-game-packages-directory>");
+        var sunstoneOnly = args.Contains("--sunstone-only", StringComparer.Ordinal);
+        var options = args.Where(argument => argument != "--sunstone-only").ToArray();
+        Require(args.Count(argument => argument == "--sunstone-only") <= 1 &&
+            options is ["--packages", var path] && !string.IsNullOrWhiteSpace(path),
+            "Usage: FortuneForge.BackendVerification [--sunstone-only] --packages <materialized-game-packages-directory>");
         ValidateEmulator();
-        var packageDirectory = Path.GetFullPath(args[1]);
+        var packageDirectory = Path.GetFullPath(options[1]);
         var compositionPath = Path.Combine(packageDirectory, "composition.json");
         var composition = JsonSerializer.Deserialize<SelectedComposition>(await File.ReadAllBytesAsync(compositionPath), Json);
         Require(composition is { ContractVersion: 1, Packages.Length: 45 }, "Verification requires the complete 45-game composition.");
@@ -131,6 +135,26 @@ internal static class BackendVerification
                 (await database.Collection("balanceTransactions").GetSnapshotAsync(token)).Count == 0,
                 "A new emulator verification project must have no settled wagers before browser actions.");
 
+            if (sunstoneOnly)
+            {
+                var spin = await VerifySunstoneAsync(database, transport, browser, session, otherSession, token);
+                return new
+                {
+                    success = true,
+                    projectId,
+                    emulatorOnly = true,
+                    mode = "sunstone-only",
+                    packagesVerified = selected.Length,
+                    selectedSunstoneReleaseId = selected.Single(package => package.RuntimeGameId == "robot-revolution-v1").ReleaseId,
+                    authenticatedGameWalletRoundTrip = spin,
+                    unsignedChildRejected = true,
+                    accountMismatchRejected = true,
+                    idempotentResponsePreserved = true,
+                    originalAuditIntentPreserved = true,
+                    previousCardGameplayChecksRepeated = false
+                };
+            }
+
             var games = new[]
             {
                 new CardCase("andar-bahar", "{\"side\":\"andar\",\"stake\":0.50}", "{\"side\":\"bahar\",\"stake\":0.50}"),
@@ -168,6 +192,122 @@ internal static class BackendVerification
             using var shutdown = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             await app.StopAsync(shutdown.Token);
         }
+    }
+
+    private static async Task<object> VerifySunstoneAsync(FirestoreDb database, IGamePackageTransport transport,
+        HttpClient browser, string session, string otherSession, CancellationToken token)
+    {
+        const string gameId = "robot-revolution-v1";
+        const string auditGameId = "robot-revolution";
+        const string path = "/api/slots/spins";
+        const string statePath = "/api/slots/state?gameId=robot-revolution-v1";
+        const string operation = "sunstone-combined-host-command-0001";
+        const string body = "{\"gameId\":\"robot-revolution-v1\",\"wagerPoints\":2,\"useFreeSpin\":false,\"useSpecialBoost\":false}";
+        const string changedBody = "{\"gameId\":\"robot-revolution-v1\",\"wagerPoints\":4,\"useFreeSpin\":false,\"useSpecialBoost\":false}";
+        using (var direct = Message(HttpMethod.Post, "https://game-package.internal" + path, session, body, operation, Player))
+        using (var unsigned = await transport.SendAsync(gameId, direct, token))
+            Require(unsigned.StatusCode == HttpStatusCode.Forbidden, "A browser cookie cannot authenticate an unsigned Sunstone child request.");
+        using (var anonymous = Message(HttpMethod.Get, statePath, null))
+        using (var unauthenticated = await browser.SendAsync(anonymous, token))
+            Require(unauthenticated.StatusCode == HttpStatusCode.Unauthorized, "An unauthenticated Sunstone state read must return 401.");
+        using (var wrong = await SendAsync(browser, HttpMethod.Post, path, session, body, operation, OtherPlayer, token))
+            Require(wrong.StatusCode == HttpStatusCode.Forbidden, "An expected-account mismatch must fail before a Sunstone wager.");
+        Require((await database.Collection("walletRoundSettlements").GetSnapshotAsync(token)).Count == 0 &&
+            (await database.Collection("balanceTransactions").GetSnapshotAsync(token)).Count == 0,
+            "Rejected Sunstone requests created a wallet charge.");
+
+        using var created = await SendAsync(browser, HttpMethod.Post, path, session, body, operation, Player, token);
+        Require(created.StatusCode == HttpStatusCode.OK,
+            $"Authenticated Sunstone spin returned {(int)created.StatusCode}, expected 200.");
+        var original = await created.Content.ReadAsByteArrayAsync(token);
+        using var response = JsonDocument.Parse(original);
+        var result = response.RootElement;
+        var roundId = result.GetProperty("spinId").GetGuid().ToString("N");
+        Require(result.GetProperty("gameId").GetString() == gameId && result.GetProperty("wagerPoints").GetInt64() == 2 &&
+            result.GetProperty("pointValueInCents").GetDecimal() == 25m && !result.GetProperty("isFreeSpin").GetBoolean(),
+            "The Sunstone result lost its game, paid wager or point-value binding.");
+        var feature = result.GetProperty("spinFeature");
+        Require(feature.GetProperty("contractVersion").GetInt32() == 1 && feature.GetProperty("kind").GetString() == "sunstone-eclipse" &&
+            feature.GetProperty("mathVersion").GetString() == "sunstone-eclipse-v1" && feature.GetProperty("rings").GetArrayLength() == 3,
+            "The selected package did not return the authoritative new Sunstone feature.");
+        var payout = result.GetProperty("payout");
+        var featureLines = payout.GetProperty("paylines").EnumerateArray()
+            .Where(line => line.GetProperty("paylineId").GetInt32() is >= 1001 and <= 1010).ToArray();
+        var featurePoints = feature.GetProperty("totalAwardPoints").GetInt64();
+        Require(featureLines.Sum(line => line.GetProperty("amountPoints").GetInt64()) == featurePoints &&
+            payout.GetProperty("paylines").EnumerateArray().Sum(line => line.GetProperty("amountPoints").GetInt64()) == payout.GetProperty("totalPoints").GetInt64(),
+            "The visible Sunwheel component awards are not included in the settled payout total.");
+        var payoutCents = checked(payout.GetProperty("totalPoints").GetInt64() * 25);
+        var afterCents = checked(InitialCents - WagerCents + payoutCents);
+        Require(Cents(result.GetProperty("slotsCreditsBalance").GetDecimal()) == afterCents,
+            "The Sunstone response balance does not match the exact wallet charge and payout.");
+        var settlementId = GameWalletSettlementIdentity.CreateId(gameId, Player, roundId);
+        var receiptReference = database.Collection("walletRoundSettlements").Document(settlementId);
+        var receipt = await receiptReference.GetSnapshotAsync(token);
+        Require(receipt.Exists && receipt.GetValue<string>("gameId") == gameId && receipt.GetValue<string>("userId") == Player &&
+            receipt.GetValue<string>("operationId") == roundId && receipt.GetValue<long>("wagerCents") == WagerCents &&
+            receipt.GetValue<long>("payoutCents") == payoutCents && receipt.GetValue<long>("balanceBeforeCents") == InitialCents &&
+            receipt.GetValue<long>("balanceAfterCents") == afterCents,
+            "The Sunstone wallet receipt escaped game, actor, operation or exact-money binding.");
+        Require(receipt.GetValue<string>("ledgerLayout") == "legacy-slot" &&
+            receipt.GetValue<string>("wagerTransactionId") == roundId + "-wager",
+            "Sunstone must retain its existing signed slot-ledger layout and durable wager identity.");
+        var allLegs = (await database.Collection("balanceTransactions").GetSnapshotAsync(token)).Documents;
+        var legs = allLegs.Where(item => item.GetValue<string>("currencyId") == "slotsCredits").ToArray();
+        Require(legs.Length == (payoutCents > 0 ? 2 : 1) && legs.All(item => item.GetValue<string>("userId") == Player) &&
+            Cents(Convert.ToDecimal(legs.Single(item => item.Id == roundId + "-wager").GetValue<object>("amount"))) == -WagerCents &&
+            legs.Single(item => item.Id == roundId + "-wager").GetValue<string>("type") == "slot-wager",
+            "The Sunstone wager was not charged exactly once to the correct ledger.");
+        if (payoutCents > 0)
+            Require(receipt.GetValue<string>("payoutTransactionId") == roundId + "-payout" &&
+                Cents(Convert.ToDecimal(legs.Single(item => item.Id == roundId + "-payout").GetValue<object>("amount"))) == payoutCents &&
+                legs.Single(item => item.Id == roundId + "-payout").GetValue<string>("type") == "slot-payout",
+                "The Sunstone feature-inclusive payout was not credited exactly once.");
+
+        using (var retry = await SendAsync(browser, HttpMethod.Post, path, session, body, operation, Player, token))
+        {
+            var retryBytes = await retry.Content.ReadAsByteArrayAsync(token);
+            Require(retry.StatusCode == created.StatusCode && original.SequenceEqual(retryBytes),
+                "Replaying the Sunstone operation changed its authoritative response.");
+        }
+        using (var changed = await SendAsync(browser, HttpMethod.Post, path, session, changedBody, operation, Player, token))
+            Require(changed.StatusCode == HttpStatusCode.Conflict, "Changing a Sunstone wager under its original key must conflict.");
+        using (var wrong = await SendAsync(browser, HttpMethod.Post, path, otherSession, body, operation, Player, token))
+            Require(wrong.StatusCode == HttpStatusCode.Forbidden, "A different account cannot replay the originating Sunstone command.");
+        Require((await receiptReference.GetSnapshotAsync(token)).UpdateTime == receipt.UpdateTime,
+            "Sunstone replay modified its immutable receipt.");
+        SameDocuments(allLegs, (await database.Collection("balanceTransactions").GetSnapshotAsync(token)).Documents,
+            "Sunstone replay changed the original ledger legs.");
+        Require((await database.Collection("walletRoundSettlements").GetSnapshotAsync(token)).Count == 1 &&
+            (await database.Collection("balanceTransactions").GetSnapshotAsync(token)).Count == allLegs.Count &&
+            await BalanceAsync(database, Player, token) == afterCents && await BalanceAsync(database, OtherPlayer, token) == InitialCents,
+            "Sunstone retries or rejected requests caused additional charges or changed another account.");
+
+        var resultDocument = await database.Collection("slotSpinResults").Document(roundId).GetSnapshotAsync(token);
+        Require(resultDocument.Exists && resultDocument.GetValue<string>("engineVersion") == "sunstone-eclipse-engine-v1" &&
+            resultDocument.GetValue<string>("walletRoundSettlementId") == settlementId,
+            "The committed Sunstone result does not identify the new engine and its exact wallet settlement.");
+        var events = (await database.Collection(GameSecurityEventDocuments.CollectionName).WhereEqualTo("instanceId", roundId).GetSnapshotAsync(token)).Documents;
+        Require(events.Count == 1, "The Sunstone round must produce exactly one original audit event.");
+        var evidence = events.Single();
+        Require(evidence.GetValue<string>("gameId") == auditGameId && evidence.GetValue<string>("userId") == Player,
+            "The Sunstone observation lost its originating game or account.");
+        using var captured = JsonDocument.Parse(evidence.GetValue<string>("payloadJson"));
+        var observation = captured.RootElement.GetProperty("request").Deserialize<GameRequestObservation>(Json);
+        Require(observation is not null && observation.GameId == auditGameId && observation.UserId == Player &&
+            observation.CommandId == operation && observation.Method == "POST" && observation.Path == path,
+            "The Sunstone child lost the root's original authenticated operation intent.");
+        var intent = await database.Collection("gameSecurityRequestIntents").Document(observation!.RequestId).GetSnapshotAsync(token);
+        Require(intent.Exists && JsonSerializer.Deserialize<GameRequestObservation>(intent.GetValue<string>("observationJson"), Json) == observation,
+            "The Sunstone audit event differs from its durable root request intent.");
+        var capturedResult = captured.RootElement.GetProperty("data").GetProperty("result");
+        Require(JsonNode.DeepEquals(JsonNode.Parse(capturedResult.GetProperty("spinFeature").GetRawText()), JsonNode.Parse(feature.GetRawText())) &&
+            capturedResult.GetProperty("payout").GetProperty("totalPoints").GetInt64() == payout.GetProperty("totalPoints").GetInt64() &&
+            (await database.Collection(RoundAuditDocuments.Summaries).WhereEqualTo("roundId", roundId).GetSnapshotAsync(token)).Count == 1,
+            "The committed Sunstone audit proof differs from the exact visible feature or settled payout.");
+        return new { gameId, spinId = roundId, wagerPoints = 2, wagerCents = WagerCents, payoutCents,
+            featureAwardPoints = featurePoints, balanceAfterCents = afterCents, ledgerLegs = legs.Length,
+            signedRealWallet = true, authoritativeSpinFeature = true, oneWagerCharge = true };
     }
 
     private static async Task<CardResult> VerifyCardAsync(FirestoreDb database, IGamePackageTransport transport,

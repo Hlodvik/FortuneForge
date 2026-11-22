@@ -4,7 +4,7 @@ using FortuneForge.Games.Slots.Runtime;
 
 namespace FortuneForge.Games.RobotRevolution.Server;
 
-/// <summary>Maps Robot Revolution's settled slot outcome to the established public response.</summary>
+/// <summary>Maps Sunstone Eclipse's settled slot outcome to the established public response.</summary>
 public sealed record RobotRevolutionSpinResponse(
     Guid SpinId, string GameId, string ReelSetId, string SymbolSetId, string PaytableId,
     long WagerPoints, decimal PointValueInCents, IReadOnlyList<int> ReelStops,
@@ -12,6 +12,8 @@ public sealed record RobotRevolutionSpinResponse(
     int ConsecutiveFiveMisses, bool FiveMatchPityTriggered, int FreeSpinsAwarded,
     int SpecialPointsAwarded, int EnergyAwarded, bool SpecialBoostApplied)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public SunstoneEclipseFeature? SpinFeature { get; init; }
     public decimal? SlotsCreditsBalance { get; init; }
     public bool IsFreeSpin { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -38,7 +40,7 @@ public sealed record RobotRevolutionSpinResponse(
     public static RobotRevolutionSpinResponse From(RobotRevolutionRoundResult result)
     {
         if (result.Round is not { } round || result.Features is not { } features)
-            throw new InvalidOperationException("The Robot Revolution round has no settled spin response.");
+            throw new InvalidOperationException("The Sunstone Eclipse round has no settled spin response.");
 
         return Capture(round) with
         {
@@ -62,6 +64,8 @@ public sealed record RobotRevolutionSpinResponse(
         {
             IsFreeSpin = spin.IsFreeSpin,
             ChargedWagerCents = round.WagerCents,
+            SpinFeature = spin.Audit.EngineVersion == RobotRevolutionEngine.EngineVersion
+                ? SunstoneEclipse.Resolve(spin.Reels, spin.WagerPoints, spin.IsFreeSpin) : null,
             MonkeyPawCount = spin.PawCount,
             MoneyGrabPoints = spin.CollectorPoints,
             BananaBonusPoints = spin.PatternBonusPoints,

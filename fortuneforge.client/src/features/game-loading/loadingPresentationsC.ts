@@ -9,7 +9,7 @@ import candyCarnivalImage from '../../assets/catalogue/slots/candy-carnival-titl
 import phantomManorImage from '../../assets/catalogue/slots/phantom-manor-title-v2.webp'
 import nordicLegendsImage from '../../assets/catalogue/slots/nordic-legends-title-v2.webp'
 import desertTreasuresImage from '../../assets/catalogue/slots/desert-treasures-title-v2.webp'
-import robotRevolutionImage from '../../assets/catalogue/slots/robot-revolution-title-v2.webp'
+import sunstoneEclipseImage from '../../assets/catalogue/slots/sunstone-eclipse-title-v1.webp'
 import dragonHoardImage from '../../assets/catalogue/slots/midnight-vault-catalogue-title-768x384.webp'
 import type { GameLoadingEntry } from './types'
 
@@ -64,9 +64,9 @@ export const LOADING_PRESENTATIONS_C: readonly GameLoadingEntry[] = [
     image: desertTreasuresImage, background: '#25170f', accent: '#ffd078',
   },
   {
-    id: 'robot-revolution', title: 'Robot Revolution',
-    routes: ['/slots/robot-revolution', '/slots/robot-revolution/demo'],
-    image: robotRevolutionImage, background: '#07142d', accent: '#37ddff',
+    id: 'robot-revolution', title: 'Sunstone Eclipse',
+    routes: ['/slots/sunstone-eclipse', '/slots/sunstone-eclipse/demo'],
+    image: sunstoneEclipseImage, background: '#100f0a', accent: '#edc975',
   },
   {
     id: 'dragon-hoard', title: 'Midnight Vault',

@@ -48,7 +48,8 @@ public sealed class RobotRevolutionRoundStoreTests
         var result = await restored.SpinAsync(Account, operation, false, default);
         var round = Assert.IsType<RobotRevolutionPreparedRound>(result.Round);
         Assert.Equal(23, round.Outcome.Audit.EffectiveGame.Paylines.Count);
-        Assert.Equal(1.126m, round.Outcome.Audit.EffectiveGame.Math.PayoutMultiplier);
+        Assert.Equal(0.874m, round.Outcome.Audit.EffectiveGame.Math.PayoutMultiplier);
+        Assert.Equal(RobotRevolutionEngine.EngineVersion, round.Outcome.Audit.EngineVersion);
         Assert.Equal(100, round.Outcome.Audit.EnergyBalanceBefore);
         Assert.Equal(5, round.Outcome.Audit.PityMissesBefore);
         Assert.Equal(0, round.Outcome.CollectorPoints);
@@ -61,7 +62,7 @@ public sealed class RobotRevolutionRoundStoreTests
         Assert.Equal(24, round.Progress.After.SealCounts["rows"]);
         Assert.Equal(240, round.Progress.After.SealWagerPoints["rows"]);
         Assert.Equal(7, result.Features.FreeSpinsRemaining);
-        Assert.Equal("rows", result.Features.FreeSpinFeatureMode);
+        Assert.Equal(RobotRevolutionEngine.EclipseFeatureMode, result.Features.FreeSpinFeatureMode);
         Assert.Equal(10, result.Features.FreeSpinWagerPoints);
         Assert.Equal(250, result.ChargedWagerCents);
         Assert.Equal(round.Outcome.Payout.TotalPoints * 25, wallet.Last!.PayoutCents);

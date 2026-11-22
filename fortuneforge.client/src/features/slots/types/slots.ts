@@ -89,6 +89,8 @@ export type SlotSealCollection = {
 }
 
 export type SpinResult = {
+  /** Optional, versioned result contract owned and validated by the selected game. */
+  spinFeature?: unknown
   olympusTumble?: GodsTumbleResult
   spinId: string
   gameId: string

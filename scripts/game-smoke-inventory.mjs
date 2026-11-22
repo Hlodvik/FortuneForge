@@ -16,7 +16,7 @@ export const slotSmokeInventory = [
   ['phantom-manor', 'phantom-manor-v1'],
   ['nordic-legends', 'nordic-legends-v1'],
   ['desert-treasures', 'desert-treasures-v1'],
-  ['robot-revolution', 'robot-revolution-v1'],
+  ['sunstone-eclipse', 'robot-revolution-v1'],
   ['dragon-hoard', 'dragon-hoard-v1'],
 ]
 

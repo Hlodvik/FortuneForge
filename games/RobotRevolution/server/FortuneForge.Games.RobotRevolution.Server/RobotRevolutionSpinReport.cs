@@ -13,7 +13,7 @@ public static class RobotRevolutionSpinReport
 {
     public const string AuditGameId = RobotRevolutionPaidRouteContract.AuditGameId;
     public const string ResultCollection = ClassicSlotReportWriter.ResultCollection;
-    private const long OutcomeSchemaVersion = 7;
+    private const long OutcomeSchemaVersion = 8;
 
     internal static void Write(Transaction transaction, FirestoreDb database, RobotRevolutionPreparedRound round,
         RobotRevolutionRoundResult settled, DateTime completedAtUtc) =>
@@ -36,7 +36,7 @@ public static class RobotRevolutionSpinReport
             checked(wallet.BalanceAfterCents - wallet.BalanceAfterWagerCents) != round.PayoutCents ||
             round.PayoutCents != RobotRevolutionRoundPolicy.ToCents(outcome.Payout.TotalPoints, outcome.PointValueInCents) ||
             round.OutcomeSha256 != RobotRevolutionRoundPolicy.OutcomeDigest(outcome) || completedAtUtc < audit.GeneratedAtUtc)
-            throw new InvalidOperationException("The Robot Revolution report does not match its settled wallet receipt.");
+            throw new InvalidOperationException("The Sunstone Eclipse report does not match its settled wallet receipt.");
 
         var rulesSha256 = GameSecurityEventDocuments.Hash(JsonSerializer.Serialize(new
         {
@@ -99,7 +99,7 @@ public static class RobotRevolutionSpinReport
             ["sealsAwarded"] = result.SealsAwarded.ToDictionary(pair => pair.Key, pair => (object)(long)pair.Value,
                 StringComparer.Ordinal),
             ["sealFreeSpinsAwarded"] = 0,
-            ["sealFreeSpinFeatureMode"] = result.FreeSpinsAwarded > 0 ? RobotRevolutionEngine.Profile.ScatterFeatureMode ?? string.Empty : string.Empty,
+            ["sealFreeSpinFeatureMode"] = result.FreeSpinsAwarded > 0 ? audit.FeatureProfile.ScatterFeatureMode ?? string.Empty : string.Empty,
             ["specialBoostApplied"] = result.SpecialBoostApplied,
             ["consecutiveFiveMisses"] = result.ConsecutiveFiveMisses,
             ["fiveMatchPityTriggered"] = result.FiveMatchPityTriggered,
@@ -125,6 +125,7 @@ public static class RobotRevolutionSpinReport
             SlotsCreditsBalance = balanceCents / 100m, features.FreeSpinsRemaining, features.SpecialPointsBalance,
             EnergyBalance = 0L, round.Outcome.Payout, EnergyMultiplierApplied = false, PayoutMultiplier = 1m,
             features.FreeSpinWagerPoints, features.SealCollections, features.FreeSpinFeatureMode,
+            RobotRevolutionSpinResponse.Capture(round).SpinFeature,
             SealFreeSpinsAwarded = 0, BonusRound = (object?)null,
             QueuedBonusRounds = Array.Empty<object>(), AwardedBonusRounds = Array.Empty<object>(), NeonDiscoSpinsRemaining = 0
         });

@@ -1,0 +1,377 @@
+{
+  "scenario": "base-eclipse",
+  "source": {
+    "source": "Native new engine, exact draw replay, valid report and in-memory wallet-receipt fixture; not a production account or persisted production transaction.",
+    "seed": 762951,
+    "attempt": 1146,
+    "EngineVersion": "sunstone-eclipse-engine-v1",
+    "baseScale": 0.874,
+    "feature": "sunstone-eclipse-v1",
+    "rootDemoOrProductionEndpointCalled": false
+  },
+  "wagerPoints": 100,
+  "initialState": {
+    "slotsCreditsBalance": 500.0,
+    "freeSpinsRemaining": 0,
+    "freeSpinWagerPoints": null,
+    "freeSpinFeatureMode": null
+  },
+  "steps": [
+    {
+      "request": {
+        "gameId": "robot-revolution-v1",
+        "wagerPoints": 100,
+        "useFreeSpin": false,
+        "useSpecialBoost": false
+      },
+      "response": {
+        "spinId": "3ae80887-701e-4639-b8c8-231353f0e989",
+        "gameId": "robot-revolution-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "classic-symbols-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 100,
+        "pointValueInCents": 25,
+        "reelStops": [
+          38,
+          12,
+          38,
+          20,
+          53
+        ],
+        "reels": [
+          [
+            "2",
+            "POWER",
+            "3",
+            "5"
+          ],
+          [
+            "3",
+            "2",
+            "2",
+            "3"
+          ],
+          [
+            "2",
+            "5",
+            "POWER",
+            "5"
+          ],
+          [
+            "POWER",
+            "7",
+            "2",
+            "POWER"
+          ],
+          [
+            "POWER",
+            "FREE",
+            "2",
+            "4"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 650,
+          "paylines": [
+            {
+              "paylineId": 1001,
+              "amountPoints": 150,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 1001,
+                    "symbolId": "7",
+                    "matchLength": 3,
+                    "positions": [
+                      {
+                        "reel": 2,
+                        "row": 2
+                      },
+                      {
+                        "reel": 3,
+                        "row": 1
+                      },
+                      {
+                        "reel": 4,
+                        "row": 0
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 2,
+                  "amountPoints": 150
+                }
+              ]
+            },
+            {
+              "paylineId": 1002,
+              "amountPoints": 150,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 1002,
+                    "symbolId": "6",
+                    "matchLength": 3,
+                    "positions": [
+                      {
+                        "reel": 2,
+                        "row": 2
+                      },
+                      {
+                        "reel": 3,
+                        "row": 3
+                      },
+                      {
+                        "reel": 4,
+                        "row": 0
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 2,
+                  "amountPoints": 150
+                }
+              ]
+            },
+            {
+              "paylineId": 1003,
+              "amountPoints": 150,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 1003,
+                    "symbolId": "5",
+                    "matchLength": 3,
+                    "positions": [
+                      {
+                        "reel": 0,
+                        "row": 3
+                      },
+                      {
+                        "reel": 2,
+                        "row": 1
+                      },
+                      {
+                        "reel": 3,
+                        "row": 0
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 2,
+                  "amountPoints": 150
+                }
+              ]
+            },
+            {
+              "paylineId": 1010,
+              "amountPoints": 200,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 1010,
+                    "symbolId": "POWER",
+                    "matchLength": 1,
+                    "positions": [
+                      {
+                        "reel": 2,
+                        "row": 2
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 2,
+                  "amountPoints": 200
+                }
+              ]
+            }
+          ]
+        },
+        "consecutiveFiveMisses": 1,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "spinFeature": {
+          "contractVersion": 1,
+          "kind": "sunstone-eclipse",
+          "mathVersion": "sunstone-eclipse-v1",
+          "dialStep": 0,
+          "rows": 4,
+          "isEclipseSpin": false,
+          "heart": {
+            "reel": 2,
+            "row": 2,
+            "symbolId": "POWER",
+            "lit": true
+          },
+          "rings": [
+            {
+              "id": "jaguar",
+              "symbolId": "7",
+              "rotationSteps": 0,
+              "path": [
+                {
+                  "reel": 0,
+                  "row": 0
+                },
+                {
+                  "reel": 1,
+                  "row": 1
+                },
+                {
+                  "reel": 2,
+                  "row": 2
+                },
+                {
+                  "reel": 3,
+                  "row": 1
+                },
+                {
+                  "reel": 4,
+                  "row": 0
+                }
+              ],
+              "matchedPositions": [
+                {
+                  "reel": 2,
+                  "row": 2
+                },
+                {
+                  "reel": 3,
+                  "row": 1
+                },
+                {
+                  "reel": 4,
+                  "row": 0
+                }
+              ],
+              "matches": 3,
+              "aligned": true,
+              "baseMultiplier": 0.5,
+              "awardPoints": 150
+            },
+            {
+              "id": "eagle",
+              "symbolId": "6",
+              "rotationSteps": 1,
+              "path": [
+                {
+                  "reel": 0,
+                  "row": 0
+                },
+                {
+                  "reel": 1,
+                  "row": 3
+                },
+                {
+                  "reel": 2,
+                  "row": 2
+                },
+                {
+                  "reel": 3,
+                  "row": 3
+                },
+                {
+                  "reel": 4,
+                  "row": 0
+                }
+              ],
+              "matchedPositions": [
+                {
+                  "reel": 2,
+                  "row": 2
+                },
+                {
+                  "reel": 3,
+                  "row": 3
+                },
+                {
+                  "reel": 4,
+                  "row": 0
+                }
+              ],
+              "matches": 3,
+              "aligned": true,
+              "baseMultiplier": 0.5,
+              "awardPoints": 150
+            },
+            {
+              "id": "serpent",
+              "symbolId": "5",
+              "rotationSteps": 2,
+              "path": [
+                {
+                  "reel": 0,
+                  "row": 3
+                },
+                {
+                  "reel": 1,
+                  "row": 0
+                },
+                {
+                  "reel": 2,
+                  "row": 1
+                },
+                {
+                  "reel": 3,
+                  "row": 0
+                },
+                {
+                  "reel": 4,
+                  "row": 3
+                }
+              ],
+              "matchedPositions": [
+                {
+                  "reel": 0,
+                  "row": 3
+                },
+                {
+                  "reel": 2,
+                  "row": 1
+                },
+                {
+                  "reel": 3,
+                  "row": 0
+                }
+              ],
+              "matches": 3,
+              "aligned": true,
+              "baseMultiplier": 0.5,
+              "awardPoints": 150
+            }
+          ],
+          "alignedRings": 3,
+          "alignmentMultiplier": 3,
+          "eclipseTriggered": true,
+          "eclipseAwardPoints": 200,
+          "totalAwardPoints": 650,
+          "maxAwardMultiplier": 20
+        },
+        "slotsCreditsBalance": 637.5,
+        "isFreeSpin": false,
+        "neonDiscoSpinsRemaining": 0,
+        "freeSpinsRemaining": 0,
+        "freeSpinWagerPoints": null,
+        "specialPointsBalance": 0,
+        "energyBalance": 0,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": null,
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    }
+  ]
+}

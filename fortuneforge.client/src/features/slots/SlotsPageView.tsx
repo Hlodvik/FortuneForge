@@ -90,6 +90,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     lastSpinOutcomeKey,
     lastWin,
     lastSpinOutcome,
+    lastSpinFeature,
     lightningCollection,
     tomeState,
     potions,
@@ -149,6 +150,7 @@ export function SlotsPageView(controller: SlotsPageController) {
   } = controller
   const LightningCollectionOverlay = presentation?.LightningCollectionOverlay
   const TomePanel = presentation?.TomePanel
+  const SpinFeaturePanel = presentation?.SpinFeaturePanel
   const PotionWagerReadout = presentation?.PotionWagerReadout
   const winHelp = presentation?.winHelp
   const WinHelpContent = winHelp?.Content
@@ -291,6 +293,14 @@ export function SlotsPageView(controller: SlotsPageController) {
       ? { label: 'Constellation collection', amount: slotPointsToRand(lightningCollection.totalPoints, controller.pointValueInCents) }
       : moneyGrabFeature?.presentation === 'separate-award' && lastCollectorAward > 0
         ? { label: moneyGrabFeature.awardLabel, amount: lastCollectorAward }
+        : presentation?.featurePaylineIds?.length && lastSpinFeature != null
+          ? {
+            label: 'Feature win',
+            amount: Math.max(0, lastWin - slotPointsToRand(
+              winningPaylines.reduce((sum, line) => sum + line.amountPoints, 0),
+              controller.pointValueInCents,
+            )),
+          }
         : undefined,
   })
   // Moving reels and the Spin/Stop control already communicate an ordinary
@@ -610,6 +620,15 @@ export function SlotsPageView(controller: SlotsPageController) {
               <output className="slots-page__win-amount" aria-label="Total win">+{formatVaultMoney(lastWin)}</output>
             )}
           </div>}
+
+          {SpinFeaturePanel && <SpinFeaturePanel
+            cabinetRef={cabinetRef}
+            feature={hasCompletedSpin ? lastSpinFeature : null}
+            spinKey={hasCompletedSpin ? lastSpinOutcomeKey : null}
+            isSpinning={isSpinning}
+            reducedMotion={prefersReducedMotion}
+            pointValueInCents={controller.pointValueInCents}
+          />}
 
           {TomePanel && tomeState && <TomePanel
             state={tomeState}

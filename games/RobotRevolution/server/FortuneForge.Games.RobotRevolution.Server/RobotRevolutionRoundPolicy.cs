@@ -46,7 +46,7 @@ internal static class RobotRevolutionRoundPolicy
         var outcome = round.Outcome;
         var audit = outcome.Audit;
         if (round.AdmissionId == Guid.Empty || outcome.SpinId == Guid.Empty || outcome.GameId != RobotRevolutionEngine.GameId ||
-            audit.EngineVersion != RobotRevolutionEngine.EngineVersion || audit.FeatureMode != mode ||
+            !RobotRevolutionEngine.IsSupportedVersion(audit.EngineVersion) || audit.FeatureMode != mode ||
             outcome.WagerPoints != round.Request.WagerPoints || outcome.IsFreeSpin != round.Request.UseFreeSpin ||
             outcome.SpecialBoostApplied != round.Request.UseSpecialBoost || audit.EnergyBalanceBefore != round.Before.Energy ||
             audit.PityMissesBefore != round.Before.Pity || audit.GeneratedAtUtc.Kind != DateTimeKind.Utc ||
@@ -83,7 +83,10 @@ internal static class RobotRevolutionRoundPolicy
         ClassicSlotRoundProgression.SpendsLegacy(before, freeSpin);
 
     internal static RobotRevolutionRoundProgress Advance(ClassicSlotRoundState before, ClassicSlotSpinOutcome outcome, bool spendsLegacy) =>
-        new(ClassicSlotRoundProgression.AdvanceScatterOnly(before, outcome, RobotRevolutionEngine.Profile, BoostCost, spendsLegacy));
+        new(ClassicSlotRoundProgression.AdvanceScatterOnly(before, outcome,
+            outcome.Audit.EngineVersion == RobotRevolutionEngine.LegacyEngineVersion
+                ? RobotRevolutionEngine.LegacyProfile : RobotRevolutionEngine.Profile,
+            BoostCost, spendsLegacy));
 
     internal static string OutcomeDigest(ClassicSlotSpinOutcome outcome) =>
         GameSecurityEventDocuments.Hash(JsonSerializer.Serialize(outcome, RoundAuditCapture.Json));

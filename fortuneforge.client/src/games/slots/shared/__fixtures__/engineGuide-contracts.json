@@ -1,7 +1,7 @@
 {
   "source": "Actual in-process OptionsSlotsDefinitionProvider, not client manifests",
-  "exportedUtc": "2026-11-22T00:16:11.9207661Z",
-  "assemblySha256": "62b38f4eed5d1b54e96002006c0f814c427b4617c7f8bef624efa6bd6f6cc4d3",
+  "exportedUtc": "2026-11-22T12:39:39.5324256Z",
+  "assemblySha256": "6cfe112de16c887d91099011c931da08a704c4a8cbdb45bfdd14c739f5d12ad0",
   "sourceHashAlgorithm": "sha256-utf8-lf-v1",
   "sourceSha256": {
     "FortuneForge.Server/Slots/Bonuses/ArcaneLightningCollector.cs": "bb0a41d2b393e42fc52f9f95e6507bf5a907fedc0a606eb14abef724c5022b21",
@@ -60,7 +60,7 @@
     "FortuneForge.Server/Slots/Spins/SpinService.Support.cs": "139fb73b47b2cf43988e810c945f10e48acb788e9ecab811be86f7d2cc2ba707",
     "FortuneForge.Server/Slots/Spins/SpinService.WukongPawPrototype.cs": "e06d55d5dc152ef0296b25d8d98921c3df29f411d96f6217367a1bc935faf5da",
     "fortuneforge.client/scripts/export-slot-guide-contracts.mjs": "13d2b9e9aa16f1d6cae182100069cac8eb65d93acf0bc06cfe18e7965587b9e9",
-    "fortuneforge.client/src/games/slots/routeMetadata.ts": "f5da140b03b99b9a14ebfc3fe84503e889142a0006f7c5cb4d778f2c47e962c8",
+    "fortuneforge.client/src/games/slots/routeMetadata.ts": "cf690c824222cbae9805f96fa52c8295e62a7f517c48cd219b234590be030574",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneArchivesEngine.cs": "0bc5db391fecbaead9d3fa8942c95d27894b4f346658f408af06d44f186e4169",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneLightningCollector.cs": "6e5eecaf1fb30a6c3de219c6302754c0cde56772c7b96e60cfc28a9e2c00a811",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneNativeReplay.cs": "b4494a88eee3cb2eb95745501048b41d1029c81ec62324348dd28dd5a44187dc",
@@ -170,7 +170,8 @@
     "games/ReelRiches/src/FortuneForge.Games.ReelRiches/FortuneForge.Games.ReelRiches.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/ReelRiches/src/FortuneForge.Games.ReelRiches/ReelRichesEngine.cs": "0b3e02379c7927f66b0cc0be9f692dc2c96ac35268bf19862a5b6adfe6c6b3f1",
     "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FortuneForge.Games.RobotRevolution.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
-    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/RobotRevolutionEngine.cs": "6bb403a88a033a9ea4ca324793134a2385cfc37ea80e11693c98256995e48b20",
+    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/RobotRevolutionEngine.cs": "84691c8995f794a6a55c3e7db615550266af65bc35b452f36d662d89154ef5e2",
+    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/SunstoneEclipse.cs": "c6636bf22fa872ac21de3623e692e25147e0e98b14383ea426234adde5f1f086",
     "games/RoyalDraw/src/FortuneForge.Games.RoyalDraw/FortuneForge.Games.RoyalDraw.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/RoyalDraw/src/FortuneForge.Games.RoyalDraw/RoyalDrawEngine.cs": "85f9301457abfba771c6ab30ca06af4c0e5a3f0c788c68e2b30df187b377c948",
     "games/SamuraiFortune/src/FortuneForge.Games.SamuraiFortune/FortuneForge.Games.SamuraiFortune.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
@@ -5926,12 +5927,12 @@
         "usesCollections": false,
         "usesEnergy": false,
         "usesDirectValueTokens": false,
-        "scatterFeatureMode": "rows",
+        "scatterFeatureMode": "rows-arcade",
         "collectionFeatureMode": null,
         "baseReelSetId": null,
         "targetHitRate": 0.32,
         "paylinePatternIds": null,
-        "payoutMultiplier": 1.126
+        "payoutMultiplier": 0.874
       },
       "layout": {
         "reelCount": 5,
@@ -5959,7 +5960,7 @@
       "math": {
         "reelSetId": "classic-reels-v4",
         "paytableId": "classic-paytable-v4",
-        "payoutMultiplier": 1.126,
+        "payoutMultiplier": 0.874,
         "paylinePayoutSteps": [
           0,
           0,

@@ -36,7 +36,7 @@ import candyCarnival from '../../assets/catalogue/slots/candy-carnival-title-v2.
 import phantomManor from '../../assets/catalogue/slots/phantom-manor-title-v2.webp'
 import nordicLegends from '../../assets/catalogue/slots/nordic-legends-title-v2.webp'
 import desertTreasures from '../../assets/catalogue/slots/desert-treasures-title-v2.webp'
-import robotRevolution from '../../assets/catalogue/slots/robot-revolution-title-v2.webp'
+import sunstoneEclipse from '../../assets/catalogue/slots/sunstone-eclipse-title-v1.webp'
 import dragonHoard from '../../assets/catalogue/slots/midnight-vault-catalogue-title-768x384.webp'
 import jadeDragon from '../../assets/catalogue/slots/jade-dragon-title-v1.webp'
 
@@ -90,7 +90,7 @@ const artByRoute: ReadonlyMap<string, CataloguePresentationArt> = new Map([
   ['/slots/phantom-manor', artwork(phantomManor)],
   ['/slots/nordic-legends', artwork(nordicLegends)],
   ['/slots/desert-treasures', artwork(desertTreasures)],
-  ['/slots/robot-revolution', artwork(robotRevolution)],
+  ['/slots/sunstone-eclipse', artwork(sunstoneEclipse)],
   ['/slots/dragon-hoard', artwork(dragonHoard, `/assets/slots/midnight-vault/v1/presentation/midnight-vault-catalogue-title-384x192.webp 384w, ${dragonHoard} 768w, /assets/slots/midnight-vault/v1/presentation/midnight-vault-catalogue-title-1024x512.webp 1024w`)],
 ])
 

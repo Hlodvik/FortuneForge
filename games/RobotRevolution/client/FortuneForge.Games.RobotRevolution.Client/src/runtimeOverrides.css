@@ -1,10 +1,89 @@
-.slots-page[data-special-round='robot-overclock'] {
-  --special-round-accent: #54ffe2;
-  --special-round-deep: #075269;
-  --special-round-ink: #041923;
+.slots-page[data-slot-theme='robot-revolution-cabinet-v1'] {
+  color: #f4e7c9;
+  --special-round-accent: #6ee1c0;
+  --special-round-deep: #18392c;
+  --special-round-ink: #081711;
 }
-
-.slots-page[data-special-round='robot-overclock'] .slots-page__spin-controls .spin-button {
-  border-radius: 0.32rem;
-  box-shadow: inset 0 0 0 2px rgb(84 255 226 / 28%), 0 0 1rem rgb(84 255 226 / 42%);
+.slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__stage::before {
+  content: 'SUNSTONE ECLIPSE';
+  display: block;
+  white-space: pre;
+  text-align: center;
+  margin: 0.15rem auto 0.4rem;
+  color: #f2d28e;
+  font: 700 clamp(1.4rem, 4.5dvh, 2.8rem)/1.05 Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.075em;
+  text-shadow: 0 2px #472b17, 0 4px #0a100c, 0 0 1.8rem #b2874350;
+  filter: drop-shadow(0 0.5rem 0.5rem #0008);
+}
+.slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__cabinet-spotlight { position: relative; }
+.slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__main { padding-top: 0.35rem; }
+.slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slot-machine {
+  filter: drop-shadow(0 0.5rem 1.5rem #0009);
+}
+.slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slot-symbol__image { filter: drop-shadow(0 0.12rem 0.12rem #0009); }
+.slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__playbar { border-color: #aa8242; background: linear-gradient(#253a2deF, #101d18f5); }
+.slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .spin-button { border-radius: 0.3rem; box-shadow: inset 0 0 0 2px #a8e4b735, 0 0.3rem 1rem #0008; }
+.slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__result-atmosphere[data-celebration='sunstone-corona']::before {
+  content: ''; inset: 0; border: 0.4rem solid #eac475; border-radius: 50%; box-shadow: 0 0 4rem #e3a834, inset 0 0 3rem #dba742; animation: sunstone-corona 1.8s ease-out both;
+}
+.win-help[data-slot-dialog-theme='sunstone-eclipse'] { background: #0c1814; border-color: #a98a4d; }
+.win-help[data-slot-dialog-theme='sunstone-eclipse'] .win-help__body { padding: 0; }
+@media (max-width: 560px) {
+  .slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__stage::before { margin: 0.1rem auto 0.3rem; font-size: clamp(1.35rem, 6.4vw, 2rem); }
+}
+@media (min-width: 721px) {
+  .slots-page[data-slot-theme='robot-revolution-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__layout {
+    width: min(42rem, calc((100dvh - 34rem) * 1.56), calc(100% - 2 * clamp(8.15rem, 9.4vw, 10.5rem)));
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (min-width: 721px) and (max-width: 1050px) {
+  .slots-page[data-slot-theme='robot-revolution-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__layout {
+    width: min(40rem, calc((100dvh - 37rem) * 1.56), calc(100% - 3rem));
+  }
+}
+.slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__special-game-tally {
+  width: 100%;
+  max-width: none;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.1rem 0.5rem;
+  padding: 0.25rem 0.5rem;
+  box-sizing: border-box;
+}
+.slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__special-game-tally > span { text-align: left; font-size: 0.56rem; letter-spacing: 0.03em; }
+.slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__special-game-tally > strong { font-size: 1.05rem; margin: 0; }
+.slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__special-game-tally > small { grid-column: 1 / -1; font-size: 0.5rem; margin: 0; }
+@media (max-width: 720px) {
+  .slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__local-controls,
+  .slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__local-controls .slots-page__utility-controls {
+    pointer-events: none;
+  }
+  .slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__local-controls:not(:has(button, a, input, select, [role='button'])) {
+    display: none;
+  }
+  .slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__local-controls :is(button, a, input, select, [role='button']) {
+    pointer-events: auto;
+  }
+  .slots-page[data-slot-theme='robot-revolution-cabinet-v1'][data-slot-controls='sidecar'] .symbol-value-guide__trigger {
+    bottom: calc(3.6rem + env(safe-area-inset-bottom, 0px));
+    /* The first six rem form the separate two-icon Help/Settings rail. */
+    left: 6rem;
+  }
+  .slots-page[data-slot-theme='robot-revolution-cabinet-v1'].slots-page--special-game .slots-page__layout {
+    width: min(100%, calc((100dvh - 35.5rem) * 1.56));
+    margin-inline: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slots-page[data-slot-theme='robot-revolution-cabinet-v1'] .slots-page__result-atmosphere::before { animation: none; }
+}
+@media (max-width: 360px) {
+  /* The filtered stage forms a stacking context. Keep its utility sibling above
+     that context, with no transparent full-width layer over other controls. */
+  .slots-page[data-slot-theme='robot-revolution-cabinet-v1'] > .slots-page__utility-buttons {
+    position: relative;
+    z-index: 30;
+    width: max-content;
+  }
 }

@@ -258,6 +258,195 @@ function Get-ApiLegacyWorkerConfiguration {
     [pscustomobject]@{ Environment = [string[]]@($environment); Secrets = [string[]]@($secrets) }
 }
 
+function Get-ApiCandidateObject {
+    param($Parent, [string]$Name)
+    if (-not $Parent.$Name) { $Parent | Add-Member -NotePropertyName $Name -NotePropertyValue ([pscustomobject]@{}) -Force }
+    if ($Parent.$Name -isnot [pscustomobject]) { throw 'Unexpected Cloud Run service object shape.' }
+    return $Parent.$Name
+}
+
+function ConvertTo-SharedBackendCandidateService {
+    param($Service, [string]$ServiceName, [string]$ServingRevision, [string]$SourceSha, [string]$Image, $Packages)
+    Assert-ReleaseSha $SourceSha
+    if (-not $Packages -or $Packages.CompositionSha256 -cnotmatch '\A[a-f0-9]{64}\z' -or
+        $Image -cnotmatch '\A[a-z0-9][a-z0-9./:_-]*@sha256:[a-f0-9]{64}\z' -or
+        $Service.metadata.name -cne $ServiceName -or [string]::IsNullOrWhiteSpace($Service.metadata.resourceVersion) -or
+        (Get-ServingApiRevision $Service) -cne $ServingRevision -or @($Service.spec.template.spec.containers).Count -ne 1) {
+        throw 'Shared backend replacement requires the verified image, composition, current service version and single serving revision.'
+    }
+    $candidate = $Service | ConvertTo-Json -Depth 60 | ConvertFrom-Json
+    $candidate.PSObject.Properties.Remove('status')
+    foreach ($name in @('uid', 'creationTimestamp', 'generation', 'selfLink', 'managedFields')) { $candidate.metadata.PSObject.Properties.Remove($name) }
+    $candidate.spec.template.metadata.PSObject.Properties.Remove('name')
+    foreach ($metadata in @($candidate.metadata, $candidate.spec.template.metadata)) {
+        $labels = Get-ApiCandidateObject $metadata 'labels'
+        $labels | Add-Member -NotePropertyName 'ff-source-sha' -NotePropertyValue $SourceSha -Force
+    }
+    $serviceAnnotations = Get-ApiCandidateObject $candidate.metadata 'annotations'
+    $serviceAnnotations | Add-Member -NotePropertyName 'run.googleapis.com/minScale' -NotePropertyValue '0' -Force
+    $revisionAnnotations = Get-ApiCandidateObject $candidate.spec.template.metadata 'annotations'
+    foreach ($pair in @(@('autoscaling.knative.dev/minScale', '0'), @('autoscaling.knative.dev/maxScale', '1'), @('run.googleapis.com/cpu-throttling', 'true'))) {
+        $revisionAnnotations | Add-Member -NotePropertyName $pair[0] -NotePropertyValue $pair[1] -Force
+    }
+    $container = $candidate.spec.template.spec.containers[0]
+    $container.image = $Image
+    $replaced = @('FF_RELEASE_SHA', 'GamePackages__Required', 'GamePackages__Directory', 'GamePackages__ManifestSha256')
+    $environment = @($container.env | Where-Object {
+        $_ -and $_.name -inotmatch '\AGameWorkers__[a-z0-9]+(?:-[a-z0-9]+)*__(Url|SigningKey)\z' -and $_.name -notin $replaced
+    })
+    $environment += @([pscustomobject]@{ name = 'FF_RELEASE_SHA'; value = $SourceSha },
+        [pscustomobject]@{ name = 'GamePackages__Required'; value = 'true' },
+        [pscustomobject]@{ name = 'GamePackages__Directory'; value = '/app/game-packages' },
+        [pscustomobject]@{ name = 'GamePackages__ManifestSha256'; value = $Packages.CompositionSha256 })
+    $container | Add-Member -NotePropertyName env -NotePropertyValue $environment -Force
+    $container | Add-Member -NotePropertyName startupProbe -NotePropertyValue ([pscustomobject]@{
+        httpGet = [pscustomobject]@{ path = '/healthz'; port = 8080 }; timeoutSeconds = 5; periodSeconds = 5; failureThreshold = 48
+    }) -Force
+    $traffic = @([pscustomobject]@{ revisionName = $ServingRevision; percent = 100; latestRevision = $false })
+    $tags = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($original in @($Service.spec.traffic | Where-Object { $_.tag })) {
+        if ($original.tag -cnotmatch '\A[a-z][a-z0-9-]{0,62}\z' -or -not $tags.Add($original.tag)) { throw 'Invalid existing Cloud Run traffic tag.' }
+        $revision = [string]$original.revisionName
+        if (-not $revision -or $original.latestRevision -eq $true) {
+            $resolved = @($Service.status.traffic | Where-Object { $_.tag -ceq $original.tag -and $_.revisionName })
+            if ($resolved.Count -ne 1) { throw 'Cannot preserve an unresolved Cloud Run traffic tag.' }
+            $revision = [string]$resolved[0].revisionName
+        }
+        if (-not $revision.StartsWith($ServiceName + '-', [StringComparison]::Ordinal) -or $revision -cnotmatch '\A[a-z0-9-]+\z') { throw 'Existing traffic tag does not name this service revision.' }
+        $traffic += [pscustomobject]@{ tag = $original.tag; revisionName = $revision; percent = 0; latestRevision = $false }
+    }
+    $candidate.spec | Add-Member -NotePropertyName traffic -NotePropertyValue $traffic -Force
+    return $candidate
+}
+
+function New-ApiServiceReplaceContext {
+    param($Service, [string]$ServiceName, [string]$ServingRevision, [string]$SourceSha, [string]$Image, $Packages, [string]$RecordPath)
+    $candidate = ConvertTo-SharedBackendCandidateService -Service $Service -ServiceName $ServiceName -ServingRevision $ServingRevision -SourceSha $SourceSha -Image $Image -Packages $Packages
+    $path = $RecordPath + '.api-service.json'
+    $bytes = [Text.UTF8Encoding]::new($false).GetBytes(($candidate | ConvertTo-Json -Depth 60))
+    $writer = [IO.File]::Open($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+    try { $writer.Write($bytes, 0, $bytes.Length) } finally { $writer.Dispose() }
+    $expected = [IO.MemoryStream]::new($bytes, $false)
+    try { $digest = Get-DeploymentInputHash $expected } finally { $expected.Dispose() }
+    $stream = [IO.File]::Open($path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    $context = [pscustomobject]@{ Path = $path; Sha256 = $digest; Stream = $stream; ResourceVersion = [string]$Service.metadata.resourceVersion }
+    try { Assert-HostRuntimeConfigurationUnchanged -Configuration $context -LockedStream $stream; return $context }
+    catch { $stream.Dispose(); throw }
+}
+
+function Assert-ApiServiceFieldSubset {
+    param($Expected, $Actual)
+    if ($Expected -is [pscustomobject]) {
+        foreach ($property in $Expected.PSObject.Properties) {
+            $found = @($Actual.PSObject.Properties | Where-Object { $_.Name -ceq $property.Name })
+            if ($found.Count -ne 1) { throw 'Cloud Run response omitted a reviewed candidate configuration field.' }
+            Assert-ApiServiceFieldSubset -Expected $property.Value -Actual $found[0].Value
+        }
+    }
+    elseif ($Expected -is [array]) {
+        $actualItems = @($Actual)
+        if ($Expected.Count -ne $actualItems.Count) { throw 'Cloud Run response changed a reviewed candidate configuration collection.' }
+        $expectedItems = @($Expected)
+        if ($Expected.Count -gt 0 -and @($Expected | Where-Object { $_ -isnot [pscustomobject] -or -not $_.name }).Count -eq 0) {
+            $expectedItems = @($Expected | Sort-Object name -CaseSensitive)
+            $actualItems = @($actualItems | Sort-Object name -CaseSensitive)
+        }
+        for ($i = 0; $i -lt $expectedItems.Count; $i++) { Assert-ApiServiceFieldSubset -Expected $expectedItems[$i] -Actual $actualItems[$i] }
+    }
+    elseif ($Expected -cne $Actual) { throw 'Cloud Run response changed a reviewed candidate configuration value.' }
+}
+
+function Assert-SharedBackendCandidateService {
+    param($Service, $Expected, [string]$SourceSha, [string]$Image, [string]$ServingRevision, $Packages)
+    if ($Service.metadata.name -cne $Expected.metadata.name -or
+        $Service.metadata.labels.'ff-source-sha' -cne $SourceSha -or
+        $Service.spec.template.metadata.labels.'ff-source-sha' -cne $SourceSha -or
+        (Get-ApiRevisionSourceSha $Service.spec.template) -cne $SourceSha -or
+        $Service.spec.template.spec.containers[0].image -cne $Image) { throw 'Cloud Run response differs from the reviewed candidate identity.' }
+    Assert-ApiServiceFieldSubset -Expected $Expected.spec.template.spec -Actual $Service.spec.template.spec
+    $actualTraffic = @($Service.spec.traffic)
+    if ($actualTraffic.Count -ne @($Expected.spec.traffic).Count) { throw 'Cloud Run changed the reviewed public traffic or tag configuration.' }
+    foreach ($entry in @($Expected.spec.traffic)) {
+        $matches = @($actualTraffic | Where-Object { [string]$_.tag -ceq [string]$entry.tag -and $_.revisionName -ceq $entry.revisionName })
+        # REST may omit protobuf defaults (false and zero). Both forms still
+        # bind a named revision and preserve the reviewed zero-percent tags.
+        if ($matches.Count -ne 1 -or [int]$matches[0].percent -ne [int]$entry.percent -or $matches[0].latestRevision -eq $true) {
+            throw 'Cloud Run changed the reviewed named revision traffic allocation.'
+        }
+    }
+    Assert-ApiSharedBackendConfiguration -Revision $Service.spec.template -Packages $Packages -Service $Service -TemplateOnly
+    $serving = @($Service.spec.traffic | Where-Object { $_.percent -gt 0 })
+    if ($serving.Count -ne 1 -or $serving[0].revisionName -cne $ServingRevision -or $serving[0].percent -ne 100 -or $serving[0].latestRevision -eq $true) {
+        throw 'Candidate preparation must keep the original named revision serving all public traffic.'
+    }
+}
+
+function Invoke-ApiServiceReplaceRequest {
+    param($Context, [string]$Endpoint, [string]$Account, [switch]$DryRun)
+    if ($Endpoint -cnotmatch '\Ahttps://[a-z0-9-]+-run\.googleapis\.com/apis/serving\.knative\.dev/v1/namespaces/[a-z0-9-]+/services/[a-z0-9-]+\z') { throw 'Unexpected regional Cloud Run replacement endpoint.' }
+    Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
+    Assert-HostRuntimeConfigurationUnchanged -Configuration $Context -LockedStream $Context.Stream
+    $token = $null
+    $headers = $null
+    $bytes = $null
+    try {
+        $token = ([string](& gcloud.cmd auth print-access-token "--account=$Account" --quiet 2>$null)).Trim()
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($token)) { throw 'Could not obtain the configured release principal token.' }
+        $bytes = [byte[]]::new([int]$Context.Stream.Length)
+        $Context.Stream.Position = 0
+        $offset = 0
+        while ($offset -lt $bytes.Length) {
+            $read = $Context.Stream.Read($bytes, $offset, $bytes.Length - $offset)
+            if ($read -eq 0) { throw 'The locked candidate service payload ended unexpectedly.' }
+            $offset += $read
+        }
+        $Context.Stream.Position = 0
+        $headers = @{ Authorization = 'Bearer ' + $token }
+        $uri = $Endpoint + $(if ($DryRun) { '?dryRun=all' } else { '' })
+        Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
+        Assert-HostRuntimeConfigurationUnchanged -Configuration $Context -LockedStream $Context.Stream
+        try { $response = Invoke-RestMethod -Uri $uri -Method Put -ContentType 'application/json' -Headers $headers -Body $bytes -TimeoutSec 90 -ErrorAction Stop }
+        catch {
+            $status = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
+            throw [InvalidOperationException]::new("Cloud Run replacement request failed (HTTP $status); the mutation will not be retried.")
+        }
+        Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
+        Assert-HostRuntimeConfigurationUnchanged -Configuration $Context -LockedStream $Context.Stream
+        return $response
+    }
+    finally {
+        if ($headers) { $headers.Clear() }
+        $token = $null
+        if ($bytes) { [Array]::Clear($bytes, 0, $bytes.Length) }
+    }
+}
+
+function Wait-SharedBackendCandidateReady {
+    param([string]$ServingRevision, [string]$PreviousRevision, [string]$SourceSha, [string]$Image, $Packages, [string]$RecordPath)
+    $deadline = [DateTime]::UtcNow.AddSeconds(360)
+    do {
+        $service = Get-CloudRunService
+        if ((Get-ServingApiRevision $service) -cne $ServingRevision) { throw 'API traffic changed while the candidate was starting.' }
+        $name = [string]$service.status.latestCreatedRevisionName
+        $ready = $false
+        if ($name -and $name -cne $ServingRevision -and $name -cne $PreviousRevision) {
+            $revision = Get-ApiRevision $name
+            if ((Get-ApiRevisionSourceSha $revision) -cne $SourceSha) { throw 'Another API candidate replaced the selected source while waiting for readiness.' }
+            Assert-ApiRevisionImage -Revision $revision -ExpectedImage $Image
+            Assert-ApiSharedBackendConfiguration -Revision $revision -Packages $Packages -Service $service -TemplateOnly
+            $ready = $service.status.latestReadyRevisionName -ceq $name -and
+                @($revision.status.conditions | Where-Object { $_.type -ceq 'Ready' -and $_.status -ceq 'True' }).Count -eq 1
+        }
+        [IO.File]::WriteAllText(($RecordPath + '.api-readiness.json'), ([ordered]@{
+            checkedAtUtc = [DateTime]::UtcNow.ToString('o'); candidateRevision = $name;
+            servingRevision = $ServingRevision; ready = $ready
+        } | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
+        if ($ready) { return $name }
+        Start-Sleep -Seconds 5
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw 'The exact shared backend candidate did not become ready within 360 seconds; public traffic remains on the prior revision.'
+}
+
 function New-ApiRuntimeFlagsContext {
     param([string]$SourceSha, [object[]]$Bindings, $RuntimeConfiguration, [string]$RecordPath, $SharedPackages, $LegacyWorkerConfiguration)
     # A catalogue-sized update exceeds cmd.exe's command-line limit. gcloud's
@@ -301,7 +490,7 @@ function Assert-ApiHostRuntimeConfiguration {
 }
 
 function Assert-ApiSharedBackendConfiguration {
-    param($Revision, $Packages, $Service)
+    param($Revision, $Packages, $Service, [switch]$TemplateOnly)
     if (-not $Packages) { return }
     $legacy = Get-ApiLegacyWorkerConfiguration $Revision
     if ($legacy.Environment.Count -gt 0 -or $legacy.Secrets.Count -gt 0) { throw 'Candidate shared backend retains external worker URL or signing-key bindings. Traffic was not changed.' }
@@ -319,7 +508,7 @@ function Assert-ApiSharedBackendConfiguration {
     $probe = $Revision.spec.containers[0].startupProbe
     if ($probe.httpGet.path -cne '/healthz' -or $probe.httpGet.port -ne 8080 -or $probe.timeoutSeconds -ne 5 -or
         $probe.periodSeconds -ne 5 -or $probe.failureThreshold -ne 48 -or
-        @($Revision.status.conditions | Where-Object { $_.type -ceq 'Ready' -and $_.status -ceq 'True' }).Count -ne 1) {
+        (-not $TemplateOnly -and @($Revision.status.conditions | Where-Object { $_.type -ceq 'Ready' -and $_.status -ceq 'True' }).Count -ne 1)) {
         throw 'Candidate shared backend has not passed its package-readiness HTTP startup probe. Traffic was not changed.'
     }
 }
@@ -1002,6 +1191,7 @@ $workspaceLock = $null
 $sourceLock = $null
 $hostRuntimeConfigurationLock = $null
 $apiRuntimeFlagsContext = $null
+$apiServiceReplaceContext = $null
 $sharedBackendPackages = $null
 $hostingContext = $null
 $recordPath = ''
@@ -1022,6 +1212,9 @@ $record = [ordered]@{
     hostRuntimeConfiguration = $hostRuntimeConfiguration
     apiRuntimeFlagsSha256 = ''
     apiRuntimeFlagsPath = ''
+    apiServiceReplaceSha256 = ''
+    apiServiceReplacePath = ''
+    apiServiceExpectedResourceVersion = ''
     sharedBackendManifestSha256 = ''
     sharedBackendCompositionSha256 = ''
     sharedBackendFileManifestSha256 = ''
@@ -1232,35 +1425,55 @@ try {
         Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
         Assert-ServingApiUnchanged -Before $apiBefore -Now (Get-LiveApi)
         Write-Host "`nCreating a non-serving Cloud Run revision from the verified image digest..." -ForegroundColor Yellow
-        $apiDeployArguments = @(
-            'run', 'deploy', $serviceName,
-            '--image', $builtImage.Image,
-            '--region', $region, '--project', $project,
-            '--max-instances', '1', '--no-traffic',
-            "--update-labels=ff-source-sha=$candidateSha",
-            '--quiet'
-        )
-        $legacyWorkerConfiguration = $null
         if ($sharedBackendPackages) {
-            $legacyWorkerConfiguration = Get-ApiLegacyWorkerConfiguration (Get-ApiRevision $apiBefore.RevisionName)
+            $freshService = Get-CloudRunService
+            $freshServingRevision = Get-ServingApiRevision $freshService
+            Assert-ServingApiUnchanged -Before $apiBefore -Now ([pscustomobject]@{
+                RevisionName = $freshServingRevision; SourceSha = Get-ApiRevisionSourceSha (Get-ApiRevision $freshServingRevision)
+            })
+            $legacyWorkerConfiguration = Get-ApiLegacyWorkerConfiguration $freshService.spec.template
             $record.sharedBackendRemovedWorkerEnvironment = $legacyWorkerConfiguration.Environment
             $record.sharedBackendRemovedWorkerSecrets = $legacyWorkerConfiguration.Secrets
+            $apiServiceReplaceContext = New-ApiServiceReplaceContext -Service $freshService -ServiceName $serviceName -ServingRevision $apiBefore.RevisionName `
+                -SourceSha $candidateSha -Image $builtImage.Image -Packages $sharedBackendPackages -RecordPath $recordPath
+            $record.apiServiceReplaceSha256 = $apiServiceReplaceContext.Sha256
+            $record.apiServiceReplacePath = $apiServiceReplaceContext.Path
+            $record.apiServiceExpectedResourceVersion = $apiServiceReplaceContext.ResourceVersion
+            Write-ReleaseRecord -Record $record -Path $recordPath
+            $expectedService = Get-Content -LiteralPath $apiServiceReplaceContext.Path -Raw | ConvertFrom-Json
+            $replaceEndpoint = "https://$region-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/$project/services/$serviceName"
+            $validated = Invoke-ApiServiceReplaceRequest -Context $apiServiceReplaceContext -Endpoint $replaceEndpoint -Account $firebaseAccount -DryRun
+            Assert-SharedBackendCandidateService -Service $validated -Expected $expectedService -SourceSha $candidateSha -Image $builtImage.Image -ServingRevision $apiBefore.RevisionName -Packages $sharedBackendPackages
+            [IO.File]::WriteAllText(($recordPath + '.api-validation.json'), ([ordered]@{
+                checkedAtUtc = [DateTime]::UtcNow.ToString('o'); dryRunValidated = $true;
+                sourceSha = $candidateSha; payloadSha256 = $apiServiceReplaceContext.Sha256;
+                expectedResourceVersion = $apiServiceReplaceContext.ResourceVersion; servingRevision = $apiBefore.RevisionName
+            } | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
+            $beforeReplace = Get-CloudRunService
+            if ([string]$beforeReplace.metadata.resourceVersion -cne $apiServiceReplaceContext.ResourceVersion) { throw 'Cloud Run service configuration changed after candidate validation; replacement was not attempted.' }
+            Assert-ServingApiUnchanged -Before $apiBefore -Now (Get-LiveApi)
+            $created = Invoke-ApiServiceReplaceRequest -Context $apiServiceReplaceContext -Endpoint $replaceEndpoint -Account $firebaseAccount
+            Assert-SharedBackendCandidateService -Service $created -Expected $expectedService -SourceSha $candidateSha -Image $builtImage.Image -ServingRevision $apiBefore.RevisionName -Packages $sharedBackendPackages
+            $sharedCandidateRevision = Wait-SharedBackendCandidateReady -ServingRevision $apiBefore.RevisionName -PreviousRevision $freshService.status.latestCreatedRevisionName `
+                -SourceSha $candidateSha -Image $builtImage.Image -Packages $sharedBackendPackages -RecordPath $recordPath
         }
-        $apiRuntimeFlagsContext = New-ApiRuntimeFlagsContext -SourceSha $candidateSha -Bindings $gameWorkerBindings -RuntimeConfiguration $hostRuntimeConfiguration -RecordPath $recordPath -SharedPackages $sharedBackendPackages -LegacyWorkerConfiguration $legacyWorkerConfiguration
-        $record.apiRuntimeFlagsSha256 = $apiRuntimeFlagsContext.Sha256
-        $record.apiRuntimeFlagsPath = $apiRuntimeFlagsContext.Path
-        Write-ReleaseRecord -Record $record -Path $recordPath
-        Assert-HostRuntimeConfigurationUnchanged -Configuration $apiRuntimeFlagsContext -LockedStream $apiRuntimeFlagsContext.Stream
-        $apiDeployArguments += "--flags-file=$($apiRuntimeFlagsContext.Path)"
-        if ($sharedBackendPackages) {
-            $apiDeployArguments += @('--min', '0', '--min-instances', '0', '--cpu-throttling',
-                '--startup-probe=httpGet.path=/healthz,httpGet.port=8080,timeoutSeconds=5,periodSeconds=5,failureThreshold=48')
+        else {
+            $apiDeployArguments = @('run', 'deploy', $serviceName, '--image', $builtImage.Image,
+                '--region', $region, '--project', $project, '--max-instances', '1', '--no-traffic',
+                "--update-labels=ff-source-sha=$candidateSha", '--quiet')
+            $apiRuntimeFlagsContext = New-ApiRuntimeFlagsContext -SourceSha $candidateSha -Bindings $gameWorkerBindings -RuntimeConfiguration $hostRuntimeConfiguration -RecordPath $recordPath
+            $record.apiRuntimeFlagsSha256 = $apiRuntimeFlagsContext.Sha256
+            $record.apiRuntimeFlagsPath = $apiRuntimeFlagsContext.Path
+            Write-ReleaseRecord -Record $record -Path $recordPath
+            Assert-HostRuntimeConfigurationUnchanged -Configuration $apiRuntimeFlagsContext -LockedStream $apiRuntimeFlagsContext.Stream
+            $apiDeployArguments += "--flags-file=$($apiRuntimeFlagsContext.Path)"
+            if ($ContinuousAudit) { $apiDeployArguments += @('--min-instances', '1', '--no-cpu-throttling') }
+            Invoke-Checked -Executable 'gcloud.cmd' -Arguments $apiDeployArguments -WorkingDirectory $releaseCheckout
         }
-        elseif ($ContinuousAudit) { $apiDeployArguments += @('--min-instances', '1', '--no-cpu-throttling') }
-        Invoke-Checked -Executable 'gcloud.cmd' -Arguments $apiDeployArguments -WorkingDirectory $releaseCheckout
 
         $service = Get-CloudRunService
         $newApiRevision = [string]$service.status.latestCreatedRevisionName
+        if ($sharedBackendPackages -and $newApiRevision -cne $sharedCandidateRevision) { throw 'Another API candidate was created after the verified shared revision became ready.' }
         if ([string]::IsNullOrWhiteSpace($newApiRevision) -or $newApiRevision -ceq $apiBefore.RevisionName) {
             throw 'Cloud Run did not expose a distinct new revision; traffic was not changed.'
         }
@@ -1272,6 +1485,9 @@ try {
         Assert-ApiWorkerBindings -Revision $newRevision -Bindings $gameWorkerBindings
         Assert-ApiHostRuntimeConfiguration -Revision $newRevision -Configuration $hostRuntimeConfiguration
         Assert-ApiSharedBackendConfiguration -Revision $newRevision -Packages $sharedBackendPackages -Service $service
+        if ($sharedBackendPackages) {
+            Assert-SharedBackendCandidateService -Service $service -Expected $expectedService -SourceSha $candidateSha -Image $builtImage.Image -ServingRevision $apiBefore.RevisionName -Packages $sharedBackendPackages
+        }
         $record.newApiRevision = $newApiRevision
         Write-ReleaseRecord -Record $record -Path $recordPath
 
@@ -1292,6 +1508,9 @@ try {
         Assert-ApiWorkerBindings -Revision $candidateAtTrafficSwitch -Bindings $gameWorkerBindings
         Assert-ApiHostRuntimeConfiguration -Revision $candidateAtTrafficSwitch -Configuration $hostRuntimeConfiguration
         Assert-ApiSharedBackendConfiguration -Revision $candidateAtTrafficSwitch -Packages $sharedBackendPackages -Service (Get-CloudRunService)
+        if ($sharedBackendPackages) {
+            Assert-SharedBackendCandidateService -Service (Get-CloudRunService) -Expected $expectedService -SourceSha $candidateSha -Image $builtImage.Image -ServingRevision $apiBefore.RevisionName -Packages $sharedBackendPackages
+        }
         Assert-SharedBackendUploadUnchanged $sharedBackendPackages
 
         Invoke-Checked -Executable 'gcloud.cmd' -Arguments @(
@@ -1390,6 +1609,7 @@ catch {
     throw
 }
 finally {
+    if ($apiServiceReplaceContext) { $apiServiceReplaceContext.Stream.Dispose() }
     if ($sharedBackendPackages) { Exit-ReleaseSourceLock -Lock $sharedBackendPackages.Lock }
     if ($apiRuntimeFlagsContext) { $apiRuntimeFlagsContext.Stream.Dispose() }
     if ($hostRuntimeConfigurationLock) { $hostRuntimeConfigurationLock.Dispose() }

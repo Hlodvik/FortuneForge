@@ -9,4 +9,19 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="../../FortuneForge.Server/FortuneForge.Server.csproj" />
   </ItemGroup>
+  <Target Name="CopyRootBackendStaticAssetManifest" AfterTargets="Build">
+    <MSBuild Projects="../../FortuneForge.Server/FortuneForge.Server.csproj"
+             Targets="GetTargetPath" BuildInParallel="false"
+             Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)">
+      <Output TaskParameter="TargetOutputs" ItemName="_RootBackendAssembly" />
+    </MSBuild>
+    <ItemGroup>
+      <_RootBackendStaticAssetManifest Include="@(_RootBackendAssembly->'%(RootDir)%(Directory)FortuneForge.Server.staticwebassets.endpoints.json');@(_RootBackendAssembly->'%(RootDir)%(Directory)FortuneForge.Server.staticwebassets.runtime.json')" />
+    </ItemGroup>
+    <Error Condition="'@(_RootBackendAssembly)' == ''"
+           Text="Could not resolve the root backend project output for integration verification." />
+    <Error Condition="!Exists('%(_RootBackendStaticAssetManifest.Identity)')"
+           Text="The root backend static-assets manifest is missing after its build: %(_RootBackendStaticAssetManifest.Identity)" />
+    <Copy SourceFiles="@(_RootBackendStaticAssetManifest)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

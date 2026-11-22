@@ -26,6 +26,8 @@ internal sealed class GamePackageLoadContext(string entry) : AssemblyLoadContext
             catch (FileNotFoundException) { }
         }
         var path = resolver.ResolveAssemblyToPath(name);
+        if (path is null && name.Name.StartsWith("FortuneForge.Games.", StringComparison.Ordinal))
+            throw new FileNotFoundException($"The selected game package lacks a required dependency: {name.Name}.");
         return path is null ? null : LoadFromAssemblyPath(path);
     }
 

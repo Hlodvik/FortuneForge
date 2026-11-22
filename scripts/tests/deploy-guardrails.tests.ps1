@@ -272,7 +272,9 @@ $verifySource = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/verify-re
 # deployment entry point. Fixtures stay in ignored artifacts, not repositories.
 $runtimeFunctions = @('ConvertFrom-HostRuntimeConfiguration', 'Get-DeploymentInputHash', 'Read-HostRuntimeConfiguration',
     'Assert-HostRuntimeConfigurationUnchanged', 'Enter-HostRuntimeConfigurationLock', 'Get-ApiWorkerDeployFlags', 'New-ApiRuntimeFlagsContext', 'Assert-ApiHostRuntimeConfiguration',
-    'Get-ApiLegacyWorkerConfiguration', 'Assert-ApiSharedBackendConfiguration', 'Enter-SharedBackendUploadLocks', 'Assert-SharedBackendUploadUnchanged')
+    'Get-ApiLegacyWorkerConfiguration', 'Assert-ApiSharedBackendConfiguration', 'Enter-SharedBackendUploadLocks', 'Assert-SharedBackendUploadUnchanged',
+    'Get-ApiCandidateObject', 'ConvertTo-SharedBackendCandidateService', 'New-ApiServiceReplaceContext',
+    'Assert-ApiServiceFieldSubset', 'Assert-SharedBackendCandidateService', 'Invoke-ApiServiceReplaceRequest')
 $runtimeAst = [System.Management.Automation.Language.Parser]::ParseInput($deploySource, [ref]$null, [ref]$null)
 foreach ($definition in $runtimeAst.FindAll({ param($node)
     $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -cin $runtimeFunctions
@@ -464,6 +466,97 @@ Assert-Equal $dockerSource.Contains('COPY artifacts/shared-backend-upload/game-p
 Assert-Equal $dockerSource.Contains('ENV GamePackages__Required=true') $true 'image refuses absent package composition'
 Assert-Equal $deploySource.Contains("'verify-materialized', '--manifest'") $true 'reused package tree is independently verified'
 Assert-Equal $deploySource.Contains('Assert-ApiSharedBackendConfiguration -Revision $candidateAtTrafficSwitch') $true 'candidate composition verified immediately before traffic'
+
+$replacementImage = 'us-east4-docker.pkg.dev/project/repository/api@sha256:' + ('a' * 64)
+$existingService = [pscustomobject]@{
+    apiVersion = 'serving.knative.dev/v1'; kind = 'Service'
+    metadata = [pscustomobject]@{ name = 'api'; resourceVersion = 'version-123'; uid = 'output-only'; labels = [pscustomobject]@{ retained = 'label' }; annotations = [pscustomobject]@{ 'run.googleapis.com/ingress' = 'all' } }
+    spec = [pscustomobject]@{
+        template = [pscustomobject]@{
+            metadata = [pscustomobject]@{ name = 'api-old'; labels = [pscustomobject]@{ retained = 'revision-label' }; annotations = [pscustomobject]@{ retained = 'revision-setting' } }
+            spec = [pscustomobject]@{ serviceAccountName = 'existing-account'; containerConcurrency = 40; timeoutSeconds = 120;
+                volumes = @([pscustomobject]@{ name = 'retained-volume'; secret = [pscustomobject]@{ secretName = 'retained-secret' } });
+                containers = @([pscustomobject]@{ image = 'existing-image'; resources = [pscustomobject]@{ limits = [pscustomobject]@{ memory = '2Gi'; cpu = '1' } };
+                    volumeMounts = @([pscustomobject]@{ name = 'retained-volume'; mountPath = '/retained' });
+                    env = @([pscustomobject]@{ name = 'UNCHANGED'; value = 'retained-value' },
+                        [pscustomobject]@{ name = 'GameWorkers__hearts__Url'; value = 'https://old.example.run.app' },
+                        [pscustomobject]@{ name = 'GameWorkers__hearts__SigningKey'; valueFrom = [pscustomobject]@{ secretKeyRef = [pscustomobject]@{ name = 'old-worker'; key = '1' } } },
+                        [pscustomobject]@{ name = 'GameWallet__SigningKey'; valueFrom = [pscustomobject]@{ secretKeyRef = [pscustomobject]@{ name = 'retained-wallet'; key = '1' } } })
+                })
+            }
+        }
+        traffic = @([pscustomobject]@{ latestRevision = $true; percent = 100 }, [pscustomobject]@{ latestRevision = $true; tag = 'preview'; percent = 0 })
+    }
+    status = [pscustomobject]@{ traffic = @([pscustomobject]@{ revisionName = 'api-old'; percent = 100 }, [pscustomobject]@{ revisionName = 'api-preview'; tag = 'preview'; percent = 0 }) }
+}
+$candidateService = ConvertTo-SharedBackendCandidateService -Service $existingService -ServiceName 'api' -ServingRevision 'api-old' -SourceSha $head -Image $replacementImage -Packages $sharedExpected
+Assert-Equal $existingService.spec.template.spec.containers[0].image 'existing-image' 'candidate construction never mutates the serving snapshot'
+Assert-Equal $candidateService.metadata.resourceVersion 'version-123' 'candidate retains exact optimistic concurrency version'
+Assert-Equal $candidateService.PSObject.Properties.Name.Contains('status') $false 'candidate omits output status'
+Assert-Equal $candidateService.spec.template.metadata.PSObject.Properties.Name.Contains('name') $false 'candidate lets Cloud Run create a distinct revision'
+Assert-Equal $candidateService.metadata.labels.'ff-source-sha' $head 'candidate stamps service source label'
+Assert-Equal $candidateService.spec.template.metadata.labels.'ff-source-sha' $head 'candidate stamps revision source label'
+Assert-Equal $candidateService.spec.template.spec.serviceAccountName 'existing-account' 'candidate preserves runtime identity'
+Assert-Equal $candidateService.spec.template.spec.containers[0].resources.limits.memory '2Gi' 'candidate preserves reviewed memory sizing'
+Assert-Equal $candidateService.spec.template.spec.volumes[0].name 'retained-volume' 'candidate preserves volumes'
+Assert-Equal $candidateService.spec.traffic[0].revisionName 'api-old' 'candidate pins old public revision'
+Assert-Equal $candidateService.spec.traffic[0].latestRevision $false 'candidate never routes public traffic to latest revision'
+Assert-Equal $candidateService.spec.traffic[1].revisionName 'api-preview' 'candidate preserves resolved zero-percent tag'
+Assert-Equal @($candidateService.spec.template.spec.containers[0].env | Where-Object { $_.name -ceq 'GameWallet__SigningKey' }).Count 1 'candidate retains unrelated secret references'
+Assert-SharedBackendCandidateService -Service $candidateService -Expected $candidateService -SourceSha $head -Image $replacementImage -ServingRevision 'api-old' -Packages $sharedExpected
+$dryService = $candidateService | ConvertTo-Json -Depth 60 | ConvertFrom-Json
+$dryService.spec.template.spec.containers[0].env = @($dryService.spec.template.spec.containers[0].env | Sort-Object name -Descending)
+$dryService.spec.traffic[0].PSObject.Properties.Remove('latestRevision')
+$dryService.spec.traffic[1].PSObject.Properties.Remove('latestRevision')
+$dryService.spec.traffic[1].PSObject.Properties.Remove('percent')
+Assert-SharedBackendCandidateService -Service $dryService -Expected $candidateService -SourceSha $head -Image $replacementImage -ServingRevision 'api-old' -Packages $sharedExpected
+$dryService.spec.template.spec.serviceAccountName = 'changed-account'
+Assert-Throws { Assert-SharedBackendCandidateService -Service $dryService -Expected $candidateService -SourceSha $head -Image $replacementImage -ServingRevision 'api-old' -Packages $sharedExpected } 'server-side validation cannot change protected runtime identity'
+$existingService.metadata.resourceVersion = ''
+Assert-Throws { ConvertTo-SharedBackendCandidateService -Service $existingService -ServiceName 'api' -ServingRevision 'api-old' -SourceSha $head -Image $replacementImage -Packages $sharedExpected } 'candidate requires an exact service resource version'
+$existingService.metadata.resourceVersion = 'version-123'
+$replacementContext = $null
+$replacementRecord = Join-Path $runtimeFixtureDirectory ('api-replace-test-' + [guid]::NewGuid().ToString('N'))
+try {
+    $replacementContext = New-ApiServiceReplaceContext -Service $existingService -ServiceName 'api' -ServingRevision 'api-old' -SourceSha $head -Image $replacementImage -Packages $sharedExpected -RecordPath $replacementRecord
+    Assert-Throws { [IO.File]::WriteAllText($replacementContext.Path, '{}') } 'reviewed service payload denies concurrent edits'
+    & {
+        # Local fakes exercise both HTTP request modes without credentials or a network.
+        $fakeRequests = [pscustomobject]@{ Calls = [System.Collections.Generic.List[object]]::new(); Fail = $false }
+        function Assert-ReleaseCheckout { param($Repository, $Sha) }
+        function gcloud.cmd { $global:LASTEXITCODE = 0; 'synthetic-access-token' }
+        function Invoke-RestMethod {
+            param($Uri, $Method, $ContentType, $Headers, $Body, $TimeoutSec, $ErrorAction)
+            $buffer = [IO.MemoryStream]::new([byte[]]$Body, $false)
+            try { $requestHash = Get-DeploymentInputHash $buffer } finally { $buffer.Dispose() }
+            $fakeRequests.Calls.Add([pscustomobject]@{ Uri = $Uri; Method = $Method; Hash = $requestHash; Authenticated = $Headers.ContainsKey('Authorization') })
+            if ($fakeRequests.Fail) { throw 'provider diagnostic must not escape' }
+            return $candidateService
+        }
+        $endpoint = 'https://us-east4-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/project/services/api'
+        $null = Invoke-ApiServiceReplaceRequest -Context $replacementContext -Endpoint $endpoint -Account 'synthetic-account' -DryRun
+        $null = Invoke-ApiServiceReplaceRequest -Context $replacementContext -Endpoint $endpoint -Account 'synthetic-account'
+        Assert-Equal $fakeRequests.Calls.Count 2 'one dry run and one exact mutation request'
+        Assert-Equal $fakeRequests.Calls[0].Uri ($endpoint + '?dryRun=all') 'candidate validates server-side without persistence first'
+        Assert-Equal $fakeRequests.Calls[1].Uri $endpoint 'candidate mutation uses regional v1 endpoint'
+        Assert-Equal $fakeRequests.Calls[0].Hash $replacementContext.Sha256 'dry run uses locked exact payload bytes'
+        Assert-Equal $fakeRequests.Calls[1].Hash $replacementContext.Sha256 'mutation uses identical reviewed payload bytes'
+        Assert-Equal $fakeRequests.Calls[1].Authenticated $true 'candidate request uses captured authorization'
+        $fakeRequests.Fail = $true
+        $failedRequest = $false
+        try { $null = Invoke-ApiServiceReplaceRequest -Context $replacementContext -Endpoint $endpoint -Account 'synthetic-account' }
+        catch {
+            $failedRequest = $true
+            Assert-Equal $_.Exception.Message.Contains('HTTP 0') $true 'HTTP failure returns only a sanitized status'
+            Assert-Equal $_.Exception.Message.Contains('provider diagnostic') $false 'HTTP failure exposes no provider header or token diagnostics'
+        }
+        Assert-Equal $failedRequest $true 'failed mutation aborts the release'
+        Assert-Equal $fakeRequests.Calls.Count 3 'failed mutation is never retried'
+    }
+}
+finally { if ($replacementContext) { $replacementContext.Stream.Dispose(); Remove-Item -LiteralPath $replacementContext.Path -Force } }
+Assert-Equal $deploySource.Contains('metadata.resourceVersion -cne $apiServiceReplaceContext.ResourceVersion') $true 'resource version rechecked immediately before mutation'
+Assert-Equal $deploySource.Contains('Wait-SharedBackendCandidateReady -ServingRevision') $true 'direct replacement waits for the exact candidate while old traffic stays pinned'
 foreach ($source in @($deploySource, $verifySource)) {
     Assert-Equal $source.Contains('[switch]$LivePlaytest') $true 'both release entry points expose explicit live-playtest mode'
     Assert-Equal $source.Contains('-LivePlaytest:$LivePlaytest') $true 'both release entry points independently bind playtest policy'

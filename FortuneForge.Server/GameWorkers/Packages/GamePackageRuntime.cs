@@ -66,7 +66,7 @@ internal sealed class GamePackageRuntime : IHostedLifecycleService, IGamePackage
                     var server = new InProcessGameServer();
                     app = module.Create(new WebApplicationOptions
                     {
-                        ApplicationName = assembly.FullName,
+                        ApplicationName = assembly.GetName().Name,
                         ContentRootPath = root,
                         EnvironmentName = environment.EnvironmentName,
                         Args = []
@@ -76,7 +76,7 @@ internal sealed class GamePackageRuntime : IHostedLifecycleService, IGamePackage
                         // secrets and other games' keys never enter the child provider.
                         builder.Configuration.Sources.Clear();
                         var childSettings = CreatePackageSettings(package.RuntimeGameId);
-                        childSettings[HostDefaults.ApplicationKey] = assembly.FullName;
+                        childSettings[HostDefaults.ApplicationKey] = assembly.GetName().Name;
                         childSettings[HostDefaults.EnvironmentKey] = environment.EnvironmentName;
                         childSettings[HostDefaults.ContentRootKey] = root;
                         builder.Configuration.AddInMemoryCollection(childSettings);
@@ -130,6 +130,9 @@ internal sealed class GamePackageRuntime : IHostedLifecycleService, IGamePackage
         result["GameWorker:Mode"] = "hosted";
         result["GameWorker:SigningKey"] = settings[$"GameWorkers:{gameId}:SigningKey"];
         result["GameSecurityRequests:Enabled"] = configuration["GameSecurityRequests:Enabled"] ?? "true";
+        result["Logging:LogLevel:Default"] = configuration["Logging:LogLevel:Default"] ?? "Information";
+        result["Logging:LogLevel:Microsoft.AspNetCore"] = configuration["Logging:LogLevel:Microsoft.AspNetCore"] ?? "Warning";
+        result["Logging:LogLevel:Microsoft.Hosting.Lifetime"] = "Warning";
         result["GameWallet:Url"] = "https://platform.game-packages.internal";
         result["GameWallet:SigningKey"] = settings[$"GameWallet:Games:{gameId}:SigningKey"];
         result["GameWallet:BatchSigningKey"] = settings[$"GameWallet:Games:{gameId}:BatchSigningKey"];

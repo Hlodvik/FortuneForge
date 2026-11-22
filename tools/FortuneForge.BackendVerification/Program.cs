@@ -65,7 +65,7 @@ internal static class BackendVerification
         var projectId = "demo-shared-backend-" + Guid.NewGuid().ToString("N");
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
-            ApplicationName = typeof(FortuneForgeStartup).Assembly.FullName,
+            ApplicationName = typeof(FortuneForgeStartup).Assembly.GetName().Name,
             EnvironmentName = Environments.Development,
             ContentRootPath = AppContext.BaseDirectory,
             Args = []
@@ -82,6 +82,8 @@ internal static class BackendVerification
             ["GamePackages:AllowDevelopmentEmulator"] = "true",
             ["GameSecurityRequests:Enabled"] = "true",
             ["LocalDevelopment:DefaultAccount:Enabled"] = "false",
+            ["FirebaseAuthentication:WebApiKey"] = "emulator-only-unused-verification-key",
+            ["FirebaseAuthentication:VerificationContinueUrl"] = "http://127.0.0.1/unused-email-verification",
             ["Payments:Provider"] = "mock",
             ["Payments:MockSimulationEnabled"] = "false",
             ["Features:AndarBaharEnabled"] = "true",
@@ -182,7 +184,8 @@ internal static class BackendVerification
             Require(unsigned.StatusCode == HttpStatusCode.Forbidden, "A browser cookie cannot authenticate an unsigned child request.");
         using (var anonymous = Message(HttpMethod.Get, $"/api/games/{game.GameId}/status", null))
         using (var unauthenticated = await browser.SendAsync(anonymous, token))
-            Require(unauthenticated.StatusCode == HttpStatusCode.Unauthorized, "The full root pipeline must reject an unauthenticated game request.");
+            Require(unauthenticated.StatusCode == HttpStatusCode.Unauthorized,
+                $"The full root pipeline returned {(int)unauthenticated.StatusCode} for an unauthenticated game request, expected 401.");
         using (var wrongAccount = await SendAsync(browser, HttpMethod.Post, path, session, game.Body, operation, OtherPlayer, token))
             Require(wrongAccount.StatusCode == HttpStatusCode.Forbidden, "An expected-account mismatch must fail before the child can wager.");
         SameDocuments(beforeReceipts, (await database.Collection("walletRoundSettlements").GetSnapshotAsync(token)).Documents,

@@ -24,12 +24,13 @@ for (const item of index.games) {
   const isArcane = contract.gameId === 'arcane-archives-v1'
   const isGoldFoundry = contract.gameId === 'gold-foundry-v1'
   const isNeonNights = contract.gameId === 'neon-nights-v1'
-  if (!isArcane && !isGoldFoundry && !isNeonNights && !['dragon-hoard-v1', 'rainbow-realm-fruits-v1'].includes(contract.gameId)) {
+  const isFifthSun = contract.gameId === 'robot-revolution-v1'
+  if (!isArcane && !isGoldFoundry && !isNeonNights && !isFifthSun && !['dragon-hoard-v1', 'rainbow-realm-fruits-v1'].includes(contract.gameId)) {
     if (basePaytable && JSON.stringify(basePaytable) !== JSON.stringify(contract.paytable)) throw new Error('Per-game paytable needs explicit guide support')
     basePaytable = contract.paytable
   }
   const nativeWildMatchLengths = isGoldFoundry ? '[3,4,5]' : isArcane || isNeonNights ? '[]' : '[3,5]'
-  const substitutionMatchLengths = isArcane ? '[]' : isNeonNights ? '[3,5]' : '[5]'
+  const substitutionMatchLengths = isArcane ? '[]' : isNeonNights || isFifthSun ? '[3,5]' : '[5]'
   if (JSON.stringify(contract.symbols.nativeWildMatchLengths) !== nativeWildMatchLengths ||
       JSON.stringify(contract.symbols.wildSubstitutionMatchLengths) !== substitutionMatchLengths) throw new Error(`Wild-match rules need guide support: ${contract.gameId}`)
   if (contract.gameId !== 'rainbow-realm-fruits-v1' && contract.math.paylinePayoutSteps.some(step => step !== 0)) throw new Error('Non-uniform payline prices need guide support')
@@ -45,7 +46,7 @@ for (const item of index.games) {
     collectionTarget: p.collectionTarget, collectionAwardedSpins: p.collectionAwardedSpins,
     usesCollections: p.usesCollections, usesEnergy: p.usesEnergy, usesDirectValueTokens: p.usesDirectValueTokens,
     scatterFeatureMode: p.scatterFeatureMode, collectionFeatureMode: p.collectionFeatureMode,
-    ...(isArcane && { paylinePayouts: createPaylinePayoutMap(contract.paytable) }),
+    ...((isArcane || isFifthSun) && { paylinePayouts: createPaylinePayoutMap(contract.paytable) }),
   })
 }
 if (games.length !== 19) throw new Error('The engine export must contain all nineteen playable slots')

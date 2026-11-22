@@ -17,7 +17,7 @@ import {
   type SpinAnimation,
   type ReelMotionState,
 } from './animation/slotAnimation'
-import type { SlotPotionState, SlotTomeState } from '@fortuneforge/slot-game-runtime/experience'
+import type { SlotPaidModeState, SlotPotionState, SlotTomeState } from '@fortuneforge/slot-game-runtime/experience'
 import type { SlotExperienceSet } from './config/slotExperienceSets'
 import type { SlotEnergyAward } from './config/slotFeatures'
 import type { SlotPotionSoundEvent } from '@fortuneforge/slot-client-core'
@@ -285,6 +285,13 @@ export function useSlotsPageController({
   )
   const [lastSpinOutcome, setLastSpinOutcome] = useState<SlotSpinOutcome | null>(null)
   const [lastSpinFeature, setLastSpinFeature] = useState<unknown | null>(null)
+  const [paidMode, setPaidMode] = useState<SlotPaidModeState | null>(null)
+  const [isSpinFeaturePresenting, setIsSpinFeaturePresenting] = useState(false)
+  const spinFeaturePresentingRef = useRef(false)
+  const setSpinFeaturePresenting = useCallback((busy: boolean) => {
+    spinFeaturePresentingRef.current = busy
+    setIsSpinFeaturePresenting(busy)
+  }, [])
   const [resultAtmosphereId, setResultAtmosphereId] = useState(0)
   const [lastEnergyAwarded, setLastEnergyAwarded] = useState(0)
   const [lastEnergyMultiplierApplied, setLastEnergyMultiplierApplied] = useState(false)
@@ -356,7 +363,7 @@ export function useSlotsPageController({
   const lockedPotionWagerPoints = potions?.active
     ? potions.active.bottle.lockedWagerPoints ?? wagerOptions[0] ?? null
     : null
-  const paidWagerPoints = lockedPotionWagerPoints ?? selectedWagerPoints
+  const paidWagerPoints = paidMode?.wagerPoints ?? lockedPotionWagerPoints ?? selectedWagerPoints
   const paidWagerRand = slotPointsToRand(paidWagerPoints, pointValueInCents)
   const expectedServerSymbolSetId = symbolSet.serverSymbolSetId ?? symbolSet.id
   const useFreeGameForNextSpin = freeSpinsRemaining > 0
@@ -461,6 +468,7 @@ export function useSlotsPageController({
       isSpinServiceDisabled ||
       isTomeActivationRequired ||
       isSpinning ||
+      isSpinFeaturePresenting ||
       isAutoSpinCoolingDown ||
       mascotPhase !== 'idle' ||
       isHelpOpen ||
@@ -499,6 +507,7 @@ export function useSlotsPageController({
     isReloadPromptOpen,
     isSettingsOpen,
     isSpinning,
+    isSpinFeaturePresenting,
     mascotPhase,
     isSpecialGameActive,
   ])
@@ -685,6 +694,7 @@ export function useSlotsPageController({
   const applySlotState = useCallback((state: SlotState) => {
     applyTomeState(state.arcaneTome ?? null)
     setPotions(state.arcanePotions ?? null)
+    setPaidMode(state.paidMode ?? null)
     const award = energyCompletionAward?.decode(state)
     if (award === null) return
 
@@ -695,9 +705,10 @@ export function useSlotsPageController({
     if (state.slotsCreditsBalance != null) setBalance(state.slotsCreditsBalance)
     if (award) setEnergyAward(award)
     setSealCollections(state.sealCollections.length > 0 ? state.sealCollections : defaultSealCollections)
-    if (state.freeSpinWagerPoints !== null && !state.arcanePotions?.active) {
+    const restoredWager = state.paidMode?.wagerPoints ?? state.freeSpinWagerPoints
+    if (restoredWager !== null && !state.arcanePotions?.active) {
       const matchingWagerIndex = wagerOptions.findIndex(
-        (wager) => wager === state.freeSpinWagerPoints,
+        (wager) => wager === restoredWager,
       )
       if (matchingWagerIndex >= 0) {
         setWagerIndex(matchingWagerIndex)
@@ -713,6 +724,8 @@ export function useSlotsPageController({
     setFreeSpinWagerPoints(null)
     setFreeSpinFeatureMode(null)
     setHasSpecialRoundStarted(false)
+    setPaidMode(null)
+    setSpinFeaturePresenting(false)
     setIsFreeSpinBadgePopping(false)
     setEnergyBalance(0)
     setIsEnergyAwardCompleting(false)
@@ -1478,9 +1491,11 @@ export function useSlotsPageController({
   useEffect(() => {
     const handleKeyboardControl = (event: KeyboardEvent) => {
       const target = event.target instanceof Element ? event.target : null
-      const isEditableTarget = Boolean(target?.closest(
-        'a, button, input, select, textarea, summary, [contenteditable="true"], [role="button"], [role="slider"]',
-      ))
+      const retainsCabinetShortcuts = Boolean(target?.closest('button[data-slot-keyboard-controls="cabinet"]'))
+      const isEditableTarget = Boolean(
+        target?.closest('input, select, textarea, [contenteditable="true"], [role="textbox"], [role="slider"]') ||
+        (!retainsCabinetShortcuts && target?.closest('a, button, summary, [role="button"]')),
+      )
       const action = getSlotKeyboardAction(event.key, {
         hasOpenDialog: isHelpOpen || isSymbolGuideOpen || isSettingsOpen || isReloadPromptOpen ||
           rainbowBonusSummary !== null,
@@ -1543,7 +1558,7 @@ export function useSlotsPageController({
   }
 
   async function handleSpin(playedPressCue?: SlotSoundCueId) {
-    if (arcaneCommandPending.current) return
+    if (arcaneCommandPending.current || spinFeaturePresentingRef.current) return
     if (isHelpOpen || isSymbolGuideOpen || isSettingsOpen || isReloadPromptOpen ||
         spinInProgressRef.current || isSpinning || collectionAwardPresentation !== null || rainbowBonusSummaryPendingRef.current) {
       return
@@ -1723,6 +1738,7 @@ export function useSlotsPageController({
             wagerPoints: wagerForSpin,
             useFreeSpin: expectedFreeSpin,
             freeSpinsRemaining,
+            paidMode,
             freeSpinWagerPoints,
             energyBalance,
             sealCollections,
@@ -1750,7 +1766,9 @@ export function useSlotsPageController({
       if (!recoveryMatchesLayout && result.reels.some((reel) => reel.length !== expectedRowCount)) {
         throw new Error(`Expected ${expectedRowCount} visible rows per reel but received an invalid slot grid.`)
       }
-      if (result.symbolSetId !== expectedServerSymbolSetId) {
+      const isHistoricalSymbolSet = (Boolean(savedPaidSpin) || (expectedFreeSpin && result.isFreeSpin)) &&
+        symbolSet.compatibleServerSymbolSetIds?.includes(result.symbolSetId) === true
+      if (result.symbolSetId !== expectedServerSymbolSetId && !isHistoricalSymbolSet) {
         throw new Error(
           `The spin used symbol set '${result.symbolSetId}' instead of '${expectedServerSymbolSetId}'.`,
         )
@@ -1873,6 +1891,7 @@ export function useSlotsPageController({
       setBonusPositions(triggeredBonusPositions)
       setLastSpinOutcome(spinOutcome)
       setLastSpinFeature(result.spinFeature ?? null)
+      setPaidMode(result.paidMode ?? null)
       setResultAtmosphereId((current) => current + 1)
       const spinWinnings = awardedRand
       setLastWin(spinWinnings)
@@ -2047,13 +2066,14 @@ export function useSlotsPageController({
           (error.code === 'free-spins-required' || error.code === 'free-spin-wager-locked' ||
             error.code === 'arcane-tome-required' || error.code === 'slot-operation-conflict' ||
             error.code === 'legacy-slot-round-restored' ||
-            error.code === 'arcane-potion-wager-locked')) {
+            error.code === 'arcane-potion-wager-locked' || error.code === 'paid-mode-wager-locked')) {
         const state = await requestSlotState(gameId, account?.userId).catch(() => null)
         if (state && isCurrentPresentation(presentationSignal)) {
           applySlotState(state)
           if (((error.code === 'free-spins-required' || error.code === 'free-spin-wager-locked') && state.freeSpinsRemaining > 0) ||
             (error.code === 'arcane-tome-required' && state.arcaneTome?.grimoireReady) ||
-            (error.code === 'arcane-potion-wager-locked' && state.arcanePotions?.active)) {
+            (error.code === 'arcane-potion-wager-locked' && state.arcanePotions?.active) ||
+            (error.code === 'paid-mode-wager-locked' && state.paidMode)) {
             setSpinError(null)
           }
         }
@@ -2120,7 +2140,7 @@ export function useSlotsPageController({
   ].filter(Boolean).join(' ')
 
   function changeWager(direction: -1 | 1) {
-    if (lockedPotionWagerPoints !== null || arcaneCommandPending.current) return
+    if (paidMode || spinFeaturePresentingRef.current || lockedPotionWagerPoints !== null || arcaneCommandPending.current) return
     if (freeSpinsRemaining > 0) {
       setSpinError('Free spins are locked to the wager that won them.')
       return
@@ -2136,7 +2156,7 @@ export function useSlotsPageController({
   }
 
   function selectWager(nextIndex: number) {
-    if (lockedPotionWagerPoints !== null || arcaneCommandPending.current) return
+    if (paidMode || spinFeaturePresentingRef.current || lockedPotionWagerPoints !== null || arcaneCommandPending.current) return
     if (freeSpinsRemaining > 0) {
       setSpinError('Free spins are locked to the wager that won them.')
       return
@@ -2150,7 +2170,7 @@ export function useSlotsPageController({
   }
 
   function handleSpinButtonClick() {
-    if (rainbowBonusSummaryPendingRef.current) return
+    if (rainbowBonusSummaryPendingRef.current || spinFeaturePresentingRef.current) return
     if (isHelpOpen || isSymbolGuideOpen || isSettingsOpen || isReloadPromptOpen) return
     if (spinInProgressRef.current || isSpinning) {
       if (!stopSpinRequestedRef.current && soundSet.events.stopButtonClick) {
@@ -2281,6 +2301,9 @@ export function useSlotsPageController({
     lastWin,
     lastSpinOutcome,
     lastSpinFeature,
+    paidMode,
+    isSpinFeaturePresenting,
+    setSpinFeaturePresenting,
     lightningCollection,
     tomeState,
     potions,
@@ -2309,6 +2332,7 @@ export function useSlotsPageController({
     selectedWager: paidWagerRand,
     preferredWager: selectedWagerRand,
     isPotionWagerLocked: lockedPotionWagerPoints !== null,
+    isPaidModeWagerLocked: paidMode !== null,
     sealFlyover,
     sealImpactId,
     heldCompletedCollectionId,

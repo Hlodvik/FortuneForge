@@ -12,7 +12,7 @@ import phantomManorTitle from '../../assets/catalogue/slots/phantom-manor-title-
 import piratesFortuneTitle from '../../assets/catalogue/slots/pirates-fortune-title-v2.webp'
 import rainbowRealmTitle from '../../assets/catalogue/slots/rainbow-realm-title-v2.webp'
 import reelRichesTitle from '../../assets/catalogue/slots/reel-riches-title-v2.webp'
-import sunstoneEclipseTitle from '../../assets/catalogue/slots/sunstone-eclipse-title-v1.webp'
+import fifthSunTitle from '../../assets/catalogue/slots/fifth-sun-title-v2.webp'
 import royalDrawTitle from '../../assets/catalogue/slots/royal-draw-title-v2.webp'
 import samuraiFortuneTitle from '../../assets/catalogue/slots/samurai-fortune-title-v1.webp'
 import wukongTitle from '../../assets/catalogue/slots/wukong-journey-to-the-west-title-v2.webp'
@@ -69,8 +69,8 @@ const catalogDefinitions: readonly SlotGameCatalogDefinition[] = [
     'Sail beneath the aurora toward rune-carved peaks, thunder gods, and a warrior’s hoard.', nordicLegendsTitle),
   hostCatalog('desert-treasures', 'Desert Treasures', 'Desert Treasures',
     'Follow the desert stars past ancient scarabs, hidden oases, and a sealed pharaoh’s vault.', desertTreasuresTitle),
-  hostCatalog('robot-revolution', 'Sunstone Eclipse', 'Sunstone Eclipse',
-    'Turn the Sunwheel, align three guardian paths, and awaken the eclipse at the heart of a golden temple.', sunstoneEclipseTitle),
+  hostCatalog('robot-revolution', 'Fifth Sun', 'Fifth Sun',
+    'Turn the Sunwheel, awaken three stone guardians, and reveal the hidden sun.', fifthSunTitle),
   MIDNIGHT_VAULT_CATALOG,
 ]
 

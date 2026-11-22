@@ -30,7 +30,7 @@ internal static class RobotRevolutionRoundPolicy
     {
         try
         {
-            var (mode, wagerCents, spendsLegacy) = Terms(round.Request, round.Before);
+            var (mode, wagerCents, spendsLegacy) = Terms(round.Request, round.Before, round.Outcome.Audit.EngineVersion);
             var progress = Advance(round.Before, round.Outcome, spendsLegacy);
             ValidateRound(round, mode, wagerCents, spendsLegacy, progress);
         }
@@ -61,32 +61,49 @@ internal static class RobotRevolutionRoundPolicy
         RobotRevolutionSpinEvidence.Validate(round.Engine, round.AccountId);
     }
 
-    private static (string? Mode, long WagerCents, bool SpendsLegacy) Terms(RobotRevolutionRoundRequest request, ClassicSlotRoundState before)
+    private static (string? Mode, long WagerCents, bool SpendsLegacy) Terms(RobotRevolutionRoundRequest request, ClassicSlotRoundState before, string? recordedVersion = null)
     {
         var carry = before.Carry;
+        var paid = FifthSunPaidModeState.Read(before);
+        if (paid is not null && request.UseFreeSpin) throw new RobotRevolutionFreeSpinsUnavailableException();
+        if (paid is not null && request.WagerPoints != paid.WagerPoints) throw new FifthSunPaidModeWagerLockedException(paid.WagerPoints);
+        if (paid is not null && request.UseSpecialBoost) throw new ArgumentException("Special boosts cannot be combined with an Eclipse round.", nameof(request));
         if (request.UseFreeSpin && carry is null) throw new RobotRevolutionFreeSpinsUnavailableException();
         if (!request.UseFreeSpin && carry is not null) throw new RobotRevolutionFreeSpinsRequiredException();
-        if (carry?.WagerPoints is { } saved && saved < RobotRevolutionEngine.MinimumWagerPoints)
+        if (carry?.WagerPoints is { } saved && saved < RobotRevolutionEngine.MinimumHistoricalWagerPoints)
             throw new RobotRevolutionLegacyFreeWagerUnplayableException(saved);
         if (carry?.WagerPoints is { } locked && request.WagerPoints != locked)
             throw new RobotRevolutionFreeWagerLockedException(locked);
 
-        RobotRevolutionEngine.ValidateWager(request.WagerPoints, isFreeSpin: carry?.WagerPoints is not null);
+        if (recordedVersion is null)
+            RobotRevolutionEngine.ValidateWager(request.WagerPoints, isFreeSpin: carry?.WagerPoints is not null);
+        else
+            RobotRevolutionEngine.ValidateRecordedWager(request.WagerPoints, carry?.WagerPoints is not null, recordedVersion);
         if (request.UseSpecialBoost && before.SpecialPoints < BoostCost)
             throw new RobotRevolutionInsufficientSpecialPointsException(before.SpecialPoints, BoostCost);
 
         var wagerCents = request.UseFreeSpin ? 0 : ToCents(request.WagerPoints, RobotRevolutionEngine.WagerPointValueInCents);
-        return (carry?.Mode, wagerCents, SpendsLegacy(before, request.UseFreeSpin));
+        return (paid?.Mode ?? carry?.Mode, wagerCents, SpendsLegacy(before, request.UseFreeSpin));
     }
 
     internal static bool SpendsLegacy(ClassicSlotRoundState before, bool freeSpin) =>
         ClassicSlotRoundProgression.SpendsLegacy(before, freeSpin);
 
-    internal static RobotRevolutionRoundProgress Advance(ClassicSlotRoundState before, ClassicSlotSpinOutcome outcome, bool spendsLegacy) =>
-        new(ClassicSlotRoundProgression.AdvanceScatterOnly(before, outcome,
-            outcome.Audit.EngineVersion == RobotRevolutionEngine.LegacyEngineVersion
-                ? RobotRevolutionEngine.LegacyProfile : RobotRevolutionEngine.Profile,
-            BoostCost, spendsLegacy));
+    internal static RobotRevolutionRoundProgress Advance(ClassicSlotRoundState before, ClassicSlotSpinOutcome outcome, bool spendsLegacy)
+    {
+        var after = ClassicSlotRoundProgression.AdvanceScatterOnly(before, outcome,
+            RobotRevolutionEngine.ProfileForVersion(outcome.Audit.EngineVersion),
+            BoostCost, spendsLegacy);
+        if (outcome.Audit.EngineVersion != RobotRevolutionEngine.EngineVersion) return new(after);
+        var paid = FifthSunPaidModeState.Read(before);
+        FifthSunPaidMode? next;
+        if (paid is not null)
+            next = paid.Remaining == 1 ? null : paid with { Remaining = paid.Remaining - 1 };
+        else
+            next = FifthSunTotalityDefinitions.TriggerMode(outcome.Reels) is { } mode
+                ? new(mode, FifthSunTotalityDefinitions.EclipseRounds, outcome.WagerPoints) : null;
+        return new(after with { NativeStateJson = FifthSunPaidModeState.Write(next) });
+    }
 
     internal static string OutcomeDigest(ClassicSlotSpinOutcome outcome) =>
         GameSecurityEventDocuments.Hash(JsonSerializer.Serialize(outcome, RoundAuditCapture.Json));

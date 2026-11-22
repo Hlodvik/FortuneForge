@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Serialization;
 using FortuneForge.Games.Slots;
 using FortuneForge.Games.Slots.Runtime;
 using Google.Cloud.Firestore;
@@ -11,9 +12,12 @@ public sealed record ClassicSlotRoundState(int NativeRemaining, int LegacyRemain
     int SpecialPoints, long Energy, int Pity, IReadOnlyDictionary<string, long> SealCounts,
     IReadOnlyDictionary<string, long> SealWagerPoints)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? NativeStateJson { get; init; }
+
     public bool Matches(ClassicSlotRoundState other) =>
         NativeRemaining == other.NativeRemaining && LegacyRemaining == other.LegacyRemaining && Carry == other.Carry &&
-        SpecialPoints == other.SpecialPoints && Energy == other.Energy && Pity == other.Pity &&
+        SpecialPoints == other.SpecialPoints && Energy == other.Energy && Pity == other.Pity && NativeStateJson == other.NativeStateJson &&
         Matches(SealCounts, other.SealCounts) && Matches(SealWagerPoints, other.SealWagerPoints);
 
     private static bool Matches(IReadOnlyDictionary<string, long> left, IReadOnlyDictionary<string, long> right) =>
@@ -22,8 +26,13 @@ public sealed record ClassicSlotRoundState(int NativeRemaining, int LegacyRemain
 
 /// <summary>Persists a classic slot's single merged carry and imports only the game's scoped historical counters.</summary>
 public sealed class ClassicSlotRoundStateCodec(string storageGameId, string ownerField, string owner, string stateField,
-    string gameName, bool usesEnergy, decimal pointValueInCents, Action<long> validateCarryWager)
+    string gameName, bool usesEnergy, decimal pointValueInCents, Action<long> validateCarryWager,
+    Action<string>? validateNativeState = null)
 {
+    public ClassicSlotRoundStateCodec(string storageGameId, string ownerField, string owner, string stateField,
+        string gameName, bool usesEnergy, decimal pointValueInCents, Action<long> validateCarryWager)
+        : this(storageGameId, ownerField, owner, stateField, gameName, usesEnergy, pointValueInCents, validateCarryWager, null) { }
+
     private const long SchemaVersion = 1;
     private const long CentsPerHistoricalPoint = 100;
     private readonly string legacySpecialPointsCurrency = $"specialPoints:{storageGameId}";
@@ -77,7 +86,8 @@ public sealed class ClassicSlotRoundStateCodec(string storageGameId, string owne
         var carry = ReadCarry(nativeRemaining, legacyRemaining, lockedWager > 0 ? lockedWager : null, Text(state, "mode"));
         return new(nativeRemaining, legacyRemaining, carry, checked((int)Counter(state, "specialPoints", required: true)),
             usesEnergy ? Counter(state, "energy", required: true) : 0, checked((int)Counter(state, "pity", required: true)),
-            ReadTracks(state, "sealCounts", required: true), ReadTracks(state, "sealWagerPoints", required: true));
+            ReadTracks(state, "sealCounts", required: true), ReadTracks(state, "sealWagerPoints", required: true))
+        { NativeStateJson = ReadNativeState(state) };
     }
 
     public Dictionary<string, object> Write(ClassicSlotRoundState state)
@@ -100,6 +110,12 @@ public sealed class ClassicSlotRoundStateCodec(string storageGameId, string owne
             ["sealWagerPoints"] = WriteTracks(state.SealWagerPoints),
         };
         if (usesEnergy) stored["energy"] = state.Energy;
+        if (state.NativeStateJson is { } native)
+        {
+            if (validateNativeState is null) throw InvalidState();
+            validateNativeState(native);
+            stored["nativeStateJson"] = native;
+        }
         return new() { [ownerField] = owner, [stateField] = stored };
     }
 
@@ -107,6 +123,14 @@ public sealed class ClassicSlotRoundStateCodec(string storageGameId, string owne
     {
         changes[ownerField] = FieldValue.Delete;
         changes[stateField] = FieldValue.Delete;
+    }
+
+    private string? ReadNativeState(IReadOnlyDictionary<string, object> state)
+    {
+        if (!state.TryGetValue("nativeStateJson", out var value)) return null;
+        if (value is not string native || string.IsNullOrWhiteSpace(native) || validateNativeState is null) throw InvalidState();
+        validateNativeState(native);
+        return native;
     }
 
     private ClassicSlotRoundState ReadHistorical(IReadOnlyDictionary<string, object> guard, int legacyRemaining,

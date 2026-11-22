@@ -1,2 +1,2 @@
 export const productionGameReleaseBaseUrl = 'https://storage.googleapis.com/fortuneforgegame-game-releases/'
-export const productionGameReleaseId = 'neon-nights'
+export const productionGameReleaseIds: readonly string[] = ['neon-nights', 'robot-revolution']

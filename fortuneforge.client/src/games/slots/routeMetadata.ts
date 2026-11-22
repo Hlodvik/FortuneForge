@@ -81,7 +81,7 @@ export const SLOT_ROUTE_METADATA = [
     playPath: '/slots/desert-treasures', demoPath: '/slots/desert-treasures/demo', serverGameIds: ['desert-treasures-v1'], shellBackdrop: 'theme',
   },
   {
-    id: 'robot-revolution', title: 'Sunstone Eclipse', shortTitle: 'Sunstone Eclipse',
+    id: 'robot-revolution', title: 'Fifth Sun', shortTitle: 'Fifth Sun',
     playPath: '/slots/sunstone-eclipse', demoPath: '/slots/sunstone-eclipse/demo', serverGameIds: ['robot-revolution-v1'], shellBackdrop: 'theme',
     legacyPaths: { '/slots/robot-revolution': '/slots/sunstone-eclipse', '/slots/robot-revolution/demo': '/slots/sunstone-eclipse/demo' },
   },

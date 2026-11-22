@@ -2,7 +2,7 @@
 // Edited: 2026-11-18T18:00:18-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T14:52:25-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T16:30:40-06:00 | Computer: Vinnabok
-import type { SlotPotionState, SlotTomeState } from '@fortuneforge/slot-game-runtime/experience'
+import type { SlotPaidModeState, SlotPotionState, SlotTomeState } from '@fortuneforge/slot-game-runtime/experience'
 import type { SlotSymbolId as SharedSlotSymbolId } from '@fortuneforge/slot-client-core'
 import type { GodsTumbleResult } from '@fortuneforge/games-gods-of-olympus/tumble'
 export type { GodsTumbleAward, GodsTumbleStep, GodsTumbleResult } from '@fortuneforge/games-gods-of-olympus/tumble'
@@ -89,6 +89,7 @@ export type SlotSealCollection = {
 }
 
 export type SpinResult = {
+  paidMode?: SlotPaidModeState | null
   /** Optional, versioned result contract owned and validated by the selected game. */
   spinFeature?: unknown
   olympusTumble?: GodsTumbleResult

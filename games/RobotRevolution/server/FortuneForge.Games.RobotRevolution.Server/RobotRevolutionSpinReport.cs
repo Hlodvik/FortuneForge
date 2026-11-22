@@ -36,7 +36,7 @@ public static class RobotRevolutionSpinReport
             checked(wallet.BalanceAfterCents - wallet.BalanceAfterWagerCents) != round.PayoutCents ||
             round.PayoutCents != RobotRevolutionRoundPolicy.ToCents(outcome.Payout.TotalPoints, outcome.PointValueInCents) ||
             round.OutcomeSha256 != RobotRevolutionRoundPolicy.OutcomeDigest(outcome) || completedAtUtc < audit.GeneratedAtUtc)
-            throw new InvalidOperationException("The Sunstone Eclipse report does not match its settled wallet receipt.");
+            throw new InvalidOperationException("The Fifth Sun report does not match its settled wallet receipt.");
 
         var rulesSha256 = GameSecurityEventDocuments.Hash(JsonSerializer.Serialize(new
         {
@@ -124,7 +124,7 @@ public static class RobotRevolutionSpinReport
         {
             SlotsCreditsBalance = balanceCents / 100m, features.FreeSpinsRemaining, features.SpecialPointsBalance,
             EnergyBalance = 0L, round.Outcome.Payout, EnergyMultiplierApplied = false, PayoutMultiplier = 1m,
-            features.FreeSpinWagerPoints, features.SealCollections, features.FreeSpinFeatureMode,
+            features.FreeSpinWagerPoints, features.SealCollections, features.FreeSpinFeatureMode, features.PaidMode,
             RobotRevolutionSpinResponse.Capture(round).SpinFeature,
             SealFreeSpinsAwarded = 0, BonusRound = (object?)null,
             QueuedBonusRounds = Array.Empty<object>(), AwardedBonusRounds = Array.Empty<object>(), NeonDiscoSpinsRemaining = 0

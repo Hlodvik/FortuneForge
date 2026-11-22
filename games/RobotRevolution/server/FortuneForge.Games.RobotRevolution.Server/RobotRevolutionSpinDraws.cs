@@ -23,6 +23,6 @@ public static partial class RobotRevolutionSpinEvidence
             new RobotRevolutionEngine(replay, audit.EngineVersion).Spin(outcome.WagerPoints, accountId, outcome.SpecialBoostApplied,
                 audit.EnergyBalanceBefore, audit.FeatureMode, audit.PityMissesBefore, outcome.IsFreeSpin));
         if (RobotRevolutionRoundPolicy.OutcomeDigest(reproduced) != RobotRevolutionRoundPolicy.OutcomeDigest(outcome))
-            throw new InvalidOperationException("Sunstone Eclipse’s recorded draws do not reproduce its prepared outcome.");
+            throw new InvalidOperationException("Fifth Sun’s recorded draws do not reproduce its prepared outcome.");
     }
 }

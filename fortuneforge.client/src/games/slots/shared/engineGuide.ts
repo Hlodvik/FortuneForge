@@ -6,7 +6,7 @@ export {
   formatCalibratedMultiplier, getSlotEngineGuideContract, SLOT_ENGINE_GUIDE_CONTRACTS, type SlotEngineGuideContract,
 } from '@fortuneforge/slot-game-runtime/engine-guide'
 
-const gameOwnedGuides = new Set(['arcane-archives-v1', 'rainbow-realm-fruits-v1', 'dragon-hoard-v1', 'neon-nights-v1'])
+const gameOwnedGuides = new Set(['arcane-archives-v1', 'rainbow-realm-fruits-v1', 'dragon-hoard-v1', 'neon-nights-v1', 'robot-revolution-v1'])
 
 export function withEngineGuide(experience: SlotExperienceSet): SlotExperienceSet {
   const { gameId } = experience.rules

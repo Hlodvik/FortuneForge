@@ -1,9 +1,9 @@
 // Edited: 2026-11-18T18:41:52-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T14:45:02-06:00 | Computer: Vinnabok
 import { ResponsiveSlotImage } from './ResponsiveSlotImage'
-import { useCallback, useId, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useCallback, useId, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { getSlotSymbolDefinition, getSlotSymbolImageSrcSet, type SlotSymbolGuideEntry, type SlotSymbolSet } from '../config/symbolSets'
+import { getSlotSymbolArtworks, getSlotSymbolDefinition, getSlotSymbolImageSrcSet, type SlotSymbolGuideEntry, type SlotSymbolSet } from '../config/symbolSets'
 import { useSlotDialog, type SlotDialogTheme } from '../hooks/useSlotDialog'
 import { formatRand } from '../slotPagePresentation'
 import { SlotDialogCloseIcon } from './SlotDialogCloseIcon'
@@ -43,6 +43,8 @@ function SymbolValueGuideItem({ entry, symbolSet, wager, pointValueInCents }: {
   const { symbol, firstLabel, firstValue, secondLabel, secondValue, artworkValueLabel, compactInSidePanel,
     payoutScale, companionSymbol, details } = entry
   const definition = getSlotSymbolDefinition(symbolSet, symbol)
+  const artworks = getSlotSymbolArtworks(definition)
+  const multipleArtworks = artworks.length > 1
   const companion = companionSymbol ? getSlotSymbolDefinition(symbolSet, companionSymbol) : null
   const hasSecondValue = Boolean(secondLabel || secondValue)
   const firstIsAmount = wager !== undefined && readMultiplier(firstValue) !== undefined
@@ -56,7 +58,8 @@ function SymbolValueGuideItem({ entry, symbolSet, wager, pointValueInCents }: {
 
   return (
     <div
-      className={`symbol-value-guide__item symbol-value-guide__item--${symbol.toLowerCase()}${compactInSidePanel ? ' symbol-value-guide__item--compact' : ''}${hasSecondValue ? '' : ' symbol-value-guide__item--single-value'}`}
+      className={`symbol-value-guide__item symbol-value-guide__item--${symbol.toLowerCase()}${compactInSidePanel ? ' symbol-value-guide__item--compact' : ''}${hasSecondValue ? '' : ' symbol-value-guide__item--single-value'}${multipleArtworks ? ' symbol-value-guide__item--artwork-variants' : ''}`}
+      style={multipleArtworks ? { '--symbol-guide-artwork-count': artworks.length } as CSSProperties : undefined}
       title={details ? undefined : definition.label}
       data-details-above={!pinned && hoverPlacement === 'above' || undefined}
       onPointerEnter={details ? event => {
@@ -70,14 +73,17 @@ function SymbolValueGuideItem({ entry, symbolSet, wager, pointValueInCents }: {
       } : undefined}
       onPointerLeave={details ? () => setHoverPlacement(null) : undefined}
     >
-      <div className="symbol-value-guide__artwork" data-value-label={artworkValueLabel ?? definition.valueLabel}>
-        <ResponsiveSlotImage imageSrcSet={getSlotSymbolImageSrcSet(definition.responsiveImages)} src={definition.image} alt="" aria-hidden="true" />
+      <div className={`symbol-value-guide__artwork${multipleArtworks ? ' symbol-value-guide__artwork--variants' : ''}`} data-value-label={artworkValueLabel ?? definition.valueLabel}>
+        {artworks.map((artwork, index) => <ResponsiveSlotImage key={index}
+          imageSrcSet={getSlotSymbolImageSrcSet(artwork.responsiveImages)} src={artwork.image}
+          alt={multipleArtworks ? artwork.label ?? definition.label : ''} aria-hidden={multipleArtworks ? undefined : true} />)}
       </div>
       <span className="symbol-value-guide__name">{definition.label}</span>
       {companion ? (
         <span className="symbol-value-guide__match">
           <span aria-hidden="true">+</span>
-          <ResponsiveSlotImage imageSrcSet={getSlotSymbolImageSrcSet(companion.responsiveImages)} src={companion.image} alt={companion.label} />
+          {getSlotSymbolArtworks(companion).map((artwork, index) => <ResponsiveSlotImage key={index}
+            imageSrcSet={getSlotSymbolImageSrcSet(artwork.responsiveImages)} src={artwork.image} alt={artwork.label ?? companion.label} />)}
           <span aria-hidden="true">=</span>
           <strong>{firstDisplayValue}</strong>
           {firstIsAmount && <span className="symbol-value-guide__match-multiplier">({firstValue})</span>}

@@ -26,12 +26,12 @@ public sealed class RobotRevolutionSpinReportingTests
             var path = patterns[index];
             Assert.Equal(path, game.Paylines[index]);
             var board = path.Select((winningRow, reel) => (IReadOnlyList<string>)Enumerable.Range(0, 4)
-                .Select(row => row == winningRow ? "7" : ((row + reel) % 5 + 2).ToString()).ToArray()).ToArray();
+                .Select(row => row == winningRow ? "JAGUAR" : new[] { "GLYPH_FLAME", "GLYPH_RAIN", "GLYPH_WIND", "GLYPH_EARTH", "GLYPH_REED" }[(row + reel) % 5]).ToArray()).ToArray();
             var evaluated = ClassicSlotEngine.Evaluate(board, game, RobotRevolutionEngine.CreateSymbolSet());
             var paid = ClassicSlotEngine.CalculatePayout(evaluated, game, RobotRevolutionEngine.CreatePaytable(), 100);
             var line = Assert.Single(paid.Paylines, candidate => candidate.PaylineId == index + 1);
             var match = Assert.Single(line.Matches).Match;
-            Assert.Equal("7", match.SymbolId);
+            Assert.Equal("JAGUAR", match.SymbolId);
             Assert.Equal(path.Select((row, reel) => new GridPosition(reel, row)), match.Positions);
         }
     }
@@ -97,7 +97,8 @@ public sealed class RobotRevolutionSpinReportingTests
     {
         var before = new ClassicSlotRoundState(0, 2, new(2, 3, "rows"), 0, 0, 0,
             new Dictionary<string, long>(), new Dictionary<string, long>());
-        var strips = RobotRevolutionEngine.CreateReelSet().Reels.Select(reel => reel.Where(symbol => symbol != "BOLT").ToArray()).ToArray();
+        var strips = ClassicSlotDefinitionFactory.Create(RobotRevolutionEngine.LegacyProfile).CreateReelSet().Reels
+            .Select(reel => reel.Where(symbol => symbol != "BOLT").ToArray()).ToArray();
         var stops = strips.Select((reel, index) => index == 0 ? 0 : Array.IndexOf(reel, "FREE")).ToArray();
         var round = RobotRevolutionRoundPolicy.Prepare(Account, new("robot-revolution-rows-retrigger", 3, true), before, DateTime.UtcNow,
             null, new ScriptedDraws(stops));

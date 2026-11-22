@@ -54,7 +54,7 @@ internal static class AdminManagementCatalog
         new("phantom-manor", "Phantom Manor", "slots", "/slots/phantom-manor"),
         new("nordic-legends", "Nordic Legends", "slots", "/slots/nordic-legends"),
         new("desert-treasures", "Desert Treasures", "slots", "/slots/desert-treasures"),
-        new("robot-revolution", "Sunstone Eclipse", "slots", "/slots/sunstone-eclipse"),
+        new("robot-revolution", "Fifth Sun", "slots", "/slots/sunstone-eclipse"),
         new("dragon-hoard", "Dragon Hoard", "slots", "/slots/dragon-hoard"),
     ];
 

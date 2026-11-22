@@ -9,11 +9,11 @@ public static class RobotRevolutionRoundStateCodec
 
     // Existing state and audit include the dormant meter until a successful spin clears it.
     internal static readonly ClassicSlotRoundStateCodec Storage = new(Owner, OwnerField, Owner,
-        "robotRevolutionRoundState", "Sunstone Eclipse", usesEnergy: true,
+        "robotRevolutionRoundState", "Fifth Sun", usesEnergy: true,
         pointValueInCents: RobotRevolutionEngine.WagerPointValueInCents,
         validateCarryWager: static wager =>
         {
             // Keep an unplayable historical one-point lock visible for reconciliation.
             if (wager != 1) RobotRevolutionEngine.ValidateWager(wager, isFreeSpin: true);
-        });
+        }, validateNativeState: FifthSunPaidModeState.Validate);
 }

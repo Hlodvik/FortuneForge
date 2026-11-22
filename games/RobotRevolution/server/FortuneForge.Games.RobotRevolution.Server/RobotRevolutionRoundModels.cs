@@ -3,6 +3,7 @@ using FortuneForge.Games.Abstractions.Wallet;
 using FortuneForge.Games.Slots;
 using FortuneForge.Games.Slots.Persistence;
 using FortuneForge.Games.Slots.Runtime;
+using System.Text.Json.Serialization;
 
 namespace FortuneForge.Games.RobotRevolution.Server;
 
@@ -18,11 +19,14 @@ public sealed record RobotRevolutionRoundStateReply(int FreeSpinsRemaining, long
     int SpecialPointsBalance, long EnergyBalance, IReadOnlyList<RobotRevolutionSealCollection> SealCollections,
     RobotRevolutionRoundRequest? PendingOperation = null, decimal? SlotsCreditsBalance = null)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FifthSunPaidMode? PaidMode { get; init; }
+
     internal static RobotRevolutionRoundStateReply From(ClassicSlotRoundState state, RobotRevolutionRoundRequest? pending = null,
         long? balanceCents = null)
     {
         return new(state.Carry?.Remaining ?? 0, state.Carry?.WagerPoints, state.Carry?.Mode, state.SpecialPoints,
-            state.Energy, [], pending, balanceCents / 100m);
+            state.Energy, [], pending, balanceCents / 100m) { PaidMode = FifthSunPaidModeState.Read(state) };
     }
 }
 
@@ -54,7 +58,7 @@ public sealed class RobotRevolutionRoundConflictException(string message, RobotR
     public RobotRevolutionRoundRequest? PendingRequest { get; } = pendingRequest;
 }
 
-public sealed class RobotRevolutionRoundPausedException() : InvalidOperationException("New Sunstone Eclipse rounds are temporarily paused.");
+public sealed class RobotRevolutionRoundPausedException() : InvalidOperationException("New Fifth Sun rounds are temporarily paused.");
 
 public sealed class RobotRevolutionRoundCooldownException(TimeSpan remaining) : InvalidOperationException("Wait for the previous spin to finish.")
 {
@@ -64,8 +68,14 @@ public sealed class RobotRevolutionRoundCooldownException(TimeSpan remaining) : 
 public sealed class RobotRevolutionFreeSpinsRequiredException() :
     InvalidOperationException("Finish the active bonus spins before placing another cash bet.");
 
+public sealed class FifthSunPaidModeWagerLockedException(long wagerPoints) :
+    InvalidOperationException("Eclipse rounds use the wager saved when the Eclipse began.")
+{
+    public long WagerPoints { get; } = wagerPoints;
+}
+
 public sealed class RobotRevolutionFreeSpinsUnavailableException() :
-    InvalidOperationException("No Sunstone Eclipse free games are available.");
+    InvalidOperationException("No Fifth Sun free games are available.");
 
 public sealed class RobotRevolutionFreeWagerLockedException(long wagerPoints) :
     InvalidOperationException("Bonus spins use the wager saved on the active round.")

@@ -24,7 +24,7 @@ internal static class SunstoneEclipseSimulation
         var withinCeiling = newResults.All(sample => sample.EstimatedReturn <= releaseRtpCeiling);
         var result = new
         {
-            mathVersion = SunstoneEclipse.MathVersion,
+            mathVersion = FifthSunWheel.MathVersion,
             seed,
             paidCycles,
             wagerPoints = wagers,
@@ -80,8 +80,7 @@ internal static class SunstoneEclipseSimulation
                 var boost = spendBoosts && points >= boostCost;
                 if (boost) { points -= boostCost; boostedSpins++; }
                 var spin = engine.Spin(wager, "sunstone-math", specialBoostApplied: boost,
-                    featureMode: free ? version == RobotRevolutionEngine.LegacyEngineVersion
-                        ? RobotRevolutionEngine.LegacyProfile.ScatterFeatureMode : RobotRevolutionEngine.Profile.ScatterFeatureMode
+                    featureMode: free ? RobotRevolutionEngine.ProfileForVersion(version).ScatterFeatureMode
                         : null, persistedPityMisses: pity, isFreeSpin: free);
                 pity = spin.ConsecutiveFiveMisses;
                 points = checked(points + spin.SpecialPointsAwarded);
@@ -90,7 +89,7 @@ internal static class SunstoneEclipseSimulation
                 if (spins > paidCycles * 20L) throw new InvalidOperationException("Sunstone free-spin qualification exceeded its continuation limit.");
                 cyclePayout = checked(cyclePayout + spin.Payout.TotalPoints);
                 if (version == RobotRevolutionEngine.LegacyEngineVersion) continue;
-                var feature = SunstoneEclipse.Resolve(spin.Reels, wager, free);
+                var feature = RobotRevolutionEngine.DescribeFeature(spin)!;
                 if (feature.TotalAwardPoints != spin.Payout.Paylines.Where(line => line.PaylineId is >= 1001 and <= 1010).Sum(line => line.AmountPoints) ||
                     feature.TotalAwardPoints > wager * feature.MaxAwardMultiplier)
                     throw new InvalidOperationException("The native Sunwheel award differs from its settled payout or exceeds its cap.");

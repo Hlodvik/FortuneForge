@@ -59,8 +59,8 @@
     "FortuneForge.Server/Slots/Spins/SpinService.Payouts.cs": "66446acc7dc3b9318283e105594db487e5edb9661fe1db4fe73557f07ce02536",
     "FortuneForge.Server/Slots/Spins/SpinService.Support.cs": "139fb73b47b2cf43988e810c945f10e48acb788e9ecab811be86f7d2cc2ba707",
     "FortuneForge.Server/Slots/Spins/SpinService.WukongPawPrototype.cs": "e06d55d5dc152ef0296b25d8d98921c3df29f411d96f6217367a1bc935faf5da",
-    "fortuneforge.client/scripts/export-slot-guide-contracts.mjs": "13d2b9e9aa16f1d6cae182100069cac8eb65d93acf0bc06cfe18e7965587b9e9",
-    "fortuneforge.client/src/games/slots/routeMetadata.ts": "cf690c824222cbae9805f96fa52c8295e62a7f517c48cd219b234590be030574",
+    "fortuneforge.client/scripts/export-slot-guide-contracts.mjs": "85b35e8c4c65bcc95bdc7f6356a2f570dd53d86f601bc9dc6f0d74a0a5ee2bf2",
+    "fortuneforge.client/src/games/slots/routeMetadata.ts": "8995ee84746af51f0b72ab206e915dcbe0f6395e4cc7f67e84efe67364a8c027",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneArchivesEngine.cs": "0bc5db391fecbaead9d3fa8942c95d27894b4f346658f408af06d44f186e4169",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneLightningCollector.cs": "6e5eecaf1fb30a6c3de219c6302754c0cde56772c7b96e60cfc28a9e2c00a811",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneNativeReplay.cs": "b4494a88eee3cb2eb95745501048b41d1029c81ec62324348dd28dd5a44187dc",
@@ -170,8 +170,8 @@
     "games/ReelRiches/src/FortuneForge.Games.ReelRiches/FortuneForge.Games.ReelRiches.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/ReelRiches/src/FortuneForge.Games.ReelRiches/ReelRichesEngine.cs": "0b3e02379c7927f66b0cc0be9f692dc2c96ac35268bf19862a5b6adfe6c6b3f1",
     "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FortuneForge.Games.RobotRevolution.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
-    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/RobotRevolutionEngine.cs": "84691c8995f794a6a55c3e7db615550266af65bc35b452f36d662d89154ef5e2",
-    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/SunstoneEclipse.cs": "c6636bf22fa872ac21de3623e692e25147e0e98b14383ea426234adde5f1f086",
+    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/RobotRevolutionEngine.cs": "d5254c88cca9081136b44c9530c85ed539b607bd64eafea7885b746fb6616500",
+    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/SunstoneEclipse.cs": "b68529353e025b71ad8ac3d614f773622f8a9e0b873149a35c7437928c25aeb5",
     "games/RoyalDraw/src/FortuneForge.Games.RoyalDraw/FortuneForge.Games.RoyalDraw.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/RoyalDraw/src/FortuneForge.Games.RoyalDraw/RoyalDrawEngine.cs": "85f9301457abfba771c6ab30ca06af4c0e5a3f0c788c68e2b30df187b377c948",
     "games/SamuraiFortune/src/FortuneForge.Games.SamuraiFortune/FortuneForge.Games.SamuraiFortune.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
@@ -200,7 +200,11 @@
     "games/shared/FortuneForge.Games.Slots.Runtime/SlotProfile.cs": "8ddcb43c4a85d8b7299af8b1ec35c4b53fae7d40f1dea3e5c12f4357c7146b97",
     "tools/FortuneForge.SlotContracts/FortuneForge.SlotContracts.csproj": "523e1acf37e3aa58e538d30e430959517e441d03be7cf60dfd74ec67b825c6be",
     "tools/FortuneForge.SlotContracts/Program.cs": "6ea89c26565335378229ed0cd63cc0668012322c258b92d366e0733d281e0b60",
-    "tools/verify-slot-contracts.mjs": "09dd178f34f878750982ea5d603526740b6ddefc48ba03c37ccd5c92189f7fcd"
+    "tools/verify-slot-contracts.mjs": "09dd178f34f878750982ea5d603526740b6ddefc48ba03c37ccd5c92189f7fcd",
+    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FifthSunDefinitions.cs": "e5ecc1c3c9ec5eebf16aaa07f94892381829be0a8a8cf110b1765a87055efd95",
+    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FifthSunWheel.cs": "0f076b3e5c9d03c0c85a068fc6166a5e127c0174c2f1ee32dcd691c5b73b1fbc",
+    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FifthSunTotalityDefinitions.cs": "dd656e68f947c2d238e4b949b05c42cd8f05d725b9f6d7647ce5d540be4961a8",
+    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FifthSunTotalityWheel.cs": "d1df66b9b34b19b5d865e4679e6672154ef2aaa79d44d914ce013f9603dfe035"
   },
   "sourceProjects": [
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/FortuneForge.Games.ArcaneArchives.csproj",
@@ -5918,21 +5922,23 @@
     },
     {
       "gameId": "robot-revolution-v1",
+      "engineVersion": "fifth-sun-engine-v2",
       "profile": {
         "gameId": "robot-revolution-v1",
-        "scatterRequiredSymbols": 3,
-        "scatterAwardedSpins": 7,
+        "scatterRequiredSymbols": 1,
+        "scatterAwardedSpins": 0,
         "collectionTarget": 24,
         "collectionAwardedSpins": 8,
         "usesCollections": false,
         "usesEnergy": false,
         "usesDirectValueTokens": false,
-        "scatterFeatureMode": "rows-arcade",
+        "scatterFeatureMode": null,
         "collectionFeatureMode": null,
-        "baseReelSetId": null,
+        "baseReelSetId": "fifth-sun-reels-v2",
         "targetHitRate": 0.32,
         "paylinePatternIds": null,
-        "payoutMultiplier": 0.874
+        "payoutMultiplier": 0.98,
+        "preserveEnergySymbolsWithoutMeter": false
       },
       "layout": {
         "reelCount": 5,
@@ -5940,27 +5946,40 @@
         "paylineCount": 23
       },
       "symbols": {
-        "symbolSetId": "classic-symbols-v3",
-        "wildSymbolId": "ACE",
+        "symbolSetId": "fifth-sun-symbols-v2",
+        "wildSymbolId": "WILD",
+        "paylineSymbolIds": [
+          "GLYPH_FLAME",
+          "GLYPH_RAIN",
+          "GLYPH_WIND",
+          "GLYPH_EARTH",
+          "GLYPH_REED",
+          "FEATHER",
+          "SERPENT",
+          "EAGLE",
+          "JAGUAR",
+          "SUNSTONE"
+        ],
         "nativeWildMatchLengths": [
           3,
           5
         ],
         "wildSubstitutionMatchLengths": [
+          3,
           5
         ]
       },
       "wagering": {
         "pointValueInCents": 25,
-        "minimumWagerPoints": 2,
-        "maximumWagerPoints": 2000,
+        "minimumWagerPoints": 12,
+        "maximumWagerPoints": 300,
         "wagerIncrementPoints": 2,
         "allowedWagerPoints": []
       },
       "math": {
-        "reelSetId": "classic-reels-v4",
-        "paytableId": "classic-paytable-v4",
-        "payoutMultiplier": 0.874,
+        "reelSetId": "fifth-sun-reels-v2",
+        "paytableId": "fifth-sun-paytable-v2",
+        "payoutMultiplier": 0.98,
         "paylinePayoutSteps": [
           0,
           0,
@@ -5988,20 +6007,22 @@
         ],
         "fiveMatchPityMissLimit": 12,
         "targets": {
-          "rtp": 0.9,
+          "rtp": null,
           "hitRate": 0.32,
           "volatility": null
         }
       },
       "specialPoints": {
-        "symbolId": "POWER",
+        "symbolId": "SUNSTONE",
         "threeMatchPoints": 1,
         "fiveMatchPoints": 2,
         "activationCost": 8,
         "commonSymbolIds": [
-          "2",
-          "3",
-          "4"
+          "GLYPH_FLAME",
+          "GLYPH_RAIN",
+          "GLYPH_WIND",
+          "GLYPH_EARTH",
+          "GLYPH_REED"
         ]
       },
       "paylines": [
@@ -6169,86 +6190,121 @@
       ],
       "paytable": [
         {
-          "symbolId": "2",
+          "symbolId": "GLYPH_FLAME",
           "matchLength": 3,
           "multiplier": 1
         },
         {
-          "symbolId": "2",
+          "symbolId": "GLYPH_FLAME",
+          "matchLength": 5,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "GLYPH_RAIN",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "GLYPH_RAIN",
           "matchLength": 5,
           "multiplier": 4
         },
         {
-          "symbolId": "3",
+          "symbolId": "GLYPH_WIND",
           "matchLength": 3,
           "multiplier": 1
         },
         {
-          "symbolId": "3",
+          "symbolId": "GLYPH_WIND",
           "matchLength": 5,
-          "multiplier": 2
+          "multiplier": 5
         },
         {
-          "symbolId": "4",
+          "symbolId": "GLYPH_EARTH",
           "matchLength": 3,
           "multiplier": 1
         },
         {
-          "symbolId": "4",
-          "matchLength": 5,
-          "multiplier": 7
-        },
-        {
-          "symbolId": "5",
-          "matchLength": 3,
-          "multiplier": 2
-        },
-        {
-          "symbolId": "5",
+          "symbolId": "GLYPH_EARTH",
           "matchLength": 5,
           "multiplier": 6
         },
         {
-          "symbolId": "6",
+          "symbolId": "GLYPH_REED",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "GLYPH_REED",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "FEATHER",
           "matchLength": 3,
           "multiplier": 2
         },
         {
-          "symbolId": "6",
+          "symbolId": "FEATHER",
           "matchLength": 5,
           "multiplier": 8
         },
         {
-          "symbolId": "7",
+          "symbolId": "SERPENT",
           "matchLength": 3,
           "multiplier": 3
         },
         {
-          "symbolId": "7",
+          "symbolId": "SERPENT",
           "matchLength": 5,
-          "multiplier": 11
+          "multiplier": 10
         },
         {
-          "symbolId": "ACE",
+          "symbolId": "EAGLE",
+          "matchLength": 3,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "EAGLE",
+          "matchLength": 5,
+          "multiplier": 12
+        },
+        {
+          "symbolId": "JAGUAR",
           "matchLength": 3,
           "multiplier": 5
         },
         {
-          "symbolId": "ACE",
+          "symbolId": "JAGUAR",
           "matchLength": 5,
-          "multiplier": 18
+          "multiplier": 16
         },
         {
-          "symbolId": "POWER",
+          "symbolId": "SUNSTONE",
           "matchLength": 3,
-          "multiplier": 2
+          "multiplier": 8
         },
         {
-          "symbolId": "POWER",
+          "symbolId": "SUNSTONE",
           "matchLength": 5,
-          "multiplier": 4
+          "multiplier": 32
+        },
+        {
+          "symbolId": "WILD",
+          "matchLength": 3,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "WILD",
+          "matchLength": 5,
+          "multiplier": 24
         }
-      ]
+      ],
+      "eclipsePayoutMultiplier": 0.35,
+      "eclipseWheelScale": 1.1,
+      "totalityAwardMultiplier": 1,
+      "eclipseRounds": 5,
+      "alignmentsPerRound": 3
     },
     {
       "gameId": "dragon-hoard-v1",

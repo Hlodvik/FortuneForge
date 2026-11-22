@@ -51,7 +51,7 @@ it('retains source identity across checkout line endings while detecting changed
   expect(hashSource(Buffer.from('alpha\nchanged\n'))).not.toBe(canonical)
 })
 
-describe.each(audited)('$catalog.title audited guide', game => {
+describe.each(audited.map(game => [game.id, game] as const))('%s audited guide', (_id, game) => {
   const experience = game.experience
   const engine = fixture.games.find(candidate => candidate.gameId === experience.rules.gameId)!
   const profile = engine.profile
@@ -74,8 +74,13 @@ describe.each(audited)('$catalog.title audited guide', game => {
     })
     if (profile.scatterAwardedSpins > 0) {
       expect(experience.help.freeGames).toMatchObject({ requiredSymbols: profile.scatterRequiredSymbols, awardedSpins: profile.scatterAwardedSpins })
-      expect(entry('FREE')?.firstLabel).toBe(`${profile.scatterRequiredSymbols}+`)
-      expect(Number.parseInt(entry('FREE')?.secondValue ?? '')).toBe(profile.scatterAwardedSpins)
+      if (game.id === 'robot-revolution') {
+        expect(entry('ECLIPSE')?.firstLabel).toBe(`${profile.scatterRequiredSymbols} scatters`)
+        expect(Number.parseInt(entry('ECLIPSE')?.firstValue ?? '')).toBe(profile.scatterAwardedSpins)
+      } else {
+        expect(entry('FREE')?.firstLabel).toBe(`${profile.scatterRequiredSymbols}+`)
+        expect(Number.parseInt(entry('FREE')?.secondValue ?? '')).toBe(profile.scatterAwardedSpins)
+      }
     } else {
       expect(experience.help.freeGames).toBeUndefined()
       expect(entry('FREE')).toBeUndefined()
@@ -107,6 +112,18 @@ describe.each(audited)('$catalog.title audited guide', game => {
       expect(experience.help.fourMatchPayoutNote).toBe('Only runs of exactly three or five matching symbols pay.')
       expect(experience.symbols.guideEntries.filter(candidate => candidate.secondValue)
         .map(candidate => candidate.firstLabel)).toEqual(['3', '3', '3', '3', '3'])
+    } else if (game.id === 'robot-revolution') {
+      expect(engine.symbols.wildSymbolId).toBe('WILD')
+      expect(engine.symbols.nativeWildMatchLengths).toEqual([3, 5])
+      expect(engine.symbols.wildSubstitutionMatchLengths).toEqual([3, 5])
+      expect(entry('WILD')?.firstLabel).toBe('3')
+      const fiveMatchRules = engine.paytable.filter(rule => rule.matchLength === 5)
+      const sunstone = fiveMatchRules.find(rule => rule.symbolId === 'SUNSTONE')!
+      expect(sunstone.multiplier).toBeGreaterThan(Math.max(...fiveMatchRules
+        .filter(rule => rule.symbolId !== 'SUNSTONE').map(rule => rule.multiplier)))
+      expect(experience.symbols.guideEntries.filter(candidate => candidate.symbol.startsWith('GLYPH_'))).toHaveLength(5)
+      expect(experience.symbols.guideNote).toContain('three- and five-symbol')
+      expect(experience.help.fourMatchPayoutNote).toMatch(/four Wilds/i)
     } else {
       expect(engine.symbols.nativeWildMatchLengths).toEqual([3, 5])
       expect(engine.symbols.wildSubstitutionMatchLengths).toEqual([5])
@@ -142,6 +159,7 @@ describe.each(audited)('$catalog.title audited guide', game => {
     expect(appliedAgain.sounds).toBe(experience.sounds)
     expect(appliedAgain.cabinet).toBe(experience.cabinet)
     expect(appliedAgain.symbols.definitions).toBe(experience.symbols.definitions)
+    if (game.id === 'robot-revolution') expect(appliedAgain).toBe(experience)
   })
 })
 

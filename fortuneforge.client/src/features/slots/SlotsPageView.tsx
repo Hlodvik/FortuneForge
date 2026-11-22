@@ -97,6 +97,10 @@ export function SlotsPageView(controller: SlotsPageController) {
     activatePotion,
     confirmedPotionUse,
     isPotionWagerLocked,
+    isPaidModeWagerLocked,
+    paidMode,
+    isSpinFeaturePresenting,
+    setSpinFeaturePresenting,
     preferredWager,
     playPotionCue,
     tomeIngredientsAwarded,
@@ -153,6 +157,7 @@ export function SlotsPageView(controller: SlotsPageController) {
   const SpinFeaturePanel = presentation?.SpinFeaturePanel
   const PotionWagerReadout = presentation?.PotionWagerReadout
   const winHelp = presentation?.winHelp
+  const usesAmbientOutcome = presentation?.outcomePresentation === 'ambient'
   const WinHelpContent = winHelp?.Content
   const firstOpenStorageKey = winHelp?.firstOpenStorageKey
   const closeHelp = () => setIsHelpOpen(false)
@@ -305,10 +310,11 @@ export function SlotsPageView(controller: SlotsPageController) {
   })
   // Moving reels and the Spin/Stop control already communicate an ordinary
   // spin. Reserve this extra panel for wins, features, and actionable errors.
-  const showOutcomeBanner = !(usesPaylinePopups && slotOutcome.tone === 'win') && slotOutcome.tone !== 'neutral' && !reelRichesIntroVisible &&
+  const showOutcomeBanner = !isSpinFeaturePresenting && !(usesPaylinePopups && slotOutcome.tone === 'win') && slotOutcome.tone !== 'neutral' && !reelRichesIntroVisible &&
     !rainbowIntroVisible && rainbowBonusSummary === null &&
     !((isReelRiches || isRainbowRealm) && isSpecialGameActive && slotOutcome.label === 'Free game ready') &&
-    !(isGodsTumbleBoard && slotOutcome.tone === 'win')
+    !(isGodsTumbleBoard && slotOutcome.tone === 'win') &&
+    (!usesAmbientOutcome || slotOutcome.tone !== 'loss' || Boolean(spinError) || spinAvailability === 'unavailable' || !canAffordSelectedWager)
   const utilityButtons = <div className="slots-page__utility-buttons" role="group" aria-label="Game options">
     <button
       className="slots-page__help-button"
@@ -347,10 +353,12 @@ export function SlotsPageView(controller: SlotsPageController) {
   const guideSymbols = symbolSet
   const symbolValueGuide = !isGodsTumbleBoard && <SymbolValueGuide
     symbolSet={guideSymbols}
-    showSidePanel={usesPiratesControls}
-    wager={isArcaneArchives ? activeWagerDisplay : undefined}
-    pointValueInCents={isArcaneArchives ? controller.pointValueInCents : undefined}
-    sidePanelClassName={isArcaneArchives ? 'symbol-value-guide--arcane' : isPiratesFortune ? 'symbol-value-guide--pirates' : undefined}
+    showSidePanel={usesPiratesControls && presentation?.symbolValueGuide?.mode !== 'modal'}
+    sidePanelMode={presentation?.symbolValueGuide?.mode === 'on-demand' ? 'on-demand' : 'auto'}
+    wager={isArcaneArchives || presentation?.symbolValueGuide ? activeWagerDisplay : undefined}
+    pointValueInCents={isArcaneArchives || presentation?.symbolValueGuide ? controller.pointValueInCents : undefined}
+    theme={presentation?.symbolValueGuide ? winHelp?.theme : undefined}
+    sidePanelClassName={presentation?.symbolValueGuide?.className ?? (isArcaneArchives ? 'symbol-value-guide--arcane' : isPiratesFortune ? 'symbol-value-guide--pirates' : undefined)}
     showValueTokens={Boolean(moneyGrabFeature?.valueSymbolPrefix)}
     isOpen={controller.isSymbolGuideOpen}
     onOpenChange={controller.setIsSymbolGuideOpen}
@@ -371,6 +379,7 @@ export function SlotsPageView(controller: SlotsPageController) {
         : slotsPageClassName}
       style={pageStyle}
       data-slot-theme={cabinetTheme.id}
+      data-paid-mode={paidMode?.mode}
       data-slot-payline-trace={paylineTrace ? 'true' : undefined}
       data-slot-controls={usesSidecarControls ? 'sidecar' : undefined}
       data-slot-celebration={cabinetTheme.celebrationEffect}
@@ -623,6 +632,8 @@ export function SlotsPageView(controller: SlotsPageController) {
 
           {SpinFeaturePanel && <SpinFeaturePanel
             cabinetRef={cabinetRef}
+            paidMode={paidMode}
+            onPresentationBusyChange={setSpinFeaturePresenting}
             feature={hasCompletedSpin ? lastSpinFeature : null}
             spinKey={hasCompletedSpin ? lastSpinOutcomeKey : null}
             isSpinning={isSpinning}
@@ -694,7 +705,7 @@ export function SlotsPageView(controller: SlotsPageController) {
             {usesPiratesControls ? (
               <SidecarSpinControls
                 activeWager={activeWagerDisplay}
-                wagerLocked={isPotionWagerLocked}
+                wagerLocked={isPotionWagerLocked || isPaidModeWagerLocked}
                 wagerReadout={PotionWagerReadout && <PotionWagerReadout
                   wager={activeWagerDisplay}
                   selectedWager={preferredWager}
@@ -702,7 +713,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                   confirmedPotionUse={confirmedPotionUse}
                   reducedMotion={prefersReducedMotion}
                 />}
-                disabled={isSpinServiceDisabled || isArcaneUpdating || isTomeActivationRequired || (usesSidecarControls && rainbowBonusSummary !== null)}
+                disabled={isSpinServiceDisabled || isSpinFeaturePresenting || isArcaneUpdating || isTomeActivationRequired || (usesSidecarControls && rainbowBonusSummary !== null)}
                 freeSpinsRemaining={freeSpinsRemaining}
                 isAutoSpinning={isAutoSpinning}
                 isFreeSpinBadgePopping={isFreeSpinBadgePopping}
@@ -726,7 +737,7 @@ export function SlotsPageView(controller: SlotsPageController) {
               <div className="slots-page__spin-stack">
                 <div className="slots-page__spin-button-shell">
                   <SpinButton
-                    disabled={isSpinServiceDisabled || isTomeActivationRequired || rainbowBonusSummary !== null}
+                    disabled={isSpinServiceDisabled || isSpinFeaturePresenting || isTomeActivationRequired || rainbowBonusSummary !== null}
                     iconSrc={cabinetTheme.spinIconImage}
                     isSpinning={isSpinning}
                     isStopRequested={isStopRequested}
@@ -766,7 +777,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                       className="slots-page__wager-nudge"
                       type="button"
                       aria-label="Decrease wager"
-                      disabled={isSpinning || isAutoSpinning || freeSpinsRemaining > 0 || wagerIndex === 0}
+                      disabled={isSpinning || isSpinFeaturePresenting || isPaidModeWagerLocked || isAutoSpinning || freeSpinsRemaining > 0 || wagerIndex === 0}
                       onClick={() => changeWager(-1)}
                     >
                       <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M28 50H72" /></svg>
@@ -779,7 +790,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                       className="slots-page__wager-nudge"
                       type="button"
                       aria-label="Increase wager"
-                      disabled={isSpinning || isAutoSpinning || freeSpinsRemaining > 0 || wagerIndex === wagerOptions.length - 1}
+                      disabled={isSpinning || isSpinFeaturePresenting || isPaidModeWagerLocked || isAutoSpinning || freeSpinsRemaining > 0 || wagerIndex === wagerOptions.length - 1}
                       onClick={() => changeWager(1)}
                     >
                       <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M28 50H72" /><path d="M50 28V72" /></svg>
@@ -809,7 +820,7 @@ export function SlotsPageView(controller: SlotsPageController) {
           </div>
           {(!isArcaneArchives && (balanceActionHref !== null || !usesPiratesControls)) && <div className="slots-page__local-controls">
             <div className="slots-page__utility-controls" aria-label="Game options">
-              {balanceActionHref !== null && <PaymentAlertsMenu />}
+              {balanceActionHref !== null && presentation?.paymentAlerts !== false && <PaymentAlertsMenu />}
               {!usesPiratesControls && utilityButtons}
             </div>
           </div>}
@@ -1090,11 +1101,19 @@ export function SlotsPageView(controller: SlotsPageController) {
         <footer
           className={`slots-page__footer${spinError || spinAvailability === 'unavailable' ? ' slots-page__footer--error' : ''}`}
         >
-          <GameOutcomeBanner
+          {usesAmbientOutcome && (slotOutcome.tone === 'win' || slotOutcome.tone === 'milestone') ? <output
+            key={lastSpinOutcomeKey}
+            className="slots-page__ambient-win"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <span>{slotOutcome.tone === 'win' ? 'Total win' : slotOutcome.label}</span><strong>{slotOutcome.title}</strong>
+          </output> : <GameOutcomeBanner
             key={lastSpinOutcomeKey}
             className="slots-page__outcome"
             {...slotOutcome}
-          />
+          />}
         </footer>
       )}
 
@@ -1109,6 +1128,7 @@ export function SlotsPageView(controller: SlotsPageController) {
       </div>
 
       <AudioSettingsDialog
+        theme={presentation?.symbolValueGuide ? winHelp?.theme : undefined}
         musicCredit={cabinetTheme.id === 'gods-of-olympus-cabinet-v1' ? <>
             <a href="https://opengameart.org/content/secret-sanctum" target="_blank" rel="noopener noreferrer">Secret Sanctum</a> was composed, performed, mixed and mastered by Viktor Kraus, using orchestral samples from the Vienna Symphonic Library. Licensed under <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener noreferrer">CC BY 3.0</a>. Converted to Ogg Vorbis.
           </> : undefined}

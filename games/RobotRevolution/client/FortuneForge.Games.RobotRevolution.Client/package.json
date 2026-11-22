@@ -12,7 +12,9 @@
     "./styles.css": "./dist/styles.css"
   },
   "scripts": {
+    "precheck": "node scripts/export-eclipse-math.mjs",
     "check": "tsc -p tsconfig.json --noEmit",
+    "prebuild": "node scripts/export-eclipse-math.mjs",
     "build": "tsc -p tsconfig.build.json && node scripts/copy-static.mjs"
   },
   "dependencies": {

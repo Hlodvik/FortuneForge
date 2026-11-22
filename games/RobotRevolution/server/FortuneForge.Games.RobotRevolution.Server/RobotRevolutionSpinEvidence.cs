@@ -16,7 +16,7 @@ public static partial class RobotRevolutionSpinEvidence
     public static bool IsNative(JsonElement data) => data.TryGetProperty("robotRevolutionDraws", out _) ||
         data.TryGetProperty("robotRevolutionProgress", out _) || data.TryGetProperty("engineOutcomeSha256", out _);
 
-    /// <summary>Replays Sunstone Eclipse's recorded draws and verifies the game and signed wallet progression.</summary>
+    /// <summary>Replays Fifth Sun's recorded draws and verifies the game and signed wallet progression.</summary>
     public static IReadOnlyList<RoundAuditFinding> InspectNative(RoundAuditSummary summary, JsonElement data)
     {
         try
@@ -26,12 +26,12 @@ public static partial class RobotRevolutionSpinEvidence
             var legacyAudit = Read<ClassicSlotRecordedAudit>(data, "engineAudit");
             var audit = legacyAudit.ToEngineAudit();
             var result = Read<RobotRevolutionSpinResponse>(data, "result");
-            var feature = audit.EngineVersion == RobotRevolutionEngine.EngineVersion
-                ? SunstoneEclipse.Resolve(result.Reels, result.WagerPoints, result.IsFreeSpin) : null;
+            var feature = RobotRevolutionEngine.DescribeFeature(result.ToOutcome(audit));
             if (JsonSerializer.Serialize(feature, RoundAuditCapture.Json) != JsonSerializer.Serialize(result.SpinFeature, RoundAuditCapture.Json))
                 throw InvalidEvidence();
             var settled = Read<SpinPayout>(data, "settledPayout");
             var source = Read<RobotRevolutionNativeProgressEvidence>(data, "robotRevolutionProgress");
+            if (result.PaidMode != FifthSunPaidModeState.Read(source.After)) throw InvalidEvidence();
             var started = data.GetProperty("startedAtUtc").GetDateTime();
             var free = data.GetProperty("isFreeSpin").GetBoolean();
             var wagerCents = free ? 0 : RobotRevolutionRoundPolicy.ToCents(result.WagerPoints, result.PointValueInCents);
@@ -68,7 +68,7 @@ public static partial class RobotRevolutionSpinEvidence
             KeyNotFoundException or FormatException or OverflowException or NullReferenceException or GameWalletUnavailableException)
         {
             return [new("slot-robot-revolution-native-proof-mismatch", "error",
-                "Sunstone Eclipse's reels, Sunwheel guardian alignment, bonus source, or signed wallet evidence do not match the paid outcome.")];
+                "Fifth Sun's reels, Sunwheel guardian alignment, bonus source, or signed wallet evidence do not match the paid outcome.")];
         }
     }
 
@@ -77,5 +77,5 @@ public static partial class RobotRevolutionSpinEvidence
 
     private static long Microseconds(DateTime value) => value.Ticks / TimeSpan.TicksPerMicrosecond;
 
-    private static InvalidOperationException InvalidEvidence() => new("The archived Sunstone Eclipse round cannot be replayed.");
+    private static InvalidOperationException InvalidEvidence() => new("The archived Fifth Sun round cannot be replayed.");
 }

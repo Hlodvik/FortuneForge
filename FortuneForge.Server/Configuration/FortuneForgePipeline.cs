@@ -17,6 +17,7 @@ using FortuneForge.Server.Bots;
 using FortuneForge.Server.Cards.Solitaire;
 using FortuneForge.Server.Games.Hearts;
 using FortuneForge.Server.GameWorkers.Packages;
+using FortuneForge.Server.Slots.Games;
 
 namespace FortuneForge.Server.Configuration;
 
@@ -48,7 +49,7 @@ public static class FortuneForgePipeline
                 context.Response.Headers.XContentTypeOptions = "nosniff";
 
                 // Reject legacy demo and practice requests before they can reach a game or wallet.
-                if (context.Request.Path.StartsWithSegments("/api/slots/demo") ||
+                if ((context.Request.Path.StartsWithSegments("/api/slots/demo") && !FifthSunDemoEndpoints.IsScopedRoute(context)) ||
                     context.Request.Path.StartsWithSegments("/api/cards/blackjack/demo") ||
                     (!app.Environment.IsDevelopment() &&
                         context.Request.Headers.ContainsKey("X-FortuneForge-Practice")))
@@ -75,6 +76,7 @@ public static class FortuneForgePipeline
         app.MapArcadeCompetitionWallet();
         app.MapGameWalletBatchSettlement();
         app.MapGameManagedPlayerRoster();
+        if (app.Environment.IsDevelopment()) app.MapFifthSunDemo();
         var arcaneFeatures = app.MapGroup(ArcaneFeatureEndpoints.RoutePrefix)
             .WithMetadata(new GameWorkerPublicRoute(ArcaneArchivesEngine.GameId, ArcaneFeatureEndpoints.RoutePrefix,
                 ArcaneFeatureEndpoints.AuditGameId))

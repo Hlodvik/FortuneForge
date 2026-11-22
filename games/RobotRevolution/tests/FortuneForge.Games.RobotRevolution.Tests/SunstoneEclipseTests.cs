@@ -99,7 +99,7 @@ public sealed class SunstoneEclipseTests
     }
 
     [Theory]
-    [InlineData(RobotRevolutionEngine.EngineVersion)]
+    [InlineData(RobotRevolutionEngine.SunstoneEngineVersion)]
     [InlineData(RobotRevolutionEngine.LegacyEngineVersion)]
     public void BothNewAndHistoricalDrawsRetainTheirVersionedPayoutMeaning(string version)
     {
@@ -119,7 +119,7 @@ public sealed class SunstoneEclipseTests
     }
 
     [Theory]
-    [InlineData(RobotRevolutionEngine.EngineVersion)]
+    [InlineData(RobotRevolutionEngine.SunstoneEngineVersion)]
     [InlineData(RobotRevolutionEngine.LegacyEngineVersion)]
     public void SettledFeatureIsVerifiedAndLegacyPreparedProofsRemainValid(string version)
     {
@@ -187,7 +187,7 @@ public sealed class SunstoneEclipseTests
                 if (isFree) { pending--; free++; } else paid++;
                 if (free > paidSpins * 10) throw new InvalidOperationException("Bonus continuation did not terminate within the smoke limit.");
                 var outcome = engine.Spin(wager, "sunstone-math-smoke", featureMode: isFree
-                        ? version == RobotRevolutionEngine.LegacyEngineVersion ? "rows" : RobotRevolutionEngine.EclipseFeatureMode : null,
+                        ? version == RobotRevolutionEngine.LegacyEngineVersion ? "rows" : RobotRevolutionEngine.SunstoneFeatureMode : null,
                     persistedPityMisses: pity, isFreeSpin: isFree);
                 pity = outcome.ConsecutiveFiveMisses;
                 pending += outcome.FreeSpinsAwarded;
@@ -208,7 +208,7 @@ public sealed class SunstoneEclipseTests
         }
         var report = new { mathVersion = SunstoneEclipse.MathVersion, seed, wagerPointsPerPaidSpin = wager,
             qualification = "Deterministic smoke estimate only; not a certified RTP or payout calibration.",
-            legacy = Sample(RobotRevolutionEngine.LegacyEngineVersion), sunstone = Sample(RobotRevolutionEngine.EngineVersion) };
+            legacy = Sample(RobotRevolutionEngine.LegacyEngineVersion), sunstone = Sample(RobotRevolutionEngine.SunstoneEngineVersion) };
         var directory = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../../../artifacts/backend-completion"));
         Directory.CreateDirectory(directory);
         File.WriteAllText(Path.Combine(directory, "sunstone-math-smoke.json"), JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
@@ -216,7 +216,7 @@ public sealed class SunstoneEclipseTests
 
     [Theory]
     [InlineData("rows", RobotRevolutionEngine.LegacyEngineVersion, 1.126)]
-    [InlineData(RobotRevolutionEngine.EclipseFeatureMode, RobotRevolutionEngine.EngineVersion, 0.874)]
+    [InlineData(RobotRevolutionEngine.SunstoneFeatureMode, RobotRevolutionEngine.SunstoneEngineVersion, 0.874)]
     public void OwedBonusCarryKeepsItsVersionAndLockedWager(string mode, string version, double scale)
     {
         var before = new ClassicSlotRoundState(0, 2, new(2, 3, mode), 0, 0, 0,
@@ -230,7 +230,7 @@ public sealed class SunstoneEclipseTests
         Assert.Equal(1, round.Progress.After.LegacyRemaining);
         Assert.Equal(mode, round.Progress.After.Carry!.Mode);
         Assert.Equal(3, round.Progress.After.Carry.WagerPoints);
-        Assert.Equal(version == RobotRevolutionEngine.EngineVersion,
+        Assert.Equal(version == RobotRevolutionEngine.SunstoneEngineVersion,
             RobotRevolutionSpinResponse.Capture(round).SpinFeature is not null);
         RobotRevolutionRoundPolicy.Validate(round);
     }
@@ -246,7 +246,7 @@ public sealed class SunstoneEclipseTests
                 new Dictionary<string, long>(), new Dictionary<string, long>());
             var started = DateTime.UtcNow;
             var (outcome, draws) = ClassicSlotReplayEvidence.Record(random, source =>
-                new RobotRevolutionEngine(source).Spin(100, account, persistedPityMisses: 0));
+                new RobotRevolutionEngine(source, RobotRevolutionEngine.SunstoneEngineVersion).Spin(100, account, persistedPityMisses: 0));
             var feature = SunstoneEclipse.Resolve(outcome.Reels, 100, false);
             if (!feature.EclipseTriggered) continue;
             var progress = RobotRevolutionRoundPolicy.Advance(before, outcome, false);
@@ -285,8 +285,8 @@ public sealed class SunstoneEclipseTests
     [Fact]
     public void BonusModeVersionMarkerChangesMetadataButNotTheQualifiedNewMath()
     {
-        var payoutMethod = typeof(SunstoneEclipse).GetMethod("CalculatePayout",
-            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!;
+        var payoutMethod = typeof(SunstoneEclipse).GetMethods(
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).Single(method => method.Name == "CalculatePayout" && method.GetParameters().Length == 4);
         Assert.NotNull(payoutMethod);
         var expectedRandom = new StableRandom(816731);
         var currentRandom = new StableRandom(816731);
@@ -296,8 +296,8 @@ public sealed class SunstoneEclipseTests
         {
             var boost = frame % 17 == 0;
             var (alias, aliasDraws) = ClassicSlotReplayEvidence.Record(expectedRandom, source =>
-                new ClassicSlotEngine(ClassicSlotDefinitionFactory.Create(RobotRevolutionEngine.Profile),
-                    RobotRevolutionEngine.Profile, source, RobotRevolutionEngine.EngineVersion,
+                new ClassicSlotEngine(ClassicSlotDefinitionFactory.Create(RobotRevolutionEngine.SunstoneProfile),
+                    RobotRevolutionEngine.SunstoneProfile, source, RobotRevolutionEngine.SunstoneEngineVersion,
                     new ClassicSlotEngineOptions
                     {
                         AllowFreeSpinCarryWager = true,
@@ -305,8 +305,8 @@ public sealed class SunstoneEclipseTests
                             (ClassicFeaturePayout)payoutMethod.Invoke(null, [reels, wager, scale, true])!
                     }).Spin(100, "old-free-alias", boost, featureMode: "rows", persistedPityMisses: pity, isFreeSpin: true));
             var (current, currentDraws) = ClassicSlotReplayEvidence.Record(currentRandom, source =>
-                new RobotRevolutionEngine(source).Spin(100, "new-free-marker", boost,
-                    featureMode: RobotRevolutionEngine.EclipseFeatureMode, persistedPityMisses: pity, isFreeSpin: true));
+                new RobotRevolutionEngine(source, RobotRevolutionEngine.SunstoneEngineVersion).Spin(100, "new-free-marker", boost,
+                    featureMode: RobotRevolutionEngine.SunstoneFeatureMode, persistedPityMisses: pity, isFreeSpin: true));
             Assert.Equal(aliasDraws, currentDraws);
             alias = alias with { SpinId = Guid.Empty, Audit = alias.Audit with { GeneratedAtUtc = DateTime.UnixEpoch, FeatureMode = "rows" } };
             current = current with { SpinId = Guid.Empty, Audit = current.Audit with { GeneratedAtUtc = DateTime.UnixEpoch, FeatureMode = "rows" } };
@@ -319,8 +319,8 @@ public sealed class SunstoneEclipseTests
         {
             status = "passed", pairedFrames = frames, seed = 816731,
             assertion = "Exact draw bytes and complete engine outcome digests match after normalizing only spin identity, generated time and the free-mode audit marker. Includes earned-layout free spins, pity and periodic special boosts.",
-            oldAlias = "rows", newVersionMarker = RobotRevolutionEngine.EclipseFeatureMode,
-            newBasePayoutMultiplier = RobotRevolutionEngine.Profile.PayoutMultiplier,
+            oldAlias = "rows", newVersionMarker = RobotRevolutionEngine.SunstoneFeatureMode,
+            newBasePayoutMultiplier = RobotRevolutionEngine.SunstoneProfile.PayoutMultiplier,
             historicalBasePayoutMultiplier = RobotRevolutionEngine.LegacyProfile.PayoutMultiplier
         }, new JsonSerializerOptions { WriteIndented = true }));
     }
@@ -332,7 +332,7 @@ public sealed class SunstoneEclipseTests
         var random = new StableRandom(891);
         for (var attempt = 0; attempt < 64; attempt++)
         {
-            var before = new ClassicSlotRoundState(2, 0, new(2, 100, RobotRevolutionEngine.EclipseFeatureMode), 0, 0, 0,
+            var before = new ClassicSlotRoundState(2, 0, new(2, 100, RobotRevolutionEngine.SunstoneFeatureMode), 0, 0, 0,
                 new Dictionary<string, long>(), new Dictionary<string, long>());
             var round = RobotRevolutionRoundPolicy.Prepare(account, new("visual-native-free-eclipse", 100, true),
                 before, DateTime.UtcNow, null, random);
@@ -354,7 +354,7 @@ public sealed class SunstoneEclipseTests
             Assert.True(response.IsFreeSpin);
             Assert.Equal(1, response.FreeSpinsRemaining);
             Assert.Equal(100, response.FreeSpinWagerPoints);
-            Assert.Equal(RobotRevolutionEngine.EclipseFeatureMode, response.FreeSpinFeatureMode);
+            Assert.Equal(RobotRevolutionEngine.SunstoneFeatureMode, response.FreeSpinFeatureMode);
             var report = RobotRevolutionSpinReport.Capture(round, settled, round.Outcome.Audit.GeneratedAtUtc);
             using var evidence = JsonDocument.Parse(report.Round.Audit.PayloadJson);
             Assert.Empty(RobotRevolutionSpinEvidence.InspectNative(report.Round.Audit.Summary, evidence.RootElement.GetProperty("data")));

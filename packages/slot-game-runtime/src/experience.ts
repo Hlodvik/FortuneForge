@@ -112,6 +112,13 @@ export type SlotWinHelpContentProps = {
   onClose: () => void
 }
 
+/** A game-owned paid feature carried between normally charged rounds. */
+export type SlotPaidModeState = Readonly<{
+  mode: string
+  remaining: number
+  wagerPoints: number
+}>
+
 /** Settled, game-owned feature data; the game validates and presents its contract. */
 export type SlotSpinFeaturePanelProps = Readonly<{
   feature: unknown | null
@@ -120,6 +127,8 @@ export type SlotSpinFeaturePanelProps = Readonly<{
   reducedMotion: boolean
   pointValueInCents: number
   cabinetRef?: RefObject<HTMLDivElement | null>
+  paidMode?: SlotPaidModeState | null
+  onPresentationBusyChange?: (busy: boolean) => void
 }>
 
 export type SlotPotionWagerReadoutProps = Readonly<{
@@ -131,6 +140,12 @@ export type SlotPotionWagerReadoutProps = Readonly<{
 }>
 
 export type SlotExperiencePresentation = {
+  paymentAlerts?: boolean
+  outcomePresentation?: 'banner' | 'ambient'
+  symbolValueGuide?: Readonly<{
+    mode?: 'auto' | 'on-demand' | 'modal'
+    className?: string
+  }>
   SpinFeaturePanel?: ComponentType<SlotSpinFeaturePanelProps>
   /** Synthetic awards are shown by the game's panel rather than reel paylines. */
   featurePaylineIds?: readonly number[]

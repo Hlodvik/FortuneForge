@@ -25,7 +25,7 @@ public sealed class RobotRevolutionRoundStoreTests
             ["consecutiveFiveMisses"] = 5L
         });
         await SeedBalance(database, "energy", 100);
-        var operation = new RobotRevolutionRoundRequest("robot-revolution-paid-collector-001", 10, false);
+        var operation = new RobotRevolutionRoundRequest("robot-revolution-paid-collector-001", 12, false);
         var service = Service(database, wallet, ScatterDraws());
         using var signed = GameSecurityContext.Push(new("robot-revolution-request-1", Account, "private-robot-revolution-session",
             "203.0.113.19", DateTime.UtcNow, "POST", RobotRevolutionPaidRouteContract.SpinPath, RobotRevolutionPaidRouteContract.AuditGameId,
@@ -43,28 +43,29 @@ public sealed class RobotRevolutionRoundStoreTests
             operation with { OperationId = "robot-revolution-unrelated-cash" }, true, default));
         Assert.Equal(operation, conflict.PendingRequest);
         await Assert.ThrowsAsync<RobotRevolutionRoundConflictException>(() => restored.SpinAsync(Account,
-            operation with { WagerPoints = 12 }, true, default));
+            operation with { WagerPoints = 14 }, true, default));
 
         var result = await restored.SpinAsync(Account, operation, false, default);
         var round = Assert.IsType<RobotRevolutionPreparedRound>(result.Round);
         Assert.Equal(23, round.Outcome.Audit.EffectiveGame.Paylines.Count);
-        Assert.Equal(0.874m, round.Outcome.Audit.EffectiveGame.Math.PayoutMultiplier);
+        Assert.Equal(RobotRevolutionEngine.Profile.PayoutMultiplier, round.Outcome.Audit.EffectiveGame.Math.PayoutMultiplier);
         Assert.Equal(RobotRevolutionEngine.EngineVersion, round.Outcome.Audit.EngineVersion);
         Assert.Equal(100, round.Outcome.Audit.EnergyBalanceBefore);
         Assert.Equal(5, round.Outcome.Audit.PityMissesBefore);
         Assert.Equal(0, round.Outcome.CollectorPoints);
         Assert.DoesNotContain(round.Outcome.Reels.SelectMany(reel => reel), symbol => symbol.StartsWith("RAND_", StringComparison.Ordinal));
         Assert.DoesNotContain(round.Outcome.Payout.Paylines, line => line.PaylineId == 901);
-        Assert.Equal(7, round.Outcome.FreeSpinsAwarded);
+        Assert.Equal(0, round.Outcome.FreeSpinsAwarded);
         Assert.Empty(round.Outcome.CollectionsAwarded);
         Assert.Equal(0, result.Features!.EnergyBalance);
         Assert.Empty(result.Features.SealCollections);
         Assert.Equal(24, round.Progress.After.SealCounts["rows"]);
         Assert.Equal(240, round.Progress.After.SealWagerPoints["rows"]);
-        Assert.Equal(7, result.Features.FreeSpinsRemaining);
-        Assert.Equal(RobotRevolutionEngine.EclipseFeatureMode, result.Features.FreeSpinFeatureMode);
-        Assert.Equal(10, result.Features.FreeSpinWagerPoints);
-        Assert.Equal(250, result.ChargedWagerCents);
+        Assert.Equal(0, result.Features.FreeSpinsRemaining);
+        Assert.Null(result.Features.FreeSpinFeatureMode);
+        Assert.Null(result.Features.FreeSpinWagerPoints);
+        Assert.Equal(new FifthSunPaidMode(FifthSunTotalityDefinitions.SolarMode, 5, 12), result.Features.PaidMode);
+        Assert.Equal(300, result.ChargedWagerCents);
         Assert.Equal(round.Outcome.Payout.TotalPoints * 25, wallet.Last!.PayoutCents);
         Assert.Equal(round.Outcome.SpinId.ToString("N"), wallet.Last.OperationId);
         Assert.Equal(1, wallet.Approvals);
@@ -76,6 +77,37 @@ public sealed class RobotRevolutionRoundStoreTests
         var raw = Assert.Single((await database.Collection(RobotRevolutionRoundStore.RawCollectionName).GetSnapshotAsync()).Documents);
         Assert.DoesNotContain("private-robot-revolution-session", raw.GetValue<string>("preparedJson"), StringComparison.Ordinal);
         Assert.Equal(GameId, (await Guard(database).GetSnapshotAsync()).GetValue<string>(RobotRevolutionRoundStateCodec.OwnerField));
+    }
+
+    [RobotRevolutionStoreEmulatorFact]
+    public async Task PaidEclipseLostReplyRestoresTheSameBoardAndConsumesOneRoundOnce()
+    {
+        var database = Connect();
+        var wallet = new Wallet();
+        var time = new RoundClock();
+        var trigger = await Service(database, wallet, ScatterDraws(), time).SpinAsync(Account,
+            new("totality-store-trigger", 12, false), true, default);
+        Assert.Equal(5, trigger.Features!.PaidMode!.Remaining);
+        time.Advance();
+        wallet.LoseNextReply = true;
+        var operation = new RobotRevolutionRoundRequest("totality-store-lost-paid-reply", 12, false);
+        await Assert.ThrowsAsync<GameWalletUnavailableException>(() => Service(database, wallet, new HighDraws(), time)
+            .SpinAsync(Account, operation, true, default));
+        var restored = Service(database, wallet, new NoDraws(), time);
+        var pending = await restored.ReadStateAsync(Account, default);
+        Assert.Equal(5, pending.PaidMode!.Remaining);
+        Assert.Equal(operation, pending.PendingOperation);
+        var result = await restored.SpinAsync(Account, operation, false, default);
+        Assert.Equal(300, result.ChargedWagerCents);
+        Assert.Equal(4, result.Features!.PaidMode!.Remaining);
+        Assert.False(result.Round!.Outcome.IsFreeSpin);
+        Assert.Equal(FifthSunTotalityDefinitions.SolarMode, result.Round.Outcome.Audit.FeatureMode);
+        var calls = wallet.Calls;
+        var repeated = await restored.SpinAsync(Account, operation, false, default);
+        Assert.Equal(result.Wallet, repeated.Wallet);
+        Assert.Equal(calls, wallet.Calls);
+        Assert.Equal(2, wallet.Approvals);
+        Assert.Equal(4, (await restored.ReadStateAsync(Account, default)).PaidMode!.Remaining);
     }
 
     [RobotRevolutionStoreEmulatorFact]
@@ -205,14 +237,14 @@ public sealed class RobotRevolutionRoundStoreTests
         var wallet = new Wallet();
         var service = Service(database, wallet, new HighDraws());
         await SeedBalance(database, "specialPoints", 9);
-        var result = await service.SpinAsync(Account, new("robot-revolution-boosted-paid", 6, false, true), true, default);
+        var result = await service.SpinAsync(Account, new("robot-revolution-boosted-paid", 12, false, true), true, default);
         var outcome = result.Round!.Outcome;
         Assert.True(outcome.SpecialBoostApplied);
         Assert.EndsWith("-power-boost", outcome.ReelSetId, StringComparison.Ordinal);
         Assert.Equal(1 + outcome.SpecialPointsAwarded, result.Features!.SpecialPointsBalance);
         Assert.Equal(9, (await LegacyBalance(database, "specialPoints").GetSnapshotAsync()).GetValue<long>("available"));
         Assert.Equal(1, wallet.Approvals);
-        Assert.Equal(150, result.ChargedWagerCents);
+        Assert.Equal(300, result.ChargedWagerCents);
     }
 
     [RobotRevolutionStoreEmulatorFact]
@@ -221,7 +253,7 @@ public sealed class RobotRevolutionRoundStoreTests
         var database = Connect();
         var wallet = new Wallet { ChangeBeforeSettle = 2 };
         var time = new RoundClock();
-        var operation = new RobotRevolutionRoundRequest("robot-revolution-stale-cash-001", 6, false);
+        var operation = new RobotRevolutionRoundRequest("robot-revolution-stale-cash-001", 12, false);
         var service = Service(database, wallet, ScatterDraws(), time);
         var declined = await service.SpinAsync(Account, operation, true, default);
         Assert.True(declined.Wallet.LegacyFreeGamesCountMismatch);
@@ -239,8 +271,8 @@ public sealed class RobotRevolutionRoundStoreTests
         var unpinned = Service(database, wallet, new HighDraws(), time);
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => unpinned.SpinAsync(Account,
             new("robot-revolution-unpinned-odd", 5, true), true, default));
-        var pinned = await unpinned.SpinAsync(Account, new("robot-revolution-pin-six-001", 6, true), true, default);
-        Assert.Equal(6, pinned.Features!.FreeSpinWagerPoints);
+        var pinned = await unpinned.SpinAsync(Account, new("robot-revolution-pin-twelve-001", 12, true), true, default);
+        Assert.Equal(12, pinned.Features!.FreeSpinWagerPoints);
         Assert.Equal(1, pinned.Features.FreeSpinsRemaining);
         Assert.True(wallet.Last!.SpendLegacyFreeGame);
     }
@@ -264,13 +296,21 @@ public sealed class RobotRevolutionRoundStoreTests
 
     private static Draws ScatterDraws(bool expandedRows = false)
     {
-        var strips = RobotRevolutionEngine.CreateReelSet().Reels.Select(strip => strip.Where(symbol => symbol != "BOLT").ToList()).ToArray();
+        if (!expandedRows)
+        {
+            var centre = RobotRevolutionEngine.CreateReelSet().Reels[2];
+            return new Draws([0, 0, centre.IndexOf(FifthSunTotalityDefinitions.SolarSymbol), 0, 0]);
+        }
+        var definition = expandedRows ? FortuneForge.Games.Slots.Runtime.ClassicSlotDefinitionFactory.Create(RobotRevolutionEngine.LegacyProfile).CreateReelSet()
+            : RobotRevolutionEngine.CreateReelSet();
+        var scatter = expandedRows ? "FREE" : "ECLIPSE";
+        var strips = definition.Reels.Select(strip => strip.Where(symbol => symbol != "BOLT").ToList()).ToArray();
         var rows = RobotRevolutionEngine.CreateGame().Layout.VisibleRows + (expandedRows ? 2 : 0);
         IEnumerable<string> Window(IReadOnlyList<string> strip, int stop) =>
             Enumerable.Range(0, rows).Select(offset => strip[(stop + offset) % strip.Count]);
-        var stops = strips.Select((strip, reel) => reel < 3 ? strip.IndexOf("FREE") :
-            Enumerable.Range(0, strip.Count).First(stop => !Window(strip, stop).Contains("FREE"))).ToArray();
-        var scatters = stops.Select((stop, reel) => Window(strips[reel], stop).Count(symbol => symbol == "FREE")).Sum();
+        var stops = strips.Select((strip, reel) => reel < 3 ? strip.IndexOf(scatter) :
+            Enumerable.Range(0, strip.Count).First(stop => !Window(strip, stop).Contains(scatter))).ToArray();
+        var scatters = stops.Select((stop, reel) => Window(strips[reel], stop).Count(symbol => symbol == scatter)).Sum();
         return new Draws([.. stops, .. Enumerable.Repeat(0, scatters), 0]);
     }
 

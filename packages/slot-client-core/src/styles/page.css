@@ -1075,6 +1075,20 @@
   filter: drop-shadow(0 0 0.28rem rgb(255 198 61 / 26%));
 }
 
+.symbol-value-guide .symbol-value-guide__item.symbol-value-guide__item--artwork-variants {
+  --symbol-guide-artwork-size: 2.15rem;
+  grid-column: 1 / -1;
+  grid-template-columns: calc(var(--symbol-guide-artwork-size) * var(--symbol-guide-artwork-count) + 0.25rem * (var(--symbol-guide-artwork-count) - 1)) minmax(0, 0.85fr) minmax(0, 1.15fr);
+}
+
+.symbol-value-guide .symbol-value-guide__artwork.symbol-value-guide__artwork--variants {
+  display: grid;
+  grid-template-columns: repeat(var(--symbol-guide-artwork-count), minmax(0, 1fr));
+  gap: 0.25rem;
+  width: calc(var(--symbol-guide-artwork-size) * var(--symbol-guide-artwork-count) + 0.25rem * (var(--symbol-guide-artwork-count) - 1));
+  height: var(--symbol-guide-artwork-size);
+}
+
 .symbol-value-guide__artwork[data-value-label]::after {
   position: absolute;
   top: 50%;

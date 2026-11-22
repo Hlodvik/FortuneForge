@@ -6,8 +6,10 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ARCANE_ARCHIVES_EXPERIENCE_SET } from '@fortuneforge/games-arcane-archives/manifest'
 import { OCEAN_ODYSSEY_SLOT_GAME } from '@fortuneforge/games-ocean-odyssey/manifest'
+import { FIFTH_SUN_SLOT_GAME } from '@fortuneforge/games-robot-revolution/manifest'
 import { WUKONG_EXPERIENCE_SET } from '@fortuneforge/games-wukong/manifest'
 import { createPreparedSlotSpinStore } from '@fortuneforge/slot-client-core/preparedSpin'
+import { SpinButton } from '@fortuneforge/slot-client-core/components/SpinButton'
 import type { SlotTomeState } from '@fortuneforge/slot-game-runtime/experience'
 import { DRAGON_HOARD_SLOT_GAME } from '../../games/slots/dragonHoard/manifest'
 import type { SlotExperienceSet } from './config/slotExperienceSets'
@@ -52,9 +54,11 @@ const withCurrentSymbolSet = (response: SpinResult): SpinResult =>
 let host: HTMLDivElement
 let root: Root
 let controller: SlotsPageController
-function Harness({ experience, account }: { experience: SlotExperienceSet; account?: SlotsPageProps['account'] }) {
+function Harness({ experience, account, withSpinControl = false }: {
+  experience: SlotExperienceSet; account?: SlotsPageProps['account']; withSpinControl?: boolean
+}) {
   controller = useSlotsPageController({ demoMode: account === undefined, account, experienceSet: experience })
-  return <div />
+  return withSpinControl ? <SpinButton onSpin={controller.handleSpinButtonClick} isSpinning={controller.isSpinning} /> : <div />
 }
 async function mount(experience = OCEAN_ODYSSEY_SLOT_GAME.experience, account?: SlotsPageProps['account']) {
   await act(async () => root.render(<Harness experience={experience} account={account} />))
@@ -77,6 +81,28 @@ afterEach(() => {
   host.remove()
   vi.useRealTimers()
   vi.unstubAllGlobals()
+})
+
+it('keeps wager and spin shortcuts after a mouse-focused Spin button', async () => {
+  await act(async () => root.render(<Harness experience={OCEAN_ODYSSEY_SLOT_GAME.experience} withSpinControl />))
+  const button = host.querySelector<HTMLButtonElement>('.spin-button')!
+  button.focus()
+  await act(async () => button.click())
+  await act(async () => { await vi.advanceTimersByTimeAsync(5_000) })
+  expect(mocks.request).toHaveBeenCalledTimes(1)
+  expect(document.activeElement).toBe(button)
+
+  const before = controller.wagerIndex
+  const arrow = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true })
+  await act(async () => { button.dispatchEvent(arrow) })
+  expect(arrow.defaultPrevented).toBe(true)
+  expect(controller.wagerIndex).toBe(before + 1)
+
+  const space = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
+  await act(async () => { button.dispatchEvent(space) })
+  await act(async () => { await vi.advanceTimersByTimeAsync(5_000) })
+  expect(space.defaultPrevented).toBe(true)
+  expect(mocks.request).toHaveBeenCalledTimes(2)
 })
 
 it('stops Arcane autoplay and blocks manual and keyboard spins until the Tome boost is activated', async () => {
@@ -201,6 +227,68 @@ it('recovers a saved paid round at zero credits and then refreshes the authorita
   } finally {
     store.forget(accountId, pending.operationId)
   }
+})
+
+it('resumes all five paid Eclipse rounds at the saved wager and charges each round', async () => {
+  const experience = OCEAN_ODYSSEY_SLOT_GAME.experience
+  const mode = { mode: 'solar-eclipse', remaining: 5, wagerPoints: 12 }
+  mocks.slotState.mockResolvedValueOnce({
+    paidMode: mode, freeSpinsRemaining: 0, freeSpinWagerPoints: null, freeSpinFeatureMode: null,
+    specialPointsBalance: 0, energyBalance: 0, sealCollections: [], slotsCreditsBalance: 20,
+  })
+  for (const remaining of [4, 3, 2, 1, 0]) mocks.paidRequest.mockResolvedValueOnce({
+    ...fixture.baseLoss.response, gameId: experience.rules.gameId,
+    symbolSetId: experience.symbols.serverSymbolSetId ?? experience.symbols.id,
+    reels: experience.rules.initialReels.map(reel => [...reel]), wagerPoints: 12,
+    isFreeSpin: false, freeSpinsAwarded: 0, freeSpinsRemaining: 0, freeSpinFeatureMode: null,
+    payout: { ...fixture.baseLoss.response.payout, totalPoints: 0, paylines: [] },
+    paidMode: remaining ? { ...mode, remaining } : null, slotsCreditsBalance: 5 + remaining * 3,
+  })
+  await mount(experience, {
+    userId: 'eclipse-paid-carry', playerName: 'Player', email: 'player@example.test', createdAtUtc: '2026-11-20T00:00:00Z',
+    balances: { slotsCredits: 20, freeGames: 0 }, role: 'player',
+    slots: { spinsPlayed: 0, wins: 0, losses: 0, creditsWagered: 0, creditsWon: 0, netCredits: 0 },
+  })
+  expect(controller.activeWagerDisplay).toBe(3)
+  expect(controller.isPaidModeWagerLocked).toBe(true)
+  act(() => controller.changeWager(1))
+  act(() => controller.selectWager(0))
+  expect(controller.activeWagerDisplay).toBe(3)
+  for (let index = 0; index < 5; index++) await spin()
+  expect(mocks.paidRequest).toHaveBeenCalledTimes(5)
+  for (const [request] of mocks.paidRequest.mock.calls) expect(request).toMatchObject({ wagerPoints: 12, useFreeSpin: false })
+  expect(controller.balance).toBe(5)
+  expect(controller.freeSpinsRemaining).toBe(0)
+  expect(controller.paidMode).toBeNull()
+  expect(controller.isPaidModeWagerLocked).toBe(false)
+})
+
+it('pauses manual keyboard and autoplay spins while the Eclipse wheel presents', async () => {
+  await mount()
+  await act(async () => { controller.setSpinFeaturePresenting(true); controller.setIsAutoSpinning(true) })
+  await spin()
+  act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })))
+  await act(async () => { await vi.advanceTimersByTimeAsync(5_000) })
+  expect(mocks.request).not.toHaveBeenCalled()
+  await act(async () => controller.setSpinFeaturePresenting(false))
+  await act(async () => { await vi.advanceTimersByTimeAsync(1) })
+  expect(mocks.request).toHaveBeenCalledTimes(1)
+})
+
+it('forwards the native paid Eclipse state between demo rounds', async () => {
+  const native = JSON.parse(readFileSync(new NodeURL('./__fixtures__/controller-eclipse-native.json', import.meta.url), 'utf8')) as {
+    trigger: SpinResult; round: SpinResult
+  }
+  mocks.request.mockResolvedValueOnce(native.trigger).mockResolvedValueOnce(native.round)
+  await mount(FIFTH_SUN_SLOT_GAME.experience)
+  await spin()
+  expect(controller.paidMode).toEqual(native.trigger.paidMode)
+  await spin()
+  expect(mocks.request.mock.calls[1][0]).toMatchObject({
+    paidMode: native.trigger.paidMode, wagerPoints: 12, useFreeSpin: false,
+  })
+  expect(controller.paidMode).toEqual(native.round.paidMode)
+  expect(controller.freeSpinsRemaining).toBe(0)
 })
 
 describe('symbol guide pauses slot controls', () => {

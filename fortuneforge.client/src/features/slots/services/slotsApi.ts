@@ -8,6 +8,7 @@ import {
   type SpinResult,
 } from '../types/slots'
 import type {
+  SlotPaidModeState,
   SlotPotionBottle,
   SlotPotionPreview,
   SlotPotionState,
@@ -50,6 +51,7 @@ export function readPendingSlotSpin(gameId: string, accountId?: string): Prepare
 }
 
 type DemoSpinRequest = Omit<SpinRequest, 'useSpecialBoost'> & {
+  paidMode?: SlotPaidModeState | null
   freeSpinsRemaining: number
   freeSpinWagerPoints: number | null
   energyBalance: number
@@ -59,6 +61,7 @@ type DemoSpinRequest = Omit<SpinRequest, 'useSpecialBoost'> & {
 }
 
 export type SlotState = {
+  paidMode?: SlotPaidModeState | null
   freeSpinsRemaining: number
   freeSpinWagerPoints: number | null
   specialPointsBalance: number
@@ -252,6 +255,7 @@ export async function requestSlotState(gameId: string, accountId?: string): Prom
     || !state.sealCollections.every(isSlotSealCollection)
     || (state.arcaneTome != null && !isTomeState(state.arcaneTome))
     || (state.arcanePotions != null && !isPotionState(state.arcanePotions))
+    || (state.paidMode != null && !isPaidModeState(state.paidMode))
     || (state.freeSpinFeatureMode !== null && typeof state.freeSpinFeatureMode !== 'string')
     || (state.slotsCreditsBalance != null && (typeof state.slotsCreditsBalance !== 'number' ||
       !Number.isFinite(state.slotsCreditsBalance) || state.slotsCreditsBalance < 0))
@@ -304,6 +308,11 @@ function isPotionPreview(value: unknown): value is SlotPotionPreview {
     typeof value.effect === 'string' && isNonNegativeInteger(value.potency)
 }
 
+function isPaidModeState(value: unknown): value is SlotPaidModeState {
+  return isRecord(value) && typeof value.mode === 'string' && value.mode.length > 0 &&
+    isPositiveInteger(value.remaining) && isPositiveInteger(value.wagerPoints)
+}
+
 function isPotionBottle(value: unknown): value is SlotPotionBottle {
   return isRecord(value) && isPositiveInteger(value.id) &&
     (value.variantId === undefined || (typeof value.variantId === 'string' && value.variantId.length > 0)) &&
@@ -351,6 +360,7 @@ function isSpinResult(
 
   return (
     typeof result.spinId === 'string' &&
+    (result.paidMode == null || isPaidModeState(result.paidMode)) &&
     typeof result.gameId === 'string' &&
     typeof result.reelSetId === 'string' &&
     typeof result.symbolSetId === 'string' &&
@@ -409,9 +419,9 @@ function isSpinResult(
     Array.isArray(result.reels) &&
     result.reels.length > 0 &&
     result.reels.every(
-      (reel) => Array.isArray(reel) && reel.length > 0 && reel.every(symbol => typeof symbol === 'string' && (symbolDefinitions
-        ? Object.hasOwn(symbolDefinitions, symbol)
-        : isSlotSymbolId(symbol) || (result.olympusTumble != null && tumbleRules?.symbols.includes(symbol) === true))),
+      (reel) => Array.isArray(reel) && reel.length > 0 && reel.every(symbol =>
+        isKnownResultSymbol(symbol, symbolDefinitions) || (!symbolDefinitions &&
+          result.olympusTumble != null && tumbleRules?.symbols.includes(symbol) === true)),
     ) &&
     Array.isArray(result.reelStops) &&
     result.reelStops.length === result.reels.length &&
@@ -423,7 +433,7 @@ function isSpinResult(
     (result.lightningCollection == null || (result.gameId === 'arcane-archives-v1' &&
       validLightningCollection(result.lightningCollection, result.reels, result.payout.totalPoints))) &&
     Array.isArray(result.payout.paylines) &&
-    result.payout.paylines.every(isPaylinePayout) &&
+    result.payout.paylines.every(line => isPaylinePayout(line, symbolDefinitions)) &&
     (result.arcaneWandCollection == null || (result.gameId === 'arcane-archives-v1' &&
       validArcaneWandCollection(result.arcaneWandCollection, result.reels, result.wagerPoints,
         result.payout.totalPoints, result.payout.paylines)))
@@ -603,30 +613,35 @@ function isSlotSealCollection(value: unknown): value is SlotSealCollection {
   )
 }
 
-function isPaylinePayout(value: unknown): boolean {
+function isKnownResultSymbol(value: unknown, symbolDefinitions?: SlotSymbolSet['definitions']): boolean {
+  return typeof value === 'string' && (symbolDefinitions
+    ? Object.hasOwn(symbolDefinitions, value) : isSlotSymbolId(value))
+}
+
+function isPaylinePayout(value: unknown, symbolDefinitions?: SlotSymbolSet['definitions']): boolean {
   return (
     isRecord(value) &&
     Number.isInteger(value.paylineId) &&
     typeof value.amountPoints === 'number' &&
     Array.isArray(value.matches) &&
-    value.matches.every(isPaidMatch)
+    value.matches.every(match => isPaidMatch(match, symbolDefinitions))
   )
 }
 
-function isPaidMatch(value: unknown): boolean {
+function isPaidMatch(value: unknown, symbolDefinitions?: SlotSymbolSet['definitions']): boolean {
   return (
     isRecord(value) &&
     typeof value.multiplier === 'number' &&
     typeof value.amountPoints === 'number' &&
-    isSymbolMatch(value.match)
+    isSymbolMatch(value.match, symbolDefinitions)
   )
 }
 
-function isSymbolMatch(value: unknown): boolean {
+function isSymbolMatch(value: unknown, symbolDefinitions?: SlotSymbolSet['definitions']): boolean {
   return (
     isRecord(value) &&
     Number.isInteger(value.paylineId) &&
-    isSlotSymbolId(value.symbolId) &&
+    isKnownResultSymbol(value.symbolId, symbolDefinitions) &&
     Number.isInteger(value.matchLength) &&
     Array.isArray(value.positions) &&
     value.positions.every(isGridPosition) &&

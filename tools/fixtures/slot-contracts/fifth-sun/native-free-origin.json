@@ -1,0 +1,18 @@
+{
+  "source": "Native engine, recorded-draw replay, verified report and in-memory receipt fixture. Not a persisted wallet transaction.",
+  "seed": 762952,
+  "attempt": 1,
+  "engineVersion": "fifth-sun-engine-v1",
+  "wagerPoints": 12,
+  "startingState": {
+    "freeSpinsRemaining": 2,
+    "freeSpinWagerPoints": 12,
+    "freeSpinFeatureMode": "arcade-rows",
+    "specialPointsBalance": 0,
+    "energyBalance": 0,
+    "sealCollections": [],
+    "pendingOperation": null,
+    "slotsCreditsBalance": 500
+  },
+  "noProductionEndpointOrAccount": true
+}

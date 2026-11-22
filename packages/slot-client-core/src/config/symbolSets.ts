@@ -5,15 +5,36 @@ export type SlotResponsiveImages = Readonly<
   { 96: string; 192: string } & ({ 256: string; 320?: never } | { 256?: never; 320: string })
 >
 
-export type SlotSymbolDefinition<TSymbol extends string = SlotSymbolId> = {
-  id: TSymbol
-  label: string
+export type SlotSymbolArtwork = {
   image: string
+  label?: string
   /** Exact-sized artwork variants; omitted for existing single-source art. */
   responsiveImages?: SlotResponsiveImages
   animatedImage?: string
+}
+
+export type SlotSymbolDefinition<TSymbol extends string = SlotSymbolId> = SlotSymbolArtwork & {
+  id: TSymbol
+  label: string
+  /** Full selectable artwork set, including the primary form; empty means use the definition. */
+  artworkVariants?: readonly SlotSymbolArtwork[]
   valueLabel?: string
   wagerMultiplier?: number
+}
+
+export function getSlotSymbolArtworks(definition: SlotSymbolDefinition): readonly SlotSymbolArtwork[] {
+  return definition.artworkVariants?.length ? definition.artworkVariants : [definition]
+}
+
+export function getSlotSymbolArtwork(
+  definition: SlotSymbolDefinition,
+  reelIndex?: number,
+  rowIndex?: number,
+): SlotSymbolArtwork {
+  const artworks = getSlotSymbolArtworks(definition)
+  if (typeof reelIndex !== 'number' || !Number.isSafeInteger(reelIndex) || reelIndex < 0 ||
+      typeof rowIndex !== 'number' || !Number.isSafeInteger(rowIndex) || rowIndex < 0) return artworks[0]
+  return artworks[(reelIndex % artworks.length + rowIndex % artworks.length) % artworks.length]
 }
 
 export function getSlotSymbolImageSrcSet(images?: SlotResponsiveImages): string | undefined {
@@ -38,6 +59,8 @@ export type SlotSymbolGuideEntry<TSymbol extends string = SlotSymbolId> = {
 export type SlotSymbolSet<TSymbol extends string = SlotSymbolId> = {
   id: string
   serverSymbolSetId?: string
+  /** Historical identities allowed for owed free spins and saved-spin recovery only. */
+  compatibleServerSymbolSetIds?: readonly string[]
   definitions: Readonly<Partial<Record<TSymbol, SlotSymbolDefinition<TSymbol>>>>
   guideEntries: readonly SlotSymbolGuideEntry<TSymbol>[]
   /** Symbols kept in consecutive guide rows, in the specified order. */

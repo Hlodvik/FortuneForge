@@ -5,6 +5,7 @@
 .vs/**
 .firebase
 .firebase/**
+.hypothesis/
 .codex-client.*.log
 .codex-server.*.log
 **/bin

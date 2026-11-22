@@ -465,7 +465,7 @@ $stampGuard = 'Assert-ReleaseCheckout -Repository $Checkout -Sha $CandidateSha'
 Assert-ScopeEqual ($scopeDeploySource.LastIndexOf($stampGuard, $scopeDeploySource.IndexOf('Write-ReleaseRecord -Record $marker')) -gt $scopeDeploySource.IndexOf('$marker = [ordered]@{')) $true 'source and ignored build-input guard immediately before Hosting stamp'
 $cloudIgnore = Get-Content -LiteralPath (Join-Path $scopeRepoRoot '.gcloudignore') -Raw
 Assert-ScopeEqual $cloudIgnore.Contains('#!include:.gitignore') $true 'ignored private/local inputs excluded from Cloud Run upload'
-foreach ($pattern in @('**/.practice/**', '**/.data/**', '**/App_Data/**')) {
+foreach ($pattern in @('**/.practice/**', '**/.data/**', '**/App_Data/**', '.hypothesis/')) {
     Assert-ScopeEqual $cloudIgnore.Contains($pattern) $true "nested private sample exclusion $pattern"
 }
 
@@ -477,7 +477,7 @@ Assert-ScopeEqual $ignore.Contains("`n**`n") $true 'strict upload excludes every
 foreach ($exact in @('!/Dockerfile', '!/games/', '!/games/Test/', '!/games/Test/src/', '!/games/Test/src/Engine.cs', '!/games/Test/src/space\ name.cs')) {
     Assert-ScopeEqual $ignore.Contains($exact) $true "strict upload exact path $exact"
 }
-foreach ($privatePath in @('games/sample/.practice/private.json', 'games/sample/.data/private.json', 'games/sample/App_Data/private.json', 'unknown.txt')) {
+foreach ($privatePath in @('games/sample/.practice/private.json', 'games/sample/.data/private.json', 'games/sample/App_Data/private.json', '.hypothesis/constants/private-cache', 'unknown.txt')) {
     Assert-ScopeThrows { Assert-ReleaseUploadPaths -TrackedPaths $uploadPaths -UploadPaths @($uploadPaths + $privatePath) } "untracked or ignored upload $privatePath"
 }
 foreach ($unsupported in @('games/Test/[literal].json', 'games/Test/file!.json', 'games/Test/file#.json', '../escape', '/rooted')) {

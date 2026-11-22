@@ -652,12 +652,17 @@ function Invoke-JsonCommand {
     return $result
 }
 
-function New-ApiUploadContext {
-    param([string]$Checkout, $LockedSource, [string]$RecordPath, $Packages)
+function Get-ApiBaseUploadInventory {
+    param([string]$Checkout, [string[]]$TrackedPaths)
     # The SDK selector preserves the committed .gcloudignore exclusions. Its
     # local-only metadata command does not contact a service or create files.
     $inventory = @(Invoke-JsonCommand 'gcloud.cmd' @('meta', 'list-files-for-upload', $Checkout, '--format=json'))
-    $trackedUpload = Assert-ReleaseUploadPaths -TrackedPaths $LockedSource.TrackedPaths -UploadPaths $inventory
+    Assert-ReleaseUploadPaths -TrackedPaths $TrackedPaths -UploadPaths $inventory
+}
+
+function New-ApiUploadContext {
+    param([string]$Checkout, $LockedSource, [string]$RecordPath, $Packages)
+    $trackedUpload = Get-ApiBaseUploadInventory -Checkout $Checkout -TrackedPaths $LockedSource.TrackedPaths
     $upload = $trackedUpload
     if ($Packages) {
         Assert-SharedBackendUploadUnchanged $Packages
@@ -1122,6 +1127,14 @@ if ($InspectLive -and $PreflightOnly) { throw 'Choose either live inspection or 
 $localPreflight = $null
 if (-not $InspectLive) {
     $localPreflight = Get-ReleaseLocalPreflight -Repository $repoRoot -Commit $Commit
+    if ($PreflightOnly -and $Target -in @('all', 'api')) {
+        $preflightTrackedPaths = @(& git -C $repoRoot -c core.quotePath=false ls-files)
+        if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect tracked paths for local source upload preflight.' }
+        $baseUpload = Get-ApiBaseUploadInventory -Checkout $repoRoot -TrackedPaths $preflightTrackedPaths
+        Assert-ReleaseCheckout -Repository $repoRoot -Sha $localPreflight.CandidateSha
+        $localPreflight | Add-Member -NotePropertyName BaseUploadFileCount -NotePropertyValue $baseUpload.FileCount
+        $localPreflight | Add-Member -NotePropertyName BaseUploadManifestSha256 -NotePropertyValue $baseUpload.ManifestSha256
+    }
     if ($sharedBackend -and $Target -in @('all', 'api')) {
         $selected = Invoke-JsonCommand 'node.exe' @((Join-Path $repoRoot 'scripts/shared-backend-packages.mjs'), 'verify', '--manifest', $sharedBackendManifestPath)
         $localPreflight | Add-Member -NotePropertyName SharedBackendPackages -NotePropertyValue $selected
@@ -1204,6 +1217,8 @@ $record = [ordered]@{
     apiUploadManifestSha256 = ''
     apiUploadIgnoreSha256 = ''
     apiUploadFileCount = 0
+    apiBaseUploadFileCount = 0
+    apiBaseUploadManifestSha256 = ''
     apiBuildId = ''
     apiBuildTag = ''
     apiImageDigest = ''
@@ -1260,6 +1275,11 @@ $record = [ordered]@{
 try {
     $workspaceLock = Enter-ReleaseWorkspaceLock -Repository $releaseCheckout
     $sourceLock = Enter-ReleaseSourceLock -Repository $releaseCheckout -Sha $candidateSha
+    if ($Target -in @('all', 'api')) {
+        $baseUpload = Get-ApiBaseUploadInventory -Checkout $releaseCheckout -TrackedPaths $sourceLock.TrackedPaths
+        $record.apiBaseUploadFileCount = $baseUpload.FileCount
+        $record.apiBaseUploadManifestSha256 = $baseUpload.ManifestSha256
+    }
     if ($hostRuntimeConfiguration) { $hostRuntimeConfigurationLock = Enter-HostRuntimeConfigurationLock -Configuration $hostRuntimeConfiguration }
     Assert-ReleaseToolingMatchesCommit -Repository $repoRoot -Sha $candidateSha -Paths $releaseToolPaths
     $record.sourceManifestSha256 = $sourceLock.ManifestSha256

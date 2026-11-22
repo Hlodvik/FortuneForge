@@ -274,7 +274,7 @@ $runtimeFunctions = @('ConvertFrom-HostRuntimeConfiguration', 'Get-DeploymentInp
     'Assert-HostRuntimeConfigurationUnchanged', 'Enter-HostRuntimeConfigurationLock', 'Get-ApiWorkerDeployFlags', 'New-ApiRuntimeFlagsContext', 'Assert-ApiHostRuntimeConfiguration',
     'Get-ApiLegacyWorkerConfiguration', 'Assert-ApiSharedBackendConfiguration', 'Enter-SharedBackendUploadLocks', 'Assert-SharedBackendUploadUnchanged',
     'Get-ApiCandidateObject', 'ConvertTo-SharedBackendCandidateService', 'New-ApiServiceReplaceContext',
-    'Assert-ApiServiceFieldSubset', 'Assert-SharedBackendCandidateService', 'Invoke-ApiServiceReplaceRequest')
+    'Assert-ApiServiceFieldSubset', 'Assert-SharedBackendCandidateService', 'Invoke-ApiServiceReplaceRequest', 'Get-ApiBaseUploadInventory')
 $runtimeAst = [System.Management.Automation.Language.Parser]::ParseInput($deploySource, [ref]$null, [ref]$null)
 foreach ($definition in $runtimeAst.FindAll({ param($node)
     $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -cin $runtimeFunctions
@@ -557,6 +557,25 @@ try {
 finally { if ($replacementContext) { $replacementContext.Stream.Dispose(); Remove-Item -LiteralPath $replacementContext.Path -Force } }
 Assert-Equal $deploySource.Contains('metadata.resourceVersion -cne $apiServiceReplaceContext.ResourceVersion') $true 'resource version rechecked immediately before mutation'
 Assert-Equal $deploySource.Contains('Wait-SharedBackendCandidateReady -ServingRevision') $true 'direct replacement waits for the exact candidate while old traffic stays pinned'
+& {
+    $fakeSdkInventory = @('Dockerfile', 'tracked.cs')
+    function Invoke-JsonCommand {
+        param($Executable, $Arguments)
+        Assert-Equal $Executable 'gcloud.cmd' 'base upload preflight uses the installed SDK selector'
+        Assert-Equal ($Arguments -join ' ') 'meta list-files-for-upload synthetic --format=json' 'base upload preflight is metadata-only without credentials or services'
+        return $fakeSdkInventory
+    }
+    $inventory = Get-ApiBaseUploadInventory -Checkout 'synthetic' -TrackedPaths @('Dockerfile', 'tracked.cs')
+    Assert-Equal $inventory.FileCount 2 'early upload preflight accepts only selected tracked source'
+    $fakeSdkInventory += '.hypothesis/constants/private-cache'
+    Assert-Throws { Get-ApiBaseUploadInventory -Checkout 'synthetic' -TrackedPaths @('Dockerfile', 'tracked.cs') } 'early upload preflight rejects any cache file escaping SDK exclusions'
+}
+$sourceLockPosition = $deploySource.IndexOf('$sourceLock = Enter-ReleaseSourceLock -Repository $releaseCheckout -Sha $candidateSha')
+$earlyUploadPosition = $deploySource.IndexOf('Get-ApiBaseUploadInventory -Checkout $releaseCheckout -TrackedPaths $sourceLock.TrackedPaths', $sourceLockPosition)
+$qaInstallPosition = $deploySource.IndexOf("Invoke-Checked -Executable 'npm.cmd' -Arguments @('ci')", $sourceLockPosition)
+if ($earlyUploadPosition -le $sourceLockPosition -or $qaInstallPosition -le $earlyUploadPosition) { throw 'Base SDK upload privacy must pass under source locks before expensive release verification.' }
+$localUploadPosition = $deploySource.IndexOf('Get-ApiBaseUploadInventory -Checkout $repoRoot -TrackedPaths $preflightTrackedPaths')
+if ($localUploadPosition -lt 0 -or $localUploadPosition -ge $deploySource.IndexOf('$hostingBefore = $null')) { throw 'Explicit local preflight must check base upload privacy before any live or credential reads.' }
 foreach ($source in @($deploySource, $verifySource)) {
     Assert-Equal $source.Contains('[switch]$LivePlaytest') $true 'both release entry points expose explicit live-playtest mode'
     Assert-Equal $source.Contains('-LivePlaytest:$LivePlaytest') $true 'both release entry points independently bind playtest policy'

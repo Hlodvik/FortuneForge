@@ -65,6 +65,7 @@ Assert-ScopeEqual @($fullCommands | Where-Object { $_.Executable -ceq 'dotnet' }
 $fullText = ($fullCommands | ForEach-Object { $_.Arguments -join ' ' }) -join "`n"
 Assert-ScopeEqual $fullText.Contains('FortuneForge.Server.Tests.csproj') $true 'full suite retains the server test project'
 Assert-ScopeEqual $fullText.Contains('game-worker-release.test.mjs') $true 'full suite retains private worker publication policy tests'
+Assert-ScopeEqual $fullText.Contains('shared-backend-packages.test.mjs') $true 'full suite verifies immutable shared package composition and materialization'
 foreach ($project in @('FortuneForge.Games.DragonTiger.Tests.csproj', 'FortuneForge.Games.HiLo.Engine.Tests.csproj',
     'FortuneForge.Games.HiLo.Server.Tests.csproj', 'FortuneForge.Games.AndarBahar.Tests.csproj')) {
     Assert-ScopeEqual $fullText.Contains($project) $false "full suite omits stale hardcoded game project $project"
@@ -165,6 +166,7 @@ $testFreeCommands = @(Get-ReleaseVerificationCommands -Plan (New-ReleaseVerifica
     -Repository $scopeRepoRoot -Target all -TestFree -TestWaiverReason 'Owner requested the explicit test-free route.')
 $testFreeText = ($testFreeCommands | ForEach-Object { $_.Executable + ' ' + ($_.Arguments -join ' ') }) -join "`n"
 Assert-ScopeEqual $testFreeText.Contains('game-worker-release.test.mjs') $false 'test-free waiver excludes worker publication policy tests'
+Assert-ScopeEqual $testFreeText.Contains('shared-backend-packages.test.mjs') $false 'test-free waiver excludes package policy test runners'
 Assert-ScopeEqual @($testFreeCommands | Where-Object {
     ($_.Executable -ceq 'dotnet' -and $_.Arguments[0] -ceq 'test') -or
     ($_.Executable -ceq 'npm.cmd' -and $_.Arguments[0] -ceq 'run' -and

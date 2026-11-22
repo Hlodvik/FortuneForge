@@ -14,7 +14,7 @@
     <DefineConstants Condition="'$(GamePackage)' == 'ArcaneArchives'">$(DefineConstants);ARCANE_ARCHIVES</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="Program.cs;GameBackendPackage.cs" />
     <Compile Include="ClassicPaidSlotOutcomes.cs" />
     <ProjectReference Include="../FortuneForge.Games.Hosting/FortuneForge.Games.Hosting.csproj" />
     <ProjectReference Include="../FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj" />

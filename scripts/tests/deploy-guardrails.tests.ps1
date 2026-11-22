@@ -271,7 +271,8 @@ $verifySource = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/verify-re
 # Import only pure validation/flag functions and input locks, never execute the
 # deployment entry point. Fixtures stay in ignored artifacts, not repositories.
 $runtimeFunctions = @('ConvertFrom-HostRuntimeConfiguration', 'Get-DeploymentInputHash', 'Read-HostRuntimeConfiguration',
-    'Assert-HostRuntimeConfigurationUnchanged', 'Enter-HostRuntimeConfigurationLock', 'Get-ApiWorkerDeployFlags', 'New-ApiRuntimeFlagsContext', 'Assert-ApiHostRuntimeConfiguration')
+    'Assert-HostRuntimeConfigurationUnchanged', 'Enter-HostRuntimeConfigurationLock', 'Get-ApiWorkerDeployFlags', 'New-ApiRuntimeFlagsContext', 'Assert-ApiHostRuntimeConfiguration',
+    'Get-ApiLegacyWorkerConfiguration', 'Assert-ApiSharedBackendConfiguration', 'Enter-SharedBackendUploadLocks', 'Assert-SharedBackendUploadUnchanged')
 $runtimeAst = [System.Management.Automation.Language.Parser]::ParseInput($deploySource, [ref]$null, [ref]$null)
 foreach ($definition in $runtimeAst.FindAll({ param($node)
     $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -cin $runtimeFunctions
@@ -365,6 +366,104 @@ finally {
     Remove-Item -LiteralPath $runtimeFixture -Force
 }
 Assert-Equal $deploySource.Contains('$apiDeployArguments += "--flags-file=$($apiRuntimeFlagsContext.Path)"') $true 'catalogue configuration uses a locked flags file instead of a long shell argument'
+
+$sharedFixture = Join-Path $repoRoot ('artifacts/releases/shared-upload-test-' + [guid]::NewGuid().ToString('N'))
+$selectedRelease = '12345678-1234-4234-8234-123456789abc'
+$sharedDirectory = Join-Path $sharedFixture 'artifacts/shared-backend-upload/game-packages'
+$selectedDirectory = Join-Path $sharedDirectory ('hearts/' + $selectedRelease)
+[IO.Directory]::CreateDirectory($selectedDirectory) | Out-Null
+$selectedFile = Join-Path $selectedDirectory 'Worker.dll'
+[IO.File]::WriteAllText($selectedFile, 'synthetic frozen package bytes')
+$selectedHash = (Get-FileHash -LiteralPath $selectedFile -Algorithm SHA256).Hash.ToLowerInvariant()
+$selectedSize = (Get-Item -LiteralPath $selectedFile).Length
+$selectedComposition = [pscustomobject]@{ contractVersion = 1; packages = @([pscustomobject]@{
+    runtimeGameId = 'hearts'; releaseId = $selectedRelease;
+    files = @([pscustomobject]@{ path = 'Worker.dll'; size = $selectedSize; sha256 = $selectedHash })
+}) }
+$compositionFile = Join-Path $sharedDirectory 'composition.json'
+[IO.File]::WriteAllText($compositionFile, ($selectedComposition | ConvertTo-Json -Depth 6), [Text.UTF8Encoding]::new($false))
+$compositionHash = (Get-FileHash -LiteralPath $compositionFile -Algorithm SHA256).Hash.ToLowerInvariant()
+$sharedLock = $null
+try {
+    $sharedLock = Enter-SharedBackendUploadLocks -Checkout $sharedFixture -Composition $selectedComposition `
+        -CompositionSha256 $compositionHash -ManifestSha256 ('a' * 64)
+    Assert-Equal $sharedLock.FileCount 2 'shared upload locks only selected package and composition files'
+    Assert-SharedBackendUploadUnchanged $sharedLock
+    Assert-Throws { [IO.File]::WriteAllText($selectedFile, 'changed') } 'frozen package bytes deny concurrent writes'
+    $sharedFlags = @(Get-ApiWorkerDeployFlags -SourceSha $head -Bindings @() -SharedPackages $sharedLock)
+    Assert-Equal $sharedFlags.Count 1 'shared backend requires no external worker secrets'
+    Assert-Equal $sharedFlags[0].Contains('GamePackages__Required=true') $true 'shared backend cannot silently fall back to split workers'
+    Assert-Equal $sharedFlags[0].Contains("GamePackages__ManifestSha256=$compositionHash") $true 'candidate binds the exact materialized composition'
+    Assert-Throws { Get-ApiWorkerDeployFlags -SourceSha $head -Bindings $runtimeBindings -SharedPackages $sharedLock } 'shared backend rejects external worker bindings'
+    Assert-Throws { Get-ApiWorkerDeployFlags -SourceSha $head -Bindings @() -RuntimeConfiguration $runtimeConfiguration -SharedPackages $sharedLock } 'shared backend rejects external runtime settings'
+    $approvedPaths = @('Dockerfile', 'tracked.cs') + $sharedLock.Paths
+    $approvedUpload = Assert-ReleaseUploadPaths -TrackedPaths $approvedPaths -UploadPaths $approvedPaths
+    Assert-Equal $approvedUpload.FileCount 4 'exact selected locked package paths can join tracked source upload'
+    Assert-Throws { Assert-ReleaseUploadPaths -TrackedPaths $approvedPaths -UploadPaths ($approvedPaths + 'artifacts/unselected/private.json') } 'shared packages do not permit broad artifact uploads'
+    Exit-ReleaseSourceLock $sharedLock.Lock; $sharedLock = $null
+    [IO.File]::WriteAllText($selectedFile, 'corrupt')
+    Assert-Throws { Enter-SharedBackendUploadLocks -Checkout $sharedFixture -Composition $selectedComposition -CompositionSha256 $compositionHash -ManifestSha256 ('a' * 64) } 'selected package hash mismatch'
+    [IO.File]::WriteAllText($selectedFile, 'synthetic frozen package bytes')
+    [IO.File]::WriteAllText((Join-Path $sharedDirectory 'unselected.json'), '{}')
+    Assert-Throws { Enter-SharedBackendUploadLocks -Checkout $sharedFixture -Composition $selectedComposition -CompositionSha256 $compositionHash -ManifestSha256 ('a' * 64) } 'unselected materialized file'
+}
+finally {
+    if ($sharedLock) { Exit-ReleaseSourceLock $sharedLock.Lock }
+    $resolvedFixture = [IO.Path]::GetFullPath($sharedFixture)
+    $fixtureBoundary = [IO.Path]::GetFullPath((Join-Path $repoRoot 'artifacts/releases')).TrimEnd('\') + '\'
+    if (-not $resolvedFixture.StartsWith($fixtureBoundary, [StringComparison]::OrdinalIgnoreCase)) { throw 'Unsafe test fixture cleanup boundary.' }
+    Remove-Item -LiteralPath $resolvedFixture -Recurse -Force
+}
+$sharedRevision = [pscustomobject]@{
+    metadata = [pscustomobject]@{ annotations = [pscustomobject]@{ 'autoscaling.knative.dev/maxScale' = '1'; 'autoscaling.knative.dev/minScale' = '0'; 'run.googleapis.com/cpu-throttling' = 'true' } }
+    status = [pscustomobject]@{ conditions = @([pscustomobject]@{ type = 'Ready'; status = 'True' }) }
+    spec = [pscustomobject]@{ containers = @([pscustomobject]@{
+        env = @([pscustomobject]@{ name = 'GamePackages__Required'; value = 'true' },
+            [pscustomobject]@{ name = 'GamePackages__Directory'; value = '/app/game-packages' },
+            [pscustomobject]@{ name = 'GamePackages__ManifestSha256'; value = $compositionHash })
+        startupProbe = [pscustomobject]@{ httpGet = [pscustomobject]@{ path = '/healthz'; port = 8080 }; timeoutSeconds = 5; periodSeconds = 5; failureThreshold = 48 }
+    }) }
+}
+$sharedExpected = [pscustomobject]@{ CompositionSha256 = $compositionHash }
+Assert-ApiSharedBackendConfiguration -Revision $sharedRevision -Packages $sharedExpected
+$sharedService = [pscustomobject]@{ metadata = [pscustomobject]@{ annotations = [pscustomobject]@{ 'run.googleapis.com/minScale' = '1' } } }
+Assert-Throws { Assert-ApiSharedBackendConfiguration -Revision $sharedRevision -Packages $sharedExpected -Service $sharedService } 'service-level minimum cannot keep shared backend always warm'
+$sharedService.metadata.annotations.'run.googleapis.com/minScale' = '0'
+Assert-ApiSharedBackendConfiguration -Revision $sharedRevision -Packages $sharedExpected -Service $sharedService
+$legacyRevision = [pscustomobject]@{ spec = [pscustomobject]@{ containers = @([pscustomobject]@{ env = @(
+    [pscustomobject]@{ name = 'GameWorkers__hearts__Url'; value = 'https://old.example.run.app' },
+    [pscustomobject]@{ name = 'GameWorkers__hearts__SigningKey'; valueFrom = [pscustomobject]@{ secretKeyRef = [pscustomobject]@{ name = 'legacy-key'; key = '1' } } },
+    [pscustomobject]@{ name = 'GAMEWORKERS__horse-flight__URL'; value = 'https://other.example.run.app' },
+    [pscustomobject]@{ name = 'Features__HeartsEnabled'; value = 'true' }
+) }) } }
+$legacyConfiguration = Get-ApiLegacyWorkerConfiguration $legacyRevision
+Assert-Equal $legacyConfiguration.Environment.Count 2 'derive only existing external worker environment names'
+Assert-Equal $legacyConfiguration.Secrets.Count 1 'derive only existing external worker secret variable names'
+$legacyRemoval = @(Get-ApiWorkerDeployFlags -SourceSha $head -Bindings @() -SharedPackages $sharedExpected -LegacyWorkerConfiguration $legacyConfiguration)
+Assert-Equal $legacyRemoval.Count 3 'shared flags remove legacy environment and secret bindings alongside required composition'
+Assert-Equal ($legacyRemoval -join ',').Contains('Features__HeartsEnabled') $false 'shared release preserves unrelated feature environment'
+$sharedRevision.spec.containers[0].env += $legacyRevision.spec.containers[0].env[0]
+Assert-Throws { Assert-ApiSharedBackendConfiguration -Revision $sharedRevision -Packages $sharedExpected } 'shared candidate retains external worker URL'
+$sharedRevision.spec.containers[0].env = @($sharedRevision.spec.containers[0].env | Where-Object { $_.name -cne 'GameWorkers__hearts__Url' })
+$sharedRevision.spec.containers[0].env[2].value = 'wrong'
+Assert-Throws { Assert-ApiSharedBackendConfiguration -Revision $sharedRevision -Packages $sharedExpected } 'candidate composition digest mismatch'
+$sharedRevision.spec.containers[0].env[2].value = $compositionHash
+$sharedRevision.metadata.annotations.'run.googleapis.com/cpu-throttling' = 'false'
+Assert-Throws { Assert-ApiSharedBackendConfiguration -Revision $sharedRevision -Packages $sharedExpected } 'shared backend cannot silently use always-on CPU'
+$sharedRevision.metadata.annotations.'run.googleapis.com/cpu-throttling' = 'true'
+$sharedRevision.metadata.annotations.'autoscaling.knative.dev/minScale' = '1'
+Assert-Throws { Assert-ApiSharedBackendConfiguration -Revision $sharedRevision -Packages $sharedExpected } 'shared backend must scale to zero'
+$sharedRevision.metadata.annotations.'autoscaling.knative.dev/minScale' = '0'
+$sharedRevision.spec.containers[0].startupProbe.httpGet.path = '/'
+Assert-Throws { Assert-ApiSharedBackendConfiguration -Revision $sharedRevision -Packages $sharedExpected } 'shared backend cannot use a TCP-only or unrelated startup check'
+$sharedRevision.spec.containers[0].startupProbe.httpGet.path = '/healthz'
+$sharedRevision.status.conditions[0].status = 'False'
+Assert-Throws { Assert-ApiSharedBackendConfiguration -Revision $sharedRevision -Packages $sharedExpected } 'shared backend must be ready before traffic'
+$dockerSource = Get-Content -LiteralPath (Join-Path $repoRoot 'Dockerfile') -Raw
+Assert-Equal $dockerSource.Contains('COPY artifacts/shared-backend-upload/game-packages/ ./game-packages/') $true 'image copies selected frozen publish artifacts'
+Assert-Equal $dockerSource.Contains('ENV GamePackages__Required=true') $true 'image refuses absent package composition'
+Assert-Equal $deploySource.Contains("'verify-materialized', '--manifest'") $true 'reused package tree is independently verified'
+Assert-Equal $deploySource.Contains('Assert-ApiSharedBackendConfiguration -Revision $candidateAtTrafficSwitch') $true 'candidate composition verified immediately before traffic'
 foreach ($source in @($deploySource, $verifySource)) {
     Assert-Equal $source.Contains('[switch]$LivePlaytest') $true 'both release entry points expose explicit live-playtest mode'
     Assert-Equal $source.Contains('-LivePlaytest:$LivePlaytest') $true 'both release entry points independently bind playtest policy'

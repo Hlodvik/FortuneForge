@@ -16,7 +16,7 @@
     <SelectedEngineProject>../../Solitaire/src/FortuneForge.Games.Solitaire/FortuneForge.Games.Solitaire.csproj</SelectedEngineProject>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Program.cs;GameComputeEndpoints.cs" />
+    <Compile Include="Program.cs;GameBackendPackage.cs;GameComputeEndpoints.cs" />
     <Compile Include="$(SelectedComputeModule)" Link="GameComputeModule.cs" Condition="Exists('$(SelectedComputeModule)')" />
     <ProjectReference Include="../FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
     <ProjectReference Include="../FortuneForge.Games.Hosting/FortuneForge.Games.Hosting.csproj" />

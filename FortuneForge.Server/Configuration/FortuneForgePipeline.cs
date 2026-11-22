@@ -16,6 +16,7 @@ using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Cards.Solitaire;
 using FortuneForge.Server.Games.Hearts;
+using FortuneForge.Server.GameWorkers.Packages;
 
 namespace FortuneForge.Server.Configuration;
 
@@ -23,6 +24,7 @@ public static class FortuneForgePipeline
 {
     public static WebApplication UseFortuneForgePipeline(this WebApplication app)
     {
+        app.BindGamePackagePlatform();
         app.MapDefaultEndpoints();
 
         app.UseDefaultFiles();

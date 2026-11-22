@@ -26,6 +26,7 @@ using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Matchmaking;
 using FortuneForge.Server.Activity;
 using FortuneForge.Server.Catalog;
+using FortuneForge.Server.GameWorkers.Packages;
 
 namespace FortuneForge.Server.Configuration;
 
@@ -33,6 +34,7 @@ public static class FortuneForgeStartup
 {
     public static WebApplicationBuilder AddFortuneForge(this WebApplicationBuilder builder)
     {
+        builder.AddGamePackages();
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.Limits.MaxRequestBodySize = 32 * 1024;

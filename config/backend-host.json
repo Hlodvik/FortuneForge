@@ -1,0 +1,302 @@
+{
+  "host": {
+    "GameWorkers:2048:ForwardPublicRoutes": "true",
+    "GameWallet:Games:andar-bahar:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:andar-bahar:LegacySlotLedger": "false",
+    "GameWorkers:andar-bahar:ForwardPublicRoutes": "true",
+    "GameWallet:Games:arcane-archives-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:arcane-archives-v1:AllowLegacyFreeGames": "true",
+    "Slots:ArcaneWorkerRoundsEnabled": "true",
+    "GameWorkers:arcane-archives-v1:ForwardPublicRoutes": "true",
+    "GameWallet:Games:asteroids:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:asteroids:LegacySlotLedger": "false",
+    "GameWallet:Games:asteroids:AllowArcadeCompetition": "true",
+    "GameWorkers:asteroids:ForwardFreeRoutes": "true",
+    "GameWorkers:asteroids:ForwardPaidCompetitionRoutes": "true",
+    "GameWallet:Games:baccarat:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:baccarat:LegacySlotLedger": "false",
+    "GameWorkers:baccarat:ForwardPublicRoutes": "true",
+    "GameWallet:Games:blackjack:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:blackjack:LegacySlotLedger": "false",
+    "GameWallet:Games:blackjack:AllowPlayerNameRead": "true",
+    "ManagedPlayerRoster:Games:blackjack:Enabled": "true",
+    "GameWorkers:blackjack:ForwardPublicRoutes": "true",
+    "GameWallet:Games:candy-carnival-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:candy-carnival-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:candy-carnival-v1:AllowAccountBalanceRead": "true",
+    "Slots:CandyCarnivalWorkerRoundsEnabled": "true",
+    "GameWallet:Games:casino-war:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:casino-war:LegacySlotLedger": "false",
+    "GameWorkers:casino-war:ForwardPublicRoutes": "true",
+    "GameWallet:Games:cosmic-fortune-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:cosmic-fortune-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:cosmic-fortune-v1:AllowAccountBalanceRead": "true",
+    "Slots:CosmicFortuneWorkerRoundsEnabled": "true",
+    "GameWallet:Games:craps:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:craps:LegacySlotLedger": "false",
+    "GameWorkers:craps:ForwardPublicRoutes": "true",
+    "GameWallet:Games:desert-treasures-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:desert-treasures-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:desert-treasures-v1:AllowAccountBalanceRead": "true",
+    "Slots:DesertTreasuresWorkerRoundsEnabled": "true",
+    "GameWallet:Games:dragon-hoard-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:dragon-hoard-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:dragon-hoard-v1:AllowAccountBalanceRead": "true",
+    "Slots:MidnightVaultWorkerRoundsEnabled": "true",
+    "GameWallet:Games:dragon-tiger:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:dragon-tiger:LegacySlotLedger": "false",
+    "GameWorkers:dragon-tiger:ForwardPublicRoutes": "true",
+    "GameWorkers:drop-merge:ForwardPublicRoutes": "true",
+    "GameWallet:Games:empty-slots-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:empty-slots-v1:AllowLegacyFreeGames": "true",
+    "Slots:JadeDragonWorkerRoundsEnabled": "true",
+    "GameWallet:Games:flappy:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:flappy:LegacySlotLedger": "false",
+    "GameWallet:Games:flappy:AllowArcadeCompetition": "true",
+    "GameWorkers:flappy:ForwardFreeRoutes": "true",
+    "GameWorkers:flappy:ForwardPaidCompetitionRoutes": "true",
+    "GameWorkers:free-solitaire:ForwardPublicRoutes": "true",
+    "GameWallet:Games:gods-of-olympus-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:gods-of-olympus-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:gods-of-olympus-v1:AllowAccountBalanceRead": "true",
+    "Slots:GodsOfOlympusWorkerRoundsEnabled": "true",
+    "GameWallet:Games:gold-foundry-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:gold-foundry-v1:AllowAccountBalanceRead": "true",
+    "Slots:GoldFoundryWorkerRoundsEnabled": "true",
+    "GameWallet:Games:hearts:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:hearts:LegacySlotLedger": "false",
+    "GameWallet:Games:hearts:AllowPlayerNameRead": "true",
+    "GameWallet:Games:hearts:AllowMultiAccountBatch": "true",
+    "ManagedPlayerRoster:Games:hearts:Enabled": "true",
+    "GameWorkers:hearts:ForwardPublicRoutes": "true",
+    "GameWallet:Games:hi-lo:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:hi-lo:LegacySlotLedger": "false",
+    "GameWallet:Games:hi-lo:AllowWagerReservations": "true",
+    "GameWorkers:hi-lo:ForwardPublicRoutes": "true",
+    "GameWallet:Games:high-noon-fortune-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:high-noon-fortune-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:high-noon-fortune-v1:AllowAccountBalanceRead": "true",
+    "Slots:HighNoonFortuneWorkerRoundsEnabled": "true",
+    "GameWallet:Games:horse-flight:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:horse-flight:LegacySlotLedger": "false",
+    "GameWallet:Games:horse-flight:AllowArcadeCompetition": "true",
+    "GameWorkers:horse-flight:ForwardFreeRoutes": "true",
+    "GameWorkers:horse-flight:ForwardPaidCompetitionRoutes": "true",
+    "GameWallet:Games:house-holdem:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:house-holdem:LegacySlotLedger": "false",
+    "GameWorkers:house-holdem:ForwardPublicRoutes": "true",
+    "GameWallet:Games:keno:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:keno:LegacySlotLedger": "false",
+    "GameWorkers:keno:ForwardPublicRoutes": "true",
+    "ManagedPlayerRoster:Games:liars-dice:Enabled": "true",
+    "GameWorkers:liars-dice:ForwardPublicRoutes": "true",
+    "GameWallet:Games:mines:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:mines:LegacySlotLedger": "false",
+    "GameWallet:Games:mines:AllowWagerReservations": "true",
+    "GameWorkers:mines:ForwardPublicRoutes": "true",
+    "GameWallet:Games:neon-nights-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:neon-nights-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:neon-nights-v1:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:neon-nights-v1:AllowWagerReservations": "true",
+    "GameWallet:Games:neon-nights-v1:AllowCashWagerWithLegacyFreeGame": "true",
+    "Slots:NeonWorkerRoundsEnabled": "true",
+    "GameWallet:Games:nordic-legends-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:nordic-legends-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:nordic-legends-v1:AllowAccountBalanceRead": "true",
+    "Slots:NordicLegendsWorkerRoundsEnabled": "true",
+    "GameWallet:Games:ocean-odyssey-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:ocean-odyssey-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:ocean-odyssey-v1:AllowAccountBalanceRead": "true",
+    "Slots:OceanOdysseyWorkerRoundsEnabled": "true",
+    "GameWallet:Games:phantom-manor-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:phantom-manor-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:phantom-manor-v1:AllowAccountBalanceRead": "true",
+    "Slots:PhantomManorWorkerRoundsEnabled": "true",
+    "GameWallet:Games:pirates-fortune-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:pirates-fortune-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:pirates-fortune-v1:AllowAccountBalanceRead": "true",
+    "Slots:PiratesFortuneWorkerRoundsEnabled": "true",
+    "GameWallet:Games:rainbow-realm-fruits-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:rainbow-realm-fruits-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:rainbow-realm-fruits-v1:AllowAccountBalanceRead": "true",
+    "Slots:RainbowRealmWorkerRoundsEnabled": "true",
+    "GameWallet:Games:reel-riches-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:reel-riches-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:reel-riches-v1:AllowAccountBalanceRead": "true",
+    "Slots:ReelRichesWorkerRoundsEnabled": "true",
+    "GameWallet:Games:robot-revolution-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:robot-revolution-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:robot-revolution-v1:AllowAccountBalanceRead": "true",
+    "Slots:RobotRevolutionWorkerRoundsEnabled": "true",
+    "GameWallet:Games:roulette:AllowPlayerNameRead": "true",
+    "ManagedPlayerRoster:Games:roulette:Enabled": "true",
+    "GameWorkers:roulette:ForwardPublicRoutes": "true",
+    "GameWallet:Games:royal-draw-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:royal-draw-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:royal-draw-v1:AllowAccountBalanceRead": "true",
+    "Slots:RoyalDrawWorkerRoundsEnabled": "true",
+    "GameWallet:Games:samurai-fortune-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:samurai-fortune-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:samurai-fortune-v1:AllowAccountBalanceRead": "true",
+    "Slots:SamuraiFortuneWorkerRoundsEnabled": "true",
+    "GameWallet:Games:sic-bo:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:sic-bo:LegacySlotLedger": "false",
+    "GameWorkers:sic-bo:ForwardPublicRoutes": "true",
+    "GameWorkers:snake:ForwardPublicRoutes": "true",
+    "GameWallet:Games:solitaire:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:solitaire:LegacySlotLedger": "false",
+    "GameWallet:Games:solitaire:AllowPlayerNameRead": "true",
+    "GameWallet:Games:solitaire:AllowMultiAccountBatch": "true",
+    "ManagedPlayerRoster:Games:solitaire:Enabled": "true",
+    "GameWorkers:solitaire:ForwardPublicRoutes": "true",
+    "GameWallet:Games:texas-holdem:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:texas-holdem:LegacySlotLedger": "false",
+    "GameWallet:Games:texas-holdem:AllowPlayerNameRead": "true",
+    "GameWallet:Games:texas-holdem:AllowMultiAccountBatch": "true",
+    "ManagedPlayerRoster:Games:texas-holdem:Enabled": "true",
+    "GameWorkers:texas-holdem:ForwardPublicRoutes": "true",
+    "GameWallet:Games:three-card-poker:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:three-card-poker:LegacySlotLedger": "false",
+    "GameWallet:Games:three-card-poker:AllowPlayerNameRead": "true",
+    "ManagedPlayerRoster:Games:three-card-poker:Enabled": "true",
+    "GameWorkers:three-card-poker:ForwardPublicRoutes": "true",
+    "GameWallet:Games:video-poker:AllowAccountBalanceRead": "true",
+    "GameWallet:Games:video-poker:LegacySlotLedger": "false",
+    "GameWorkers:video-poker:ForwardPublicRoutes": "true",
+    "GameWallet:Games:wukong-journey-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:wukong-journey-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:wukong-journey-v1:AllowAccountBalanceRead": "true",
+    "Slots:WukongWorkerRoundsEnabled": "true"
+  },
+  "packages": {
+    "2048": {},
+    "andar-bahar": {
+      "Features:AndarBaharEnabled": "true"
+    },
+    "arcane-archives-v1": {
+      "Arcane:AllowNewPaidRounds": "true"
+    },
+    "asteroids": {},
+    "baccarat": {
+      "Features:BaccaratEnabled": "true"
+    },
+    "blackjack": {
+      "Features:BlackjackEnabled": "false",
+      "Features:BlackjackMultiplayerEnabled": "false",
+      "Features:BlackjackTableEnabled": "true"
+    },
+    "candy-carnival-v1": {
+      "CandyCarnival:AllowNewPaidRounds": "true"
+    },
+    "casino-war": {
+      "CasinoWar:AllowNewPaidRounds": "true"
+    },
+    "cosmic-fortune-v1": {
+      "CosmicFortune:AllowNewPaidRounds": "true"
+    },
+    "craps": {
+      "Features:CrapsEnabled": "true"
+    },
+    "desert-treasures-v1": {
+      "DesertTreasures:AllowNewPaidRounds": "true"
+    },
+    "dragon-hoard-v1": {
+      "MidnightVault:AllowNewPaidRounds": "true"
+    },
+    "dragon-tiger": {
+      "Features:DragonTigerEnabled": "true"
+    },
+    "drop-merge": {},
+    "empty-slots-v1": {
+      "JadeDragon:AllowNewPaidRounds": "true"
+    },
+    "flappy": {},
+    "free-solitaire": {},
+    "gods-of-olympus-v1": {
+      "GodsOfOlympus:AllowNewPaidRounds": "true"
+    },
+    "gold-foundry-v1": {
+      "GoldFoundry:AllowNewPaidRounds": "true"
+    },
+    "hearts": {
+      "Features:HeartsEnabled": "true"
+    },
+    "hi-lo": {
+      "Features:HiLoEnabled": "true",
+      "GameWorker:AllowedOrigins:0": "https://fortuneforgegame.web.app",
+      "GameWorker:AllowedOrigins:1": "https://fortuneforgegame.firebaseapp.com"
+    },
+    "high-noon-fortune-v1": {
+      "HighNoonFortune:AllowNewPaidRounds": "true"
+    },
+    "horse-flight": {
+      "Features:HorseFlightEnabled": "true"
+    },
+    "house-holdem": {},
+    "keno": {
+      "Features:KenoEnabled": "true"
+    },
+    "liars-dice": {
+      "Features:LiarsDiceEnabled": "true"
+    },
+    "mines": {
+      "Features:MinesEnabled": "true",
+      "Features:MinesPaidEnabled": "true",
+      "GameWorker:AllowedOrigins:0": "https://fortuneforgegame.web.app",
+      "GameWorker:AllowedOrigins:1": "https://fortuneforgegame.firebaseapp.com"
+    },
+    "neon-nights-v1": {
+      "Neon:AllowNewPaidRounds": "true"
+    },
+    "nordic-legends-v1": {
+      "NordicLegends:AllowNewPaidRounds": "true"
+    },
+    "ocean-odyssey-v1": {
+      "OceanOdyssey:AllowNewPaidRounds": "true"
+    },
+    "phantom-manor-v1": {
+      "PhantomManor:AllowNewPaidRounds": "true"
+    },
+    "pirates-fortune-v1": {
+      "PiratesFortune:AllowNewPaidRounds": "true"
+    },
+    "rainbow-realm-fruits-v1": {
+      "RainbowRealm:AllowNewPaidRounds": "true"
+    },
+    "reel-riches-v1": {
+      "ReelRiches:AllowNewPaidRounds": "true"
+    },
+    "robot-revolution-v1": {
+      "RobotRevolution:AllowNewPaidRounds": "true"
+    },
+    "roulette": {
+      "Features:RouletteEnabled": "true"
+    },
+    "royal-draw-v1": {
+      "RoyalDraw:AllowNewPaidRounds": "true"
+    },
+    "samurai-fortune-v1": {
+      "SamuraiFortune:AllowNewPaidRounds": "true"
+    },
+    "sic-bo": {
+      "Features:SicBoEnabled": "true"
+    },
+    "snake": {},
+    "solitaire": {
+      "Features:CompetitiveSolitaireEnabled": "true",
+      "Solitaire:AllowNewPaidRounds": "true",
+      "Cards:CompetitiveSolitaire:AllowSingleHumanBotFill": "true"
+    },
+    "texas-holdem": {
+      "Features:CreditTexasHoldemEnabled": "true",
+      "Cards:CreditTexasHoldem:AllowSingleHumanBotFill": "true"
+    },
+    "three-card-poker": {
+      "Features:ThreeCardPokerTableEnabled": "true"
+    },
+    "video-poker": {},
+    "wukong-journey-v1": {
+      "Wukong:AllowNewPaidRounds": "true"
+    }
+  }
+}

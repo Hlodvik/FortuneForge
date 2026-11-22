@@ -8,6 +8,7 @@ import { parseArgs } from 'node:util'
 import { activateRelease, isGameId, isReleaseId, readActiveBackendReleaseId, stageRelease } from './game-release-activation.mjs'
 import { gameHostRuntime } from './game-release-runtime.mjs'
 import { gameWorkerOptions, publishGameWorker } from './game-worker-release.mjs'
+import { describeBackendRelease } from './shared-backend-packages.mjs'
 
 const repository = fileURLToPath(new URL('../', import.meta.url))
 const readJson = async path => JSON.parse(await readFile(path, 'utf8'))
@@ -56,6 +57,7 @@ async function findGame(gameId) {
 
 async function buildBackend(project, directory, gameId, releaseId, gamePackage) {
   if (!project.endsWith('.csproj')) throw new Error('Backend release requires a .NET executable project')
+  const sourceSha = backendSourceRevision()
   const assembly = basename(project, '.csproj')
   const entry = assembly + '.dll'
   await mkdir(directory, { recursive: true })
@@ -65,8 +67,27 @@ async function buildBackend(project, directory, gameId, releaseId, gamePackage) 
   for (const file of [entry, assembly + '.runtimeconfig.json', assembly + '.deps.json']) {
     if (!(await stat(join(directory, file))).isFile()) throw new Error('Missing backend artifact: ' + file)
   }
-  const descriptor = JSON.stringify({ gameId, releaseId, entry }, null, 2) + '\n'
+  const metadata = spawnSync('dotnet', [join(directory, entry), '--describe-backend'], {
+    cwd: repository, encoding: 'utf8', windowsHide: true,
+  })
+  if (metadata.error || metadata.status !== 0) throw new Error('Published backend could not describe its in-process package contract')
+  let description
+  try { description = JSON.parse(metadata.stdout) }
+  catch { throw new Error('Published backend returned invalid --describe-backend JSON') }
+  if (backendSourceRevision() !== sourceSha) throw new Error('Backend source revision changed during publication')
+  const descriptor = JSON.stringify(describeBackendRelease(description, { gameId, releaseId, entry, sourceSha }), null, 2) + '\n'
   await writeFile(join(directory, 'release.json'), descriptor, { flag: 'wx' })
+}
+
+function backendSourceRevision() {
+  const revision = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: repository, encoding: 'utf8', windowsHide: true })
+  const changes = spawnSync('git', ['status', '--porcelain=v1', '--untracked-files=normal'], {
+    cwd: repository, encoding: 'utf8', windowsHide: true,
+  })
+  if (revision.error || revision.status !== 0 || !/^[a-f0-9]{40}$/.test(revision.stdout.trim()) ||
+    changes.error || changes.status !== 0 || changes.stdout.trim())
+    throw new Error('Backend packages require a clean committed source revision before and after publication')
+  return revision.stdout.trim()
 }
 
 async function buildFrontend(frontend, entry, directory, config) {

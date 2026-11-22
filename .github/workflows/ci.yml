@@ -32,6 +32,7 @@ jobs:
           npm run verify:game-source
           npm run verify:game-routes
           npm run verify:ci-emulator
+          node --test scripts/tests/shared-backend-packages.test.mjs
 
       - name: Restore .NET dependencies
         run: |
@@ -84,8 +85,8 @@ jobs:
           npm run web:lint
           npm audit --audit-level=high
 
-      - name: Build deployment image
-        run: docker build --file Dockerfile --tag fortuneforge:ci .
+      - name: Build shared backend host
+        run: docker build --file Dockerfile --target build --tag fortuneforge:ci .
 
   slots-visual:
     runs-on: windows-latest

@@ -69,6 +69,26 @@ release without changing source. `-Commit SHA` must resolve to that same active
 Prepare a reviewed revert commit for a rollback rather than switching this
 checkout during deployment. The script never reconciles source automatically.
 
+When `config/backend-packages.lock.json` exists, API releases use its exact
+immutable game package selections. The local pinned artifact cache is required;
+missing packages are never rebuilt from current game source as a fallback.
+The guard materializes complete publish payloads under
+`artifacts/shared-backend-upload/game-packages`, verifies every selected byte,
+and holds read-share locks through publication. An existing materialization is
+reused only if it exactly matches the committed lock. Preserve or move a stale
+derived directory before retrying; the deployment never replaces it silently.
+Only these exact selected paths join the tracked-source upload allowlist.
+The final Artifact Registry runtime image retains all frozen package payloads
+and requires the verified composition digest.
+
+Shared releases reject external worker binding/runtime files, remove only old
+worker URL/signing-key references, and require the committed host policy.
+They use request-based CPU, service and revision minimum zero, revision maximum
+one, and an HTTP startup probe that waits for every selected package to be ready.
+CI builds only Docker's `build` target to verify host compilation without the
+local package cache or deployment credentials. The deployment guard assembles
+and verifies the complete runtime image from the pinned cache.
+
 Once the exact committed candidate passes preflight, run `npm run deploy`, or
 use `npm run deploy:hosting` / `npm run deploy:api`. The
 Firebase commands use the active gcloud account, which must also already be
@@ -99,8 +119,9 @@ command boundary and immediately before stamping/publication, including files
 added after initial preflight. Use reviewed committed code
 configuration. `.gcloudignore` includes the committed root `.gitignore` and
 explicit nested sample-store exclusions. The local SDK selector preserves
-those exclusions, and every selected upload file must also be a tracked,
-locked candidate file. Unknown/ignored extras fail rather than being uploaded.
+those exclusions, and every selected source upload file must also be a tracked,
+locked candidate file. The only additional inputs are the exact verified and
+locked shared package payloads described above. Unknown/ignored extras fail rather than being uploaded.
 The script generates a strict ignore allowlist for that exact intersection:
 all other files, including new siblings created after inventory, are excluded.
 Unsupported glob-like filenames fail closed. The generated allowlist has its

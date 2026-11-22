@@ -4,6 +4,7 @@ using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.Hosting;
 using Google.Apis.Auth.OAuth2;
+using FortuneForge.Server.GameWorkers.Packages;
 
 namespace FortuneForge.Server.GameWorkers;
 
@@ -13,9 +14,10 @@ public sealed class GameWorkerUnavailableException(string gameId, Exception? inn
 public sealed class GameWorkerRequestRejectedException()
     : ArgumentException("The game service rejected the requested action.");
 
-/// <summary>Calls a private, independently released game worker on behalf of an authenticated player.</summary>
+/// <summary>Calls a selected game backend on behalf of an authenticated player.</summary>
 public sealed class GameWorkerClient(HttpClient http, IConfiguration configuration, IHostEnvironment environment,
-    TimeProvider clock, ILogger<GameWorkerClient> logger, IHttpClientFactory? httpClients = null)
+    TimeProvider clock, ILogger<GameWorkerClient> logger, IHttpClientFactory? httpClients = null,
+    IGamePackageTransport? packages = null)
 {
     internal const string ExactResponseClient = "GameWorkerExactResponse";
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
@@ -69,7 +71,8 @@ public sealed class GameWorkerClient(HttpClient http, IConfiguration configurati
                 message.Content = new ByteArrayContent(body);
                 if (contentType is not null) message.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
             }
-            if (!environment.IsDevelopment() || !origin.IsLoopback)
+            var local = packages?.Contains(gameId) == true;
+            if (!local && (!environment.IsDevelopment() || !origin.IsLoopback))
             {
                 var identity = await GetIdentityTokenAsync(origin.GetLeftPart(UriPartial.Authority), token);
                 message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", identity);
@@ -80,6 +83,8 @@ public sealed class GameWorkerClient(HttpClient http, IConfiguration configurati
             message.Headers.Add(GameWorkerAuthentication.AssertionHeader,
                 GameWorkerAuthentication.CreateAssertion(gameId, userId, method.Method, destination.PathAndQuery,
                     body, key, clock.GetUtcNow(), GameSecurityContext.Current, headers));
+
+            if (local) return await packages!.SendAsync(gameId, message, token);
 
             using var exactClient = preserveResponse ? httpClients?.CreateClient(ExactResponseClient) : null;
             return await (exactClient ?? http).SendAsync(message, token);

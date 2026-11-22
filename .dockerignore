@@ -13,3 +13,11 @@
 **/obj/
 **/*.user
 **/*.suo
+
+# Only the guarded, verified shared package materialization enters the image.
+!config/
+!config/backend-host.json
+!artifacts/
+!artifacts/shared-backend-upload/
+!artifacts/shared-backend-upload/game-packages/
+!artifacts/shared-backend-upload/game-packages/**

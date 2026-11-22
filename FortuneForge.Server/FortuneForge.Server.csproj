@@ -117,6 +117,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="..\config\backend-host.json" Link="backend-host.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
       <_Parameter1>FortuneForge.Server.Tests</_Parameter1>
     </AssemblyAttribute>

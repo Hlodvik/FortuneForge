@@ -398,12 +398,13 @@ function Get-ReleaseToolPaths {
       'scripts/tests/game-navbar-boundary.test.mjs', 'scripts/verify-ci-emulator-order.mjs',
       'scripts/tests/ci-emulator-order.test.mjs', 'scripts/publish-site-hosting.mjs',
       'scripts/game-worker-release.mjs', 'scripts/tests/game-worker-release.test.mjs',
+      'scripts/shared-backend-packages.mjs', 'scripts/tests/shared-backend-packages.test.mjs',
       'scripts/tests/site-hosting-release.test.mjs', 'fortuneforge.client/scripts/verify-site-build.mjs',
       'fortuneforge.client/scripts/check-site-types.mjs',
       'scripts/site-release-contract.mjs', 'scripts/site-release-contract.json', 'scripts/smoke-site.mjs',
       'fortuneforge.client/vite.site.config.ts', 'fortuneforge.client/tsconfig.site.json',
       'fortuneforge.client/build/siteBuildBoundary.mjs',
-      '.github/workflows/ci.yml', '.gcloudignore')
+      '.github/workflows/ci.yml', '.gcloudignore', 'Dockerfile', '.dockerignore')
 }
 
 function Assert-ReleaseCheckout {
@@ -994,7 +995,8 @@ function Get-ReleaseVerificationCommands {
         }
     }
     else {
-        $commands.Add([pscustomobject]@{ Executable = 'node.exe'; Arguments = @('--test', (Join-Path $Repository 'scripts/tests/game-worker-release.test.mjs')) })
+        $commands.Add([pscustomobject]@{ Executable = 'node.exe'; Arguments = @('--test', (Join-Path $Repository 'scripts/tests/game-worker-release.test.mjs'),
+            (Join-Path $Repository 'scripts/tests/shared-backend-packages.test.mjs')) })
         foreach ($script in @('verify:game-navbar', 'verify:ci-emulator')) {
             $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', $script) })
         }

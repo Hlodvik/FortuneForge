@@ -29,8 +29,14 @@ $project = 'fortuneforgegame'
 $region = 'us-east4'
 $serviceName = 'fortuneforge-api'
 $baseUrl = 'https://fortuneforgegame.web.app'
+$sharedBackendManifestPath = Join-Path $repoRoot 'config/backend-packages.lock.json'
+$sharedBackend = Test-Path -LiteralPath $sharedBackendManifestPath -PathType Leaf
 Import-Module (Join-Path $PSScriptRoot 'ReleaseGuardrails.psm1') -Force
 Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason -LivePlaytest:$LivePlaytest -TestFree:$TestFree
+if ($sharedBackend -and ($PSBoundParameters.ContainsKey('GameWorkerBindingsFile') -or $PSBoundParameters.ContainsKey('HostRuntimeConfigurationFile'))) {
+    throw 'The committed shared backend composition cannot be combined with external worker bindings or runtime configuration.'
+}
+if ($sharedBackend -and $ContinuousAudit) { throw 'Shared backend releases use request-based CPU and scale to zero; -ContinuousAudit is incompatible.' }
 if ($ContinuousAudit -and $Target -in @('hosting', 'site')) { throw '-ContinuousAudit applies only to an API release.' }
 if ($PSBoundParameters.ContainsKey('GameWorkerBindingsFile') -and $Target -in @('hosting', 'site')) {
     throw '-GameWorkerBindingsFile applies only to a release that includes the API.'
@@ -213,10 +219,15 @@ function Enter-HostRuntimeConfigurationLock {
 }
 
 function Get-ApiWorkerDeployFlags {
-    param([string]$SourceSha, [object[]]$Bindings, $RuntimeConfiguration)
+    param([string]$SourceSha, [object[]]$Bindings, $RuntimeConfiguration, $SharedPackages, $LegacyWorkerConfiguration)
 
     $variables = @("FF_RELEASE_SHA=$SourceSha")
     $secretReferences = @()
+    if ($SharedPackages) {
+        if ($Bindings.Count -gt 0 -or $RuntimeConfiguration) { throw 'Shared packages cannot use external game worker configuration.' }
+        $variables += @('GamePackages__Required=true', 'GamePackages__Directory=/app/game-packages',
+            "GamePackages__ManifestSha256=$($SharedPackages.CompositionSha256)")
+    }
     foreach ($binding in $Bindings) {
         $prefix = "GameWorkers__$($binding.gameId)__"
         $variables += "${prefix}Url=$($binding.url)"
@@ -228,15 +239,32 @@ function Get-ApiWorkerDeployFlags {
     }
     "--update-env-vars=$($variables -join ',')"
     if ($secretReferences.Count -gt 0) { "--update-secrets=$($secretReferences -join ',')" }
+    if ($SharedPackages -and $LegacyWorkerConfiguration) {
+        if ($LegacyWorkerConfiguration.Environment.Count -gt 0) { "--remove-env-vars=$($LegacyWorkerConfiguration.Environment -join ',')" }
+        if ($LegacyWorkerConfiguration.Secrets.Count -gt 0) { "--remove-secrets=$($LegacyWorkerConfiguration.Secrets -join ',')" }
+    }
+}
+
+function Get-ApiLegacyWorkerConfiguration {
+    param($Revision)
+    $environment = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $secrets = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($variable in @($Revision.spec.containers[0].env)) {
+        if ($variable.name -imatch '\AGameWorkers__[a-z0-9]+(?:-[a-z0-9]+)*__(Url|SigningKey)\z') {
+            if ($variable.valueFrom.secretKeyRef) { [void]$secrets.Add($variable.name) }
+            else { [void]$environment.Add($variable.name) }
+        }
+    }
+    [pscustomobject]@{ Environment = [string[]]@($environment); Secrets = [string[]]@($secrets) }
 }
 
 function New-ApiRuntimeFlagsContext {
-    param([string]$SourceSha, [object[]]$Bindings, $RuntimeConfiguration, [string]$RecordPath)
+    param([string]$SourceSha, [object[]]$Bindings, $RuntimeConfiguration, [string]$RecordPath, $SharedPackages, $LegacyWorkerConfiguration)
     # A catalogue-sized update exceeds cmd.exe's command-line limit. gcloud's
     # JSON flags file carries the same validated dictionary values without
     # exposing raw signing keys or relying on shell quoting/argument length.
     $flags = [ordered]@{}
-    foreach ($argument in @(Get-ApiWorkerDeployFlags -SourceSha $SourceSha -Bindings $Bindings -RuntimeConfiguration $RuntimeConfiguration)) {
+    foreach ($argument in @(Get-ApiWorkerDeployFlags -SourceSha $SourceSha -Bindings $Bindings -RuntimeConfiguration $RuntimeConfiguration -SharedPackages $SharedPackages -LegacyWorkerConfiguration $LegacyWorkerConfiguration)) {
         $name, $value = $argument -split '=', 2
         $flags[$name] = $value
     }
@@ -270,6 +298,115 @@ function Assert-ApiHostRuntimeConfiguration {
             throw 'Candidate API revision does not match the reviewed signing secret references. Traffic was not changed.'
         }
     }
+}
+
+function Assert-ApiSharedBackendConfiguration {
+    param($Revision, $Packages, $Service)
+    if (-not $Packages) { return }
+    $legacy = Get-ApiLegacyWorkerConfiguration $Revision
+    if ($legacy.Environment.Count -gt 0 -or $legacy.Secrets.Count -gt 0) { throw 'Candidate shared backend retains external worker URL or signing-key bindings. Traffic was not changed.' }
+    $expected = [ordered]@{ GamePackages__Required = 'true'; GamePackages__Directory = '/app/game-packages'; GamePackages__ManifestSha256 = $Packages.CompositionSha256 }
+    Assert-ApiHostRuntimeConfiguration -Revision $Revision -Configuration ([pscustomobject]@{ Environment = $expected; Secrets = [ordered]@{} })
+    $annotations = $Revision.metadata.annotations
+    if ($Service.metadata.annotations.'run.googleapis.com/minScale' -and $Service.metadata.annotations.'run.googleapis.com/minScale' -cne '0') {
+        throw 'Shared backend service-level minimum scaling must be zero. Traffic was not changed.'
+    }
+    if ($annotations.'autoscaling.knative.dev/maxScale' -cne '1' -or
+        ($annotations.'autoscaling.knative.dev/minScale' -and $annotations.'autoscaling.knative.dev/minScale' -cne '0') -or
+        ($annotations.'run.googleapis.com/cpu-throttling' -and $annotations.'run.googleapis.com/cpu-throttling' -cne 'true')) {
+        throw 'Candidate shared backend must use request-based CPU with zero minimum and one maximum instance. Traffic was not changed.'
+    }
+    $probe = $Revision.spec.containers[0].startupProbe
+    if ($probe.httpGet.path -cne '/healthz' -or $probe.httpGet.port -ne 8080 -or $probe.timeoutSeconds -ne 5 -or
+        $probe.periodSeconds -ne 5 -or $probe.failureThreshold -ne 48 -or
+        @($Revision.status.conditions | Where-Object { $_.type -ceq 'Ready' -and $_.status -ceq 'True' }).Count -ne 1) {
+        throw 'Candidate shared backend has not passed its package-readiness HTTP startup probe. Traffic was not changed.'
+    }
+}
+
+function Enter-SharedBackendUploadLocks {
+    param([string]$Checkout, $Composition, [string]$CompositionSha256, [string]$ManifestSha256)
+    if ($CompositionSha256 -cnotmatch '\A[a-f0-9]{64}\z' -or $ManifestSha256 -cnotmatch '\A[a-f0-9]{64}\z') {
+        throw 'Shared backend composition requires verified SHA256 identities.'
+    }
+    $prefix = 'artifacts/shared-backend-upload/game-packages'
+    $directory = Join-Path $Checkout $prefix
+    $expected = [System.Collections.Generic.List[object]]::new()
+    $compositionPath = Join-Path $directory 'composition.json'
+    $expected.Add([pscustomobject]@{ Path = "$prefix/composition.json"; Size = (Get-Item -LiteralPath $compositionPath).Length; Sha256 = $CompositionSha256 })
+    foreach ($package in $Composition.packages) {
+        $release = [guid]::Empty
+        if ($package.runtimeGameId -cnotmatch '\A[a-z0-9]+(?:-[a-z0-9]+)*\z' -or -not [guid]::TryParseExact([string]$package.releaseId, 'D', [ref]$release)) {
+            throw 'Unsafe selected backend package identity.'
+        }
+        foreach ($file in $package.files) {
+            if ($file.path -cnotmatch '\A[A-Za-z0-9_-][A-Za-z0-9_.-]*(?:/[A-Za-z0-9_-][A-Za-z0-9_.-]*)*\z' -or
+                $file.sha256 -cnotmatch '\A[a-f0-9]{64}\z' -or $file.size -lt 0) { throw 'Unsafe selected backend artifact.' }
+            $expected.Add([pscustomobject]@{ Path = "$prefix/$($package.runtimeGameId)/$($package.releaseId)/$($file.path)"; Size = $file.size; Sha256 = $file.sha256 })
+        }
+    }
+    $streams = [System.Collections.Generic.List[System.IO.FileStream]]::new()
+    $entries = [System.Collections.Generic.List[object]]::new()
+    $paths = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    try {
+        foreach ($file in $expected) {
+            if (-not $paths.Add($file.Path)) { throw 'Duplicate shared backend upload path.' }
+            $absolute = Join-Path $Checkout $file.Path
+            $item = Get-Item -LiteralPath $absolute -ErrorAction Stop
+            if ($item -isnot [System.IO.FileInfo]) { throw 'Expected a regular shared backend artifact.' }
+            if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) { throw 'Shared backend upload paths cannot contain reparse points.' }
+            $parent = $item.Directory
+            while ($parent -and $parent.FullName.TrimEnd('\') -ine $Checkout.TrimEnd('\')) {
+                if ($parent.Attributes -band [System.IO.FileAttributes]::ReparsePoint) { throw 'Shared backend upload paths cannot contain redirected ancestors.' }
+                $parent = $parent.Parent
+            }
+            $stream = [System.IO.File]::Open($absolute, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+            $streams.Add($stream)
+            if ($stream.Length -ne $file.Size -or (Get-DeploymentInputHash $stream) -cne $file.Sha256) { throw 'Shared backend artifact differs from the committed package selection.' }
+            $entries.Add([pscustomobject]@{ Path = $file.Path; AbsolutePath = $absolute; Size = $file.Size; Sha256 = $file.Sha256; Stream = $stream })
+        }
+        $actual = @(Get-ChildItem -LiteralPath $directory -Recurse -File -Force)
+        if ($actual.Count -ne $expected.Count -or @($actual | Where-Object { -not $paths.Contains($_.FullName.Substring($Checkout.TrimEnd('\').Length + 1).Replace('\', '/')) }).Count -gt 0) {
+            throw 'Shared backend materialization contains unselected files.'
+        }
+        $manifestLines = [string[]]@($entries | ForEach-Object { "$($_.Path)`t$($_.Size)`t$($_.Sha256)" })
+        [Array]::Sort($manifestLines, [StringComparer]::Ordinal)
+        return [pscustomobject]@{ Paths = [string[]]@($entries | ForEach-Object { $_.Path }); Entries = $entries;
+            Lock = [pscustomobject]@{ Streams = $streams }; FileCount = $entries.Count;
+            ManifestSha256 = $ManifestSha256; CompositionSha256 = $CompositionSha256;
+            FileManifestSha256 = Get-ReleaseTextHash ($manifestLines -join "`n"); Directory = $directory }
+    }
+    catch { foreach ($stream in $streams) { $stream.Dispose() }; throw }
+}
+
+function Assert-SharedBackendUploadUnchanged {
+    param($Packages)
+    if (-not $Packages) { return }
+    foreach ($file in $Packages.Entries) {
+        if ($file.Stream.Length -ne $file.Size -or (Get-DeploymentInputHash $file.Stream) -cne $file.Sha256 -or
+            (Get-FileHash -LiteralPath $file.AbsolutePath -Algorithm SHA256).Hash.ToLowerInvariant() -cne $file.Sha256) {
+            throw 'Selected shared backend artifact changed during the guarded release.'
+        }
+    }
+}
+
+function New-SharedBackendUploadContext {
+    param([string]$Checkout)
+    $manifest = Join-Path $Checkout 'config/backend-packages.lock.json'
+    $output = Join-Path $Checkout 'artifacts/shared-backend-upload'
+    [System.IO.Directory]::CreateDirectory($output) | Out-Null
+    $script = Join-Path $Checkout 'scripts/shared-backend-packages.mjs'
+    if (-not (Test-Path -LiteralPath (Join-Path $output 'game-packages'))) {
+        $null = Invoke-JsonCommand 'node.exe' @($script, 'materialize', '--manifest', $manifest, '--output', $output)
+    }
+    # Reuse is allowed only for the exact immutable selection. Stale output is
+    # preserved and refused; no release silently replaces a prior artifact tree.
+    $verified = Invoke-JsonCommand 'node.exe' @($script, 'verify-materialized', '--manifest', $manifest, '--output', $output)
+    if ($verified.manifestSha256 -cne (Get-FileHash -LiteralPath $manifest -Algorithm SHA256).Hash.ToLowerInvariant()) {
+        throw 'Backend package lock changed during materialization.'
+    }
+    $composition = Get-Content -LiteralPath $manifest -Raw | ConvertFrom-Json -ErrorAction Stop
+    Enter-SharedBackendUploadLocks -Checkout $Checkout -Composition $composition -CompositionSha256 $verified.compositionSha256 -ManifestSha256 $verified.manifestSha256
 }
 
 function Assert-ApiWorkerBindings {
@@ -327,11 +464,17 @@ function Invoke-JsonCommand {
 }
 
 function New-ApiUploadContext {
-    param([string]$Checkout, $LockedSource, [string]$RecordPath)
+    param([string]$Checkout, $LockedSource, [string]$RecordPath, $Packages)
     # The SDK selector preserves the committed .gcloudignore exclusions. Its
     # local-only metadata command does not contact a service or create files.
     $inventory = @(Invoke-JsonCommand 'gcloud.cmd' @('meta', 'list-files-for-upload', $Checkout, '--format=json'))
-    $upload = Assert-ReleaseUploadPaths -TrackedPaths $LockedSource.TrackedPaths -UploadPaths $inventory
+    $trackedUpload = Assert-ReleaseUploadPaths -TrackedPaths $LockedSource.TrackedPaths -UploadPaths $inventory
+    $upload = $trackedUpload
+    if ($Packages) {
+        Assert-SharedBackendUploadUnchanged $Packages
+        $upload = Assert-ReleaseUploadPaths -TrackedPaths @($LockedSource.TrackedPaths + $Packages.Paths) `
+            -UploadPaths @($trackedUpload.Paths + $Packages.Paths)
+    }
     $text = New-ReleaseUploadIgnoreText -Paths $upload.Paths
     $path = $RecordPath + '.source.gcloudignore'
     $writer = [System.IO.File]::Open($path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
@@ -790,6 +933,10 @@ if ($InspectLive -and $PreflightOnly) { throw 'Choose either live inspection or 
 $localPreflight = $null
 if (-not $InspectLive) {
     $localPreflight = Get-ReleaseLocalPreflight -Repository $repoRoot -Commit $Commit
+    if ($sharedBackend -and $Target -in @('all', 'api')) {
+        $selected = Invoke-JsonCommand 'node.exe' @((Join-Path $repoRoot 'scripts/shared-backend-packages.mjs'), 'verify', '--manifest', $sharedBackendManifestPath)
+        $localPreflight | Add-Member -NotePropertyName SharedBackendPackages -NotePropertyValue $selected
+    }
     if ($PreflightOnly) {
         if ($gameWorkerBindings.Count -gt 0) {
             $localPreflight | Add-Member -NotePropertyName GameWorkerBindings -NotePropertyValue $gameWorkerBindings
@@ -855,6 +1002,7 @@ $workspaceLock = $null
 $sourceLock = $null
 $hostRuntimeConfigurationLock = $null
 $apiRuntimeFlagsContext = $null
+$sharedBackendPackages = $null
 $hostingContext = $null
 $recordPath = ''
 $record = [ordered]@{
@@ -874,6 +1022,12 @@ $record = [ordered]@{
     hostRuntimeConfiguration = $hostRuntimeConfiguration
     apiRuntimeFlagsSha256 = ''
     apiRuntimeFlagsPath = ''
+    sharedBackendManifestSha256 = ''
+    sharedBackendCompositionSha256 = ''
+    sharedBackendFileManifestSha256 = ''
+    sharedBackendFileCount = 0
+    sharedBackendRemovedWorkerEnvironment = @()
+    sharedBackendRemovedWorkerSecrets = @()
     firestoreIndexPublicationSha256 = ''
     firestoreIndexConfigSha256 = ''
     firestorePublishedIndexCount = 0
@@ -922,6 +1076,15 @@ try {
     [System.IO.Directory]::CreateDirectory($recordDirectory) | Out-Null
     $recordPath = Join-Path $recordDirectory (([DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss-fff')) + '-' + $candidateSha.Substring(0, 12) + '-' + [guid]::NewGuid().ToString('N').Substring(0, 8) + '.json')
     Write-ReleaseRecord -Record $record -Path $recordPath
+
+    if ($sharedBackend -and $Target -in @('all', 'api')) {
+        $sharedBackendPackages = New-SharedBackendUploadContext -Checkout $releaseCheckout
+        $record.sharedBackendManifestSha256 = $sharedBackendPackages.ManifestSha256
+        $record.sharedBackendCompositionSha256 = $sharedBackendPackages.CompositionSha256
+        $record.sharedBackendFileManifestSha256 = $sharedBackendPackages.FileManifestSha256
+        $record.sharedBackendFileCount = $sharedBackendPackages.FileCount
+        Write-ReleaseRecord -Record $record -Path $recordPath
+    }
 
     Write-Host "`nVerifying immutable main commit $candidateSha..." -ForegroundColor Yellow
     Invoke-Checked -Executable 'npm.cmd' -Arguments @('ci') -WorkingDirectory $releaseCheckout
@@ -1047,7 +1210,7 @@ try {
         Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
 
         Assert-ApiBuildRepository
-        $uploadContext = New-ApiUploadContext -Checkout $releaseCheckout -LockedSource $sourceLock -RecordPath $recordPath
+        $uploadContext = New-ApiUploadContext -Checkout $releaseCheckout -LockedSource $sourceLock -RecordPath $recordPath -Packages $sharedBackendPackages
         $imageTag = "$region-docker.pkg.dev/$project/$ArtifactRepository/${serviceName}:ff-$($candidateSha.Substring(0, 12))-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
         $record.apiUploadManifestSha256 = $uploadContext.ManifestSha256
         $record.apiUploadIgnoreSha256 = $uploadContext.IgnoreSha256
@@ -1060,6 +1223,7 @@ try {
         $build = Invoke-JsonCommand 'gcloud.cmd' @('builds', 'submit', $releaseCheckout,
             '--ignore-file', $uploadContext.IgnoreFile, '--tag', $imageTag,
             '--project', $project, '--format=json', '--suppress-logs', '--quiet')
+        Assert-SharedBackendUploadUnchanged $sharedBackendPackages
         $builtImage = Get-ReleaseBuiltImage -Build $build -ExpectedTag $imageTag
         $record.apiBuildId = $builtImage.BuildId
         $record.apiImageDigest = $builtImage.Digest
@@ -1076,13 +1240,23 @@ try {
             "--update-labels=ff-source-sha=$candidateSha",
             '--quiet'
         )
-        $apiRuntimeFlagsContext = New-ApiRuntimeFlagsContext -SourceSha $candidateSha -Bindings $gameWorkerBindings -RuntimeConfiguration $hostRuntimeConfiguration -RecordPath $recordPath
+        $legacyWorkerConfiguration = $null
+        if ($sharedBackendPackages) {
+            $legacyWorkerConfiguration = Get-ApiLegacyWorkerConfiguration (Get-ApiRevision $apiBefore.RevisionName)
+            $record.sharedBackendRemovedWorkerEnvironment = $legacyWorkerConfiguration.Environment
+            $record.sharedBackendRemovedWorkerSecrets = $legacyWorkerConfiguration.Secrets
+        }
+        $apiRuntimeFlagsContext = New-ApiRuntimeFlagsContext -SourceSha $candidateSha -Bindings $gameWorkerBindings -RuntimeConfiguration $hostRuntimeConfiguration -RecordPath $recordPath -SharedPackages $sharedBackendPackages -LegacyWorkerConfiguration $legacyWorkerConfiguration
         $record.apiRuntimeFlagsSha256 = $apiRuntimeFlagsContext.Sha256
         $record.apiRuntimeFlagsPath = $apiRuntimeFlagsContext.Path
         Write-ReleaseRecord -Record $record -Path $recordPath
         Assert-HostRuntimeConfigurationUnchanged -Configuration $apiRuntimeFlagsContext -LockedStream $apiRuntimeFlagsContext.Stream
         $apiDeployArguments += "--flags-file=$($apiRuntimeFlagsContext.Path)"
-        if ($ContinuousAudit) { $apiDeployArguments += @('--min-instances', '1', '--no-cpu-throttling') }
+        if ($sharedBackendPackages) {
+            $apiDeployArguments += @('--min', '0', '--min-instances', '0', '--cpu-throttling',
+                '--startup-probe=httpGet.path=/healthz,httpGet.port=8080,timeoutSeconds=5,periodSeconds=5,failureThreshold=48')
+        }
+        elseif ($ContinuousAudit) { $apiDeployArguments += @('--min-instances', '1', '--no-cpu-throttling') }
         Invoke-Checked -Executable 'gcloud.cmd' -Arguments $apiDeployArguments -WorkingDirectory $releaseCheckout
 
         $service = Get-CloudRunService
@@ -1097,6 +1271,7 @@ try {
         Assert-ApiRevisionImage -Revision $newRevision -ExpectedImage $builtImage.Image
         Assert-ApiWorkerBindings -Revision $newRevision -Bindings $gameWorkerBindings
         Assert-ApiHostRuntimeConfiguration -Revision $newRevision -Configuration $hostRuntimeConfiguration
+        Assert-ApiSharedBackendConfiguration -Revision $newRevision -Packages $sharedBackendPackages -Service $service
         $record.newApiRevision = $newApiRevision
         Write-ReleaseRecord -Record $record -Path $recordPath
 
@@ -1116,6 +1291,8 @@ try {
         if ((Get-ApiRevisionSourceSha $candidateAtTrafficSwitch) -cne $candidateSha) { throw 'Candidate API source stamp changed before traffic switch.' }
         Assert-ApiWorkerBindings -Revision $candidateAtTrafficSwitch -Bindings $gameWorkerBindings
         Assert-ApiHostRuntimeConfiguration -Revision $candidateAtTrafficSwitch -Configuration $hostRuntimeConfiguration
+        Assert-ApiSharedBackendConfiguration -Revision $candidateAtTrafficSwitch -Packages $sharedBackendPackages -Service (Get-CloudRunService)
+        Assert-SharedBackendUploadUnchanged $sharedBackendPackages
 
         Invoke-Checked -Executable 'gcloud.cmd' -Arguments @(
             'run', 'services', 'update-traffic', $serviceName,
@@ -1213,6 +1390,7 @@ catch {
     throw
 }
 finally {
+    if ($sharedBackendPackages) { Exit-ReleaseSourceLock -Lock $sharedBackendPackages.Lock }
     if ($apiRuntimeFlagsContext) { $apiRuntimeFlagsContext.Stream.Dispose() }
     if ($hostRuntimeConfigurationLock) { $hostRuntimeConfigurationLock.Dispose() }
     if ($hostingContext) { Exit-ReleaseSourceLock -Lock $hostingContext.Lock }

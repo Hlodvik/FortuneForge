@@ -1,10 +1,7 @@
 using FortuneForge.Games.Hosting;
-using FortuneForge.Games.Slots;
-using FortuneForge.Games.Slots.Runtime;
+using FortuneForge.Games.ClassicSlot.Server;
 
-var app = GameServiceHost.Create(args, SelectedEngine.GameId, SelectedEngine.EngineVersion);
-app.UseGameWorkerAuthentication(SelectedEngine.GameId);
-var outcomes = new ClassicPaidSlotOutcomes(new CryptographicSlotRandom());
-app.MapGameAction<PaidSlotOutcomeRequest, PaidSlotOutcomeResponse>(
-    PaidSlotOutcomeProtocol.Route, outcomes.Resolve, accountSelector: request => request.PlayerId);
+var package = new GameBackendPackage();
+if (GameBackendPackageCommand.TryDescribe(args, package)) return;
+var app = package.Create(new WebApplicationOptions { Args = args }, _ => { });
 app.Run();

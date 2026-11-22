@@ -7214,30 +7214,30 @@
     {
       "gameId": "robot-revolution",
       "runtimeGameId": "robot-revolution-v1",
-      "releaseId": "4b604d63-9ecd-4ebd-bb0d-c79908737392",
-      "sourceSha": "0264936199db2d068f3147b305e334eec0be9382",
+      "releaseId": "582eb047-c87e-4c30-a605-10e74c712413",
+      "sourceSha": "79823724c35eeaf81699d2639f49f79bf0be3b85",
       "entry": "FortuneForge.Games.PackagedGame.Server.dll",
       "moduleType": "FortuneForge.Games.PackagedGame.Server.GameBackendPackage",
       "files": [
         {
           "path": "FortuneForge.Games.Abstractions.dll",
           "size": 132608,
-          "sha256": "087503a6efe5ec705a647b5890a47583aa0f225837d2f65db7d356e40940a5d6"
+          "sha256": "a5ab1a8363fec23b584c7071269bafabf7203072763749c46b5bb04217a63ecd"
         },
         {
           "path": "FortuneForge.Games.Abstractions.pdb",
           "size": 31728,
-          "sha256": "9414cd6eb03d753e634fd2b6687b5171afebb6095cda1b37ca27c9a6643829c4"
+          "sha256": "50bc9e8cadfa1416b967a1ef394864f85b233b7c4dc027fb7aa5b7bbd1021399"
         },
         {
           "path": "FortuneForge.Games.Hosting.dll",
           "size": 99840,
-          "sha256": "a116877b1ae9e443e0ef10c2cc46e2fbf8f246bda2f4824b6bc7a9a28261c48d"
+          "sha256": "c210ff2054a46800bb21f68164a8eb46b4258a784425be35b6df0c1ae6ad1a42"
         },
         {
           "path": "FortuneForge.Games.Hosting.pdb",
           "size": 39124,
-          "sha256": "fd7a96967ed7a8b806d8c1da566ed180b56bdb92a5ac4f9b5474dc9f87090836"
+          "sha256": "7077d8daf54878154f50d8d15b3badbe624cc32e7a835aef8f8d0d9469d2186a"
         },
         {
           "path": "FortuneForge.Games.PackagedGame.Server.deps.json",
@@ -7247,12 +7247,12 @@
         {
           "path": "FortuneForge.Games.PackagedGame.Server.dll",
           "size": 24576,
-          "sha256": "30b15245ff2197e3baae76371a287dc9b30ac5633bd095a1883c04c241b3473b"
+          "sha256": "53f805418cbe42d4edac17b5c9bf27b9f416263d281585b82da75f91fe1864a9"
         },
         {
           "path": "FortuneForge.Games.PackagedGame.Server.pdb",
           "size": 26964,
-          "sha256": "48ca5bb810bee5c9204e2044f2932ca386835e1bde565137c7f90d2f7668af28"
+          "sha256": "b0838cd35ed0293cb008c35daa243a7c50294bb169f498d1cde26eba21d63dc6"
         },
         {
           "path": "FortuneForge.Games.PackagedGame.Server.runtimeconfig.json",
@@ -7271,13 +7271,13 @@
         },
         {
           "path": "FortuneForge.Games.RobotRevolution.Server.dll",
-          "size": 101376,
-          "sha256": "f9b632cbd73837b057998db145ead1ae898b3c9d4d13bd3f7e0e4e50a3307e73"
+          "size": 108544,
+          "sha256": "28490f85ca3b80a0bb415b7dc64fabd09458f58a462be987aece30e7db5089d4"
         },
         {
           "path": "FortuneForge.Games.RobotRevolution.Server.pdb",
-          "size": 36888,
-          "sha256": "9c0d4b1d58a5325ca5ab4342cd7a1d68e9b5c1989304921fa3e0cc7ff7474d27"
+          "size": 38688,
+          "sha256": "dfa0c6f793b689b175132eff7d06662d973d9022c634748c4b98faa1560ad9b7"
         },
         {
           "path": "FortuneForge.Games.RobotRevolution.Server.runtimeconfig.json",
@@ -7286,43 +7286,43 @@
         },
         {
           "path": "FortuneForge.Games.RobotRevolution.dll",
-          "size": 30720,
-          "sha256": "e08b8e7ff2088113103b7daf2ff8d84de6456148b3387faa3a7ab41e2519a49c"
+          "size": 57344,
+          "sha256": "0f631b273322ce8f35ac7087e59cfc698f40ea5b5403c418707ed7a269c8a05f"
         },
         {
           "path": "FortuneForge.Games.RobotRevolution.pdb",
-          "size": 15320,
-          "sha256": "d0578e1b3a686759b1054d0eddf73cc1d83212f121fa906be91808c125b5e7c6"
+          "size": 19996,
+          "sha256": "4e95ba7f62a2ad6dc1e47b5434175d2cebce1151c5db4b69efa9089b3fd162a2"
         },
         {
           "path": "FortuneForge.Games.Slots.Contracts.dll",
           "size": 40960,
-          "sha256": "34a9102b5157281e421365f0f7b33d9821300c222e162cd254a79ede4567bf66"
+          "sha256": "a4f497bef115314902cec014bda58024e65964554fb1a54bb7e6ac73cb987139"
         },
         {
           "path": "FortuneForge.Games.Slots.Contracts.pdb",
           "size": 18996,
-          "sha256": "402cf9fea45dbba9dfb2307e1f40c73b45b1a942f9d69a898330c44e1c695bc2"
+          "sha256": "737ad5e80cc605eec587d45a41267fc14d60297a2605d73075943524960b3cc0"
         },
         {
           "path": "FortuneForge.Games.Slots.Persistence.dll",
-          "size": 63488,
-          "sha256": "1eed6518338484aa2a289dbbbde50e9e9d828b69251816b2de4f592bfd49e8ca"
+          "size": 64512,
+          "sha256": "68a430ad0b61bdaf03e2749bc6294a6ea13c39b6bb2186e1433cfa3e4fcb7d24"
         },
         {
           "path": "FortuneForge.Games.Slots.Persistence.pdb",
-          "size": 21984,
-          "sha256": "05d0034d380ed4f893a66566a80352daf83b69a352eedd8319a168e729667222"
+          "size": 22168,
+          "sha256": "2ffae16d1f961455c5ed644e15b3daf4f00fa3030f517e68c7baa68f0827c52d"
         },
         {
           "path": "FortuneForge.Games.Slots.Runtime.dll",
           "size": 115200,
-          "sha256": "81abbb0835a08dc2b12deeafe2eb518513546e200a945a7e03231326c0eb4d05"
+          "sha256": "3dd4ed48dbf1df4760c66a8e474691ce53bd42b06b3cfe175699d7284b45da0c"
         },
         {
           "path": "FortuneForge.Games.Slots.Runtime.pdb",
           "size": 30708,
-          "sha256": "fb55008b95d1403df2f472b4fe6bed762d0e78b1a2ef568fa62f547a2e0e9ba2"
+          "sha256": "edc24d9f7757c5f742692f72f495950ae6c2f25f9d57c46092d864b3323c6922"
         },
         {
           "path": "Google.Api.CommonProtos.dll",
@@ -7422,7 +7422,7 @@
         {
           "path": "release.json",
           "size": 349,
-          "sha256": "31b43f860ab0b4199b0049d4a7c9ae99d3031c90d4166828c75004c6c6136cfc"
+          "sha256": "ba14b38b0694b31efaaa96b95789c7724a755e23f7bdb29cbeb4e57ff60969fc"
         },
         {
           "path": "runtimes/win/lib/net7.0/System.Management.dll",

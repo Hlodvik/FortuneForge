@@ -33,7 +33,7 @@ try
 }
 catch (Exception error)
 {
-    await Console.Error.WriteLineAsync($"Shared backend verification failed: {error.GetType().Name}: {error.Message}");
+    await Console.Error.WriteLineAsync($"Shared backend verification failed: {error}");
     return 1;
 }
 
@@ -67,6 +67,7 @@ internal static class BackendVerification
         using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
         var token = timeout.Token;
         var projectId = "demo-shared-backend-" + Guid.NewGuid().ToString("N");
+        await Console.Error.WriteLineAsync($"Isolated emulator verification project: {projectId}");
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
             ApplicationName = typeof(FortuneForgeStartup).Assembly.GetName().Name,
@@ -220,6 +221,9 @@ internal static class BackendVerification
         Require(created.StatusCode == HttpStatusCode.OK,
             $"Authenticated Sunstone spin returned {(int)created.StatusCode}, expected 200.");
         var original = await created.Content.ReadAsByteArrayAsync(token);
+        var artifactDirectory = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "artifacts", "sunstone-eclipse"));
+        Directory.CreateDirectory(artifactDirectory);
+        await File.WriteAllBytesAsync(Path.Combine(artifactDirectory, "shared-host-integration-response.json"), original, token);
         using var response = JsonDocument.Parse(original);
         var result = response.RootElement;
         var roundId = result.GetProperty("spinId").GetGuid().ToString("N");
@@ -300,7 +304,7 @@ internal static class BackendVerification
         var intent = await database.Collection("gameSecurityRequestIntents").Document(observation!.RequestId).GetSnapshotAsync(token);
         Require(intent.Exists && JsonSerializer.Deserialize<GameRequestObservation>(intent.GetValue<string>("observationJson"), Json) == observation,
             "The Sunstone audit event differs from its durable root request intent.");
-        var capturedResult = captured.RootElement.GetProperty("data").GetProperty("result");
+        var capturedResult = captured.RootElement.GetProperty("state").GetProperty("result");
         Require(JsonNode.DeepEquals(JsonNode.Parse(capturedResult.GetProperty("spinFeature").GetRawText()), JsonNode.Parse(feature.GetRawText())) &&
             capturedResult.GetProperty("payout").GetProperty("totalPoints").GetInt64() == payout.GetProperty("totalPoints").GetInt64() &&
             (await database.Collection(RoundAuditDocuments.Summaries).WhereEqualTo("roundId", roundId).GetSnapshotAsync(token)).Count == 1,

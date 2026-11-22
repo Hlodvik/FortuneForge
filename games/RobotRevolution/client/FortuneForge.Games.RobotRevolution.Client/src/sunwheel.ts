@@ -1,4 +1,4 @@
-import { FIFTH_SUN_ECLIPSE_MATH as eclipseMath } from './eclipseMath.generated'
+import { FIFTH_SUN_ECLIPSE_MATH as eclipseMath } from './eclipseMath.generated.js'
 
 export type GuardianId = 'jaguar' | 'eagle' | 'serpent'
 export type EclipseMode = 'solar' | 'lunar'

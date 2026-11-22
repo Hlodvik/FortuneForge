@@ -1,6 +1,6 @@
 import type { SlotSymbolDefinition, SlotSymbolSet } from '@fortuneforge/slot-client-core'
 import { createClassicPaylineGuide, formatCalibratedMultiplier, getSlotEngineGuideContract } from '@fortuneforge/slot-game-runtime/engine-guide'
-import { FIFTH_SUN_ECLIPSE_MATH as eclipseMath } from './eclipseMath.generated'
+import { FIFTH_SUN_ECLIPSE_MATH as eclipseMath } from './eclipseMath.generated.js'
 import flame from './assets/art/fifth-sun-glyphs/jade-flame-approved-v1.webp'
 import rain from './assets/art/fifth-sun-glyphs/jade-rain-approved-v1.webp'
 import wind from './assets/art/fifth-sun-glyphs/jade-wind-approved-v1.webp'

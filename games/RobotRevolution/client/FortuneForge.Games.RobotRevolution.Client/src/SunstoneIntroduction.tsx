@@ -7,7 +7,7 @@ import { FIFTH_SUN_GAME_ID, FIFTH_SUN_TITLE } from './definition'
 import { FIFTH_SUN_PAYING_SYMBOLS, FIFTH_SUN_SYMBOL_SET } from './symbols'
 import { getSunwheelPath, SUNWHEEL_GUARDIANS, SUNWHEEL_PAYOUT_TIERS } from './sunwheel'
 import type { GuardianId } from './sunwheel'
-import { FIFTH_SUN_ECLIPSE_MATH as eclipseMath } from './eclipseMath.generated'
+import { FIFTH_SUN_ECLIPSE_MATH as eclipseMath } from './eclipseMath.generated.js'
 import './FifthSunIntroduction.css'
 
 const illustrationRows = 4

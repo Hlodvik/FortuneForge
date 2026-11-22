@@ -25,12 +25,14 @@ const contract = JSON.parse(await readFile(resolve(capture.directory, midnight.r
 assert.equal(contract.symbolSet?.id, contract.symbols.symbolSetId, 'Actual Midnight symbol-set metadata is required')
 assert.equal(contract.symbolSet.symbols.length, 15, 'Midnight requires all fifteen actual symbol definitions')
 const presentationBytes = Buffer.from(JSON.stringify({ ...contract, schemaVersion: 2,
+  sourceHashAlgorithm: capture.provenance.sourceHashAlgorithm ?? 'sha256-raw-bytes-v1',
   sourceSha256: capture.provenance.sourceSha256, assemblySha256: capture.provenance.assemblySha256,
 }, null, 2) + '\n')
 records.push({ path: 'fortuneforge.client/src/games/slots/dragonHoard/evidence/current-engine-contract.json',
   bytes: presentationBytes, sha256: sha(presentationBytes) })
 for (const [name, value] of Object.entries({
-  'engine-contract': { schemaVersion: 1, sourceSha256: capture.provenance.sourceSha256,
+  'engine-contract': { schemaVersion: 1, sourceHashAlgorithm: capture.provenance.sourceHashAlgorithm ?? 'sha256-raw-bytes-v1',
+    sourceSha256: capture.provenance.sourceSha256,
     assemblySha256: capture.provenance.assemblySha256, contract },
   index: { schemaVersion: 1, route: midnight.route, scenarios: midnight.scenarios,
     source: 'Actual current in-process server demo capture; see engine-contract.json' },

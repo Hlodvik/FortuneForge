@@ -1,12 +1,16 @@
 using System.Reflection;
+using System.Net;
+using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using FortuneForge.Games.Mines;
 using FortuneForge.Games.Mines.Server;
+using FortuneForge.Games.Hosting;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Accounts.Storage;
+using FortuneForge.Server.Accounts.Wallet;
 using FortuneForge.Server.Cards.History;
 using FortuneForge.Server.Configuration;
 using FortuneForge.Server.Tests.Accounts;
@@ -14,8 +18,10 @@ using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Games.Mines;
@@ -99,52 +105,105 @@ public sealed class MinesHistoryIntegrationTests
         var accounts = new FirestoreAccountStore(database);
         await accounts.CreateAsync("alice", "Alice", "ALICE", "alice@example.test", "unused", "active", default);
         await database.Collection("userBalances").Document("alice_slotsCredits").SetAsync(new Dictionary<string, object>
-            { ["available"] = 123L, ["availableFractionalCents"] = 45L });
+            { ["userId"] = "alice", ["currencyId"] = "slotsCredits", ["available"] = 123L,
+                ["availableFractionalCents"] = 45L, ["reserved"] = 0L, ["version"] = 1L });
         await database.Collection("userBalances").Document("attacker_slotsCredits").SetAsync(new Dictionary<string, object>
             { ["available"] = 999L, ["availableFractionalCents"] = 0L });
         var token = new string('a', 48);
         var hash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
         await accounts.CreateSessionAsync(hash, "alice", DateTime.UtcNow, DateTime.UtcNow.AddHours(1), null, default);
-        var accessor = new HttpContextAccessor();
-        var builder = MinesHostRegistrationTests.CreateBuilder();
+        var walletKey = RandomNumberGenerator.GetBytes(32);
+        var workerKey = RandomNumberGenerator.GetBytes(32);
+        var walletBuilder = LoopbackBuilder();
+        walletBuilder.Configuration["GameWallet:Games:mines:SigningKey"] = Convert.ToBase64String(walletKey);
+        walletBuilder.Configuration["GameWallet:Games:mines:AllowAccountBalanceRead"] = "true";
+        walletBuilder.Services.AddSingleton(database);
+        walletBuilder.Services.AddSingleton<IWalletRoundSettlementStore>(new FirestoreWalletRoundSettlementStore(database));
+        await using var wallet = walletBuilder.Build();
+        wallet.MapGameWalletSettlement();
+        await wallet.StartAsync();
+
+        var workerBuilder = LoopbackBuilder();
+        workerBuilder.Configuration["GameWorker:Mode"] = "hosted";
+        workerBuilder.Configuration["GameWorker:SigningKey"] = Convert.ToBase64String(workerKey);
+        workerBuilder.Configuration["GameWallet:Url"] = wallet.Urls.Single();
+        workerBuilder.Configuration["GameWallet:SigningKey"] = Convert.ToBase64String(walletKey);
+        workerBuilder.Configuration["Features:MinesEnabled"] = "true";
+        workerBuilder.Configuration["Features:MinesPaidEnabled"] = "false";
+        workerBuilder.Services.AddSingleton(database);
+        workerBuilder.Services.AddGameWalletClient("mines");
+        workerBuilder.Services.AddMinesServer(options => options.AllowedOrigins = ["https://fortuneforgegame.web.app"]);
+        await using var worker = workerBuilder.Build();
+        worker.UseRouting();
+        worker.UseGameWorkerAuthentication("mines");
+        var observedAccounts = new List<string?>();
+        worker.MapMines((context, _) =>
+        {
+            var actor = GameWorkerAuthentication.GetAccountId(context);
+            observedAccounts.Add(actor);
+            return Task.FromResult<MinesAccount?>(actor is null ? null : new MinesAccount(actor));
+        });
+        await worker.StartAsync();
+
+        var builder = MinesHostRegistrationTests.CreateBuilder(Environments.Development);
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Configuration["LocalDevelopment:DefaultAccount:Enabled"] = "false";
+        builder.Configuration["GameWorkers:mines:ForwardPublicRoutes"] = "true";
+        builder.Configuration["GameWorkers:mines:Url"] = worker.Urls.Single();
+        builder.Configuration["GameWorkers:mines:SigningKey"] = Convert.ToBase64String(workerKey);
         builder.AddFortuneForge();
         builder.Services.AddSingleton(database);
-        builder.Services.AddSingleton(new AccountService(accounts, null!, null!, accessor));
+        builder.Services.AddSingleton(provider => new AccountService(accounts, null!, null!, provider.GetRequiredService<IHttpContextAccessor>()));
         await using var app = builder.Build();
         app.UseFortuneForgePipeline();
-        var endpoint = ((IEndpointRouteBuilder)app).DataSources.SelectMany(source => source.Endpoints).OfType<RouteEndpoint>()
-            .Single(value => value.RoutePattern.RawText == "/api/games/mines/session");
-        async Task<DefaultHttpContext> Get(string? cookie, bool practice = false)
+        await app.StartAsync();
+        using var browser = new HttpClient(new HttpClientHandler { UseCookies = false }) { BaseAddress = new Uri(app.Urls.Single()) };
+        async Task<HttpResponseMessage> Send(string? cookie, bool practice = false, bool start = false)
         {
-            var context = new DefaultHttpContext { RequestServices = app.Services };
-            context.Response.Body = new MemoryStream();
-            context.Request.Headers["X-FortuneForge-Practice"] = practice ? "true" : "false";
-            context.Request.Headers["X-Player-Id"] = "attacker";
-            context.Request.QueryString = new QueryString("?playerId=attacker&userId=attacker");
-            if (cookie is not null) context.Request.Headers.Cookie = AccountSessionCookie.Name + "=" + cookie;
-            accessor.HttpContext = context;
-            await endpoint.RequestDelegate!(context);
-            return context;
+            using var request = new HttpRequestMessage(start ? HttpMethod.Post : HttpMethod.Get,
+                "/api/games/mines/" + (start ? "rounds" : "session") + "?playerId=attacker&userId=attacker");
+            if (practice) request.Headers.Add("X-FortuneForge-Practice", "true");
+            request.Headers.Add("X-Player-Id", "attacker");
+            request.Headers.Add("Origin", "https://fortuneforgegame.web.app");
+            if (cookie is not null) request.Headers.Add("Cookie", AccountSessionCookie.Name + "=" + cookie);
+            if (start) request.Content = JsonContent.Create(new StartMinesRequest(Guid.NewGuid().ToString("N"), 100, 3));
+            return await browser.SendAsync(request);
         }
-        Assert.Equal(401, (await Get(null)).Response.StatusCode);
-        Assert.Equal(401, (await Get(new string('b', 48))).Response.StatusCode);
-        var closed = await Get(token);
-        Assert.Equal(503, closed.Response.StatusCode);
-        Assert.DoesNotContain("practice", Encoding.UTF8.GetString(((MemoryStream)closed.Response.Body).ToArray()), StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(403, (await Get(token, practice: true)).Response.StatusCode);
-        // Enabling account-credit protocol locally must not turn a practice request into a real wager.
+        using var anonymous = await Send(null);
+        using var invalid = await Send(new string('b', 48));
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, invalid.StatusCode);
+        using var closed = await Send(token, start: true);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, closed.StatusCode);
+        Assert.DoesNotContain("practice", await closed.Content.ReadAsStringAsync(), StringComparison.OrdinalIgnoreCase);
+        using var practiceBefore = await Send(token, practice: true);
+        Assert.Equal(HttpStatusCode.Forbidden, practiceBefore.StatusCode);
+        // The worker owns admission; enabling the old host flag cannot admit a wager.
         app.Configuration["Features:MinesPaidEnabled"] = "true";
-        var authenticated = await Get(token);
-        Assert.Equal(200, authenticated.Response.StatusCode);
-        Assert.Equal(403, (await Get(token, practice: true)).Response.StatusCode);
-        var session = await JsonSerializer.DeserializeAsync<MinesSessionResponse>(
-            new MemoryStream(((MemoryStream)authenticated.Response.Body).ToArray()), JsonSerializerOptions.Web);
+        using var stillClosed = await Send(token, start: true);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, stillClosed.StatusCode);
+        worker.Configuration["Features:MinesPaidEnabled"] = "true";
+        using var authenticated = await Send(token);
+        Assert.Equal(HttpStatusCode.OK, authenticated.StatusCode);
+        using var practiceAfter = await Send(token, practice: true);
+        Assert.Equal(HttpStatusCode.Forbidden, practiceAfter.StatusCode);
+        var session = await authenticated.Content.ReadFromJsonAsync<MinesSessionResponse>(JsonSerializerOptions.Web);
         Assert.False(session!.Practice);
         Assert.Equal(12_345, session.BalanceCents);
         Assert.Empty((await database.Collection("minesRounds").GetSnapshotAsync()).Documents);
         Assert.Empty((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
+        Assert.NotEmpty(observedAccounts);
+        Assert.All(observedAccounts, actor => Assert.Equal("alice", actor));
         await accounts.RevokeSessionAsync(hash, DateTime.UtcNow, default);
-        Assert.Equal(401, (await Get(token)).Response.StatusCode);
+        using var revoked = await Send(token);
+        Assert.Equal(HttpStatusCode.Unauthorized, revoked.StatusCode);
+    }
+
+    private static WebApplicationBuilder LoopbackBuilder()
+    {
+        var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions { EnvironmentName = Environments.Development });
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        return builder;
     }
 
     private static FirestoreDb Database() => new FirestoreDbBuilder

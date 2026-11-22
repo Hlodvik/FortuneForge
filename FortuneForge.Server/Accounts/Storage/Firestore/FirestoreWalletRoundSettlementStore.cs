@@ -25,6 +25,97 @@ internal sealed class WalletRoundLedgerLayout
 
 internal sealed class FirestoreWalletRoundSettlementStore(FirestoreDb database) : IWalletRoundSettlementStore
 {
+    internal static IReadOnlyList<DocumentReference> PostedStandardLegEvidence(FirestoreDb database, DocumentSnapshot ledger)
+    {
+        if (PostedLegIdentity(ledger) is not { } identity) return [];
+        var id = GameWalletSettlementIdentity.CreateId(identity.GameId, identity.UserId, identity.OperationId);
+        var completion = GameWalletSettlementIdentity.CreateCompletionId(identity.GameId, identity.UserId, identity.OperationId);
+        return [database.Collection("walletRoundSettlements").Document(id),
+            database.Collection("walletRoundSettlements").Document(completion),
+            Transaction(database, id + "-wager"), Transaction(database, id + "-payout")];
+    }
+
+    // Read-only history uses the same receipt arithmetic and ledger contracts as exact wallet retries.
+    internal static bool IsPostedStandardLeg(DocumentSnapshot ledger, IReadOnlyDictionary<string, DocumentSnapshot> evidence)
+    {
+        try
+        {
+            if (PostedLegIdentity(ledger) is not { } identity ||
+                !ledger.TryGetValue<string>("walletSettlementId", out var settlementId)) return false;
+            var id = GameWalletSettlementIdentity.CreateId(identity.GameId, identity.UserId, identity.OperationId);
+            var completionId = GameWalletSettlementIdentity.CreateCompletionId(identity.GameId, identity.UserId, identity.OperationId);
+            if (settlementId != id && settlementId != completionId) return false;
+            DocumentSnapshot Read(string collection, string key) => evidence[collection + "/" + key];
+            var stored = Read("walletRoundSettlements", settlementId);
+            var phase = stored.ContainsField("phase")
+                ? Enum.Parse<GameWalletSettlementPhase>(stored.GetValue<string>("phase"), ignoreCase: false)
+                : GameWalletSettlementPhase.Direct;
+            var settlement = ReadLinkedSettlement(stored, identity, phase);
+            var settledAt = new DateTimeOffset(stored.GetValue<Timestamp>("settledAtUtc").ToDateTime());
+            Validate(settlement, settledAt, null);
+            if (settlement.SpendLegacyFreeGame || settlement.ExpectedLegacyFreeGamesRemaining is not null ||
+                stored.ContainsField("legacyFreeGamesBefore")) return false;
+            var wager = Read("balanceTransactions", id + "-wager");
+            var payout = Read("balanceTransactions", id + "-payout");
+            var receipt = ReadReceipt(stored, settlement, false, wager.Id, payout.Id, null);
+            if (IsDeclined(receipt) || receipt.SettlementId != (phase == GameWalletSettlementPhase.CompleteReservation ? completionId : id))
+                return false;
+            var isWager = ledger.GetValue<string>("type") == "game-wager";
+            VerifyLeg(ledger, isWager ? receipt.WagerTransactionId : receipt.PayoutTransactionId,
+                settlement, receipt, false, isWager);
+
+            if (phase == GameWalletSettlementPhase.Direct)
+            {
+                VerifyLeg(wager, receipt.WagerTransactionId, settlement, receipt, false, true);
+                VerifyLeg(payout, receipt.PayoutTransactionId, settlement, receipt, false, false);
+                return true;
+            }
+            var reservedDocument = Read("walletRoundSettlements", id);
+            var reserve = ReadLinkedSettlement(reservedDocument, identity, GameWalletSettlementPhase.Reserve);
+            Validate(reserve, new DateTimeOffset(reservedDocument.GetValue<Timestamp>("settledAtUtc").ToDateTime()), null);
+            if (reserve.SpendLegacyFreeGame || reserve.ExpectedLegacyFreeGamesRemaining is not null ||
+                reservedDocument.ContainsField("legacyFreeGamesBefore")) return false;
+            var reserved = ReadReceipt(reservedDocument, reserve, false, wager.Id, payout.Id, null);
+            if (IsDeclined(reserved)) return false;
+            VerifyLeg(wager, reserved.WagerTransactionId, reserve, reserved, false, true);
+            var completedDocument = Read("walletRoundSettlements", completionId);
+            if (!completedDocument.Exists)
+            {
+                VerifyLeg(payout, null, reserve, reserved, false, false);
+                return phase == GameWalletSettlementPhase.Reserve;
+            }
+            var complete = ReadLinkedSettlement(completedDocument, identity, GameWalletSettlementPhase.CompleteReservation);
+            Validate(complete, new DateTimeOffset(completedDocument.GetValue<Timestamp>("settledAtUtc").ToDateTime()), null);
+            if (!string.Equals(complete.ReservationSha256, reserve.OutcomeSha256, StringComparison.OrdinalIgnoreCase)) return false;
+            var completed = ReadReceipt(completedDocument, complete, false, wager.Id, payout.Id, null);
+            if (IsDeclined(completed)) return false;
+            VerifyLeg(payout, completed.PayoutTransactionId, complete, completed, false, false);
+            return true;
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or KeyNotFoundException or FormatException or OverflowException)
+        { return false; }
+    }
+
+    private static WalletRoundSettlement? PostedLegIdentity(DocumentSnapshot ledger)
+    {
+        try
+        {
+            if (!ledger.Exists || ledger.Reference.Parent.Id != "balanceTransactions" ||
+                !ledger.TryGetValue<string>("currencyId", out var currency) || currency != SlotsCreditsCurrencyId ||
+                !ledger.TryGetValue<long>("schemaVersion", out var schema) || schema != 1 ||
+                !ledger.TryGetValue<string>("type", out var type) || type is not ("game-wager" or "game-payout") ||
+                !ledger.TryGetValue<string>("gameId", out var game) || !ledger.TryGetValue<string>("userId", out var actor) ||
+                !ledger.TryGetValue<string>("operationId", out var operation)) return null;
+            ValidateIdentityPart(game, nameof(game));
+            ValidateIdentityPart(actor, nameof(actor));
+            ValidateIdentityPart(operation, nameof(operation));
+            if (actor.Contains('/')) return null;
+            return new(game, actor, operation, "", 0, 0);
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or FormatException)
+        { return null; }
+    }
+
     public Task<WalletRoundSettlementReceipt> SettleAsync(
         WalletRoundSettlement settlement, DateTimeOffset settledAtUtc, CancellationToken cancellationToken,
         WalletRoundLedgerLayout? ledgerLayout = null) =>
@@ -194,7 +285,7 @@ internal sealed class FirestoreWalletRoundSettlementStore(FirestoreDb database) 
         if (!document.Exists)
             throw new WalletRoundSettlementConflictException();
         var fields = document.ToDictionary();
-        if (!Equals(fields.GetValueOrDefault("phase"), phase.ToString()))
+        if (!Equals(fields.GetValueOrDefault("phase"), phase == GameWalletSettlementPhase.Direct ? null : phase.ToString()))
             throw new WalletRoundSettlementConflictException();
         if (fields.GetValueOrDefault("outcomeSha256") is not string outcome ||
             fields.GetValueOrDefault("wagerCents") is not long wager || fields.GetValueOrDefault("payoutCents") is not long payout)
@@ -331,7 +422,8 @@ internal sealed class FirestoreWalletRoundSettlementStore(FirestoreDb database) 
         WalletRoundSettlementReceipt receipt, bool isLegacySlot, bool isWager, WalletRoundLedgerLayout? layout = null)
     {
         if (expectedId is null ? snapshot.Exists :
-            !snapshot.Exists || !MatchesFields(snapshot.ToDictionary(), LegData(expectedId, settlement, receipt, isLegacySlot, isWager, layout)))
+            !snapshot.Exists || snapshot.Id != expectedId ||
+            !MatchesFields(snapshot.ToDictionary(), LegData(expectedId, settlement, receipt, isLegacySlot, isWager, layout)))
             throw CorruptSettlement();
     }
 

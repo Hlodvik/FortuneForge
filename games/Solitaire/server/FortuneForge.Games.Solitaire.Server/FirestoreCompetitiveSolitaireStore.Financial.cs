@@ -55,7 +55,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         var observation = GameSecurityContext.Current;
         if (observation is not null && (observation.UserId != account || observation.GameId != ComputeGameId))
             throw new SolitaireConflictException("The signed Solitaire request belongs to another account or game.");
-        var prepared = await database.RunTransactionAsync(async transaction =>
+        var prepared = await RunTransactionAsync(async transaction =>
         {
             var snapshots = await transaction.GetAllSnapshotsAsync([FinancialOperation(id), FinancialGate()], token);
             if (snapshots[0].Exists)

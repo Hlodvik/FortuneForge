@@ -61,18 +61,28 @@ public sealed class SlotRoundAuditTests
         Assert.Empty(SlotRoundAudit.Check(stale, stale.Payout));
     }
 
-    [Fact]
-    public void HighNoonPaidArchive_IgnoresDormantEnergyWhenItsCapturedRulesDisableTheMeter()
+    [Theory]
+    [InlineData(SlotSpecialRoundProfiles.HighNoonFortuneGameId)]
+    [InlineData(SlotSpecialRoundProfiles.GodsOfOlympusGameId)]
+    public void NativeClassicPaidArchive_IgnoresDormantEnergyWhenItsCapturedRulesDisableTheMeter(string gameId)
     {
         var provider = Provider();
         var result = Enumerable.Range(1, 32)
-            .Select(seed => Spin(provider, SlotSpecialRoundProfiles.HighNoonFortuneGameId, energy: 100, seed: seed).Result)
+            .Select(seed => Spin(provider, gameId, energy: 100, seed: seed).Result)
             .First(spin => spin.Payout.TotalPoints > 0);
 
-        Assert.Equal(100, Assert.IsType<SlotSpinEngineAudit>(result.EngineAudit).EnergyBalanceBefore);
+        var audit = Assert.IsType<SlotSpinEngineAudit>(result.EngineAudit);
+        Assert.Equal(100, audit.EnergyBalanceBefore);
+        Assert.False(audit.FeatureProfile!.UsesEnergy);
+        Assert.NotEqual(SpinService.AuditEngineVersion, audit.EngineVersion);
+        Assert.Null(audit.BaseGame.Energy);
+        Assert.Null(audit.EffectiveGame.Energy);
         Assert.Empty(SlotRoundAudit.Check(result, result.Payout, isPaid: true));
         var inflated = EnergyBonus.Settle(100, result.EnergyAwarded, result.Payout).Payout;
         Assert.Contains(SlotRoundAudit.Check(result, inflated, isPaid: true),
+            finding => finding.Code == "slot-settlement-mismatch");
+        var relabelled = result with { EngineAudit = audit with { EngineVersion = SpinService.AuditEngineVersion } };
+        Assert.Contains(SlotRoundAudit.Check(relabelled, inflated, isPaid: true),
             finding => finding.Code == "slot-settlement-mismatch");
     }
 

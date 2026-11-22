@@ -2,6 +2,7 @@ using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.Abstractions.Wallet;
 using FortuneForge.Server.Admin.Operations;
+using FortuneForge.Server.Accounts.Storage;
 using Google.Cloud.Firestore;
 using Microsoft.Extensions.Options;
 
@@ -55,7 +56,7 @@ internal sealed class FirestoreAdminPlayersStore(FirestoreDb database, IOptions<
         await Task.WhenAll(ledgerTask, purchaseTask);
         var ledger = ledgerTask.Result.Documents.Take(scanLimit).ToArray();
         var purchases = purchaseTask.Result.Documents.Take(scanLimit).ToArray();
-        var cash = ledger.Select(Gaming).OfType<AdminPlayerGamingEvent>().ToArray();
+        var cash = await ProjectGamingAsync(ledger, ct);
         var limitations = new List<string> { CashFlowCaution };
         if (ledgerTask.Result.Count > scanLimit) limitations.Add($"Wallet summary is capped at {scanLimit} stored records and is not a lifetime total.");
         if (purchaseTask.Result.Count > scanLimit) limitations.Add($"Purchase summary is capped at {scanLimit} stored records and is not a lifetime total.");
@@ -86,7 +87,7 @@ internal sealed class FirestoreAdminPlayersStore(FirestoreDb database, IOptions<
     public async Task<AdminPlayerPage<AdminPlayerGamingEvent>> GamingAsync(string userId, int limit, string? cursor, CancellationToken ct)
     {
         var page = await UserPage("balanceTransactions", userId, "gaming", limit, cursor, ct);
-        var items = page.Items.Select(Gaming).OfType<AdminPlayerGamingEvent>().ToArray();
+        var items = await ProjectGamingAsync(page.Items, ct);
         return new(items, page.NextCursor, items.All(item => item.NetCredits is not null),
             [StorageOrder, CashFlowCaution, "Non-Rand currencies, purchase credits and withdrawal events are excluded. A page can be empty while more source records remain.", "Legacy wallet events do not always record a match ID; no match link is fabricated."]);
     }
@@ -192,7 +193,24 @@ internal sealed class FirestoreAdminPlayersStore(FirestoreDb database, IOptions<
         "solitaire-no-contest-refund-claim", "solitaire-test-refund-claim", "hearts-queue-refund"
     };
 
-    internal static AdminPlayerGamingEvent? Gaming(DocumentSnapshot document)
+    private async Task<AdminPlayerGamingEvent[]> ProjectGamingAsync(IEnumerable<DocumentSnapshot> source, CancellationToken ct)
+    {
+        var documents = source.ToArray();
+        var eligible = documents.Where(document => (Text(document, "type") is "game-wager" or "game-payout") &&
+            GamePrefixes.Any(prefix => prefix.Game == Text(document, "gameId"))).ToArray();
+        var evidence = documents.ToDictionary(document => document.Reference.Parent.Id + "/" + document.Id);
+        var references = eligible.SelectMany(document => FirestoreWalletRoundSettlementStore.PostedStandardLegEvidence(database, document))
+            .DistinctBy(reference => reference.Path).Where(reference => !evidence.ContainsKey(reference.Parent.Id + "/" + reference.Id));
+        foreach (var batch in references.Chunk(100))
+            foreach (var snapshot in await database.GetAllSnapshotsAsync(batch, cancellationToken: ct))
+                evidence[snapshot.Reference.Parent.Id + "/" + snapshot.Id] = snapshot;
+        return documents.Select(document => Gaming(document, eligible.Contains(document) &&
+            FirestoreWalletRoundSettlementStore.IsPostedStandardLeg(document, evidence))).OfType<AdminPlayerGamingEvent>().ToArray();
+    }
+
+    internal static AdminPlayerGamingEvent? Gaming(DocumentSnapshot document) => Gaming(document, false);
+
+    private static AdminPlayerGamingEvent? Gaming(DocumentSnapshot document, bool verifiedStandardLeg)
     {
         if (Text(document, "currencyId") != "slotsCredits") return null;
         var type = Text(document, "type", "unknown");
@@ -201,10 +219,10 @@ internal sealed class FirestoreAdminPlayersStore(FirestoreDb database, IOptions<
         var game = OptionalText(document, "gameId") ?? prefix.Game ?? "unclassified";
         var directCardRound = DirectCardWalletRound(document, game, type);
         var amount = Money(document, "amount", "amountCents");
-        var isCharge = ChargeTypes.Contains(type) || directCardRound is not null && type == "game-wager" ||
+        var isCharge = ChargeTypes.Contains(type) || verifiedStandardLeg && type == "game-wager" ||
             type.StartsWith("texas-holdem-action-v", StringComparison.Ordinal) &&
             int.TryParse(type.AsSpan("texas-holdem-action-v".Length), out var version) && version >= 0;
-        var isPayout = PayoutTypes.Contains(type) || directCardRound is not null && type == "game-payout";
+        var isPayout = PayoutTypes.Contains(type) || verifiedStandardLeg && type == "game-payout";
         var isRefund = RefundTypes.Contains(type);
         var isAdjustment = type is "blackjack-table-wager-adjustment" or "three-card-poker-table-wager-adjustment";
         var known = amount is not null && (isCharge && amount <= 0 || isPayout && amount >= 0 || isRefund && amount >= 0 || isAdjustment);

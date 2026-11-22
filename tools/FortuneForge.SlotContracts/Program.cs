@@ -1,8 +1,10 @@
 // Edited: 2026-11-18T19:29:04-06:00 | Computer: Vinnabok
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using FortuneForge.Games.ArcaneArchives;
 using FortuneForge.Games.Slots;
 using FortuneForge.Server.Controllers;
@@ -21,23 +23,30 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 var json = new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true };
+const string sourceHashAlgorithm = "sha256-utf8-lf-v1";
 if (args is ["--arcane-symbol-guide", var guideOutput])
 {
     ExportArcaneSymbolGuide(guideOutput);
     return;
 }
+var guideOnly = args is ["--guide-contracts", _, _];
+if (guideOnly) args = args[1..];
 if (args.Length != 2) throw new ArgumentException(
-    "Usage: exporter <repository-root> <new-output-directory> or exporter --arcane-symbol-guide <output-file>");
+    "Usage: exporter [--guide-contracts] <repository-root> <new-output-directory> or exporter --arcane-symbol-guide <output-file>");
 var repository = Path.GetFullPath(args[0]);
 var output = Path.GetFullPath(args[1]);
 var compiledAssembly = typeof(SpinService).Assembly.Location;
 
-var configuration = Path.Combine(repository, "FortuneForge.Server/appsettings.json");
-using var configurationDocument = JsonDocument.Parse(File.ReadAllText(configuration));
-var options = configurationDocument.RootElement.GetProperty("Slots").Deserialize<SlotsOptions>(json)!;
-var validation = new SlotsOptionsValidator().Validate(null, options);
-Require(!validation.Failed, string.Join("\n", validation.Failures ?? []));
-var definitions = new OptionsSlotsDefinitionProvider(Options.Create(options));
+var definitions = new OptionsSlotsDefinitionProvider();
+if (!guideOnly)
+{
+    var configuration = Path.Combine(repository, "FortuneForge.Server/appsettings.json");
+    using var configurationDocument = JsonDocument.Parse(File.ReadAllText(configuration));
+    var options = configurationDocument.RootElement.GetProperty("Slots").Deserialize<SlotsOptions>(json)!;
+    var validation = new SlotsOptionsValidator().Validate(null, options);
+    Require(!validation.Failed, string.Join("\n", validation.Failures ?? []));
+    definitions = new OptionsSlotsDefinitionProvider(Options.Create(options));
+}
 var routeFile = "fortuneforge.client/src/games/slots/routeMetadata.ts";
 var routesSource = File.ReadAllText(Path.Combine(repository, routeFile));
 var routePattern = "id: '([^']+)', (?:gameReleaseId: '[^']+', )?title: (?:'([^']*)'|\"([^\"]*)\"),[^{}]*?playPath: '([^']+)', demoPath: '([^']+)', serverGameIds: \\['([^']+)'\\]";
@@ -48,30 +57,71 @@ var routes = Regex.Matches(routesSource, routePattern).Select(match =>
 Require(routes.Length == 19 && routes.Select(route => route.Id).Distinct().Count() == 19 &&
     routes.Select(route => route.GameId).Distinct().Count() == 19, "Actual route registry must supply exactly 19 unique playable profiles.");
 Require(routes.All(route => SlotSpecialRoundProfiles.TryGet(route.GameId, out _)), "Catalogue profile missing.");
+// Slot projects declare their domain ownership through these shared contracts.
+// Follow that boundary instead of retaining a partial, hand-maintained title list.
+var sharedSlotProjects = new[]
+{
+    "games/shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj",
+    "games/shared/FortuneForge.Games.Slots.Runtime/FortuneForge.Games.Slots.Runtime.csproj"
+}.Select(path => Path.GetFullPath(Path.Combine(repository, path))).ToHashSet(StringComparer.OrdinalIgnoreCase);
+var slotProjects = Directory.EnumerateFiles(Path.Combine(repository, "games"), "*.csproj", SearchOption.AllDirectories)
+    .Where(path => path.Replace('\\', '/').Contains("/src/", StringComparison.Ordinal) &&
+        !path.Replace('\\', '/').Contains("/obj/", StringComparison.Ordinal) &&
+        !path.Replace('\\', '/').Contains("/bin/", StringComparison.Ordinal))
+    .Where(path => XDocument.Load(path).Descendants("ProjectReference")
+        .Select(reference => (string?)reference.Attribute("Include"))
+        .OfType<string>().Any(reference => sharedSlotProjects.Contains(Path.GetFullPath(
+            Path.Combine(Path.GetDirectoryName(path)!, reference.Replace('\\', Path.DirectorySeparatorChar))))))
+    .Order(StringComparer.Ordinal).ToArray();
+Require(slotProjects.Length == 20, "Expected all twenty independently owned slot engine projects.");
 var sourceDirectories = new[]
 {
     "FortuneForge.Server/Slots",
-    "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives",
-    "games/MidnightVault/src/FortuneForge.Games.MidnightVault",
-    "games/GoldFoundry/src/FortuneForge.Games.GoldFoundry",
-    "games/NeonNights/src/FortuneForge.Games.NeonNights",
-    "games/JadeDragon/src/FortuneForge.Games.JadeDragon",
     "games/shared/FortuneForge.Games.Slots.Contracts",
     "games/shared/FortuneForge.Games.Slots.Runtime"
-};
+}.Concat(slotProjects.Select(path => Path.GetRelativePath(repository, Path.GetDirectoryName(path)!)));
 var sourcePaths = sourceDirectories.SelectMany(directory =>
         Directory.EnumerateFiles(Path.Combine(repository, directory), "*", SearchOption.AllDirectories))
     .Where(file => (Path.GetExtension(file) is ".cs" or ".json" or ".csproj") &&
         !file.Replace('\\', '/').Contains("/bin/", StringComparison.Ordinal) &&
         !file.Replace('\\', '/').Contains("/obj/", StringComparison.Ordinal))
     .Select(file => Path.GetRelativePath(repository, file).Replace('\\', '/'))
-    .Append("FortuneForge.Server/appsettings.json").Append("FortuneForge.Server/Controllers/DemoSlotsController.cs")
-    .Append(routeFile).Append("FortuneForge.Server/RoundAudit/DemoSlotRoundRecording.cs")
-    .Append("FortuneForge.Server/Accounts/Security/AntiAbuseRateLimiting.cs")
+    .Append(routeFile)
+    .Concat(guideOnly ? Array.Empty<string>() : new[] { "FortuneForge.Server/appsettings.json", "FortuneForge.Server/Controllers/DemoSlotsController.cs",
+        "FortuneForge.Server/RoundAudit/DemoSlotRoundRecording.cs", "FortuneForge.Server/Accounts/Security/AntiAbuseRateLimiting.cs" })
     .Append("tools/FortuneForge.SlotContracts/Program.cs")
     .Append("tools/FortuneForge.SlotContracts/FortuneForge.SlotContracts.csproj")
+    .Concat(guideOnly ? new[] { "fortuneforge.client/scripts/export-slot-guide-contracts.mjs", "tools/verify-slot-contracts.mjs" } : Array.Empty<string>())
     .Order(StringComparer.Ordinal).ToArray();
-var sourceHashes = sourcePaths.ToDictionary(path => path, path => Hash(Path.Combine(repository, path)));
+var sourceHashes = sourcePaths.ToDictionary(path => path, path => HashSource(Path.Combine(repository, path)));
+if (guideOnly)
+{
+    Directory.CreateDirectory(output);
+    foreach (var route in routes)
+    {
+        var directory = Path.Combine(output, route.Id);
+        Directory.CreateDirectory(directory);
+        WriteNew(directory, "contract.json", DefinitionContract(route));
+    }
+    foreach (var (path, expected) in sourceHashes)
+        Require(HashSource(Path.Combine(repository, path)) == expected, $"Source changed during export: {path}");
+    WriteNew(output, "source-provenance.json", new
+    {
+        checkedUtc = DateTime.UtcNow, assemblySha256 = Hash(compiledAssembly),
+        compilationEvidence = "ProjectReference build; run this tool from freshly built source.",
+        sourceHashAlgorithm, sourceSha256 = sourceHashes, sourceProjects = slotProjects.Select(path => Path.GetRelativePath(repository, path).Replace('\\', '/')),
+        recordedSourceCount = sourceHashes.Count, hashesUnchangedDuringExport = true,
+        scope = "Current package-owned definition contracts through the actual host provider; no retired controller simulation or account settlement."
+    });
+    WriteNew(output, "index.json", new
+    {
+        schemaVersion = 1, kind = "slot-guide-definitions-v1", exportedUtc = DateTime.UtcNow,
+        gameCount = routes.Length, games = routes.Select(route => new { route }),
+        generator = "Actual in-process OptionsSlotsDefinitionProvider backed by independently owned slot packages."
+    });
+    Console.WriteLine($"COMPLETE: {routes.Length} guide definition contracts from {slotProjects.Length} slot projects.");
+    return;
+}
 var modes = new[] { "sync", "rows", "paw", "rand" };
 var seals = new[] { "SEAL_SYNC", "SEAL_ROWS", "SEAL_PAW", "SEAL_RAND" };
 var summaries = new List<object>();
@@ -125,17 +175,14 @@ foreach (var route in routes)
     else unavailable.Add("Direct-value tokens and collectors disabled in actual engine profile.");
 
     Require(misses.Count == 0, $"Required actual engine scenarios were not found for {route.Id}.");
-    var contract = new
-    {
-        schemaVersion = 1, route, gameId = route.GameId, profile, layout = game.Layout,
-        symbols = game.Symbols, symbolSet = definitions.GetSymbolSet(game.Symbols.SymbolSetId), matching = game.Matching, wagering = game.Wagering,
-        freeGames = game.FreeGames, energy = game.Energy, specialPoints = game.SpecialPoints,
-        math = game.Math, paylines = game.Paylines,
-        paytable = paytable.Rules,
-        observedRows = scenarios.SelectMany(scenario => scenario.Steps).Select(step => step.Response.Reels[0].Count).Distinct().Order().ToArray(),
-        observedActiveModes = scenarios.SelectMany(scenario => scenario.Steps).Select(step => step.Response.FreeSpinFeatureMode).Distinct().ToArray(),
-        statusEndpoint = 204, scenarios = scenarios.Select(ScenarioSummary), missingScenarios = misses, unavailable
-    };
+    var contract = DefinitionContract(route);
+    var observedRows = scenarios.SelectMany(scenario => scenario.Steps).Select(step => step.Response.Reels[0].Count).Distinct().Order().ToArray();
+    contract["observedRows"] = JsonSerializer.SerializeToNode(observedRows, json);
+    contract["observedActiveModes"] = JsonSerializer.SerializeToNode(scenarios.SelectMany(scenario => scenario.Steps).Select(step => step.Response.FreeSpinFeatureMode).Distinct(), json);
+    contract["statusEndpoint"] = 204;
+    contract["scenarios"] = JsonSerializer.SerializeToNode(scenarios.Select(ScenarioSummary), json);
+    contract["missingScenarios"] = JsonSerializer.SerializeToNode(misses, json);
+    contract["unavailable"] = JsonSerializer.SerializeToNode(unavailable, json);
     WriteNew(gameDirectory, "contract.json", contract);
     foreach (var scenario in scenarios)
         WriteNew(gameDirectory, $"{scenario.Name}.json", new
@@ -159,7 +206,7 @@ foreach (var route in routes)
     summaries.Add(new
     {
         route, statusEndpoint = 204, game.Layout.PaylineCount, profile,
-        game.Math.PayoutMultiplier, observedRows = contract.observedRows,
+        game.Math.PayoutMultiplier, observedRows,
         scenarios = scenarios.Select(ScenarioSummary).ToArray(), missingScenarios = misses.ToArray(),
         responses = scenarios.Sum(scenario => scenario.Steps.Count), unavailable
     });
@@ -250,12 +297,12 @@ foreach (var route in routes)
 }
 
 foreach (var (path, expected) in sourceHashes)
-    Require(Hash(Path.Combine(repository, path)) == expected, $"Source changed during export: {path}");
+    Require(HashSource(Path.Combine(repository, path)) == expected, $"Source changed during export: {path}");
 WriteNew(output, "source-provenance.json", new
 {
     checkedUtc = DateTime.UtcNow, engineVersion = SpinService.AuditEngineVersion,
     assemblySha256 = Hash(compiledAssembly), compilationEvidence = "ProjectReference build; run this tool from freshly built source.",
-    sourceSha256 = sourceHashes, recordedSourceCount = sourceHashes.Count, hashesUnchangedDuringExport = true,
+    sourceHashAlgorithm, sourceSha256 = sourceHashes, recordedSourceCount = sourceHashes.Count, hashesUnchangedDuringExport = true,
     scope = "Current slot/controller/config/route source hashes and loaded assembly identity; this is demo contract evidence, not security certification."
 });
 WriteNew(output, "index.json", new
@@ -287,6 +334,20 @@ void WriteNew(string directory, string filename, object value)
     using var file = new FileStream(Path.Combine(directory, filename), FileMode.CreateNew, FileAccess.Write);
     // Match the repository's LF policy on Windows as well as Linux.
     file.Write(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value, json).ReplaceLineEndings("\n") + "\n"));
+}
+
+JsonObject DefinitionContract(Route route)
+{
+    var game = definitions.GetGame(route.GameId) ?? throw new InvalidOperationException($"Missing definition: {route.GameId}");
+    var paytable = definitions.GetPaytable(game.Math.PaytableId) ?? throw new InvalidOperationException($"Missing paytable: {route.GameId}");
+    Require(SlotSpecialRoundProfiles.TryGet(route.GameId, out var profile), $"Missing profile: {route.GameId}");
+    return JsonSerializer.SerializeToNode(new
+    {
+        schemaVersion = 1, route, gameId = route.GameId, profile, layout = game.Layout,
+        symbols = game.Symbols, symbolSet = definitions.GetSymbolSet(game.Symbols.SymbolSetId), matching = game.Matching,
+        wagering = game.Wagering, freeGames = game.FreeGames, energy = game.Energy, specialPoints = game.SpecialPoints,
+        math = game.Math, paylines = game.Paylines, paytable = paytable.Rules
+    }, json)!.AsObject();
 }
 
 void ExportArcaneSymbolGuide(string filename)
@@ -323,6 +384,13 @@ static void NormalizeNewRoundIds(JsonNode? node, Guid spinId)
         foreach (var item in array) NormalizeNewRoundIds(item, spinId);
 }
 static string Hash(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
+static string HashSource(string path)
+{
+    var text = new UTF8Encoding(false, true).GetString(File.ReadAllBytes(path));
+    if (text.StartsWith('\uFEFF')) text = text[1..];
+    var canonical = text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+    return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
+}
 static void Require(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }
 sealed class SeededRandom(int seed) : IRandomIndexSource { private readonly Random random = new(seed); public int Next(int maximumExclusive) => random.Next(maximumExclusive); }
 sealed class NoOpAudit : IDemoSlotAuditStore { public Task RecordAsync(DemoSlotAuditEntry entry, CancellationToken cancellationToken) => Task.CompletedTask; }

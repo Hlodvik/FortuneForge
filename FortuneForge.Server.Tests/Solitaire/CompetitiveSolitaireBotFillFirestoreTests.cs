@@ -92,6 +92,18 @@ public sealed class CompetitiveSolitaireBotFillFirestoreTests
         Assert.Equal(2_000, Field<long>(funding, "humanEntryCents"));
         Assert.Equal(0, Field<long>(funding, "houseFundedEntryCents"));
         Assert.Equal(4, Field<long>(funding, "humanPlayerCount"));
+        var ledger = await LedgerAsync(database);
+        Assert.Equal(users.Length, ledger.Count);
+        foreach (var user in users)
+        {
+            var debit = Assert.Single(ledger, entry => Field<string>(entry, "userId") == user);
+            Assert.Equal("game-wager", Field<string>(debit, "type"));
+            Assert.Equal("solitaire", Field<string>(debit, "gameId"));
+            Assert.Equal(-500, Field<long>(debit, "amountCents"));
+            Assert.Equal(FirestoreCompetitiveSolitaireStore.CreateLookupKey($"{user}\njoin-command-{user}"),
+                Field<string>(debit, "operationId"));
+            Assert.Equal(9_500, await ReadBalanceAsync(database, user));
+        }
     }
 
     [Fact]

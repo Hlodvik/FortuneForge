@@ -2,6 +2,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using FortuneForge.Games.ArcaneArchives.Server;
+using FortuneForge.Games.Hosting;
 
 namespace FortuneForge.Server.Activity;
 
@@ -30,6 +32,8 @@ internal static class AcceptedGameActivityReader
     private static readonly (string Game, Regex Path)[] Actions =
     [
         Rule("slots", @"/api/slots/spins"),
+        Rule("slots", Regex.Escape(PreparedSlotSpinRoutes.Path)),
+        Rule("slots", Regex.Escape(ArcaneFeatureEndpoints.RoutePrefix + ArcaneFeatureEndpoints.PreparedSpinRoute)),
         Rule("blackjack", @"/api/cards/blackjack/table/tables/[^/]+/(wagers|actions)"),
         Rule("blackjack", @"/api/cards/blackjack/games(/[^/]+/actions)?"),
         Rule("three-card-poker", @"/api/cards/three-card-poker/table/tables/[^/]+/(wagers|actions)"),

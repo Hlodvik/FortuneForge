@@ -20,18 +20,35 @@ type EngineContract = {
   paytable: { symbolId: string; matchLength: number; multiplier: number }[]
 }
 const fixture = JSON.parse(readFileSync(new URL('./__fixtures__/engineGuide-contracts.json', import.meta.url), 'utf8')) as {
-  sourceSha256: Record<string, string>; games: EngineContract[]
+  sourceHashAlgorithm: string; sourceSha256: Record<string, string>; sourceProjects: string[]; games: EngineContract[]
 }
+const hashSource = (bytes: Uint8Array) => createHash('sha256').update(
+  new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/\r\n?/g, '\n'),
+).digest('hex')
 const manifests = await loadAllSlotGameManifests()
 const audited = manifests.filter(game => !['rainbow-realm-fruits-v1', 'dragon-hoard-v1', 'neon-nights-v1', GOLD_FOUNDRY_GAME_ID].includes(game.experience.rules.gameId))
 
 it('retains the server sources that produced the independently exported guide contracts', () => {
+  expect(fixture.sourceHashAlgorithm).toBe('sha256-utf8-lf-v1')
+  expect(fixture.sourceProjects).toHaveLength(20)
+  expect(new Set(fixture.sourceProjects).size).toBe(20)
+  for (const project of fixture.sourceProjects) {
+    expect(project).toMatch(/^games\/[^/]+\/src\/[^/]+\/[^/]+\.csproj$/)
+    expect(fixture.sourceSha256[project], `Retain the package that owns ${project}`).toMatch(/^[a-f0-9]{64}$/)
+  }
   for (const [path, expected] of Object.entries(fixture.sourceSha256)) {
     const current = readFileSync(new URL(`../../../../../${path}`, import.meta.url))
-    expect(createHash('sha256').update(current).digest('hex'), `Re-export actual engine evidence after changing ${path}`).toBe(expected)
+    expect(hashSource(current), `Re-export actual engine evidence after changing ${path}`).toBe(expected)
   }
   expect(fixture.games).toHaveLength(19)
   expect(audited).toHaveLength(15)
+})
+
+it('retains source identity across checkout line endings while detecting changed text', () => {
+  const canonical = hashSource(Buffer.from('alpha\nbeta\n'))
+  expect(hashSource(Buffer.from('alpha\r\nbeta\r\n'))).toBe(canonical)
+  expect(hashSource(Buffer.from('\uFEFFalpha\rbeta\r'))).toBe(canonical)
+  expect(hashSource(Buffer.from('alpha\nchanged\n'))).not.toBe(canonical)
 })
 
 describe.each(audited)('$catalog.title audited guide', game => {

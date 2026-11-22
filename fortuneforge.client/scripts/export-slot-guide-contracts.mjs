@@ -2,10 +2,10 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { verifySlotContracts } from '../../tools/verify-slot-contracts.mjs'
+import { verifySlotGuideContracts } from '../../tools/verify-slot-contracts.mjs'
 
 if (!process.argv[2]) throw new Error('Usage: node fortuneforge.client/scripts/export-slot-guide-contracts.mjs <fresh-engine-export>')
-const { directory: source, index, provenance } = await verifySlotContracts(process.argv[2], { requireCurrent: true })
+const { directory: source, index, provenance } = await verifySlotGuideContracts(process.argv[2])
 const games = []
 const engineFixtures = []
 let basePaytable
@@ -62,7 +62,9 @@ await mkdir(fixtureDirectory, { recursive: true })
 const fixture = {
   source: 'Actual in-process OptionsSlotsDefinitionProvider, not client manifests',
   exportedUtc: index.exportedUtc, assemblySha256: provenance.assemblySha256,
+  sourceHashAlgorithm: provenance.sourceHashAlgorithm,
   sourceSha256: provenance.sourceSha256,
+  sourceProjects: provenance.sourceProjects,
   games: engineFixtures,
 }
 await writeFile(resolve(fixtureDirectory, 'engineGuide-contracts.json'), `${JSON.stringify(fixture, null, 2)}\n`, 'utf8')

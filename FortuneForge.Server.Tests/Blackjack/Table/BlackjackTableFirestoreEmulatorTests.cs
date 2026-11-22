@@ -4,6 +4,7 @@ using FortuneForge.Server.Cards.Blackjack.Table;
 using FortuneForge.Server.Bots.Blackjack;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Matchmaking;
+using FortuneForge.Server.Accounts.Storage;
 using Google.Cloud.Firestore;
 using System.Text.Json;
 using Xunit;
@@ -471,6 +472,8 @@ public sealed class BlackjackTableFirestoreEmulatorTests
             Start,
             default)));
         Assert.All(joins, result => Assert.IsType<BlackjackTableQueueSessionResponse>(result.Session));
+        var originalJoin = Assert.IsType<BlackjackTableQueueSessionResponse>(joins[0].Session);
+        var originalReceipt = JsonSerializer.Serialize(originalJoin);
 
         var polls = await Task.WhenAll(Enumerable.Range(0, 10).Select(index =>
             stores[index % stores.Length].GetSessionAsync(
@@ -484,6 +487,8 @@ public sealed class BlackjackTableFirestoreEmulatorTests
             session.Table.Seats.Count,
             BlackjackManagedTablePolicy.MinimumStartOccupancy,
             BlackjackManagedTablePolicy.MaximumOccupiedSeats));
+        var originalTicketIds = (await database.Collection(BlackjackBackend.Tickets).GetSnapshotAsync()).Documents
+            .Select(document => document.Id).Order(StringComparer.Ordinal).ToArray();
 
         var replays = await Task.WhenAll(Enumerable.Range(0, 8).Select(index =>
             stores[index % stores.Length].JoinAsync(
@@ -494,9 +499,22 @@ public sealed class BlackjackTableFirestoreEmulatorTests
                 Start.AddSeconds(7),
                 default)));
         Assert.All(replays, result =>
-            Assert.Equal(
-                sessions[0].Table.TableId,
-                Assert.IsType<BlackjackTablePlaySessionResponse>(result.Session).Table.TableId));
+        {
+            var replay = Assert.IsType<BlackjackTableQueueSessionResponse>(result.Session);
+            Assert.Equal(originalReceipt, JsonSerializer.Serialize(replay));
+            Assert.Equal(joins[0].BalanceCents, result.BalanceCents);
+        });
+
+        var current = Assert.IsType<BlackjackTablePlaySessionResponse>(
+            (await stores[0].GetSessionAsync(users[0], Start.AddSeconds(7), default)).Session);
+        Assert.Equal(sessions[0].Table.TableId, current.Table.TableId);
+        Assert.InRange(current.Table.Seats.Count, BlackjackManagedTablePolicy.MinimumStartOccupancy,
+            BlackjackManagedTablePolicy.MaximumOccupiedSeats);
+        var ticketIdsAfterReplay = (await database.Collection(BlackjackBackend.Tickets).GetSnapshotAsync()).Documents
+            .Select(document => document.Id).Order(StringComparer.Ordinal).ToArray();
+        Assert.Equal(originalTicketIds, ticketIdsAfterReplay);
+        Assert.Empty((await database.Collection(BlackjackBackend.PendingAccounts).GetSnapshotAsync()).Documents);
+        Assert.Empty((await database.Collection(BlackjackBackend.PendingShards).GetSnapshotAsync()).Documents);
 
         var shards = (await database.Collection("blackjackTableState").GetSnapshotAsync()).Documents;
         Assert.Equal(2, shards.Count);
@@ -513,6 +531,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests
             Assert.Equal(5_000, await ReadBalanceAsync(database, user));
             Assert.Empty(await LedgerAsync(database, user));
         }
+        Assert.Empty((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
     }
 
     [Fact]
@@ -637,14 +656,18 @@ public sealed class BlackjackTableFirestoreEmulatorTests
         return new ManagedPlayerQueuer(generator, profiles, assignments);
     }
 
-    private static Task SeedBalanceAsync(FirestoreDb database, string userId, long cents) =>
-        database.Collection("userBalances").Document($"{userId}_slotsCredits").SetAsync(new Dictionary<string, object>
+    private static async Task SeedBalanceAsync(FirestoreDb database, string userId, long cents)
+    {
+        var account = await new FirestoreAccountStore(database).CreateAsync(userId, userId,
+            userId.ToUpperInvariant(), $"{userId}@example.test", "unused-local-test", "active", default);
+        Assert.NotNull(account.Value);
+        await database.Collection("userBalances").Document($"{userId}_slotsCredits").UpdateAsync(new Dictionary<string, object>
         {
             ["available"] = cents / 100,
             ["availableFractionalCents"] = cents % 100,
-            ["version"] = 1L,
             ["updatedAt"] = Timestamp.FromDateTime(Start)
         });
+    }
 
     private static async Task<long> ReadBalanceAsync(FirestoreDb database, string userId)
     {

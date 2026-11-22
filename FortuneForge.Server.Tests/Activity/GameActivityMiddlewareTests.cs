@@ -1,5 +1,8 @@
 using System.Text;
 using System.IO.Pipelines;
+using System.Text.Json;
+using FortuneForge.Games.ArcaneArchives.Server;
+using FortuneForge.Games.Hosting;
 using FortuneForge.Server.Activity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -116,6 +119,42 @@ public sealed class GameActivityMiddlewareTests
         Assert.Single(store.Writes);
     }
 
+    [Theory]
+    [InlineData(PreparedSlotSpinRoutes.Path, "wukong-journey-v1", "wukong-journey-to-the-west")]
+    [InlineData(ArcaneFeatureEndpoints.RoutePrefix + ArcaneFeatureEndpoints.PreparedSpinRoute, "arcane-archives-v1", "arcane-archives")]
+    public async Task Prepared_slot_aliases_record_account_scoped_activity_and_share_one_receipt_with_legacy_retries(
+        string preparedPath, string runtimeId, string catalogueId)
+    {
+        var spinId = Guid.NewGuid().ToString();
+        var response = JsonSerializer.Serialize(new { gameId = runtimeId, spinId });
+        var accounts = new Accounts();
+        var store = new Store();
+        var experience = new Experience();
+        using var recorder = new GameActivityRecorder(store, new Clock());
+        var middleware = new GameActivityMiddleware(async context =>
+        {
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(response);
+        }, NullLogger<GameActivityMiddleware>.Instance, experience);
+        foreach (var path in new[] { preparedPath, "/api/slots/spins" })
+        {
+            var context = Context();
+            context.Request.Path = path;
+            context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString("N");
+            await middleware.InvokeAsync(context, accounts, recorder);
+            Assert.Equal(response, Encoding.UTF8.GetString(((MemoryStream)context.Response.Body).ToArray()));
+        }
+        Assert.Equal(2, accounts.Calls);
+        var recent = Assert.Single(store.Writes);
+        Assert.Equal("verified-account", recent.User);
+        Assert.Equal(catalogueId, recent.Activity.GameId);
+        Assert.Equal(spinId, recent.Activity.RoundKey);
+        Assert.Equal(spinId, recent.Activity.EventKey);
+        Assert.True(recent.Activity.IsTerminal);
+        Assert.Equal(2, experience.Writes.Count);
+        Assert.All(experience.Writes, activity => Assert.Equal(recent, activity));
+    }
+
     private static DefaultHttpContext Context()
     {
         var context = new DefaultHttpContext(); context.Request.Method = "POST"; context.Request.Path = "/api/games/baccarat/rounds";
@@ -139,6 +178,13 @@ public sealed class GameActivityMiddlewareTests
         public async Task RecordAsync(string userId, AcceptedGameActivity activity, DateTime nowUtc, CancellationToken ct)
         { OnRecord?.Invoke(); if (OnRecordAsync is not null) await OnRecordAsync(); Writes.Add((userId, activity)); }
         public Task<IReadOnlyList<RecentGameActivity>> ReadAsync(string userId, CancellationToken ct) => Task.FromResult<IReadOnlyList<RecentGameActivity>>([]);
+    }
+    private sealed class Experience : IPlayerGameExperienceStore
+    {
+        public List<(string User, AcceptedGameActivity Activity)> Writes = [];
+        public Task RecordAcceptedAsync(string userId, AcceptedGameActivity activity, CancellationToken ct)
+        { Writes.Add((userId, activity)); return Task.CompletedTask; }
+        public Task<PlayerGameExperienceResponse> ReadAsync(string userId, CancellationToken ct) => throw new NotSupportedException();
     }
     private sealed class CompletingResponseBodyFeature : IHttpResponseBodyFeature
     {

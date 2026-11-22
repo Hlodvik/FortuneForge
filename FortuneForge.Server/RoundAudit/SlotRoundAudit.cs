@@ -17,6 +17,7 @@ using FortuneForge.Server.Slots.Games.NeonNights;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
+using FortuneForge.Server.Slots.Spins;
 
 namespace FortuneForge.Server.RoundAudit;
 
@@ -136,7 +137,11 @@ internal static class SlotRoundAudit
             audit.PityMissesBefore, audit.FreeSpinFeatureMode, audit.RawGeneratedReels,
             audit.ReelsAfterFreeGameFrequency, audit.IsDerivedFreeSpin, audit.WukongPawPrototype, audit.NeonArcade,
             isPaid: isPaid, neonEngineVersion: usesNeonEngine ? audit.EngineVersion : null,
-            profileUsesEnergy: audit.FeatureProfile?.UsesEnergy);
+            // The original host settled energy from the frozen game rules; its
+            // captured profile could already describe newer rules for that game.
+            profileUsesEnergy: audit.EngineVersion == SpinService.AuditEngineVersion &&
+                audit.BaseGame.Energy is not null && audit.EffectiveGame.Energy is not null
+                ? null : audit.FeatureProfile?.UsesEnergy);
     }
 
     private static IReadOnlyList<RoundAuditFinding> CheckOlympusTumble(

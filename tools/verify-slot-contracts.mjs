@@ -9,6 +9,51 @@ const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const json = async path => JSON.parse(await readFile(path, 'utf8'))
 const safeId = value => typeof value === 'string' && /^[a-z0-9-]+$/.test(value)
 
+async function verifyCurrentSourceHashes(provenance) {
+  const algorithm = provenance.sourceHashAlgorithm ?? 'sha256-raw-bytes-v1'
+  assert.ok(['sha256-raw-bytes-v1', 'sha256-utf8-lf-v1'].includes(algorithm), 'Unknown source hash algorithm')
+  assert.ok(Object.keys(provenance.sourceSha256).length > 0)
+  for (const [name, expected] of Object.entries(provenance.sourceSha256)) {
+    const filename = resolve(repository, name), rel = relative(repository, filename)
+    assert.ok(rel && !isAbsolute(rel) && !rel.startsWith('..'), 'Source provenance escaped repository')
+    const bytes = await readFile(filename)
+    const source = algorithm === 'sha256-utf8-lf-v1'
+      ? new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/\r\n?/g, '\n') : bytes
+    const actual = createHash('sha256').update(source).digest('hex')
+    assert.equal(actual, expected, `Capture is stale for ${name}; rebuild and export current source`)
+  }
+}
+
+export async function verifySlotGuideContracts(directory) {
+  const root = resolve(directory)
+  const index = await json(resolve(root, 'index.json'))
+  const provenance = await json(resolve(root, 'source-provenance.json'))
+  assert.equal(index.kind, 'slot-guide-definitions-v1', 'Expected a provider-only guide export')
+  assert.equal(provenance.sourceHashAlgorithm, 'sha256-utf8-lf-v1', 'Guide source hashes require versioned canonical UTF8/LF text')
+  assert.equal(index.gameCount, 19)
+  assert.equal(index.games.length, index.gameCount)
+  assert.equal(new Set(index.games.map(game => game.route.id)).size, index.gameCount)
+  assert.equal(new Set(index.games.map(game => game.route.gameId)).size, index.gameCount)
+  assert.equal(provenance.sourceProjects.length, 20, 'Retain all independently owned slot projects')
+  assert.equal(new Set(provenance.sourceProjects).size, 20)
+  for (const project of provenance.sourceProjects) {
+    assert.ok(/^games\/[^/]+\/src\/[^/]+\/[^/]+\.csproj$/.test(project), 'Expected a package-owned slot project')
+    assert.ok(Object.hasOwn(provenance.sourceSha256, project), `Missing slot owner provenance: ${project}`)
+  }
+  assert.equal(provenance.hashesUnchangedDuringExport, true)
+  assert.equal(provenance.recordedSourceCount, Object.keys(provenance.sourceSha256).length)
+  assert.match(provenance.assemblySha256, /^[a-f0-9]{64}$/)
+  for (const game of index.games) {
+    assert.ok(safeId(game.route.id), 'Unsafe guide contract path')
+    const contract = await json(resolve(root, game.route.id, 'contract.json'))
+    assert.equal(contract.gameId, game.route.gameId)
+    assert.equal(contract.profile.gameId, contract.gameId)
+    assert.ok(contract.paytable.length > 0)
+  }
+  await verifyCurrentSourceHashes(provenance)
+  return { directory: root, games: index.gameCount, index, provenance }
+}
+
 export async function verifySlotContracts(directory, { requireCurrent = false } = {}) {
   const root = resolve(directory)
   const index = await json(resolve(root, 'index.json'))
@@ -59,13 +104,7 @@ export async function verifySlotContracts(directory, { requireCurrent = false } 
   assert.equal(scenarios, index.scenarioCount)
   assert.equal(responses, index.responseCount)
   if (requireCurrent) {
-    assert.ok(Object.keys(provenance.sourceSha256).length > 0)
-    for (const [name, expected] of Object.entries(provenance.sourceSha256)) {
-      const filename = resolve(repository, name), rel = relative(repository, filename)
-      assert.ok(rel && !isAbsolute(rel) && !rel.startsWith('..'), 'Source provenance escaped repository')
-      const actual = createHash('sha256').update(await readFile(filename)).digest('hex')
-      assert.equal(actual, expected, `Capture is stale for ${name}; rebuild and export current source`)
-    }
+    await verifyCurrentSourceHashes(provenance)
   }
   return { directory: root, games: index.gameCount, scenarios, responses, files, sourceHashesCurrent: requireCurrent, index, provenance }
 }

@@ -128,6 +128,8 @@ public sealed class RainbowRealmModelTests
         Assert.True(settled.MultiplierApplied);
         Assert.Equal(6, settled.Payout.TotalPoints);
         Assert.Empty(SlotRoundAudit.Check(result, settled.Payout));
+        Assert.Contains(SlotRoundAudit.Check(result, result.Payout),
+            finding => finding.Code == "slot-settlement-mismatch");
     }
 
     private static SpinResult Spin(ISlotsDefinitionProvider provider, int wager, string? featureMode = null, long energy = 0)

@@ -1,7 +1,10 @@
 using System.Reflection;
 using System.Text.Json;
 using FortuneForge.Games.AndarBahar.Server;
+using FortuneForge.Games.ArcaneArchives;
+using FortuneForge.Games.ArcaneArchives.Server;
 using FortuneForge.Games.DragonTiger.Server;
+using FortuneForge.Games.Hosting;
 using FortuneForge.Games.HiLo.Server;
 using FortuneForge.Games.Mines.Server;
 using FortuneForge.Games.Solitaire;
@@ -15,6 +18,7 @@ using FortuneForge.Server.Cards.Solitaire;
 using FortuneForge.Server.Cards.TexasHoldem.Credit;
 using FortuneForge.Server.Cards.VideoPoker;
 using FortuneForge.Server.Controllers;
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -34,12 +38,21 @@ public sealed class AcceptedGameActivityRealContractTests
         var runtimeIds = SlotSpecialRoundProfiles.All.Select(profile => profile.GameId).ToArray();
         Assert.Equal(20, runtimeIds.Length);
         var canonicalIds = new HashSet<string>();
-        var path = ActionPath<SlotsController>(nameof(SlotsController.Spin));
+        var paths = ActionPaths<SlotsController>(nameof(SlotsController.Spin));
+        const string legacyPath = "/api/slots/spins";
+        const string arcanePath = ArcaneFeatureEndpoints.RoutePrefix + ArcaneFeatureEndpoints.PreparedSpinRoute;
+        Assert.Equal(new[] { legacyPath, PreparedSlotSpinRoutes.Path, arcanePath }.Order(), paths.Order());
         foreach (var runtimeId in runtimeIds)
         {
             var spinId = Guid.NewGuid();
             var result = Shape<SpinResult>(new { spinId, gameId = runtimeId });
-            var activity = Read(path, result);
+            var preparedPath = runtimeId == ArcaneArchivesEngine.GameId ? arcanePath : PreparedSlotSpinRoutes.Path;
+            if (runtimeId != ArcaneArchivesEngine.GameId)
+                Assert.NotNull(PreparedSlotWorkerRegistry.Find(runtimeId));
+            var activities = paths.Where(path => path == legacyPath || path == preparedPath)
+                .Select(path => Read(path, result)).ToArray();
+            Assert.Equal(2, activities.Length);
+            var activity = Assert.Single(activities.Distinct());
             Assert.Equal(spinId.ToString(), activity.RoundKey);
             Assert.Equal(activity.RoundKey, activity.EventKey);
             Assert.True(canonicalIds.Add(activity.GameId));
@@ -129,10 +142,17 @@ public sealed class AcceptedGameActivityRealContractTests
     // must survive the real serializer before the reader sees any JSON.
     private static T Shape<T>(object fields) => JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(fields, Json), Json)!;
 
-    private static string ActionPath<T>(string method)
+    private static string ActionPath<T>(string method) => Assert.Single(ActionPaths<T>(method));
+
+    private static string[] ActionPaths<T>(string method)
     {
         var route = typeof(T).GetCustomAttribute<RouteAttribute>()!.Template;
-        var action = typeof(T).GetMethod(method)!.GetCustomAttribute<HttpPostAttribute>()!.Template;
-        return "/" + route + "/" + System.Text.RegularExpressions.Regex.Replace(action!, "\\{[^}]+\\}", "server-id");
+        return typeof(T).GetMethod(method)!.GetCustomAttributes<HttpPostAttribute>().Select(attribute =>
+        {
+            var action = attribute.Template ?? "";
+            var path = action.StartsWith("~/", StringComparison.Ordinal) ? action[1..]
+                : action.StartsWith('/') ? action : "/" + route + "/" + action;
+            return System.Text.RegularExpressions.Regex.Replace(path, "\\{[^}]+\\}", "server-id");
+        }).ToArray();
     }
 }

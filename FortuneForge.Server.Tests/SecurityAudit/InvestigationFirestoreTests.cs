@@ -428,10 +428,11 @@ public sealed class InvestigationFirestoreTests(BlackjackTableFirestoreEmulatorF
     public async Task EscrowHandRequiresItsBuyInWalletDebitAndValidatesLaterCashOut()
     {
         var db = Database(); var clock = new Clock();
+        var ticketId = FortuneForge.Server.Cards.TexasHoldem.Credit.CreditHoldemIds.Hash("alice\nescrow-a");
         var capture = RoundAuditCapture.Create("texas-holdem", "escrow-hand-1", "table-escrow", 1,
             clock.Now.AddMinutes(-1), clock.Now,
             new { usesBuyInEscrow = true, matchId = "table-escrow",
-                players = new[] { new { isAccountBacked = true, actorId = "alice", escrowTicketId = "ticket-a", stack = 500L } },
+                players = new[] { new { isAccountBacked = true, actorId = "alice", escrowTicketId = ticketId, stack = 500L } },
                 cashedOutReservations = Array.Empty<string>() }, "holdem-hand-v1", "test",
             [new("alice", "Alice", true, 100, 100, 0)], []);
         await db.Collection("creditHoldemMatchRevenue").Document(capture.Summary.RoundId).SetAsync(new Dictionary<string, object>
@@ -439,16 +440,16 @@ public sealed class InvestigationFirestoreTests(BlackjackTableFirestoreEmulatorF
             ["matchId"] = "table-escrow", ["humanWagerCents"] = 100L, ["humanPayoutCents"] = 100L,
             ["financialClassification"] = "escrow-house-backed-v1"
         });
-        await db.Collection("creditHoldemTickets").Document("ticket-a").SetAsync(new Dictionary<string, object>
+        await db.Collection("creditHoldemTickets").Document(ticketId).SetAsync(new Dictionary<string, object>
         { ["ticketJson"] = JsonSerializer.Serialize(new { userId = "alice", buyInCents = 500L }), ["status"] = "matched" });
         Assert.Contains(await HoldemFinancialAudit.InspectAsync(db, capture.Summary, default, capture.PayloadJson),
             finding => finding.Code == "holdem-escrow-buy-in-mismatch" && finding.Severity == "error");
-        await db.Collection("balanceTransactions").Document("ticket-a-buy-in").SetAsync(new Dictionary<string, object>
-        { ["userId"] = "alice", ["type"] = "texas-holdem-buy-in", ["idempotencyKey"] = "ticket-a", ["amount"] = -5d });
+        await db.Collection("balanceTransactions").Document($"{ticketId}-buy-in").SetAsync(new Dictionary<string, object>
+        { ["userId"] = "alice", ["type"] = "texas-holdem-buy-in", ["idempotencyKey"] = ticketId, ["amount"] = -5d });
         Assert.DoesNotContain(await HoldemFinancialAudit.InspectAsync(db, capture.Summary, default, capture.PayloadJson),
             finding => finding.Severity == "error");
-        await db.Collection("balanceTransactions").Document("ticket-a-cash-out").SetAsync(new Dictionary<string, object>
-        { ["userId"] = "bob", ["type"] = "texas-holdem-cash-out", ["idempotencyKey"] = "ticket-a", ["amount"] = 5d });
+        await db.Collection("balanceTransactions").Document($"{ticketId}-cash-out").SetAsync(new Dictionary<string, object>
+        { ["userId"] = "bob", ["type"] = "texas-holdem-cash-out", ["idempotencyKey"] = ticketId, ["amount"] = 5d });
         Assert.Contains(await HoldemFinancialAudit.InspectAsync(db, capture.Summary, default, capture.PayloadJson),
             finding => finding.Code == "holdem-escrow-cash-out-invalid" && finding.Severity == "error");
     }

@@ -434,9 +434,10 @@ describe('DragonTigerGame betting and results', () => {
     expect(playDragonTigerAudio).toHaveBeenCalledWith('chip', false)
   })
 
-  it('keeps the previous round available to Rebet after resetting chips', async () => {
+  it('keeps the previous round available to Rebet and preserves live funds after resetting chips', async () => {
     const gateway = makeGateway(), changed = vi.fn()
     gateway.getLatestRound.mockResolvedValueOnce(dragonWin)
+    gateway.getStatus.mockResolvedValueOnce(status).mockResolvedValue({ ...status, balance: 37 })
     await start(gateway, 'player-a', changed)
     expect(resetChips()).toHaveProperty('disabled', true)
     fireEvent.keyDown(document, { key: 'Escape' })
@@ -448,7 +449,7 @@ describe('DragonTigerGame betting and results', () => {
     expect(total()).toBe('R0.00')
     expect(chipPicker().getAttribute('aria-label')).toBe('Choose chip value, currently R5.00')
     expect(screen.getByRole('button', { name: /Rebet/ })).toHaveProperty('disabled', false)
-    expect(balance()).toBe('R102.00')
+    expect(balance()).toBe('R37.00')
     fireEvent.click(screen.getByRole('button', { name: /Rebet/ }))
     expect(total()).toBe('R2.00')
     expect(spot('Dragon').getAttribute('aria-label')).toContain('current bet R2.00')

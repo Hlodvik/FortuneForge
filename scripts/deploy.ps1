@@ -431,7 +431,7 @@ function Remove-SharedBackendCandidateTag {
     }
     Assert-SharedBackendCandidateService -Service $current @TaggedReview
     Invoke-Checked -Executable 'gcloud.cmd' -Arguments @('run', 'services', 'update-traffic', $serviceName,
-        "--remove-tags=$Tag", '--region', $region, '--project', $project, '--quiet') -WorkingDirectory $releaseCheckout
+        "--remove-tags=$Tag", '--region', $region, '--project', $project, '--quiet') -WorkingDirectory $releaseCheckout | Out-Host
     Assert-SharedBackendCandidateService -Service (Get-CloudRunService) @Review
 }
 
@@ -465,7 +465,7 @@ function Wait-SharedBackendCandidateReady {
                 # A zero-traffic, untagged min-zero revision can remain retired.
                 # Add only our unique tag; never replace the service's other tags.
                 Invoke-Checked -Executable 'gcloud.cmd' -Arguments @('run', 'services', 'update-traffic', $serviceName,
-                    "--update-tags=$tag=$name", '--region', $region, '--project', $project, '--quiet') -WorkingDirectory $releaseCheckout
+                    "--update-tags=$tag=$name", '--region', $region, '--project', $project, '--quiet') -WorkingDirectory $releaseCheckout | Out-Host
             }
             if ($state.revision -cne $name) { throw 'Another API candidate appeared during tagged startup verification.' }
             Assert-SharedBackendCandidateService -Service (Get-CloudRunService) @taggedReview

@@ -1,3 +1,8 @@
+param(
+    [ValidateSet('success', 'failure', 'conflict', 'stdout')]
+    [string[]]$Scenarios = @('success', 'failure', 'conflict', 'stdout')
+)
+
 $ErrorActionPreference = 'Stop'
 $repository = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $tokens = $null
@@ -33,6 +38,10 @@ function Assert-SharedBackendCandidateService {
 function Invoke-Checked {
     param($Executable, $Arguments, $WorkingDirectory)
     $script:commands.Add(($Arguments -join ' '))
+    if ($script:mode -eq 'stdout') {
+        Write-Output 'URL: https://candidate.example.test'
+        Write-Output 'Traffic: 100% api-old'
+    }
     $add = @($Arguments | Where-Object { $_ -like '--update-tags=*' })
     if ($add.Count) {
         $mapping = $add[0].Substring('--update-tags='.Length).Split('=')
@@ -54,7 +63,7 @@ $project = 'local-only'
 $releaseCheckout = $repository
 $receiptBase = Join-Path ([IO.Path]::GetTempPath()) ('ff-candidate-activation-' + [guid]::NewGuid().ToString('N'))
 try {
-    foreach ($case in @('success', 'failure', 'conflict')) {
+    foreach ($case in $Scenarios) {
         $script:mode = $case
         $script:added = $false
         $script:commands = [Collections.Generic.List[string]]::new()
@@ -71,8 +80,9 @@ try {
             $result = Wait-SharedBackendCandidateReady -ServingRevision 'api-old' -PreviousRevision 'api-old' -SourceSha ('a' * 40) -Image 'image@sha256:abc' -Packages @{} -RecordPath $receiptBase -ExpectedService $expected
         }
         catch { $caught = $_ }
-        if ($case -eq 'success' -and ($caught -or $result -cne 'api-new')) { throw "Successful tagged activation failed: $caught" }
-        if ($case -ne 'success' -and -not $caught) { throw "Expected $case to stop before promotion." }
+        $succeeds = $case -in @('success', 'stdout')
+        if ($succeeds -and ($caught -or $result -isnot [string] -or $result -cne 'api-new')) { throw "Tagged activation did not return exactly one candidate revision string: $caught" }
+        if (-not $succeeds -and -not $caught) { throw "Expected $case to stop before promotion." }
         $receipt = Get-Content ($receiptBase + '.api-candidate-tag.json') -Raw | ConvertFrom-Json
         $removals = @($script:commands | Where-Object { $_ -like '*--remove-tags=*' })
         if ($case -eq 'conflict') {

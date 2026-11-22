@@ -421,10 +421,29 @@ function Invoke-ApiServiceReplaceRequest {
     }
 }
 
+function Remove-SharedBackendCandidateTag {
+    param([string]$Tag, [string]$Revision, [hashtable]$Review, [hashtable]$TaggedReview)
+    $current = Get-CloudRunService
+    $owned = @($current.spec.traffic | Where-Object { $_.tag -ceq $Tag })
+    if ($owned.Count -eq 0) { Assert-SharedBackendCandidateService -Service $current @Review; return }
+    if ($owned.Count -ne 1 -or $owned[0].revisionName -cne $Revision -or [int]$owned[0].percent -ne 0 -or $owned[0].latestRevision -eq $true) {
+        throw 'Candidate tag ownership changed; refusing automatic cleanup.'
+    }
+    Assert-SharedBackendCandidateService -Service $current @TaggedReview
+    Invoke-Checked -Executable 'gcloud.cmd' -Arguments @('run', 'services', 'update-traffic', $serviceName,
+        "--remove-tags=$Tag", '--region', $region, '--project', $project, '--quiet') -WorkingDirectory $releaseCheckout
+    Assert-SharedBackendCandidateService -Service (Get-CloudRunService) @Review
+}
+
 function Wait-SharedBackendCandidateReady {
-    param([string]$ServingRevision, [string]$PreviousRevision, [string]$SourceSha, [string]$Image, $Packages, [string]$RecordPath)
+    param([string]$ServingRevision, [string]$PreviousRevision, [string]$SourceSha, [string]$Image, $Packages, [string]$RecordPath, $ExpectedService)
     $deadline = [DateTime]::UtcNow.AddSeconds(360)
-    do {
+    $tag = 'ff-candidate-' + $SourceSha.Substring(0, 8) + '-' + [guid]::NewGuid().ToString('N').Substring(0, 8)
+    $review = @{ Expected = $ExpectedService; SourceSha = $SourceSha; Image = $Image; ServingRevision = $ServingRevision; Packages = $Packages }
+    $attempted = $false
+    $complete = $false
+    $state = [ordered]@{ tag = $tag; revision = ''; cleanupCompleted = $false; cleanupPending = $false }
+    try { do {
         $service = Get-CloudRunService
         if ((Get-ServingApiRevision $service) -cne $ServingRevision) { throw 'API traffic changed while the candidate was starting.' }
         $name = [string]$service.status.latestCreatedRevisionName
@@ -434,6 +453,22 @@ function Wait-SharedBackendCandidateReady {
             if ((Get-ApiRevisionSourceSha $revision) -cne $SourceSha) { throw 'Another API candidate replaced the selected source while waiting for readiness.' }
             Assert-ApiRevisionImage -Revision $revision -ExpectedImage $Image
             Assert-ApiSharedBackendConfiguration -Revision $revision -Packages $Packages -Service $service -TemplateOnly
+            if (-not $attempted) {
+                Assert-SharedBackendCandidateService -Service $service @review
+                if (@($service.spec.traffic | Where-Object { $_.tag -ceq $tag }).Count -gt 0) { throw 'Candidate activation tag already exists.' }
+                $tagged = $ExpectedService | ConvertTo-Json -Depth 60 | ConvertFrom-Json
+                $tagged.spec.traffic = @($tagged.spec.traffic) + [pscustomobject]@{ tag = $tag; revisionName = $name; percent = 0; latestRevision = $false }
+                $taggedReview = $review.Clone()
+                $taggedReview.Expected = $tagged
+                $state.revision = $name
+                $attempted = $true
+                # A zero-traffic, untagged min-zero revision can remain retired.
+                # Add only our unique tag; never replace the service's other tags.
+                Invoke-Checked -Executable 'gcloud.cmd' -Arguments @('run', 'services', 'update-traffic', $serviceName,
+                    "--update-tags=$tag=$name", '--region', $region, '--project', $project, '--quiet') -WorkingDirectory $releaseCheckout
+            }
+            if ($state.revision -cne $name) { throw 'Another API candidate appeared during tagged startup verification.' }
+            Assert-SharedBackendCandidateService -Service (Get-CloudRunService) @taggedReview
             $ready = $service.status.latestReadyRevisionName -ceq $name -and
                 @($revision.status.conditions | Where-Object { $_.type -ceq 'Ready' -and $_.status -ceq 'True' }).Count -eq 1
         }
@@ -441,10 +476,25 @@ function Wait-SharedBackendCandidateReady {
             checkedAtUtc = [DateTime]::UtcNow.ToString('o'); candidateRevision = $name;
             servingRevision = $ServingRevision; ready = $ready
         } | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
-        if ($ready) { return $name }
+        if ($ready) { $complete = $true; return $name }
         Start-Sleep -Seconds 5
     } while ([DateTime]::UtcNow -lt $deadline)
-    throw 'The exact shared backend candidate did not become ready within 360 seconds; public traffic remains on the prior revision.'
+        throw 'The exact shared backend candidate did not become ready within 360 seconds; public traffic remains on the prior revision.'
+    }
+    finally {
+        if ($attempted) {
+            try {
+                Remove-SharedBackendCandidateTag -Tag $tag -Revision $state.revision -Review $review -TaggedReview $taggedReview
+                $state.cleanupCompleted = $true
+            }
+            catch {
+                $state.cleanupPending = $true
+                if ($complete) { throw }
+                Write-Warning 'Owned candidate tag cleanup could not be confirmed; public traffic was not promoted. Inspect the candidate-tag receipt.'
+            }
+            finally { [IO.File]::WriteAllText(($RecordPath + '.api-candidate-tag.json'), ($state | ConvertTo-Json), [Text.UTF8Encoding]::new($false)) }
+        }
+    }
 }
 
 function New-ApiRuntimeFlagsContext {
@@ -1331,6 +1381,10 @@ try {
             '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
             (Join-Path $repoRoot 'scripts/tests/deploy-guardrails.tests.ps1')
         ) -WorkingDirectory $repoRoot
+        Invoke-Checked -Executable 'powershell.exe' -Arguments @(
+            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+            (Join-Path $repoRoot 'scripts/tests/shared-backend-candidate-activation.tests.ps1')
+        ) -WorkingDirectory $repoRoot
     }
     $sourceChanges = & git -C $releaseCheckout status --porcelain=v1 --untracked-files=normal
     if ($LASTEXITCODE -ne 0 -or $sourceChanges) {
@@ -1475,7 +1529,7 @@ try {
             $created = Invoke-ApiServiceReplaceRequest -Context $apiServiceReplaceContext -Endpoint $replaceEndpoint -Account $firebaseAccount
             Assert-SharedBackendCandidateService -Service $created -Expected $expectedService -SourceSha $candidateSha -Image $builtImage.Image -ServingRevision $apiBefore.RevisionName -Packages $sharedBackendPackages
             $sharedCandidateRevision = Wait-SharedBackendCandidateReady -ServingRevision $apiBefore.RevisionName -PreviousRevision $freshService.status.latestCreatedRevisionName `
-                -SourceSha $candidateSha -Image $builtImage.Image -Packages $sharedBackendPackages -RecordPath $recordPath
+                -SourceSha $candidateSha -Image $builtImage.Image -Packages $sharedBackendPackages -RecordPath $recordPath -ExpectedService $expectedService
         }
         else {
             $apiDeployArguments = @('run', 'deploy', $serviceName, '--image', $builtImage.Image,

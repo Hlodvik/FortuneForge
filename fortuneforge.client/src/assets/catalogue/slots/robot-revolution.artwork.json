@@ -1,20 +1,26 @@
 {
   "id": "robot-revolution",
-  "title": "Fifth Sun",
-  "file": "fifth-sun-title-v2.webp",
+  "title": "Sunstone Eclipse",
+  "file": "sunstone-eclipse-title-v1.webp",
   "width": 768,
   "height": 384,
-  "bytes": 68088,
+  "bytes": 107452,
+  "prompt": "Use case: ads-marketing. Asset type: finished premium casino SLOT GAME catalogue cover, horizontal 2:1 composition. Exact readable title text: SUNSTONE ECLIPSE. Original dark turquoise and molten-gold fantasy temple imagery: looming stepped stone temple, jungle mist, huge black solar eclipse with brilliant gold corona behind the title; an ornate circular sunstone calendar medallion and small polished gold jaguar mask as framing motifs. Adult premium slot illustration, crisp detailed 3D gold and carved obsidian, cinematic dusk, extremely legible sumptuous gold title in two balanced lines with restrained carved turquoise inlay, title centred and occupying roughly half the image, edge-safe margins for catalogue cropping. No people, no robots, no words other than SUNSTONE ECLIPSE, no UI, no reels, no watermarks, no brand logos. The name must be spelled precisely. Never include any historical civilisation name.",
   "generator": "built-in imagegen",
-  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a20326-477a-7c20-8927-15b79064e136/exec-b3523325-39a1-49a3-bee0-8db54790627f.png",
-  "prompt": "Use case: ads-marketing. Asset type: finished premium adult casino SLOT GAME catalogue cover, horizontal2:1. Exact title text: FIFTH SUN. A monumental ancient stepped stone temple in tropical dusk beneath a huge astronomical black eclipse with a brilliant gold corona. A restrained angular ceremonial jaguar MASK and long single turquoise feather as small thematic accents; avoid circles full of competing little objects. Name FIFTH SUN must be overwhelmingly clear in large premium carved-gold serif lettering, one strong line or two balanced words centred, readable at256x128, all lettering inside central75percent width with safe margins. Dark obsidian, deep turquoise jungle mist and molten warm gold, premium high-contrast sculptural casino illustration with quiet broad shapes, elegant atmospheric depth. Retain the dramatic eclipse/temple identity but refresh branding completely. No previous title, no cultural civilisation names, no other words, no people, no robots, no UI, no reels, no payout claims, no logos or watermark. Spell FIFTH SUN exactly.",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a20326-477a-7c20-8927-15b79064e136/exec-728e1a44-dd77-45a8-9819-7f9c7a2c0381.png",
+  "referencePaths": [
+    "games/RobotRevolution/client/FortuneForge.Games.RobotRevolution.Client/src/assets/art/sunstone-eclipse/sunstone-eclipse-temple-background-v1.webp",
+    "games/RobotRevolution/client/FortuneForge.Games.RobotRevolution.Client/src/assets/art/sunstone-eclipse/sunstone-jaguar-mask-v1.webp",
+    "games/RobotRevolution/client/FortuneForge.Games.RobotRevolution.Client/src/assets/art/sunstone-eclipse/sunstone-wild-calendar-v1.webp"
+  ],
   "visualCheck": [
-    "Inspected final768x384 WebP: exact FIFTH SUN title, readable at catalogue size.",
-    "New original temple/eclipse composition with angular jaguar mask and single feather; no interface or additional wording.",
-    "68088bytes under180KiB; prior selected artwork and original generation masters preserved."
+    "Inspected the generated master and final 768x384 WebP cover.",
+    "Exact SUNSTONE ECLIPSE title is clear and centred with edge-safe margins.",
+    "Dark turquoise jungle temple, carved gold calendar, golden jaguar and obsidian eclipse replace the former machine imagery.",
+    "No interface, payout claims, brands, extra wording, people or watermark.",
+    "Actual WebP at quality84: 107452bytes, below180KiB. Original selected covers and generation history are preserved."
   ],
   "status": "ready-for-parent-integration",
-  "referencePaths": [],
   "generationHistory": [
     {
       "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-6f199ca8-7f4f-40f4-8cbb-ba44b197504e.png",
@@ -56,6 +62,24 @@
         "Actual WebP at quality84: 107452bytes, below180KiB. Original selected covers and generation history are preserved."
       ],
       "status": "ready-for-parent-review"
+    },
+    {
+      "id": "robot-revolution",
+      "title": "Fifth Sun",
+      "file": "fifth-sun-title-v2.webp",
+      "width": 768,
+      "height": 384,
+      "bytes": 68088,
+      "generator": "built-in imagegen",
+      "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a20326-477a-7c20-8927-15b79064e136/exec-b3523325-39a1-49a3-bee0-8db54790627f.png",
+      "prompt": "Use case: ads-marketing. Asset type: finished premium adult casino SLOT GAME catalogue cover, horizontal2:1. Exact title text: FIFTH SUN. A monumental ancient stepped stone temple in tropical dusk beneath a huge astronomical black eclipse with a brilliant gold corona. A restrained angular ceremonial jaguar MASK and long single turquoise feather as small thematic accents; avoid circles full of competing little objects. Name FIFTH SUN must be overwhelmingly clear in large premium carved-gold serif lettering, one strong line or two balanced words centred, readable at256x128, all lettering inside central75percent width with safe margins. Dark obsidian, deep turquoise jungle mist and molten warm gold, premium high-contrast sculptural casino illustration with quiet broad shapes, elegant atmospheric depth. Retain the dramatic eclipse/temple identity but refresh branding completely. No previous title, no cultural civilisation names, no other words, no people, no robots, no UI, no reels, no payout claims, no logos or watermark. Spell FIFTH SUN exactly.",
+      "visualCheck": [
+        "Inspected final768x384 WebP: exact FIFTH SUN title, readable at catalogue size.",
+        "New original temple/eclipse composition with angular jaguar mask and single feather; no interface or additional wording.",
+        "68088bytes under180KiB; prior selected artwork and original generation masters preserved."
+      ],
+      "status": "ready-for-parent-integration",
+      "referencePaths": []
     }
   ]
 }

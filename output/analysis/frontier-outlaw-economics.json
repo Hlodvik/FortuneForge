@@ -1,0 +1,61 @@
+{
+  "engineVersion": "frontier-fortune-engine-v2",
+  "baseMathVersion": "frontier-paylines-v1",
+  "semanticRulesSha256": "1a1e6d02083a4cb9576d2ce05691c5879c8f17a122696120776876772b93d3ba",
+  "baseReturnExact": "38961747/50000000",
+  "baseReturn": 0.77923494,
+  "baseSequencesEvaluated": 248832,
+  "ante": {
+    "wantedProbability": 0.02,
+    "oneChipProbability": 0.03229894034892437,
+    "twoChipProbability": 0.0030393745632011316,
+    "expectedChipsPerPaidSpin": 0.03837768947532663,
+    "requiredChips": 12,
+    "steadyStateBonusesPerPaidSpin": 0.0031981407896105526,
+    "steadyStatePaidSpinsPerBonus": 312.68166906491103
+  },
+  "rigorousBounds": {
+    "wildProbability": 0.01,
+    "cellsSeenPerReel": 9,
+    "grandActualWildAvailabilityUpperBound": 4.837795631597018E-06,
+    "ordinaryAwardCeiling": 60,
+    "actualWildGrandAward": 250,
+    "anyStrategyMeanFeatureAwardUpperBound": 60.000919181170005,
+    "anyStrategyFullGameReturnUpperBound": 0.9711263270474261,
+    "explanation": "A Grand needs an actual WILD in each reel\u0027s at-most-nine observed cards. All other categories pay no more than the ordinary ceiling."
+  },
+  "strategy": {
+    "seed": 20261123,
+    "samples": 20000,
+    "nativeRandomDraws": 900000,
+    "nativeClassifications": 1429356,
+    "method": "Enumerate native classifications over every visible unheld-reel row combination (at most 3^5). Prefer current award, then actual WILDs; hold WILDs and the largest same-rank group, using native card weights to break ties. All deals, confirms and final awards use production APIs.",
+    "meanFeatureAwardMultiplier": 57.133,
+    "standardDeviation": 7.137601716818468,
+    "standardError": 0.05047046575371082,
+    "meanFeatureAward95PercentSamplingInterval": [
+      57.03407788712273,
+      57.23192211287728
+    ],
+    "estimatedFixedWagerFullGameReturn": 0.9619543177328198,
+    "fullGameReturn95PercentSamplingInterval": [
+      0.9616379508886325,
+      0.962270684577007
+    ],
+    "finalCategoryCounts": {
+      "five": 17184,
+      "four": 2750,
+      "full-house": 63,
+      "trips": 3
+    },
+    "observedMinimumAward": 15,
+    "observedMaximumAward": 60,
+    "optimality": "Achievable heuristic strategy estimate, not certified optimal play. Sampling intervals exclude the unknown strategy optimality gap."
+  },
+  "assumptions": [
+    "A fixed legal wager is used throughout the ante cycle; excess ante chips carry forward. Included deals charge no additional wager.",
+    "The test-only seeded random source drives native weighted draws without changing any probabilities or player-facing behavior.",
+    "The Grand bound is analytic; an unobserved rare Grand in a finite sample is not assigned zero probability.",
+    "The long-run budget uses expected earned chips divided by required chips; finite initial/final incomplete ante cycles are excluded."
+  ]
+}

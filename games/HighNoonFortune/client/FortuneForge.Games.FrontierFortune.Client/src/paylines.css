@@ -1,0 +1,76 @@
+.frontier .frontier-payline-tracers {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.frontier .frontier-payline-tracers polyline {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.frontier .frontier-payline-tracers__rest {
+  stroke: #dab35c;
+  stroke-width: 0.85;
+  opacity: 0.19;
+}
+
+.frontier .frontier-payline-tracers__active-line,
+.frontier .frontier-payline-tracers__core {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: frontier-payline-draw 560ms ease-out forwards;
+}
+
+.frontier .frontier-payline-tracers__active-line {
+  stroke: #f9d789;
+  stroke-width: 2.1;
+  opacity: 0.95;
+}
+
+.frontier .frontier-payline-tracers__core {
+  stroke: #fff4d6;
+  stroke-width: 0.7;
+  opacity: 0.92;
+}
+
+.frontier .frontier-payline-tracers__halos circle {
+  fill: #f9d78908;
+  stroke: #efd08a;
+  stroke-width: 1.1;
+  opacity: 0.7;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: frontier-payline-halo 1800ms ease-in-out infinite;
+}
+
+@keyframes frontier-payline-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes frontier-payline-halo {
+  0%, 100% { opacity: 0.5; transform: scale(0.94); }
+  45% { opacity: 0.85; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frontier .frontier-payline-tracers__active-line,
+  .frontier .frontier-payline-tracers__core {
+    animation: none;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+
+  .frontier .frontier-payline-tracers__halos circle {
+    animation: none;
+    transform: none;
+    opacity: 0.75;
+  }
+}

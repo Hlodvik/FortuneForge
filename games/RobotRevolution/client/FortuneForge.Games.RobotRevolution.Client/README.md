@@ -1,6 +1,6 @@
-# Fifth Sun slot client
+# Sunstone Eclipse slot client
 
-An original temple-and-sun slot presentation. The public game is Fifth Sun;
+An original temple-and-sun slot presentation. The public game is Sunstone Eclipse;
 the package and server identifiers remain stable so saved rounds, balances and
 analytics continue to resolve. The public play route is `/slots/sunstone-eclipse`.
 
@@ -32,7 +32,7 @@ separately, so owed free bonuses retain their original presentation and rules.
 Keyboard path inspection and live result announcements are supported.
 
 Five native carved glyphs and a separate Wild live in `src/assets/art/fifth-sun-glyphs/`.
-The named Fifth Sun wire symbols are used for new games; rendering-only legacy
+The named Sunstone Eclipse wire symbols are used for new games; rendering-only legacy
 aliases support owed historical bonuses without changing their financial evidence.
 The Fraunces variable display font is bundled with its original OFL license in
 `src/assets/fonts/`.

@@ -4,7 +4,7 @@ using FortuneForge.Games.Slots.Runtime;
 
 namespace FortuneForge.Games.CosmicFortune.Server;
 
-/// <summary>Maps Cosmic Fortune’ settled slot outcome to the established public response.</summary>
+/// <summary>Maps Pharaoh's Ascent's settled slot outcome to the established paid response.</summary>
 public sealed record CosmicFortuneSpinResponse(
     Guid SpinId, string GameId, string ReelSetId, string SymbolSetId, string PaytableId,
     long WagerPoints, decimal PointValueInCents, IReadOnlyList<int> ReelStops,
@@ -12,9 +12,14 @@ public sealed record CosmicFortuneSpinResponse(
     int ConsecutiveFiveMisses, bool FiveMatchPityTriggered, int FreeSpinsAwarded,
     int SpecialPointsAwarded, int EnergyAwarded, bool SpecialBoostApplied)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public PharaohsAscentFeature? SpinFeature { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public PharaohsAscentState? GameFeatureState { get; init; }
+    public bool FeatureActionRequired => GameFeatureState?.Tomb is { ActiveRun: not null } or
+        { LastRun: not null } or { PendingAction: not null };
     public decimal? SlotsCreditsBalance { get; init; }
     public bool IsFreeSpin { get; init; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long ChargedWagerCents { get; init; }
     public int NeonDiscoSpinsRemaining => 0;
     public int FreeSpinsRemaining { get; init; }
@@ -42,7 +47,7 @@ public sealed record CosmicFortuneSpinResponse(
 
         return Capture(round) with
         {
-            ChargedWagerCents = 0,
+            ChargedWagerCents = round.WagerCents,
             Payout = round.Progress.SettledPayout,
             SlotsCreditsBalance = result.Wallet.BalanceAfterCents / 100m,
             FreeSpinsRemaining = features.FreeSpinsRemaining,
@@ -52,7 +57,8 @@ public sealed record CosmicFortuneSpinResponse(
             EnergyMultiplierApplied = round.Progress.EnergySettlement.MultiplierApplied,
             PayoutMultiplier = round.Progress.EnergySettlement.PayoutMultiplier,
             SealCollections = features.SealCollections,
-            FreeSpinFeatureMode = features.FreeSpinFeatureMode
+            FreeSpinFeatureMode = features.FreeSpinFeatureMode,
+            GameFeatureState = features.GameFeatureState
         };
     }
 
@@ -66,6 +72,10 @@ public sealed record CosmicFortuneSpinResponse(
         {
             IsFreeSpin = spin.IsFreeSpin,
             ChargedWagerCents = round.WagerCents,
+            SpinFeature = PharaohsAscentFeature.From(round),
+            GameFeatureState = CosmicFortuneRoundStateReply.From(round.Progress.After,
+                includeTomb: CosmicFortuneEngine.UsesSealedTombFunding(spin.Audit.EngineVersion),
+                includeFundingRequirement: spin.Audit.EngineVersion == CosmicFortuneEngine.EngineVersion).GameFeatureState,
             MonkeyPawCount = spin.PawCount,
             MoneyGrabPoints = spin.CollectorPoints,
             BananaBonusPoints = spin.PatternBonusPoints,

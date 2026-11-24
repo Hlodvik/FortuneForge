@@ -1,0 +1,32 @@
+@import '@fortuneforge/slot-client-core/styles.css';
+@import './styles.css';
+@import './runtimeOverrides.css';
+
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__cabinet-spotlight {
+  --arcane-payline-color: var(--slot-payline-base);
+}
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slot-winning-paylines,
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slot-symbol--winner { color: var(--arcane-payline-color); }
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slot-winning-paylines__amount {
+  fill: var(--slot-payline-label); stroke: var(--slot-payline-label-outline);
+}
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slot-symbol--winner::before {
+  background: radial-gradient(circle, #fff 0 8%, color-mix(in srgb, currentColor 75%, transparent) 24%, transparent 65%);
+}
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__win-announcement {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+.arcane-archives__status {
+  padding: 0.6rem 0.8rem; border: 1px solid #bf9b6266; border-radius: 0.45rem;
+  background: #21142de8; color: #ffe5bf; text-align: center; font: 600 0.85rem/1.4 system-ui, sans-serif;
+}
+@property --arcane-payline-color { syntax: '<color>'; inherits: true; initial-value: #f2cd79; }
+@media (prefers-reduced-motion: no-preference) {
+  .slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__cabinet-spotlight:has(.slot-winning-paylines) {
+    animation: arcane-archives-payline-breathe 4.4s ease-in-out infinite;
+  }
+}
+@keyframes arcane-archives-payline-breathe {
+  0%, 100% { --arcane-payline-color: var(--slot-payline-base); }
+  50% { --arcane-payline-color: var(--slot-payline-glow); }
+}

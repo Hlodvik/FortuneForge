@@ -25,7 +25,7 @@ const slotManifestLoaderModules: Readonly<Record<SlotRouteId, () => Promise<Slot
   'gold-foundry': () => import('./manifestLoaders/gold-foundry'),
   'neon-nights': () => import('./manifestLoaders/neon-nights'),
   'ocean-odyssey': () => import('./manifestLoaders/ocean-odyssey'),
-  'samurai-fortune': () => import('./manifestLoaders/samurai-fortune'),
+  'crooked-road': () => import('./manifestLoaders/crooked-road'),
   'candy-carnival': () => import('./manifestLoaders/candy-carnival'),
   'phantom-manor': () => import('./manifestLoaders/phantom-manor'),
   'nordic-legends': () => import('./manifestLoaders/nordic-legends'),
@@ -41,7 +41,7 @@ export const SLOT_ROUTE_DEFINITIONS: readonly SlotRouteDefinition[] = SLOT_ROUTE
 }))
 
 export const SECOND_WAVE_SLOT_GAME_IDS = [
-  'neon-nights', 'ocean-odyssey', 'samurai-fortune', 'candy-carnival',
+  'neon-nights', 'ocean-odyssey', 'crooked-road', 'candy-carnival',
   'phantom-manor', 'nordic-legends', 'desert-treasures', 'robot-revolution', 'dragon-hoard',
 ] as const
 

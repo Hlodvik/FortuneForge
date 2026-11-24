@@ -43,9 +43,9 @@ public static class ArcanePaidEndpoints
                     });
                 return Results.Ok(ArcaneSpinResponse.From(result));
             }
-            catch (ArcaneLegacyPreparedRoundException)
+            catch (ArcaneObsoleteRoundException exception)
             {
-                return Results.Conflict(new { code = ArcanePaidRouteContract.LegacyPreparedCode });
+                return Results.Conflict(new { code = ArcanePaidRouteContract.ObsoleteRoundCode, error = exception.Message });
             }
             catch (GameWalletUnavailableException exception)
             {
@@ -110,6 +110,10 @@ public static class ArcanePaidEndpoints
                     arcanePotions = ArcanePotionView.FromState(state.Potions),
                     pendingOperation = state.PendingRequest
                 });
+            }
+            catch (ArcaneObsoleteRoundException exception)
+            {
+                return Results.Conflict(new { code = ArcanePaidRouteContract.ObsoleteRoundCode, error = exception.Message });
             }
             catch (GameWalletUnavailableException exception)
             {

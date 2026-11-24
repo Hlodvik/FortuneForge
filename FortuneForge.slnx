@@ -50,6 +50,11 @@
     <Project Path="games/HighNoonFortune/server/FortuneForge.Games.HighNoonFortune.Server/FortuneForge.Games.HighNoonFortune.Server.csproj" />
     <Project Path="games/HighNoonFortune/tests/FortuneForge.Games.HighNoonFortune.Tests/FortuneForge.Games.HighNoonFortune.Tests.csproj" />
   </Folder>
+  <Folder Name="/Games/Frontier Fortune/">
+    <Project Path="games/HighNoonFortune/src/FortuneForge.Games.FrontierFortune/FortuneForge.Games.FrontierFortune.csproj" />
+    <Project Path="games/HighNoonFortune/server/FortuneForge.Games.FrontierFortune.Server/FortuneForge.Games.FrontierFortune.Server.csproj" />
+    <Project Path="games/HighNoonFortune/tests/FortuneForge.Games.FrontierFortune.Tests/FortuneForge.Games.FrontierFortune.Tests.csproj" />
+  </Folder>
   <Folder Name="/Games/RoyalDraw/">
     <Project Path="games/RoyalDraw/src/FortuneForge.Games.RoyalDraw/FortuneForge.Games.RoyalDraw.csproj" />
     <Project Path="games/RoyalDraw/server/FortuneForge.Games.RoyalDraw.Server/FortuneForge.Games.RoyalDraw.Server.csproj" />
@@ -70,10 +75,10 @@
     <Project Path="games/OceanOdyssey/server/FortuneForge.Games.OceanOdyssey.Server/FortuneForge.Games.OceanOdyssey.Server.csproj" />
     <Project Path="games/OceanOdyssey/tests/FortuneForge.Games.OceanOdyssey.Tests/FortuneForge.Games.OceanOdyssey.Tests.csproj" />
   </Folder>
-  <Folder Name="/Games/SamuraiFortune/">
-    <Project Path="games/SamuraiFortune/src/FortuneForge.Games.SamuraiFortune/FortuneForge.Games.SamuraiFortune.csproj" />
-    <Project Path="games/SamuraiFortune/server/FortuneForge.Games.SamuraiFortune.Server/FortuneForge.Games.SamuraiFortune.Server.csproj" />
-    <Project Path="games/SamuraiFortune/tests/FortuneForge.Games.SamuraiFortune.Tests/FortuneForge.Games.SamuraiFortune.Tests.csproj" />
+  <Folder Name="/Games/CrookedRoad/">
+    <Project Path="games/CrookedRoad/src/FortuneForge.Games.CrookedRoad/FortuneForge.Games.CrookedRoad.csproj" />
+    <Project Path="games/CrookedRoad/server/FortuneForge.Games.CrookedRoad.Server/FortuneForge.Games.CrookedRoad.Server.csproj" />
+    <Project Path="games/CrookedRoad/tests/FortuneForge.Games.CrookedRoad.Tests/FortuneForge.Games.CrookedRoad.Tests.csproj" />
   </Folder>
   <Folder Name="/Games/CandyCarnival/">
     <Project Path="games/CandyCarnival/src/FortuneForge.Games.CandyCarnival/FortuneForge.Games.CandyCarnival.csproj" />

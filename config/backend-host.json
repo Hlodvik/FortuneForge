@@ -76,7 +76,8 @@
     "GameWallet:Games:high-noon-fortune-v1:LegacySlotLedger": "true",
     "GameWallet:Games:high-noon-fortune-v1:AllowLegacyFreeGames": "true",
     "GameWallet:Games:high-noon-fortune-v1:AllowAccountBalanceRead": "true",
-    "Slots:HighNoonFortuneWorkerRoundsEnabled": "true",
+    "Slots:FrontierFortuneWorkerRoundsEnabled": "true",
+    "GameWorkers:high-noon-fortune-v1:ForwardPublicRoutes": "true",
     "GameWallet:Games:horse-flight:AllowAccountBalanceRead": "true",
     "GameWallet:Games:horse-flight:LegacySlotLedger": "false",
     "GameWallet:Games:horse-flight:AllowArcadeCompetition": "true",
@@ -135,10 +136,6 @@
     "GameWallet:Games:royal-draw-v1:AllowLegacyFreeGames": "true",
     "GameWallet:Games:royal-draw-v1:AllowAccountBalanceRead": "true",
     "Slots:RoyalDrawWorkerRoundsEnabled": "true",
-    "GameWallet:Games:samurai-fortune-v1:LegacySlotLedger": "true",
-    "GameWallet:Games:samurai-fortune-v1:AllowLegacyFreeGames": "true",
-    "GameWallet:Games:samurai-fortune-v1:AllowAccountBalanceRead": "true",
-    "Slots:SamuraiFortuneWorkerRoundsEnabled": "true",
     "GameWallet:Games:sic-bo:AllowAccountBalanceRead": "true",
     "GameWallet:Games:sic-bo:LegacySlotLedger": "false",
     "GameWorkers:sic-bo:ForwardPublicRoutes": "true",
@@ -166,7 +163,11 @@
     "GameWallet:Games:wukong-journey-v1:LegacySlotLedger": "true",
     "GameWallet:Games:wukong-journey-v1:AllowLegacyFreeGames": "true",
     "GameWallet:Games:wukong-journey-v1:AllowAccountBalanceRead": "true",
-    "Slots:WukongWorkerRoundsEnabled": "true"
+    "Slots:WukongWorkerRoundsEnabled": "true",
+    "GameWallet:Games:crooked-road-v1:LegacySlotLedger": "false",
+    "GameWallet:Games:crooked-road-v1:AllowAccountBalanceRead": "true",
+    "GameWorkers:crooked-road-v1:ForwardPublicRoutes": "true",
+    "Slots:CrookedRoadWorkerRoundsEnabled": "true"
   },
   "packages": {
     "2048": {},
@@ -227,7 +228,7 @@
       "GameWorker:AllowedOrigins:1": "https://fortuneforgegame.firebaseapp.com"
     },
     "high-noon-fortune-v1": {
-      "HighNoonFortune:AllowNewPaidRounds": "true"
+      "FrontierFortune:AllowNewPaidRounds": "true"
     },
     "horse-flight": {
       "Features:HorseFlightEnabled": "true"
@@ -275,8 +276,8 @@
     "royal-draw-v1": {
       "RoyalDraw:AllowNewPaidRounds": "true"
     },
-    "samurai-fortune-v1": {
-      "SamuraiFortune:AllowNewPaidRounds": "true"
+    "crooked-road-v1": {
+      "CrookedRoad:AllowNewPaidRounds": "true"
     },
     "sic-bo": {
       "Features:SicBoEnabled": "true"

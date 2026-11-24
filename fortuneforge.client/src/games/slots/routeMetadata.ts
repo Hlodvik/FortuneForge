@@ -5,7 +5,7 @@ export type SlotRouteMetadata = Readonly<{
   shortTitle: string
   gameReleaseId?: string
   playPath: string | null
-  demoPath: string
+  demoPath: string | null
   serverGameIds: readonly string[]
   shellBackdrop: 'default-clouds' | 'theme'
   legacyPaths?: Readonly<Record<string, string>>
@@ -21,7 +21,7 @@ export const SLOT_ROUTE_METADATA = [
     playPath: '/slots/rainbow-realm', demoPath: '/slots/rainbow-realm/demo', serverGameIds: ['rainbow-realm-fruits-v1'], shellBackdrop: 'theme',
   },
   {
-    id: 'pirates-fortune', title: "Pirates' Fortune", shortTitle: "Pirates' Fortune",
+    id: 'pirates-fortune', title: "Treasure Cove", shortTitle: "Treasure Cove",
     playPath: '/slots/pirates-fortune', demoPath: '/slots/pirates-fortune/demo', serverGameIds: ['pirates-fortune-v1'], shellBackdrop: 'theme',
   },
   {
@@ -33,8 +33,9 @@ export const SLOT_ROUTE_METADATA = [
     playPath: '/slots/reel-riches', demoPath: '/slots/reel-riches/demo', serverGameIds: ['reel-riches-v1'], shellBackdrop: 'theme',
   },
   {
-    id: 'high-noon-fortune', title: 'High Noon Fortune', shortTitle: 'High Noon',
-    playPath: '/slots/high-noon-fortune', demoPath: '/slots/high-noon-fortune/demo', serverGameIds: ['high-noon-fortune-v1'], shellBackdrop: 'theme',
+    id: 'high-noon-fortune', title: 'Frontier Fortune', shortTitle: 'Frontier Fortune',
+    playPath: '/slots/frontier-fortune', demoPath: null, serverGameIds: ['high-noon-fortune-v1'], shellBackdrop: 'theme',
+    legacyPaths: { '/slots/high-noon-fortune': '/slots/frontier-fortune', '/slots/high-noon-fortune/demo': '/slots/frontier-fortune' },
   },
   {
     id: 'royal-draw', title: 'Royal Draw', shortTitle: 'Royal Draw',
@@ -45,8 +46,9 @@ export const SLOT_ROUTE_METADATA = [
     playPath: '/slots/arcane-archives', demoPath: '/slots/arcane-archives/demo', serverGameIds: ['arcane-archives-v1'], shellBackdrop: 'theme',
   },
   {
-    id: 'cosmic-fortune', title: 'Cosmic Fortune', shortTitle: 'Cosmic Fortune',
-    playPath: '/slots/cosmic-fortune', demoPath: '/slots/cosmic-fortune/demo', serverGameIds: ['cosmic-fortune-v1'], shellBackdrop: 'theme',
+    id: 'cosmic-fortune', title: 'Pharaoh’s Ascent', shortTitle: 'Pharaoh’s Ascent',
+    playPath: '/slots/pharaohs-ascent', demoPath: null, serverGameIds: ['cosmic-fortune-v1'], shellBackdrop: 'theme',
+    legacyPaths: { '/slots/cosmic-fortune': '/slots/pharaohs-ascent', '/slots/cosmic-fortune/demo': '/slots/pharaohs-ascent' },
   },
   {
     id: 'gold-foundry', title: 'Gold Foundry', shortTitle: 'Gold Foundry',
@@ -61,8 +63,8 @@ export const SLOT_ROUTE_METADATA = [
     playPath: '/slots/ocean-odyssey', demoPath: '/slots/ocean-odyssey/demo', serverGameIds: ['ocean-odyssey-v1'], shellBackdrop: 'theme',
   },
   {
-    id: 'samurai-fortune', title: 'Samurai Fortune', shortTitle: 'Samurai Fortune',
-    playPath: '/slots/samurai-fortune', demoPath: '/slots/samurai-fortune/demo', serverGameIds: ['samurai-fortune-v1'], shellBackdrop: 'theme',
+    id: 'crooked-road', title: 'The Crooked Road', shortTitle: 'The Crooked Road',
+    playPath: '/slots/crooked-road', demoPath: null, serverGameIds: ['crooked-road-v1'], shellBackdrop: 'theme',
   },
   {
     id: 'candy-carnival', title: 'Candy Carnival', shortTitle: 'Candy Carnival',
@@ -81,7 +83,7 @@ export const SLOT_ROUTE_METADATA = [
     playPath: '/slots/desert-treasures', demoPath: '/slots/desert-treasures/demo', serverGameIds: ['desert-treasures-v1'], shellBackdrop: 'theme',
   },
   {
-    id: 'robot-revolution', title: 'Fifth Sun', shortTitle: 'Fifth Sun',
+    id: 'robot-revolution', title: 'Sunstone Eclipse', shortTitle: 'Sunstone Eclipse',
     playPath: '/slots/sunstone-eclipse', demoPath: '/slots/sunstone-eclipse/demo', serverGameIds: ['robot-revolution-v1'], shellBackdrop: 'theme',
     legacyPaths: { '/slots/robot-revolution': '/slots/sunstone-eclipse', '/slots/robot-revolution/demo': '/slots/sunstone-eclipse/demo' },
   },

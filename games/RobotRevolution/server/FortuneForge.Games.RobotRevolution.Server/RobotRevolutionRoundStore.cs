@@ -24,7 +24,7 @@ public sealed class RobotRevolutionRoundStore(FirestoreDb database, IGameRandomS
     private sealed class Persistence(FirestoreDb database, IGameRandomSource random, TimeProvider clock)
         : ClassicSlotPaidRoundStore<RobotRevolutionRoundRequest, RobotRevolutionPreparedRound, RobotRevolutionRoundResult>(
             database, clock, RobotRevolutionRoundStateCodec.Storage, new(RobotRevolutionEngine.GameId, RobotRevolutionPaidRouteContract.AuditGameId,
-                RobotRevolutionEngine.GameId, "Fifth Sun", RawCollectionName, RobotRevolutionRoundStateCodec.OwnerField))
+                RobotRevolutionEngine.GameId, "Sunstone Eclipse", RawCollectionName, RobotRevolutionRoundStateCodec.OwnerField))
     {
         protected override RobotRevolutionPreparedRound PrepareRound(string account, RobotRevolutionRoundRequest request,
             ClassicSlotRoundState before, DateTime now, GameRequestObservation? observation, bool importing) =>

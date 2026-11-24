@@ -1,0 +1,17 @@
+{
+  "game": "Frontier Fortune",
+  "generationMethod": "built-in imagegen",
+  "assetCount": 18,
+  "promptFiles": [
+    "prompts-symbols.json",
+    "prompts-ranks.json",
+    "prompts-scenery.json",
+    "prompts-bonus.json",
+    "prompts-extra-symbols.json"
+  ],
+  "sourceAssetRoot": "games/HighNoonFortune/artwork/source",
+  "runtimeAssetRoot": "games/HighNoonFortune/client/FortuneForge.Games.FrontierFortune.Client/src/assets/frontier",
+  "runtimeEncoding": "WebP with preserved transparency; originals preserved as PNG",
+  "runtimeBytes": 1618656,
+  "rebuildCommand": "node tools/artwork/frontier-runtime.mjs"
+}

@@ -13,4 +13,8 @@ public sealed class CosmicFortuneRoundService(CosmicFortuneRoundStore rounds, IG
     public Task<CosmicFortuneRoundResult> SpinAsync(string accountId, CosmicFortuneRoundRequest request, bool allowStart,
         CancellationToken cancellationToken) =>
         rounds.SpinAsync(accountId, request, allowStart, wallet, accounts, cancellationToken);
+
+    public Task<CosmicFortuneRoundStateReply> ActAsync(string accountId, string operationId, SealedTombAction action,
+        CancellationToken cancellationToken) =>
+        rounds.ActAsync(accountId, operationId, action, wallet, accounts, cancellationToken);
 }

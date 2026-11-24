@@ -20,9 +20,14 @@ const featuredSlotRanks = new Map([
   'empty-slots-game',
   'gods-of-olympus',
   'arcane-archives',
+  'robot-revolution',
+  'crooked-road',
+  'high-noon-fortune',
   'gold-foundry',
-  'rainbow-realm',
+  'dragon-hoard',
   'pirates-fortune',
+  'reel-riches',
+  'rainbow-realm',
   'candy-carnival',
 ].map((id, rank) => [id, rank]))
 const AccountSettingsContent = lazy(() => import('./AccountSettingsPage').then(module => ({ default: module.AccountSettingsContent })))

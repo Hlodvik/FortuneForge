@@ -1,0 +1,123 @@
+.frontier .frontier-win-display {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  padding: 8px 5%;
+  container-type: inline-size;
+  pointer-events: none;
+  user-select: none;
+  isolation: isolate;
+}
+
+.frontier .frontier-win-display::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 13% 4%;
+  background: radial-gradient(ellipse, #ffce6530, #e89a2220 35%, transparent 72%);
+  filter: blur(9px);
+  pointer-events: none;
+}
+
+.frontier .frontier-win-display__award {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(3px, 1.5cqw, 10px);
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+  animation: frontier-win-arrive 540ms cubic-bezier(.18, .82, .2, 1) both;
+}
+
+.frontier .frontier-win-display__label {
+  max-width: 94%;
+  color: #ffe8b0;
+  font: 700 clamp(.875rem, 4cqw, 1.3rem)/1.1 'Barlow Condensed', Georgia, serif;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  text-shadow: 0 2px 2px #211104, 0 0 10px #000, 0 0 24px #000;
+}
+
+.frontier .frontier-win-display__amount {
+  display: block;
+  max-width: 94%;
+  margin: 0;
+  padding: .06em .04em .12em;
+  color: #ffe3a0;
+  font-family: 'Rye', Georgia, serif;
+  font-weight: 400;
+  font-size: min(5.65rem, calc(118cqw / var(--frontier-win-characters)));
+  font-variant-numeric: tabular-nums;
+  line-height: 1.18;
+  letter-spacing: -.025em;
+  white-space: nowrap;
+  -webkit-text-stroke: .012em #8b5318;
+  text-shadow: 0 1px 0 #fff2c0, 0 3px 0 #aa6d20, 0 5px 0 #60370e,
+    0 7px 3px #180c04, 0 0 .2em #ffbd4e99, 0 0 .55em #d1863466;
+  transform-origin: center;
+  animation: frontier-win-breathe 3.8s ease-in-out 540ms infinite;
+  will-change: transform, filter;
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .frontier .frontier-win-display__amount {
+    background: linear-gradient(#fff9dc 0%, #ffe79d 20%, #d99b35 41%,
+      #fff0b6 49%, #e6b353 62%, #b77725 84%, #ffe3a0 96%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+.frontier .frontier-win-display__detail {
+  display: block;
+  width: 92%;
+  max-width: 42rem;
+  min-height: 1.25em;
+  margin: 0;
+  color: #fff0c9;
+  font: 600 clamp(.875rem, 3.2cqw, 1rem)/1.25 'Barlow Condensed', Georgia, serif;
+  text-align: center;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  text-shadow: 0 2px 3px #000, 0 0 10px #000, 0 0 18px #000;
+}
+
+@keyframes frontier-win-arrive {
+  from { opacity: 0; transform: translateY(5px) scale(.84); }
+  65% { opacity: 1; transform: translateY(0) scale(1.025); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes frontier-win-breathe {
+  0%, 100% { transform: scale(.985); filter: drop-shadow(0 0 7px #ffd07866); }
+  50% { transform: scale(1.045); filter: drop-shadow(0 0 19px #ffcb70b3); }
+}
+
+.frontier[data-reduced-motion='true'] .frontier-win-display__award,
+.frontier[data-reduced-motion='true'] .frontier-win-display__amount {
+  animation: none;
+  transform: none;
+  opacity: 1;
+  will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frontier .frontier-win-display__award,
+  .frontier .frontier-win-display__amount {
+    animation: none;
+    transform: none;
+    opacity: 1;
+    will-change: auto;
+  }
+}

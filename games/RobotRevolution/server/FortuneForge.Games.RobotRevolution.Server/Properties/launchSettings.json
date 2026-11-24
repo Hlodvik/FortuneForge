@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "FortuneForge.Games.RobotRevolution.Server": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:57377;http://localhost:57379"
+    }
+  }
+}

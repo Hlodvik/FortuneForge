@@ -1,0 +1,16 @@
+{
+  "engineVersion": "frontier-fortune-engine-v2",
+  "baseMathVersion": "frontier-paylines-v1",
+  "ante": { "requiredChips": 12, "wantedForOneChip": 2, "wantedForTwoChips": 3 },
+  "hand": {
+    "deals": 3,
+    "symbols": [
+      { "id": "J", "weight": 25 },
+      { "id": "Q", "weight": 25 },
+      { "id": "K", "weight": 25 },
+      { "id": "A", "weight": 24 },
+      { "id": "WILD", "weight": 1 }
+    ],
+    "awards": { "pair": 3, "two-pair": 8, "trips": 15, "full-house": 25, "four": 40, "five": 60, "grand": 250 }
+  }
+}

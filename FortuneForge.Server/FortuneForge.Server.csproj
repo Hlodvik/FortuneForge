@@ -43,6 +43,8 @@
     <ProjectReference Include="..\games\ReelRiches\server\FortuneForge.Games.ReelRiches.Server\FortuneForge.Games.ReelRiches.Server.csproj" />
     <ProjectReference Include="..\games\HighNoonFortune\src\FortuneForge.Games.HighNoonFortune\FortuneForge.Games.HighNoonFortune.csproj" />
     <ProjectReference Include="..\games\HighNoonFortune\server\FortuneForge.Games.HighNoonFortune.Server\FortuneForge.Games.HighNoonFortune.Server.csproj" />
+    <ProjectReference Include="..\games\HighNoonFortune\src\FortuneForge.Games.FrontierFortune\FortuneForge.Games.FrontierFortune.csproj" />
+    <ProjectReference Include="..\games\HighNoonFortune\server\FortuneForge.Games.FrontierFortune.Server\FortuneForge.Games.FrontierFortune.Server.csproj" />
     <ProjectReference Include="..\games\RoyalDraw\src\FortuneForge.Games.RoyalDraw\FortuneForge.Games.RoyalDraw.csproj" />
     <ProjectReference Include="..\games\RoyalDraw\server\FortuneForge.Games.RoyalDraw.Server\FortuneForge.Games.RoyalDraw.Server.csproj" />
     <ProjectReference Include="..\games\ArcaneArchives\src\FortuneForge.Games.ArcaneArchives\FortuneForge.Games.ArcaneArchives.csproj" />
@@ -51,8 +53,8 @@
     <ProjectReference Include="..\games\CosmicFortune\server\FortuneForge.Games.CosmicFortune.Server\FortuneForge.Games.CosmicFortune.Server.csproj" />
     <ProjectReference Include="..\games\OceanOdyssey\src\FortuneForge.Games.OceanOdyssey\FortuneForge.Games.OceanOdyssey.csproj" />
     <ProjectReference Include="..\games\OceanOdyssey\server\FortuneForge.Games.OceanOdyssey.Server\FortuneForge.Games.OceanOdyssey.Server.csproj" />
-    <ProjectReference Include="..\games\SamuraiFortune\src\FortuneForge.Games.SamuraiFortune\FortuneForge.Games.SamuraiFortune.csproj" />
-    <ProjectReference Include="..\games\SamuraiFortune\server\FortuneForge.Games.SamuraiFortune.Server\FortuneForge.Games.SamuraiFortune.Server.csproj" />
+    <ProjectReference Include="..\games\CrookedRoad\src\FortuneForge.Games.CrookedRoad\FortuneForge.Games.CrookedRoad.csproj" />
+    <ProjectReference Include="..\games\CrookedRoad\server\FortuneForge.Games.CrookedRoad.Server\FortuneForge.Games.CrookedRoad.Server.csproj" />
     <ProjectReference Include="..\games\CandyCarnival\src\FortuneForge.Games.CandyCarnival\FortuneForge.Games.CandyCarnival.csproj" />
     <ProjectReference Include="..\games\CandyCarnival\server\FortuneForge.Games.CandyCarnival.Server\FortuneForge.Games.CandyCarnival.Server.csproj" />
     <ProjectReference Include="..\games\PhantomManor\src\FortuneForge.Games.PhantomManor\FortuneForge.Games.PhantomManor.csproj" />

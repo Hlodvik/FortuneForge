@@ -8,13 +8,11 @@ using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Reels;
 using ArcaneEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
-using ArcanePotionBottle = FortuneForge.Games.ArcaneArchives.ArcanePotionBottle;
-using ArcaneWandCollector = FortuneForge.Games.ArcaneArchives.ArcaneWandCollector;
 using CandyEngine = FortuneForge.Games.CandyCarnival.CandyCarnivalEngine;
 using CosmicEngine = FortuneForge.Games.CosmicFortune.CosmicFortuneEngine;
 using DesertEngine = FortuneForge.Games.DesertTreasures.DesertTreasuresEngine;
 using OlympusEngine = FortuneForge.Games.GodsOfOlympus.GodsOfOlympusEngine;
-using HighNoonEngine = FortuneForge.Games.HighNoonFortune.HighNoonFortuneEngine;
+using FrontierEngine = FortuneForge.Games.FrontierFortune.Server.FrontierOutlawDefinitions;
 using NordicEngine = FortuneForge.Games.NordicLegends.NordicLegendsEngine;
 using OceanEngine = FortuneForge.Games.OceanOdyssey.OceanOdysseyEngine;
 using PhantomEngine = FortuneForge.Games.PhantomManor.PhantomManorEngine;
@@ -23,7 +21,6 @@ using RainbowEngine = FortuneForge.Games.RainbowRealm.RainbowRealmEngine;
 using ReelRichesEngine = FortuneForge.Games.ReelRiches.ReelRichesEngine;
 using RobotEngine = FortuneForge.Games.RobotRevolution.RobotRevolutionEngine;
 using RoyalEngine = FortuneForge.Games.RoyalDraw.RoyalDrawEngine;
-using SamuraiEngine = FortuneForge.Games.SamuraiFortune.SamuraiFortuneEngine;
 using WukongEngine = FortuneForge.Games.Wukong.WukongEngine;
 
 namespace FortuneForge.Server.Slots.Games;
@@ -47,7 +44,8 @@ public sealed class StandaloneSlotPackageRegistry
         Func<GameDefinition> Game,
         Func<SymbolSetDefinition> Symbols,
         Func<ReelSetDefinition> Reels,
-        Func<PaytableDefinition> Paytable);
+        Func<PaytableDefinition> Paytable,
+        bool SupportsClassicSpin = true);
 
     private static readonly IReadOnlyDictionary<string, DefinitionBundle> Definitions =
         new Dictionary<string, DefinitionBundle>(StringComparer.Ordinal)
@@ -62,18 +60,16 @@ public sealed class StandaloneSlotPackageRegistry
                 OlympusEngine.CreateReelSet, OlympusEngine.CreatePaytable),
             [ReelRichesEngine.GameId] = new(ReelRichesEngine.CreateGame, ReelRichesEngine.CreateSymbolSet,
                 ReelRichesEngine.CreateReelSet, ReelRichesEngine.CreatePaytable),
-            [HighNoonEngine.GameId] = new(HighNoonEngine.CreateGame, HighNoonEngine.CreateSymbolSet,
-                HighNoonEngine.CreateReelSet, HighNoonEngine.CreatePaytable),
+            [FrontierEngine.GameId] = new(FrontierEngine.CreateGame, FrontierEngine.CreateSymbolSet,
+                FrontierEngine.CreateReelSet, FrontierEngine.CreatePaytable),
             [RoyalEngine.GameId] = new(RoyalEngine.CreateGame, RoyalEngine.CreateSymbolSet,
                 RoyalEngine.CreateReelSet, RoyalEngine.CreatePaytable),
             [ArcaneEngine.GameId] = new(ArcaneEngine.CreateGame, ArcaneEngine.CreateSymbolSet,
-                ArcaneEngine.CreateReelSet, ArcaneEngine.CreatePaytable),
+                ArcaneEngine.CreateReelSet, ArcaneEngine.CreatePaytable, SupportsClassicSpin: false),
             [CosmicEngine.GameId] = new(CosmicEngine.CreateGame, CosmicEngine.CreateSymbolSet,
                 CosmicEngine.CreateReelSet, CosmicEngine.CreatePaytable),
             [OceanEngine.GameId] = new(OceanEngine.CreateGame, OceanEngine.CreateSymbolSet,
                 OceanEngine.CreateReelSet, OceanEngine.CreatePaytable),
-            [SamuraiEngine.GameId] = new(SamuraiEngine.CreateGame, SamuraiEngine.CreateSymbolSet,
-                SamuraiEngine.CreateReelSet, SamuraiEngine.CreatePaytable),
             [CandyEngine.GameId] = new(CandyEngine.CreateGame, CandyEngine.CreateSymbolSet,
                 CandyEngine.CreateReelSet, CandyEngine.CreatePaytable),
             [PhantomEngine.GameId] = new(PhantomEngine.CreateGame, PhantomEngine.CreateSymbolSet,
@@ -88,12 +84,10 @@ public sealed class StandaloneSlotPackageRegistry
 
     private readonly IReadOnlyDictionary<string, SpinDelegate> spinners;
     private readonly OlympusEngine olympusEngine;
-    private readonly ArcaneEngine arcaneEngine;
 
     public StandaloneSlotPackageRegistry(IRandomIndexSource random)
     {
         olympusEngine = new OlympusEngine(random);
-        arcaneEngine = new ArcaneEngine(random);
         spinners = new Dictionary<string, SpinDelegate>(StringComparer.Ordinal)
         {
             [WukongEngine.GameId] = new WukongEngine(random).Spin,
@@ -101,12 +95,9 @@ public sealed class StandaloneSlotPackageRegistry
             [PiratesEngine.GameId] = new PiratesEngine(random).Spin,
             [OlympusEngine.GameId] = olympusEngine.Spin,
             [ReelRichesEngine.GameId] = new ReelRichesEngine(random).Spin,
-            [HighNoonEngine.GameId] = new HighNoonEngine(random).Spin,
             [RoyalEngine.GameId] = new RoyalEngine(random).Spin,
-            [ArcaneEngine.GameId] = arcaneEngine.Spin,
             [CosmicEngine.GameId] = new CosmicEngine(random).Spin,
             [OceanEngine.GameId] = new OceanEngine(random).Spin,
-            [SamuraiEngine.GameId] = new SamuraiEngine(random).Spin,
             [CandyEngine.GameId] = new CandyEngine(random).Spin,
             [PhantomEngine.GameId] = new PhantomEngine(random).Spin,
             [NordicEngine.GameId] = new NordicEngine(random).Spin,
@@ -115,7 +106,7 @@ public sealed class StandaloneSlotPackageRegistry
         };
     }
 
-    public static bool Owns(string gameId) => Definitions.ContainsKey(gameId);
+    public static bool Owns(string gameId) => Definitions.TryGetValue(gameId, out var package) && package.SupportsClassicSpin;
 
     public static GameDefinition? GetGame(string id) =>
         Definitions.TryGetValue(id, out var package) ? package.Game() : null;
@@ -144,12 +135,7 @@ public sealed class StandaloneSlotPackageRegistry
         return true;
     }
 
-    public SpinResult SpinArcaneTome(long wagerPoints, string playerId, long currentEnergyBalance,
-        int? persistedPityMisses, bool isFreeSpin, bool tomeActive, ArcanePotionBottle? potion) =>
-        MapOutcome(arcaneEngine.SpinTome(wagerPoints, playerId,
-            currentEnergyBalance, persistedPityMisses, isFreeSpin, tomeActive, potion), potion);
-
-    internal static SpinResult MapOutcome(ClassicSlotSpinOutcome outcome, ArcanePotionBottle? potion = null)
+    internal static SpinResult MapOutcome(ClassicSlotSpinOutcome outcome)
     {
         SlotSpecialRoundProfiles.TryGet(outcome.GameId, out var profile);
         var audit = outcome.Audit;
@@ -167,20 +153,10 @@ public sealed class StandaloneSlotPackageRegistry
                 audit.ReelSet, audit.SymbolSet, audit.Paytable, profile,
                 audit.PityMissesBefore, audit.EnergyBalanceBefore,
                 audit.FeatureMode, audit.GenerationAttempts,
-                audit.ReelsBeforeFrequency, audit.ReelsAfterFrequency)
-            {
-                IsDerivedFreeSpin = outcome.IsFreeSpin && outcome.GameId == ArcaneEngine.GameId,
-                ArcanePotionApplied = potion
-            },
+                audit.ReelsBeforeFrequency, audit.ReelsAfterFrequency),
             MonkeyPawCount = outcome.PawCount,
             MoneyGrabPoints = outcome.CollectorPoints,
             BananaBonusPoints = outcome.PatternBonusPoints,
-            ArcaneWandCollection = ArcaneEngine.IsWandModel(audit.BaseGame)
-                ? ArcaneWandCollector.Calculate(outcome.Reels, outcome.WagerPoints, potion)
-                : null,
-            LightningCollection = ArcaneLightningCollector.IsModel(audit.BaseGame)
-                ? ArcaneLightningCollector.Calculate(outcome.Reels, outcome.WagerPoints)
-                : null,
             SealsAwarded = outcome.CollectionsAwarded
         };
     }

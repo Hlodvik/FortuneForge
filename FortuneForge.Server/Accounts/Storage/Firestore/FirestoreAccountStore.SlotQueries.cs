@@ -2,8 +2,6 @@
 // Edited: 2026-11-18T16:30:13-06:00 | Computer: Vinnabok
 using System.Security.Cryptography;
 using System.Text;
-using FortuneForge.Games.ArcaneArchives;
-using FortuneForge.Games.ArcaneArchives.Server;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.Slots.Bonuses;
@@ -22,6 +20,7 @@ public sealed partial class FirestoreAccountStore
         decimal pointValueInCents,
         CancellationToken cancellationToken)
     {
+        RejectRemovedSlotRuntime(gameId);
         var guardReference = SlotSpinGuardDocument(userId, gameId);
         var specialPointsCurrencyId = GameCurrencyId(SpecialPointsCurrencyId, gameId);
         var energyCurrencyId = GameCurrencyId(EnergyCurrencyId, gameId);
@@ -97,12 +96,7 @@ public sealed partial class FirestoreAccountStore
             checked((int)ReadLong(snapshots[1], "available")),
             gameId == SlotSpecialRoundProfiles.RainbowRealmGameId ? 0 : ReadLong(snapshots[2], "available"),
             CreateSealCollections(guardSnapshot, pointValueInCents, gameId),
-            null)
-        {
-            ArcaneTome = gameId == ArcaneArchivesEngine.GameId ? ArcaneTome.ToView(ArcaneFeatureStore.ReadTome(guardSnapshot)) : null,
-            ArcanePotions = gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId
-                ? ArcanePotionView.FromState(ArcaneFeatureStore.ReadPotions(guardSnapshot)) : null
-        };
+            null);
     }
 
     private static void RejectWorkerOwnedSlot(string gameId, DocumentSnapshot guard)

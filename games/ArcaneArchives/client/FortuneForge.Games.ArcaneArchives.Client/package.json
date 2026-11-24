@@ -10,14 +10,17 @@
     "./catalog": { "types": "./dist/catalog.d.ts", "import": "./dist/catalog.js" },
     "./sounds": { "types": "./dist/sounds.d.ts", "import": "./dist/sounds.js" },
     "./presentation": { "types": "./dist/presentation.d.ts", "import": "./dist/presentation.js" },
+    "./features": { "types": "./dist/arcaneFeatures.d.ts", "import": "./dist/arcaneFeatures.js" },
     "./ArcaneLightningCollection": { "types": "./dist/ArcaneLightningCollection.d.ts", "import": "./dist/ArcaneLightningCollection.js" },
     "./styles.css": "./dist/styles.css"
   },
   "scripts": {
     "check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
     "build": "tsc -p tsconfig.build.json && node scripts/copy-static.mjs"
   },
   "dependencies": {
+    "@fortuneforge/client-presentation": "0.1.0",
     "@fortuneforge/slot-client-core": "0.1.0",
     "@fortuneforge/slot-game-runtime": "0.1.0"
   },
@@ -25,7 +28,9 @@
   "devDependencies": {
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "jsdom": "^28.1.0",
     "typescript": "~6.0.3",
-    "vite": "^8.1.6"
+    "vite": "^8.1.6",
+    "vitest": "^4.1.12"
   }
 }

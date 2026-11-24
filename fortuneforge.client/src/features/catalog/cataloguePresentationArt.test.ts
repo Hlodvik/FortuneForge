@@ -79,9 +79,18 @@ describe('landing and home catalogue presentation art', () => {
     for (const definition of SLOT_ROUTE_DEFINITIONS) {
       const art = getCataloguePresentationArt(definition.playPath)
       expect(art, definition.id).toBeDefined()
-      expect(getCataloguePresentationArt(definition.demoPath)).toBe(art)
-      expect(getCataloguePresentationArt(`${definition.demoPath}/?source=home#preview`)).toBe(art)
+      if (definition.demoPath !== null) {
+        expect(getCataloguePresentationArt(definition.demoPath)).toBe(art)
+        expect(getCataloguePresentationArt(`${definition.demoPath}/?source=home#preview`)).toBe(art)
+      }
     }
+  })
+
+  it('uses Frontier Fortune art for its paid route without inventing a demo alias', () => {
+    const frontier = SLOT_ROUTE_DEFINITIONS.find(route => route.id === 'high-noon-fortune')
+    expect(frontier?.demoPath).toBeNull()
+    expect(getCataloguePresentationArt('/slots/frontier-fortune')?.src).toMatch(/frontier-fortune-title\.webp$/)
+    expect(getCataloguePresentationArt('/slots/frontier-fortune/demo')).toBeUndefined()
   })
 
   it('covers the non-slot play routes and only the two real internal card demo aliases', () => {
@@ -115,9 +124,11 @@ describe('landing and home catalogue presentation art', () => {
   it('imports only selected image URLs, with no playable game code or archived integration', () => {
     const source = readFileSync(new URL('./cataloguePresentationArt.ts', import.meta.url), 'utf8')
     const imports = [...source.matchAll(/^import .+ from '([^']+)'$/gm)].map(match => match[1])
-    expect(imports).toHaveLength(41)
-    expect(new Set(imports).size).toBe(41)
-    for (const path of imports) expect(path).toMatch(/^\.\.\/\.\.\/assets\/catalogue\/(?:non-slots|slots)\/[a-z0-9-]+\.webp$/)
+    const imageImports = imports.filter(path => path.startsWith('../../assets/catalogue/'))
+    expect(imageImports).toHaveLength(41)
+    expect(new Set(imageImports).size).toBe(41)
+    for (const path of imageImports) expect(path).toMatch(/^\.\.\/\.\.\/assets\/catalogue\/(?:non-slots|slots)\/[a-z0-9-]+\.webp$/)
+    expect(imports.filter(path => !path.startsWith('../../assets/catalogue/'))).toEqual(['../../games/slots/routeMetadata'])
     expect(source).not.toContain('import(')
     expect(source).not.toContain('nonSlotCatalogueArt')
   })

@@ -1,0 +1,25 @@
+{
+  "engineVersion": "pharaohs-ascent-sealed-tomb-v3",
+  "paytableId": "pharaohs-ascent-paytable-v3",
+  "payoutMultiplier": 1,
+  "targetRtp": 0.94,
+  "tombMinimumScarabs": 3,
+  "payouts": [
+    { "symbolId": "2", "matchLength": 3, "multiplier": 1 },
+    { "symbolId": "2", "matchLength": 5, "multiplier": 2 },
+    { "symbolId": "3", "matchLength": 3, "multiplier": 1 },
+    { "symbolId": "3", "matchLength": 5, "multiplier": 2 },
+    { "symbolId": "4", "matchLength": 3, "multiplier": 1 },
+    { "symbolId": "4", "matchLength": 5, "multiplier": 3 },
+    { "symbolId": "5", "matchLength": 3, "multiplier": 2 },
+    { "symbolId": "5", "matchLength": 5, "multiplier": 6 },
+    { "symbolId": "6", "matchLength": 3, "multiplier": 2 },
+    { "symbolId": "6", "matchLength": 5, "multiplier": 8 },
+    { "symbolId": "7", "matchLength": 3, "multiplier": 3 },
+    { "symbolId": "7", "matchLength": 5, "multiplier": 11 },
+    { "symbolId": "ACE", "matchLength": 3, "multiplier": 5 },
+    { "symbolId": "ACE", "matchLength": 5, "multiplier": 18 },
+    { "symbolId": "POWER", "matchLength": 3, "multiplier": 1 },
+    { "symbolId": "POWER", "matchLength": 5, "multiplier": 5 }
+  ]
+}

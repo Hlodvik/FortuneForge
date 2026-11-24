@@ -3,7 +3,7 @@
 // Edited: 2026-11-18T18:11:03-06:00 | Computer: VINNABOK
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import type { SlotTomePanelProps } from '@fortuneforge/slot-game-runtime/experience'
+import type { SlotTomePanelProps } from './arcaneFeatures'
 import './ingredientFlights.css'
 
 type IngredientFlightsProps = Pick<SlotTomePanelProps, 'cabinetRef' | 'settledSpin' | 'awarded' | 'reducedMotion'> & {

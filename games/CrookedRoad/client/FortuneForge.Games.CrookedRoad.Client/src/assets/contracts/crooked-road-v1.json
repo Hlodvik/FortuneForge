@@ -1,0 +1,35 @@
+{
+  "modelId": "crooked-road-math-v1",
+  "pointValueInCents": 1,
+  "symbols": [
+    { "id": "2", "weight": 24, "pays": [35,105,350] },
+    { "id": "3", "weight": 21, "pays": [49,147,490] },
+    { "id": "4", "weight": 17, "pays": [70,210,700] },
+    { "id": "5", "weight": 13, "pays": [105,315,1050] },
+    { "id": "6", "weight": 9, "pays": [175,525,1750] },
+    { "id": "7", "weight": 6, "pays": [280,840,2800] },
+    { "id": "ACE", "weight": 4, "pays": [] },
+    { "id": "FREE", "weight": 2, "pays": [] },
+    { "id": "POWER", "weight": 4, "pays": [] }
+  ],
+  "paylines": [[0,0,0,0,0],[1,1,1,1,1],[2,2,2,2,2],[0,1,2,1,0],[2,1,0,1,2],[0,0,1,2,2],[2,2,1,0,0],[1,0,0,0,1],[1,2,2,2,1],[0,1,1,1,0]],
+  "payoutScaleNumerator": 1068,
+  "payoutScaleDenominator": 1000,
+  "payoutUnits": 100,
+  "minimumWagerPoints": 100,
+  "maximumWagerPoints": 5000,
+  "wagerIncrementPoints": 100,
+  "fundingSpins": 20,
+  "bonusExpectedMultiplier": 6,
+  "scatterRequired": 3,
+  "fortLandingDenominator": 4,
+  "fortCoinValues": [1,2,3,5],
+  "fortCoinWeights": [60,25,12,3],
+  "hillPrizes": [[0,2,4],[0,1,5],[1,2,3]],
+  "road": {
+    "entryCell": 7,
+    "entryPort": 4,
+    "tilePorts": { "straight": 5, "corner": 3, "junction": 11 },
+    "destinations": [ { "id": "well", "cell": 3, "port": 8 }, { "id": "fort", "cell": 1, "port": 1 }, { "id": "hill", "cell": 5, "port": 2 } ]
+  }
+}

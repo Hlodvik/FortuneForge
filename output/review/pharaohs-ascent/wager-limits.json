@@ -1,0 +1,12 @@
+{
+  "localOnly": true,
+  "initial": "Change bet, currently R3",
+  "minimum": "Change bet, currently R0.5",
+  "maximum": "Change bet, currently R75",
+  "reset": "Change bet, currently R3",
+  "minIndex": 0,
+  "maxIndex": 149,
+  "limits": "R0.5\nR75",
+  "posts": [],
+  "errors": []
+}

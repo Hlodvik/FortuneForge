@@ -1,5 +1,5 @@
 // Edited: 2026-11-18T18:18:18-06:00 | Computer: VINNABOK
-import type { SlotPotionBottle } from '@fortuneforge/slot-game-runtime/experience'
+import type { SlotPotionBottle } from './arcaneFeatures'
 import mandrakeBottle from './assets/art/potions/rootwake-potion-v1.webp'
 import nightshadeBottle from './assets/art/potions/nightveil-potion-v1.webp'
 import mooncapBottle from './assets/art/potions/moonfall-potion-v1.webp'

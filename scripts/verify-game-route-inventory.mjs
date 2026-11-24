@@ -11,15 +11,16 @@ export function verifyGameRouteInventory({ appRoutes, catalog, slotRoutes, runti
   assert(embeddedSlotSmokeInventory.length === 1 && embeddedSlotSmokeInventory[0].smokePath === '/slots/jade-dragon',
     'Jade Dragon must retain embedded-client coverage')
 
-  const registeredSlots = [...slotRoutes.matchAll(/playPath:\s*'([^']+)',\s*demoPath:\s*'([^']+)',\s*serverGameIds:\s*\[([^\]]*)\]/g)]
+  const registeredSlots = [...slotRoutes.matchAll(/playPath:\s*'([^']+)',\s*demoPath:\s*(?:'([^']+)'|null),\s*serverGameIds:\s*\[([^\]]*)\]/g)]
   assert(registeredSlots.length === 19, `expected 19 playable slot route definitions, found ${registeredSlots.length}`)
-  assert(new Set(registeredSlots.flatMap(([, playPath, demoPath]) => [playPath, demoPath])).size === 38,
+  const publicPaths = registeredSlots.flatMap(([, playPath, demoPath]) => demoPath ? [playPath, demoPath] : [playPath])
+  assert(new Set(publicPaths).size === publicPaths.length,
     'playable slot play and demo routes must be unique')
   for (const [route, gameId] of slotSmokeInventory) {
     const demoPath = `/slots/${route}/demo`
-    const registered = registeredSlots.find(([, , path]) => path === demoPath)
-    assert(registered !== undefined, `${demoPath} is missing from the slot route registry`)
-    assert(registered[1] === `/slots/${route}`, `${demoPath} must retain its playable route /slots/${route}`)
+    const registered = registeredSlots.find(([, path]) => path === `/slots/${route}`)
+    assert(registered !== undefined, `/slots/${route} is missing from the slot route registry`)
+    assert(registered[2] === undefined || registered[2] === demoPath, `/slots/${route} declares an unexpected practice route`)
     assert([...registered[3].matchAll(/'([^']+)'/g)].some(([, id]) => id === gameId),
       `${demoPath} does not declare server profile ${gameId}`)
   }
@@ -54,7 +55,7 @@ export function verifyGameRouteInventory({ appRoutes, catalog, slotRoutes, runti
   for (const { smokePath } of embeddedSlotSmokeInventory) {
     assert(appRoutes.includes(`pathname === '${smokePath}') route = <JadeDragonRoute />`),
       `${smokePath} is missing its custom Jade Dragon route in AppRoutes`)
-    assert(!registeredSlots.some(([, playPath, demoPath]) => playPath === smokePath || demoPath.startsWith(`${smokePath}/`)),
+    assert(!registeredSlots.some(([, playPath, demoPath]) => playPath === smokePath || demoPath?.startsWith(`${smokePath}/`)),
       `${smokePath} must remain an embedded client rather than a generic slot contract`)
     if (runtimeGames) assert(runtimeGames.get(smokePath) === true, `${smokePath} runtime default visibility must be true`)
     assert(jadeCatalog?.includes(`playHref: '${smokePath}'`), `${smokePath} is missing from the Jade Dragon catalog`)

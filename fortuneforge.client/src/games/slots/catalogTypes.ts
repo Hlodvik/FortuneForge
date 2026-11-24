@@ -13,6 +13,6 @@ export type SlotGameCatalogDefinition = {
 
 export type SlotGameCatalogEntry = SlotGameCatalogDefinition & {
   playHref: string | null
-  demoHref: string
+  demoHref: string | null
   serverGameIds: readonly string[]
 }

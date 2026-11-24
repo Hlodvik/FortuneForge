@@ -13,5 +13,7 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="FortuneForge.Games.CosmicFortune.Tests" />
+    <InternalsVisibleTo Include="FortuneForge.Games.CosmicFortune.Math" />
+    <InternalsVisibleTo Include="FortuneForge.Server.Tests" />
   </ItemGroup>
 </Project>

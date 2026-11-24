@@ -46,8 +46,12 @@ public sealed partial class ClassicSlotEngine
             Inject(reels, 2, () => "ACE");
 
         if (options.UsesPatternBonus)
-            Inject(reels, Next(100) switch { < 48 => 0, < 88 => 1, < 98 => 2, _ => 3 },
-                () => "BANANA");
+        {
+            var roll = Next(100);
+            var count = options.PatternCountFromRoll?.Invoke(roll) ??
+                roll switch { < 48 => 0, < 88 => 1, < 98 => 2, _ => 3 };
+            Inject(reels, Math.Max(0, count), () => "BANANA");
+        }
         if (profile.UsesCollections)
         {
             var chance = options.CollectionAppearanceChance?.Invoke(energyBalance) ?? energyBalance switch

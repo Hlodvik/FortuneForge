@@ -1,0 +1,4220 @@
+{
+  "generatedAtLocal": "2026-11-22T19:54:30.5720968-06:00",
+  "computer": "Vinnabok",
+  "engineVersion": "pharaohs-ascent-sealed-tomb-v2",
+  "wagering": {
+    "pointValueInCents": 25,
+    "minimumWagerPoints": 2,
+    "defaultWagerPoints": 12,
+    "maximumWagerPoints": 300,
+    "wagerIncrementPoints": 2
+  },
+  "paidSpins": 3000000.0,
+  "earnedSpins": 731576.0,
+  "sourceReports": [
+    "rtp-million.json (stakes2 and12only)",
+    "rtp-max75.json (stake300)"
+  ],
+  "note": "Current bet limits only restrict new paid admissions. Engine, payout, progression and funded bonus rules are unchanged. The earlier2000-point sample is historical and excluded from this current-stake report.",
+  "sourceVerification": {
+    "baselineFiles": 41,
+    "unchangedFiles": 40,
+    "changedFiles": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/CosmicFortuneRoundPolicy.cs",
+    "explanation": "RoundPolicy adds current new-paid admission validation; financial math and progression source fingerprints remain unchanged."
+  },
+  "accounting": [
+    {
+      "stakePoints": 2,
+      "strategy": "coins",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 2,
+      "strategy": "keys",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 2,
+      "strategy": "random",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 2,
+      "strategy": "optimal",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 12,
+      "strategy": "coins",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 12,
+      "strategy": "keys",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 12,
+      "strategy": "random",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 12,
+      "strategy": "optimal",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 300,
+      "strategy": "coins",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 300,
+      "strategy": "keys",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 300,
+      "strategy": "random",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 300,
+      "strategy": "optimal",
+      "accountingPassed": true
+    }
+  ],
+  "profiles": [
+    {
+      "stakePoints": 2,
+      "totals": {
+        "paidSpins": 1000000,
+        "earnedSpins": 245146,
+        "paidWagerPoints": 2000000,
+        "paidWagerCents": 50000000,
+        "paidReelBasePayoutPoints": 1299534,
+        "paidReelPayoutPoints": 1306905,
+        "paidReelPayoutCents": 32672625,
+        "paidEnergyExtraPoints": 7371,
+        "earnedReelBasePayoutPoints": 273368,
+        "earnedReelPayoutPoints": 275587,
+        "earnedReelPayoutCents": 6889675,
+        "earnedEnergyExtraPoints": 2219,
+        "paidSigilQualifyingSpins": 115857,
+        "pityTriggeredSpins": 73181,
+        "paidPityTriggeredSpins": 70441,
+        "generationAttempts": 4231443,
+        "scatterSpinsAwarded": 61494,
+        "collectionSpinsAwarded": 183652,
+        "energyMultiplierEvents": 3801,
+        "maximumEarnedSpinsInOnePaidCycle": 59
+      },
+      "strategies": {
+        "coins": {
+          "decisionPolicy": "coins",
+          "tomb": {
+            "expeditions": 19309,
+            "actions": 154472,
+            "roomsOpened": 115854,
+            "basePoints": 193090,
+            "roomPoints": 614114,
+            "relicExtraPoints": 0,
+            "finalePoints": 0,
+            "payoutPoints": 807204,
+            "payoutCents": 20180100
+          },
+          "observedTombMeanMultiplier": 20.902273551193744,
+          "observedRtp": 1.194848,
+          "paidReelRtp": 0.6534525,
+          "earnedReelRtp": 0.1377935,
+          "tombRtp": 0.403602,
+          "blockConfidence95": {
+            "lower": 1.1915912825035244,
+            "upper": 1.1981047174964754,
+            "standardError": 0.0016413112090181085,
+            "halfWidth": 0.003256717496475553,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": 0.015072231098359118
+          }
+        },
+        "keys": {
+          "decisionPolicy": "three coin rooms, then three key rooms, then sarcophagus",
+          "tomb": {
+            "expeditions": 19309,
+            "actions": 173781,
+            "roomsOpened": 115854,
+            "basePoints": 193090,
+            "roomPoints": 423022,
+            "relicExtraPoints": 0,
+            "finalePoints": 402520,
+            "payoutPoints": 1018632,
+            "payoutCents": 25465800
+          },
+          "observedTombMeanMultiplier": 26.37712983582785,
+          "observedRtp": 1.300562,
+          "paidReelRtp": 0.6534525,
+          "earnedReelRtp": 0.1377935,
+          "tombRtp": 0.509316,
+          "blockConfidence95": {
+            "lower": 1.296845539021946,
+            "upper": 1.304278460978054,
+            "standardError": 0.0018730114195534896,
+            "halfWidth": 0.0037164609780539573,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": -0.029618801304565703
+          }
+        },
+        "random": {
+          "decisionPolicy": "random",
+          "tomb": {
+            "expeditions": 19309,
+            "actions": 153785,
+            "roomsOpened": 108977,
+            "basePoints": 193090,
+            "roomPoints": 337232,
+            "relicExtraPoints": 30114,
+            "finalePoints": 129256,
+            "payoutPoints": 689692,
+            "payoutCents": 17242300
+          },
+          "observedTombMeanMultiplier": 17.859340204049925,
+          "observedRtp": 1.136092,
+          "paidReelRtp": 0.6534525,
+          "earnedReelRtp": 0.1377935,
+          "tombRtp": 0.344846,
+          "blockConfidence95": {
+            "lower": 1.1326791964776506,
+            "upper": 1.1395048035223496,
+            "standardError": 0.0017199749998183112,
+            "halfWidth": 0.0034128035223495693,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": 0.048320470662844735
+          }
+        },
+        "optimal": {
+          "decisionPolicy": "optimal",
+          "tomb": {
+            "expeditions": 19309,
+            "actions": 173781,
+            "roomsOpened": 115854,
+            "basePoints": 193090,
+            "roomPoints": 422562,
+            "relicExtraPoints": 0,
+            "finalePoints": 401712,
+            "payoutPoints": 1017364,
+            "payoutCents": 25434100
+          },
+          "observedTombMeanMultiplier": 26.344295406287223,
+          "observedRtp": 1.299928,
+          "paidReelRtp": 0.6534525,
+          "earnedReelRtp": 0.1377935,
+          "tombRtp": 0.508682,
+          "blockConfidence95": {
+            "lower": 1.2962211786519704,
+            "upper": 1.3036348213480295,
+            "standardError": 0.0018681532662666162,
+            "halfWidth": 0.003706821348029505,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": 0.01154866723757629
+          }
+        }
+      },
+      "residualResources": {
+        "energy": 54,
+        "pity": 12,
+        "nativeRemaining": 0,
+        "legacyRemaining": 0,
+        "carry": null,
+        "specialPoints": 23983,
+        "sealCounts": {
+          "sync": 21,
+          "rows": 7,
+          "paw": 23,
+          "rand": 15
+        },
+        "sealWagerPoints": {
+          "sync": 42,
+          "rows": 14,
+          "paw": 46,
+          "rand": 30
+        },
+        "tombFunding": {
+          "sigils": 3,
+          "requiredSigils": 6,
+          "averageWagerPoints": 2
+        },
+        "sigilWagerPointTotal": 6,
+        "unredeemedTickets": 0,
+        "note": "Partial sigils, collections, energy and pity are carried through every block and left unvalued at the final boundary; no new paid spins were manufactured to complete them."
+      },
+      "confidenceMethod": {
+        "kind": "continuous nonoverlapping paid-cycle block ratio means",
+        "batchSize": 10000,
+        "completedBlocks": 100,
+        "note": "Approximate Student-t interval from long blocks, retaining serial game state; a single smoke block has no meaningful confidence interval."
+      },
+      "blocks": [
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 313150,
+          "earnedReelCents": 75475,
+          "tombCents": {
+            "coins": 195700,
+            "keys": 244550,
+            "random": 162900,
+            "optimal": 249100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 319675,
+          "earnedReelCents": 62900,
+          "tombCents": {
+            "coins": 195350,
+            "keys": 250250,
+            "random": 168100,
+            "optimal": 246150
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 333025,
+          "earnedReelCents": 63975,
+          "tombCents": {
+            "coins": 213000,
+            "keys": 263200,
+            "random": 179450,
+            "optimal": 267950
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 322900,
+          "earnedReelCents": 73950,
+          "tombCents": {
+            "coins": 207300,
+            "keys": 255200,
+            "random": 174250,
+            "optimal": 261000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 327650,
+          "earnedReelCents": 74050,
+          "tombCents": {
+            "coins": 209150,
+            "keys": 260800,
+            "random": 178300,
+            "optimal": 263900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 323000,
+          "earnedReelCents": 65700,
+          "tombCents": {
+            "coins": 211600,
+            "keys": 263750,
+            "random": 184800,
+            "optimal": 267400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 327275,
+          "earnedReelCents": 69000,
+          "tombCents": {
+            "coins": 205500,
+            "keys": 256900,
+            "random": 169050,
+            "optimal": 254000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 335725,
+          "earnedReelCents": 70650,
+          "tombCents": {
+            "coins": 203550,
+            "keys": 254650,
+            "random": 173150,
+            "optimal": 255400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 330950,
+          "earnedReelCents": 71375,
+          "tombCents": {
+            "coins": 196100,
+            "keys": 244700,
+            "random": 168950,
+            "optimal": 244750
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 331325,
+          "earnedReelCents": 63625,
+          "tombCents": {
+            "coins": 210300,
+            "keys": 262350,
+            "random": 182450,
+            "optimal": 265450
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 328200,
+          "earnedReelCents": 68175,
+          "tombCents": {
+            "coins": 205550,
+            "keys": 263300,
+            "random": 180150,
+            "optimal": 259200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 324925,
+          "earnedReelCents": 72025,
+          "tombCents": {
+            "coins": 204050,
+            "keys": 252650,
+            "random": 170950,
+            "optimal": 256100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 332800,
+          "earnedReelCents": 72575,
+          "tombCents": {
+            "coins": 198650,
+            "keys": 250700,
+            "random": 168300,
+            "optimal": 249800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 329525,
+          "earnedReelCents": 67375,
+          "tombCents": {
+            "coins": 203200,
+            "keys": 257850,
+            "random": 172200,
+            "optimal": 254200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 328250,
+          "earnedReelCents": 71650,
+          "tombCents": {
+            "coins": 204800,
+            "keys": 257800,
+            "random": 172000,
+            "optimal": 260900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 328275,
+          "earnedReelCents": 70425,
+          "tombCents": {
+            "coins": 205250,
+            "keys": 259750,
+            "random": 175500,
+            "optimal": 260550
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 325450,
+          "earnedReelCents": 67350,
+          "tombCents": {
+            "coins": 204600,
+            "keys": 258800,
+            "random": 176450,
+            "optimal": 259050
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 336925,
+          "earnedReelCents": 66900,
+          "tombCents": {
+            "coins": 195500,
+            "keys": 245750,
+            "random": 166500,
+            "optimal": 241400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 325775,
+          "earnedReelCents": 63875,
+          "tombCents": {
+            "coins": 197950,
+            "keys": 255150,
+            "random": 171850,
+            "optimal": 256850
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 329525,
+          "earnedReelCents": 71750,
+          "tombCents": {
+            "coins": 197650,
+            "keys": 245250,
+            "random": 173350,
+            "optimal": 256200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 330025,
+          "earnedReelCents": 75150,
+          "tombCents": {
+            "coins": 204100,
+            "keys": 256900,
+            "random": 172650,
+            "optimal": 256850
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 327325,
+          "earnedReelCents": 67675,
+          "tombCents": {
+            "coins": 193550,
+            "keys": 242750,
+            "random": 171300,
+            "optimal": 242700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 320750,
+          "earnedReelCents": 62825,
+          "tombCents": {
+            "coins": 208150,
+            "keys": 261800,
+            "random": 180550,
+            "optimal": 262200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 326075,
+          "earnedReelCents": 67100,
+          "tombCents": {
+            "coins": 195950,
+            "keys": 246650,
+            "random": 167950,
+            "optimal": 246600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 319500,
+          "earnedReelCents": 70000,
+          "tombCents": {
+            "coins": 199200,
+            "keys": 250750,
+            "random": 164700,
+            "optimal": 246450
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 329800,
+          "earnedReelCents": 71550,
+          "tombCents": {
+            "coins": 195150,
+            "keys": 248350,
+            "random": 167750,
+            "optimal": 248500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 326525,
+          "earnedReelCents": 63600,
+          "tombCents": {
+            "coins": 199500,
+            "keys": 251650,
+            "random": 168750,
+            "optimal": 250000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 333125,
+          "earnedReelCents": 70575,
+          "tombCents": {
+            "coins": 197700,
+            "keys": 248950,
+            "random": 167850,
+            "optimal": 245950
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 332475,
+          "earnedReelCents": 67075,
+          "tombCents": {
+            "coins": 191450,
+            "keys": 244100,
+            "random": 164900,
+            "optimal": 245000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 330025,
+          "earnedReelCents": 72150,
+          "tombCents": {
+            "coins": 198400,
+            "keys": 248200,
+            "random": 172000,
+            "optimal": 252450
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 330400,
+          "earnedReelCents": 65975,
+          "tombCents": {
+            "coins": 198500,
+            "keys": 250250,
+            "random": 176900,
+            "optimal": 255050
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 333925,
+          "earnedReelCents": 77025,
+          "tombCents": {
+            "coins": 191400,
+            "keys": 244150,
+            "random": 166000,
+            "optimal": 247350
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 329250,
+          "earnedReelCents": 67775,
+          "tombCents": {
+            "coins": 209350,
+            "keys": 262250,
+            "random": 184750,
+            "optimal": 265100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 329000,
+          "earnedReelCents": 63550,
+          "tombCents": {
+            "coins": 205700,
+            "keys": 259550,
+            "random": 176550,
+            "optimal": 257650
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 322625,
+          "earnedReelCents": 64275,
+          "tombCents": {
+            "coins": 207250,
+            "keys": 268050,
+            "random": 178300,
+            "optimal": 256100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 320325,
+          "earnedReelCents": 70025,
+          "tombCents": {
+            "coins": 203250,
+            "keys": 256600,
+            "random": 174550,
+            "optimal": 263950
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 326550,
+          "earnedReelCents": 69825,
+          "tombCents": {
+            "coins": 215850,
+            "keys": 272450,
+            "random": 186200,
+            "optimal": 272150
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 327450,
+          "earnedReelCents": 63600,
+          "tombCents": {
+            "coins": 200300,
+            "keys": 252800,
+            "random": 164650,
+            "optimal": 257200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 319525,
+          "earnedReelCents": 67250,
+          "tombCents": {
+            "coins": 210900,
+            "keys": 272350,
+            "random": 178300,
+            "optimal": 261200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 330250,
+          "earnedReelCents": 67875,
+          "tombCents": {
+            "coins": 198850,
+            "keys": 249850,
+            "random": 173150,
+            "optimal": 247850
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 330975,
+          "earnedReelCents": 64975,
+          "tombCents": {
+            "coins": 196900,
+            "keys": 246500,
+            "random": 172950,
+            "optimal": 249600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 327250,
+          "earnedReelCents": 67225,
+          "tombCents": {
+            "coins": 207850,
+            "keys": 264150,
+            "random": 176750,
+            "optimal": 273650
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 317575,
+          "earnedReelCents": 72750,
+          "tombCents": {
+            "coins": 196600,
+            "keys": 248750,
+            "random": 168250,
+            "optimal": 243150
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 325075,
+          "earnedReelCents": 61775,
+          "tombCents": {
+            "coins": 193450,
+            "keys": 247350,
+            "random": 164750,
+            "optimal": 246250
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 322125,
+          "earnedReelCents": 67625,
+          "tombCents": {
+            "coins": 197450,
+            "keys": 245650,
+            "random": 164500,
+            "optimal": 245500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 328700,
+          "earnedReelCents": 67900,
+          "tombCents": {
+            "coins": 196600,
+            "keys": 247600,
+            "random": 165650,
+            "optimal": 246600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 332175,
+          "earnedReelCents": 69750,
+          "tombCents": {
+            "coins": 205450,
+            "keys": 256100,
+            "random": 173300,
+            "optimal": 254350
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 327475,
+          "earnedReelCents": 68300,
+          "tombCents": {
+            "coins": 195200,
+            "keys": 244000,
+            "random": 166850,
+            "optimal": 242600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 325725,
+          "earnedReelCents": 69725,
+          "tombCents": {
+            "coins": 204400,
+            "keys": 259450,
+            "random": 173950,
+            "optimal": 256350
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 325525,
+          "earnedReelCents": 77100,
+          "tombCents": {
+            "coins": 205850,
+            "keys": 258650,
+            "random": 171750,
+            "optimal": 255100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 324850,
+          "earnedReelCents": 77425,
+          "tombCents": {
+            "coins": 199600,
+            "keys": 255750,
+            "random": 171850,
+            "optimal": 249050
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 323775,
+          "earnedReelCents": 67050,
+          "tombCents": {
+            "coins": 207500,
+            "keys": 265450,
+            "random": 174700,
+            "optimal": 262900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 331725,
+          "earnedReelCents": 65000,
+          "tombCents": {
+            "coins": 200850,
+            "keys": 254800,
+            "random": 163400,
+            "optimal": 252400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 322850,
+          "earnedReelCents": 62950,
+          "tombCents": {
+            "coins": 193950,
+            "keys": 242150,
+            "random": 166500,
+            "optimal": 245150
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 325075,
+          "earnedReelCents": 61600,
+          "tombCents": {
+            "coins": 196150,
+            "keys": 252450,
+            "random": 170800,
+            "optimal": 250600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 330100,
+          "earnedReelCents": 76000,
+          "tombCents": {
+            "coins": 192500,
+            "keys": 243850,
+            "random": 166550,
+            "optimal": 240150
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 328875,
+          "earnedReelCents": 71650,
+          "tombCents": {
+            "coins": 198250,
+            "keys": 247350,
+            "random": 170600,
+            "optimal": 246700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 329325,
+          "earnedReelCents": 68500,
+          "tombCents": {
+            "coins": 205450,
+            "keys": 267000,
+            "random": 185750,
+            "optimal": 261400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 326025,
+          "earnedReelCents": 67775,
+          "tombCents": {
+            "coins": 187800,
+            "keys": 237400,
+            "random": 159900,
+            "optimal": 238650
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 327575,
+          "earnedReelCents": 68250,
+          "tombCents": {
+            "coins": 202100,
+            "keys": 255600,
+            "random": 171150,
+            "optimal": 257450
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 324650,
+          "earnedReelCents": 63600,
+          "tombCents": {
+            "coins": 198650,
+            "keys": 249800,
+            "random": 166550,
+            "optimal": 248700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 328750,
+          "earnedReelCents": 72825,
+          "tombCents": {
+            "coins": 206000,
+            "keys": 260550,
+            "random": 176050,
+            "optimal": 256050
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 326975,
+          "earnedReelCents": 71875,
+          "tombCents": {
+            "coins": 202800,
+            "keys": 257150,
+            "random": 177600,
+            "optimal": 260250
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 331450,
+          "earnedReelCents": 67750,
+          "tombCents": {
+            "coins": 200350,
+            "keys": 248550,
+            "random": 170900,
+            "optimal": 247350
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 327350,
+          "earnedReelCents": 70100,
+          "tombCents": {
+            "coins": 199000,
+            "keys": 247700,
+            "random": 167600,
+            "optimal": 250700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 319325,
+          "earnedReelCents": 62600,
+          "tombCents": {
+            "coins": 207800,
+            "keys": 258750,
+            "random": 172250,
+            "optimal": 261550
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 317050,
+          "earnedReelCents": 68575,
+          "tombCents": {
+            "coins": 199950,
+            "keys": 250300,
+            "random": 170250,
+            "optimal": 251050
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 328100,
+          "earnedReelCents": 65475,
+          "tombCents": {
+            "coins": 201300,
+            "keys": 253950,
+            "random": 169050,
+            "optimal": 250150
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 322475,
+          "earnedReelCents": 65075,
+          "tombCents": {
+            "coins": 200750,
+            "keys": 257350,
+            "random": 175900,
+            "optimal": 259650
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 333350,
+          "earnedReelCents": 66775,
+          "tombCents": {
+            "coins": 202850,
+            "keys": 260250,
+            "random": 176700,
+            "optimal": 258300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 326100,
+          "earnedReelCents": 61075,
+          "tombCents": {
+            "coins": 205150,
+            "keys": 256750,
+            "random": 173150,
+            "optimal": 253350
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 324950,
+          "earnedReelCents": 68750,
+          "tombCents": {
+            "coins": 206900,
+            "keys": 259150,
+            "random": 172850,
+            "optimal": 259700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 321400,
+          "earnedReelCents": 76550,
+          "tombCents": {
+            "coins": 201950,
+            "keys": 256300,
+            "random": 177100,
+            "optimal": 254550
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 325800,
+          "earnedReelCents": 66525,
+          "tombCents": {
+            "coins": 209000,
+            "keys": 267950,
+            "random": 181750,
+            "optimal": 262400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 321450,
+          "earnedReelCents": 67650,
+          "tombCents": {
+            "coins": 198050,
+            "keys": 250300,
+            "random": 170850,
+            "optimal": 248350
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 327925,
+          "earnedReelCents": 67900,
+          "tombCents": {
+            "coins": 205150,
+            "keys": 256050,
+            "random": 180000,
+            "optimal": 255400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 323625,
+          "earnedReelCents": 69250,
+          "tombCents": {
+            "coins": 207650,
+            "keys": 263550,
+            "random": 177800,
+            "optimal": 266250
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 325850,
+          "earnedReelCents": 76500,
+          "tombCents": {
+            "coins": 190200,
+            "keys": 238350,
+            "random": 164750,
+            "optimal": 243750
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 324525,
+          "earnedReelCents": 70100,
+          "tombCents": {
+            "coins": 205700,
+            "keys": 256500,
+            "random": 173250,
+            "optimal": 255650
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 326325,
+          "earnedReelCents": 77025,
+          "tombCents": {
+            "coins": 204850,
+            "keys": 267000,
+            "random": 178700,
+            "optimal": 260150
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 335325,
+          "earnedReelCents": 78100,
+          "tombCents": {
+            "coins": 206300,
+            "keys": 261250,
+            "random": 179250,
+            "optimal": 256550
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 321325,
+          "earnedReelCents": 65650,
+          "tombCents": {
+            "coins": 195000,
+            "keys": 245050,
+            "random": 162750,
+            "optimal": 244800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 315800,
+          "earnedReelCents": 73800,
+          "tombCents": {
+            "coins": 207350,
+            "keys": 261800,
+            "random": 181500,
+            "optimal": 260950
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 322900,
+          "earnedReelCents": 69475,
+          "tombCents": {
+            "coins": 204700,
+            "keys": 256200,
+            "random": 176250,
+            "optimal": 257100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 330675,
+          "earnedReelCents": 63700,
+          "tombCents": {
+            "coins": 201550,
+            "keys": 250500,
+            "random": 168200,
+            "optimal": 256450
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 333225,
+          "earnedReelCents": 77500,
+          "tombCents": {
+            "coins": 202350,
+            "keys": 256550,
+            "random": 170350,
+            "optimal": 258050
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 318525,
+          "earnedReelCents": 68700,
+          "tombCents": {
+            "coins": 199800,
+            "keys": 256400,
+            "random": 165250,
+            "optimal": 250050
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 337125,
+          "earnedReelCents": 68975,
+          "tombCents": {
+            "coins": 203000,
+            "keys": 255300,
+            "random": 170900,
+            "optimal": 254400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 323225,
+          "earnedReelCents": 69325,
+          "tombCents": {
+            "coins": 198700,
+            "keys": 250600,
+            "random": 170500,
+            "optimal": 249800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 329225,
+          "earnedReelCents": 75075,
+          "tombCents": {
+            "coins": 203350,
+            "keys": 258450,
+            "random": 169850,
+            "optimal": 258100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 322050,
+          "earnedReelCents": 67925,
+          "tombCents": {
+            "coins": 200300,
+            "keys": 256400,
+            "random": 176350,
+            "optimal": 258750
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 317175,
+          "earnedReelCents": 67050,
+          "tombCents": {
+            "coins": 207150,
+            "keys": 259150,
+            "random": 173050,
+            "optimal": 257050
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 335675,
+          "earnedReelCents": 67925,
+          "tombCents": {
+            "coins": 202250,
+            "keys": 256500,
+            "random": 169600,
+            "optimal": 255200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 326875,
+          "earnedReelCents": 71450,
+          "tombCents": {
+            "coins": 200300,
+            "keys": 253500,
+            "random": 171000,
+            "optimal": 251000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 326700,
+          "earnedReelCents": 72225,
+          "tombCents": {
+            "coins": 204200,
+            "keys": 255450,
+            "random": 172350,
+            "optimal": 252900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 329825,
+          "earnedReelCents": 68625,
+          "tombCents": {
+            "coins": 208350,
+            "keys": 264250,
+            "random": 176050,
+            "optimal": 258150
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 326350,
+          "earnedReelCents": 61925,
+          "tombCents": {
+            "coins": 200900,
+            "keys": 252300,
+            "random": 170600,
+            "optimal": 256900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 317325,
+          "earnedReelCents": 72950,
+          "tombCents": {
+            "coins": 207650,
+            "keys": 263300,
+            "random": 175800,
+            "optimal": 262250
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 331075,
+          "earnedReelCents": 69925,
+          "tombCents": {
+            "coins": 197800,
+            "keys": 249550,
+            "random": 171950,
+            "optimal": 252800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 332775,
+          "earnedReelCents": 62400,
+          "tombCents": {
+            "coins": 201900,
+            "keys": 255300,
+            "random": 171400,
+            "optimal": 252300
+          }
+        }
+      ],
+      "elapsedSeconds": 223.0137099,
+      "paidSpinsPerSecond": 4484.029253410461
+    },
+    {
+      "stakePoints": 12,
+      "totals": {
+        "paidSpins": 1000000,
+        "earnedSpins": 243022,
+        "paidWagerPoints": 12000000,
+        "paidWagerCents": 300000000,
+        "paidReelBasePayoutPoints": 7489908,
+        "paidReelPayoutPoints": 7529524,
+        "paidReelPayoutCents": 188238100,
+        "paidEnergyExtraPoints": 39616,
+        "earnedReelBasePayoutPoints": 1565909,
+        "earnedReelPayoutPoints": 1577190,
+        "earnedReelPayoutCents": 39429750,
+        "earnedEnergyExtraPoints": 11281,
+        "paidSigilQualifyingSpins": 115745,
+        "pityTriggeredSpins": 73101,
+        "paidPityTriggeredSpins": 70328,
+        "generationAttempts": 4217260,
+        "scatterSpinsAwarded": 59916,
+        "collectionSpinsAwarded": 183106,
+        "energyMultiplierEvents": 3795,
+        "maximumEarnedSpinsInOnePaidCycle": 70
+      },
+      "strategies": {
+        "coins": {
+          "decisionPolicy": "coins",
+          "tomb": {
+            "expeditions": 19290,
+            "actions": 154320,
+            "roomsOpened": 115740,
+            "basePoints": 1157400,
+            "roomPoints": 3680388,
+            "relicExtraPoints": 0,
+            "finalePoints": 0,
+            "payoutPoints": 4837788,
+            "payoutCents": 120944700
+          },
+          "observedTombMeanMultiplier": 20.89937791601866,
+          "observedRtp": 1.1620418333333333,
+          "paidReelRtp": 0.6274603333333333,
+          "earnedReelRtp": 0.1314325,
+          "tombRtp": 0.403149,
+          "blockConfidence95": {
+            "lower": 1.1587615192935847,
+            "upper": 1.165322147373082,
+            "standardError": 0.0016532033276959088,
+            "halfWidth": 0.0032803140397486144,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": -0.15398766212727175
+          }
+        },
+        "keys": {
+          "decisionPolicy": "three coin rooms, then three key rooms, then sarcophagus",
+          "tomb": {
+            "expeditions": 19290,
+            "actions": 173610,
+            "roomsOpened": 115740,
+            "basePoints": 1157400,
+            "roomPoints": 2534148,
+            "relicExtraPoints": 0,
+            "finalePoints": 2407392,
+            "payoutPoints": 6098940,
+            "payoutCents": 152473500
+          },
+          "observedTombMeanMultiplier": 26.347589424572316,
+          "observedRtp": 1.2671378333333334,
+          "paidReelRtp": 0.6274603333333333,
+          "earnedReelRtp": 0.1314325,
+          "tombRtp": 0.508245,
+          "blockConfidence95": {
+            "lower": 1.2633766025069857,
+            "upper": 1.2708990641596811,
+            "standardError": 0.001895574400195859,
+            "halfWidth": 0.0037612308263477506,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": -0.0683621063727934
+          }
+        },
+        "random": {
+          "decisionPolicy": "random",
+          "tomb": {
+            "expeditions": 19290,
+            "actions": 153624,
+            "roomsOpened": 108896,
+            "basePoints": 1157400,
+            "roomPoints": 2026848,
+            "relicExtraPoints": 170280,
+            "finalePoints": 767952,
+            "payoutPoints": 4122480,
+            "payoutCents": 103062000
+          },
+          "observedTombMeanMultiplier": 17.809227579056508,
+          "observedRtp": 1.1024328333333333,
+          "paidReelRtp": 0.6274603333333333,
+          "earnedReelRtp": 0.1314325,
+          "tombRtp": 0.34354,
+          "blockConfidence95": {
+            "lower": 1.0991895600605197,
+            "upper": 1.105676106606147,
+            "standardError": 0.0016345356274649692,
+            "halfWidth": 0.0032432732728136025,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": -0.10201801136096214
+          }
+        },
+        "optimal": {
+          "decisionPolicy": "optimal",
+          "tomb": {
+            "expeditions": 19290,
+            "actions": 173610,
+            "roomsOpened": 115740,
+            "basePoints": 1157400,
+            "roomPoints": 2534040,
+            "relicExtraPoints": 0,
+            "finalePoints": 2409936,
+            "payoutPoints": 6101376,
+            "payoutCents": 152534400
+          },
+          "observedTombMeanMultiplier": 26.358113011923276,
+          "observedRtp": 1.2673408333333334,
+          "paidReelRtp": 0.6274603333333333,
+          "earnedReelRtp": 0.1314325,
+          "tombRtp": 0.508448,
+          "blockConfidence95": {
+            "lower": 1.2634884251079663,
+            "upper": 1.2711932415587004,
+            "standardError": 0.0019415257260880499,
+            "halfWidth": 0.003852408225366962,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": -0.11144312423146933
+          }
+        }
+      },
+      "residualResources": {
+        "energy": 21,
+        "pity": 1,
+        "nativeRemaining": 0,
+        "legacyRemaining": 0,
+        "carry": null,
+        "specialPoints": 23802,
+        "sealCounts": {
+          "sync": 0,
+          "rows": 5,
+          "paw": 12,
+          "rand": 12
+        },
+        "sealWagerPoints": {
+          "sync": 0,
+          "rows": 60,
+          "paw": 144,
+          "rand": 144
+        },
+        "tombFunding": {
+          "sigils": 5,
+          "requiredSigils": 6,
+          "averageWagerPoints": 12
+        },
+        "sigilWagerPointTotal": 60,
+        "unredeemedTickets": 0,
+        "note": "Partial sigils, collections, energy and pity are carried through every block and left unvalued at the final boundary; no new paid spins were manufactured to complete them."
+      },
+      "confidenceMethod": {
+        "kind": "continuous nonoverlapping paid-cycle block ratio means",
+        "batchSize": 10000,
+        "completedBlocks": 100,
+        "note": "Approximate Student-t interval from long blocks, retaining serial game state; a single smoke block has no meaningful confidence interval."
+      },
+      "blocks": [
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1858575,
+          "earnedReelCents": 385200,
+          "tombCents": {
+            "coins": 1205700,
+            "keys": 1538100,
+            "random": 1066500,
+            "optimal": 1544100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1847400,
+          "earnedReelCents": 370400,
+          "tombCents": {
+            "coins": 1209300,
+            "keys": 1571400,
+            "random": 1053000,
+            "optimal": 1529400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1897850,
+          "earnedReelCents": 402075,
+          "tombCents": {
+            "coins": 1215000,
+            "keys": 1533900,
+            "random": 1038900,
+            "optimal": 1504500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1905775,
+          "earnedReelCents": 397625,
+          "tombCents": {
+            "coins": 1155600,
+            "keys": 1484400,
+            "random": 957000,
+            "optimal": 1435800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1889200,
+          "earnedReelCents": 403275,
+          "tombCents": {
+            "coins": 1206900,
+            "keys": 1514100,
+            "random": 1000200,
+            "optimal": 1508400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1896425,
+          "earnedReelCents": 374650,
+          "tombCents": {
+            "coins": 1262100,
+            "keys": 1563300,
+            "random": 1073700,
+            "optimal": 1607700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1868700,
+          "earnedReelCents": 393525,
+          "tombCents": {
+            "coins": 1226700,
+            "keys": 1572300,
+            "random": 1027200,
+            "optimal": 1534200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1864850,
+          "earnedReelCents": 396950,
+          "tombCents": {
+            "coins": 1257300,
+            "keys": 1569900,
+            "random": 1092900,
+            "optimal": 1562100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1859200,
+          "earnedReelCents": 362325,
+          "tombCents": {
+            "coins": 1234200,
+            "keys": 1535100,
+            "random": 1040100,
+            "optimal": 1543800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1927750,
+          "earnedReelCents": 383900,
+          "tombCents": {
+            "coins": 1235400,
+            "keys": 1551000,
+            "random": 1026300,
+            "optimal": 1525200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1841650,
+          "earnedReelCents": 455950,
+          "tombCents": {
+            "coins": 1191300,
+            "keys": 1520700,
+            "random": 1018800,
+            "optimal": 1518900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1822900,
+          "earnedReelCents": 392875,
+          "tombCents": {
+            "coins": 1221000,
+            "keys": 1528800,
+            "random": 1057200,
+            "optimal": 1519800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1858050,
+          "earnedReelCents": 400675,
+          "tombCents": {
+            "coins": 1268100,
+            "keys": 1608900,
+            "random": 1094700,
+            "optimal": 1597800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1858800,
+          "earnedReelCents": 398425,
+          "tombCents": {
+            "coins": 1206900,
+            "keys": 1554600,
+            "random": 1064700,
+            "optimal": 1517700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1867850,
+          "earnedReelCents": 393275,
+          "tombCents": {
+            "coins": 1203900,
+            "keys": 1502400,
+            "random": 1034700,
+            "optimal": 1503600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1929975,
+          "earnedReelCents": 409925,
+          "tombCents": {
+            "coins": 1233000,
+            "keys": 1547700,
+            "random": 1059300,
+            "optimal": 1547700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1813250,
+          "earnedReelCents": 415650,
+          "tombCents": {
+            "coins": 1267500,
+            "keys": 1601700,
+            "random": 1101900,
+            "optimal": 1580700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1881125,
+          "earnedReelCents": 438075,
+          "tombCents": {
+            "coins": 1201200,
+            "keys": 1515900,
+            "random": 1023600,
+            "optimal": 1495800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1846300,
+          "earnedReelCents": 409800,
+          "tombCents": {
+            "coins": 1261500,
+            "keys": 1595100,
+            "random": 1051200,
+            "optimal": 1591200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1885700,
+          "earnedReelCents": 384200,
+          "tombCents": {
+            "coins": 1200000,
+            "keys": 1474500,
+            "random": 1006200,
+            "optimal": 1497900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1897350,
+          "earnedReelCents": 432100,
+          "tombCents": {
+            "coins": 1225500,
+            "keys": 1534800,
+            "random": 1069800,
+            "optimal": 1538100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1914900,
+          "earnedReelCents": 394150,
+          "tombCents": {
+            "coins": 1199700,
+            "keys": 1471500,
+            "random": 1016700,
+            "optimal": 1523400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1858825,
+          "earnedReelCents": 373050,
+          "tombCents": {
+            "coins": 1182000,
+            "keys": 1513200,
+            "random": 1023600,
+            "optimal": 1491900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1839150,
+          "earnedReelCents": 406250,
+          "tombCents": {
+            "coins": 1192200,
+            "keys": 1516800,
+            "random": 1001400,
+            "optimal": 1504800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1855725,
+          "earnedReelCents": 359975,
+          "tombCents": {
+            "coins": 1244700,
+            "keys": 1554600,
+            "random": 1055400,
+            "optimal": 1541100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1892650,
+          "earnedReelCents": 357450,
+          "tombCents": {
+            "coins": 1243800,
+            "keys": 1554600,
+            "random": 1045500,
+            "optimal": 1539300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1863600,
+          "earnedReelCents": 409275,
+          "tombCents": {
+            "coins": 1167900,
+            "keys": 1436400,
+            "random": 992700,
+            "optimal": 1498800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1904075,
+          "earnedReelCents": 420425,
+          "tombCents": {
+            "coins": 1219800,
+            "keys": 1510200,
+            "random": 1044600,
+            "optimal": 1531200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1884075,
+          "earnedReelCents": 417200,
+          "tombCents": {
+            "coins": 1185900,
+            "keys": 1495500,
+            "random": 1017900,
+            "optimal": 1471800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1850900,
+          "earnedReelCents": 387225,
+          "tombCents": {
+            "coins": 1155900,
+            "keys": 1458600,
+            "random": 980400,
+            "optimal": 1469400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1878025,
+          "earnedReelCents": 414350,
+          "tombCents": {
+            "coins": 1287600,
+            "keys": 1616400,
+            "random": 1105500,
+            "optimal": 1627800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1838075,
+          "earnedReelCents": 438125,
+          "tombCents": {
+            "coins": 1128900,
+            "keys": 1419300,
+            "random": 962400,
+            "optimal": 1406700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1930325,
+          "earnedReelCents": 359575,
+          "tombCents": {
+            "coins": 1169100,
+            "keys": 1457100,
+            "random": 979500,
+            "optimal": 1493100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1900875,
+          "earnedReelCents": 388600,
+          "tombCents": {
+            "coins": 1238700,
+            "keys": 1536000,
+            "random": 1031400,
+            "optimal": 1536600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1843100,
+          "earnedReelCents": 426125,
+          "tombCents": {
+            "coins": 1172100,
+            "keys": 1527300,
+            "random": 1027200,
+            "optimal": 1530000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1902250,
+          "earnedReelCents": 363525,
+          "tombCents": {
+            "coins": 1221300,
+            "keys": 1541400,
+            "random": 1044300,
+            "optimal": 1553100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1864775,
+          "earnedReelCents": 387575,
+          "tombCents": {
+            "coins": 1220700,
+            "keys": 1533000,
+            "random": 1063500,
+            "optimal": 1560300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1907950,
+          "earnedReelCents": 363975,
+          "tombCents": {
+            "coins": 1164900,
+            "keys": 1488600,
+            "random": 994200,
+            "optimal": 1457400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1865425,
+          "earnedReelCents": 419125,
+          "tombCents": {
+            "coins": 1162200,
+            "keys": 1451100,
+            "random": 955200,
+            "optimal": 1449300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1892000,
+          "earnedReelCents": 375525,
+          "tombCents": {
+            "coins": 1168200,
+            "keys": 1434600,
+            "random": 992400,
+            "optimal": 1461000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1845825,
+          "earnedReelCents": 420125,
+          "tombCents": {
+            "coins": 1225800,
+            "keys": 1558200,
+            "random": 1012800,
+            "optimal": 1561800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1856750,
+          "earnedReelCents": 387750,
+          "tombCents": {
+            "coins": 1201500,
+            "keys": 1506300,
+            "random": 1044600,
+            "optimal": 1535100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1872300,
+          "earnedReelCents": 369400,
+          "tombCents": {
+            "coins": 1164600,
+            "keys": 1448700,
+            "random": 980100,
+            "optimal": 1499100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1908250,
+          "earnedReelCents": 366850,
+          "tombCents": {
+            "coins": 1227900,
+            "keys": 1558200,
+            "random": 1029600,
+            "optimal": 1530000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1915300,
+          "earnedReelCents": 392200,
+          "tombCents": {
+            "coins": 1254000,
+            "keys": 1598700,
+            "random": 1077000,
+            "optimal": 1564800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1857525,
+          "earnedReelCents": 406375,
+          "tombCents": {
+            "coins": 1183200,
+            "keys": 1489800,
+            "random": 1005600,
+            "optimal": 1495800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1925650,
+          "earnedReelCents": 372800,
+          "tombCents": {
+            "coins": 1253700,
+            "keys": 1562100,
+            "random": 1096200,
+            "optimal": 1585200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1848925,
+          "earnedReelCents": 409875,
+          "tombCents": {
+            "coins": 1155900,
+            "keys": 1459200,
+            "random": 964800,
+            "optimal": 1444800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1930550,
+          "earnedReelCents": 368625,
+          "tombCents": {
+            "coins": 1284300,
+            "keys": 1590300,
+            "random": 1080900,
+            "optimal": 1642200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1894750,
+          "earnedReelCents": 371325,
+          "tombCents": {
+            "coins": 1156500,
+            "keys": 1472700,
+            "random": 1015500,
+            "optimal": 1476600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1940725,
+          "earnedReelCents": 408875,
+          "tombCents": {
+            "coins": 1189200,
+            "keys": 1468200,
+            "random": 1024500,
+            "optimal": 1501500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1856150,
+          "earnedReelCents": 383150,
+          "tombCents": {
+            "coins": 1209300,
+            "keys": 1543500,
+            "random": 1016700,
+            "optimal": 1530900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1885575,
+          "earnedReelCents": 402800,
+          "tombCents": {
+            "coins": 1186800,
+            "keys": 1497600,
+            "random": 1040400,
+            "optimal": 1496400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1895425,
+          "earnedReelCents": 368900,
+          "tombCents": {
+            "coins": 1266600,
+            "keys": 1560900,
+            "random": 1071000,
+            "optimal": 1602900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1862450,
+          "earnedReelCents": 364775,
+          "tombCents": {
+            "coins": 1224000,
+            "keys": 1549200,
+            "random": 1038600,
+            "optimal": 1550100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1916625,
+          "earnedReelCents": 445150,
+          "tombCents": {
+            "coins": 1257300,
+            "keys": 1568400,
+            "random": 1077300,
+            "optimal": 1569300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1862975,
+          "earnedReelCents": 373175,
+          "tombCents": {
+            "coins": 1189200,
+            "keys": 1490100,
+            "random": 1050000,
+            "optimal": 1489800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1904250,
+          "earnedReelCents": 388475,
+          "tombCents": {
+            "coins": 1213800,
+            "keys": 1518600,
+            "random": 1013400,
+            "optimal": 1512900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1865475,
+          "earnedReelCents": 422850,
+          "tombCents": {
+            "coins": 1218600,
+            "keys": 1533600,
+            "random": 1008300,
+            "optimal": 1559700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1860950,
+          "earnedReelCents": 412500,
+          "tombCents": {
+            "coins": 1191000,
+            "keys": 1529100,
+            "random": 978300,
+            "optimal": 1481400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1913700,
+          "earnedReelCents": 373525,
+          "tombCents": {
+            "coins": 1198200,
+            "keys": 1539300,
+            "random": 1017900,
+            "optimal": 1506600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1915600,
+          "earnedReelCents": 413375,
+          "tombCents": {
+            "coins": 1180500,
+            "keys": 1491600,
+            "random": 1042800,
+            "optimal": 1498500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1912450,
+          "earnedReelCents": 421500,
+          "tombCents": {
+            "coins": 1227600,
+            "keys": 1551900,
+            "random": 1040700,
+            "optimal": 1528500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1874475,
+          "earnedReelCents": 453150,
+          "tombCents": {
+            "coins": 1216500,
+            "keys": 1530000,
+            "random": 1034400,
+            "optimal": 1545000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1853200,
+          "earnedReelCents": 411750,
+          "tombCents": {
+            "coins": 1218000,
+            "keys": 1517700,
+            "random": 1035300,
+            "optimal": 1548900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1867550,
+          "earnedReelCents": 359375,
+          "tombCents": {
+            "coins": 1256700,
+            "keys": 1559700,
+            "random": 1037400,
+            "optimal": 1561500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1913250,
+          "earnedReelCents": 399050,
+          "tombCents": {
+            "coins": 1162500,
+            "keys": 1484400,
+            "random": 981000,
+            "optimal": 1473900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1891525,
+          "earnedReelCents": 366600,
+          "tombCents": {
+            "coins": 1205700,
+            "keys": 1514400,
+            "random": 1020300,
+            "optimal": 1505100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1865700,
+          "earnedReelCents": 376775,
+          "tombCents": {
+            "coins": 1194000,
+            "keys": 1503300,
+            "random": 1008000,
+            "optimal": 1499700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1850700,
+          "earnedReelCents": 370350,
+          "tombCents": {
+            "coins": 1172400,
+            "keys": 1456800,
+            "random": 997200,
+            "optimal": 1475100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1892375,
+          "earnedReelCents": 404250,
+          "tombCents": {
+            "coins": 1217700,
+            "keys": 1546800,
+            "random": 1041900,
+            "optimal": 1557900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1930525,
+          "earnedReelCents": 407100,
+          "tombCents": {
+            "coins": 1227600,
+            "keys": 1550100,
+            "random": 1032000,
+            "optimal": 1543800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1886200,
+          "earnedReelCents": 396950,
+          "tombCents": {
+            "coins": 1215600,
+            "keys": 1543500,
+            "random": 1027800,
+            "optimal": 1562100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1897925,
+          "earnedReelCents": 391275,
+          "tombCents": {
+            "coins": 1268400,
+            "keys": 1582500,
+            "random": 1096500,
+            "optimal": 1606200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1898550,
+          "earnedReelCents": 383525,
+          "tombCents": {
+            "coins": 1229700,
+            "keys": 1581300,
+            "random": 1041300,
+            "optimal": 1588800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1892050,
+          "earnedReelCents": 384700,
+          "tombCents": {
+            "coins": 1221300,
+            "keys": 1530600,
+            "random": 1042200,
+            "optimal": 1530300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1927525,
+          "earnedReelCents": 400875,
+          "tombCents": {
+            "coins": 1206900,
+            "keys": 1533900,
+            "random": 1054200,
+            "optimal": 1538700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1850100,
+          "earnedReelCents": 437275,
+          "tombCents": {
+            "coins": 1189800,
+            "keys": 1518000,
+            "random": 987000,
+            "optimal": 1503000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1907175,
+          "earnedReelCents": 391575,
+          "tombCents": {
+            "coins": 1227000,
+            "keys": 1530300,
+            "random": 1025400,
+            "optimal": 1558200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1924400,
+          "earnedReelCents": 375850,
+          "tombCents": {
+            "coins": 1252500,
+            "keys": 1583400,
+            "random": 1091700,
+            "optimal": 1638600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1879275,
+          "earnedReelCents": 395325,
+          "tombCents": {
+            "coins": 1209300,
+            "keys": 1520700,
+            "random": 1032000,
+            "optimal": 1520100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1896950,
+          "earnedReelCents": 406950,
+          "tombCents": {
+            "coins": 1210500,
+            "keys": 1511100,
+            "random": 1018800,
+            "optimal": 1504500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1881975,
+          "earnedReelCents": 385575,
+          "tombCents": {
+            "coins": 1174200,
+            "keys": 1480800,
+            "random": 1013100,
+            "optimal": 1490400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1885300,
+          "earnedReelCents": 386275,
+          "tombCents": {
+            "coins": 1218600,
+            "keys": 1545300,
+            "random": 1025700,
+            "optimal": 1526100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1855200,
+          "earnedReelCents": 414300,
+          "tombCents": {
+            "coins": 1231500,
+            "keys": 1554600,
+            "random": 1030200,
+            "optimal": 1558800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1884425,
+          "earnedReelCents": 391800,
+          "tombCents": {
+            "coins": 1209300,
+            "keys": 1529100,
+            "random": 998700,
+            "optimal": 1523100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1865200,
+          "earnedReelCents": 417550,
+          "tombCents": {
+            "coins": 1199400,
+            "keys": 1530000,
+            "random": 1009500,
+            "optimal": 1510500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1876750,
+          "earnedReelCents": 356950,
+          "tombCents": {
+            "coins": 1166100,
+            "keys": 1512300,
+            "random": 985800,
+            "optimal": 1461300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1864575,
+          "earnedReelCents": 415700,
+          "tombCents": {
+            "coins": 1226400,
+            "keys": 1555800,
+            "random": 1046700,
+            "optimal": 1554000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1884025,
+          "earnedReelCents": 351400,
+          "tombCents": {
+            "coins": 1198500,
+            "keys": 1522500,
+            "random": 1030200,
+            "optimal": 1521900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1869175,
+          "earnedReelCents": 375700,
+          "tombCents": {
+            "coins": 1219500,
+            "keys": 1524300,
+            "random": 1071900,
+            "optimal": 1556400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1915175,
+          "earnedReelCents": 379650,
+          "tombCents": {
+            "coins": 1253400,
+            "keys": 1571400,
+            "random": 1082400,
+            "optimal": 1579800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1875875,
+          "earnedReelCents": 388750,
+          "tombCents": {
+            "coins": 1247400,
+            "keys": 1578900,
+            "random": 1071900,
+            "optimal": 1580700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1834675,
+          "earnedReelCents": 410250,
+          "tombCents": {
+            "coins": 1178400,
+            "keys": 1500900,
+            "random": 1024200,
+            "optimal": 1490400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1907975,
+          "earnedReelCents": 402900,
+          "tombCents": {
+            "coins": 1202400,
+            "keys": 1535400,
+            "random": 1033800,
+            "optimal": 1502400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1913600,
+          "earnedReelCents": 412350,
+          "tombCents": {
+            "coins": 1186500,
+            "keys": 1549200,
+            "random": 1015200,
+            "optimal": 1511700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1896750,
+          "earnedReelCents": 400975,
+          "tombCents": {
+            "coins": 1204800,
+            "keys": 1522200,
+            "random": 1034700,
+            "optimal": 1514100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1878650,
+          "earnedReelCents": 355850,
+          "tombCents": {
+            "coins": 1120200,
+            "keys": 1398000,
+            "random": 959700,
+            "optimal": 1416000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1888850,
+          "earnedReelCents": 391025,
+          "tombCents": {
+            "coins": 1124400,
+            "keys": 1392000,
+            "random": 968700,
+            "optimal": 1431900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1906925,
+          "earnedReelCents": 373300,
+          "tombCents": {
+            "coins": 1208400,
+            "keys": 1551300,
+            "random": 1036500,
+            "optimal": 1528200
+          }
+        }
+      ],
+      "elapsedSeconds": 222.5834694,
+      "paidSpinsPerSecond": 4492.696609045314
+    },
+    {
+      "stakePoints": 300,
+      "totals": {
+        "paidSpins": 1000000,
+        "earnedSpins": 243408,
+        "paidWagerPoints": 300000000,
+        "paidWagerCents": 7500000000,
+        "paidReelBasePayoutPoints": 188834773,
+        "paidReelPayoutPoints": 189834855,
+        "paidReelPayoutCents": 4745871375,
+        "paidEnergyExtraPoints": 1000082,
+        "earnedReelBasePayoutPoints": 39644547,
+        "earnedReelPayoutPoints": 39916325,
+        "earnedReelPayoutCents": 997908125,
+        "earnedEnergyExtraPoints": 271778,
+        "paidSigilQualifyingSpins": 116431,
+        "pityTriggeredSpins": 72941,
+        "paidPityTriggeredSpins": 70304,
+        "generationAttempts": 4219372,
+        "scatterSpinsAwarded": 59784,
+        "collectionSpinsAwarded": 183624,
+        "energyMultiplierEvents": 3787,
+        "maximumEarnedSpinsInOnePaidCycle": 53
+      },
+      "strategies": {
+        "coins": {
+          "decisionPolicy": "coins",
+          "tomb": {
+            "expeditions": 19405,
+            "actions": 155240,
+            "roomsOpened": 116430,
+            "basePoints": 29107500,
+            "roomPoints": 92506200,
+            "relicExtraPoints": 0,
+            "finalePoints": 0,
+            "payoutPoints": 121613700,
+            "payoutCents": 3040342500
+          },
+          "observedTombMeanMultiplier": 20.8904406080907,
+          "observedRtp": 1.1712162666666666,
+          "paidReelRtp": 0.63278285,
+          "earnedReelRtp": 0.13305441666666667,
+          "tombRtp": 0.405379,
+          "blockConfidence95": {
+            "lower": 1.167796534371197,
+            "upper": 1.1746359989621362,
+            "standardError": 0.0017234669431628463,
+            "halfWidth": 0.003419732295469721,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": 0.1302528613199944
+          }
+        },
+        "keys": {
+          "decisionPolicy": "three coin rooms, then three key rooms, then sarcophagus",
+          "tomb": {
+            "expeditions": 19405,
+            "actions": 174645,
+            "roomsOpened": 116430,
+            "basePoints": 29107500,
+            "roomPoints": 63702000,
+            "relicExtraPoints": 0,
+            "finalePoints": 60422400,
+            "payoutPoints": 153231900,
+            "payoutCents": 3830797500
+          },
+          "observedTombMeanMultiplier": 26.321721205874773,
+          "observedRtp": 1.2766102666666668,
+          "paidReelRtp": 0.63278285,
+          "earnedReelRtp": 0.13305441666666667,
+          "tombRtp": 0.510773,
+          "blockConfidence95": {
+            "lower": 1.2726015787762819,
+            "upper": 1.2806189545570517,
+            "standardError": 0.0020202871065925195,
+            "halfWidth": 0.0040086878903848626,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": 0.02814108077586149
+          }
+        },
+        "random": {
+          "decisionPolicy": "random",
+          "tomb": {
+            "expeditions": 19405,
+            "actions": 154528,
+            "roomsOpened": 109606,
+            "basePoints": 29107500,
+            "roomPoints": 51098100,
+            "relicExtraPoints": 4333200,
+            "finalePoints": 19100400,
+            "payoutPoints": 103639200,
+            "payoutCents": 2590980000
+          },
+          "observedTombMeanMultiplier": 17.802834321051275,
+          "observedRtp": 1.1113012666666666,
+          "paidReelRtp": 0.63278285,
+          "earnedReelRtp": 0.13305441666666667,
+          "tombRtp": 0.345464,
+          "blockConfidence95": {
+            "lower": 1.107838875425357,
+            "upper": 1.1147636579079763,
+            "standardError": 0.001744966077198176,
+            "halfWidth": 0.003462391241309625,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": 0.18305399354122986
+          }
+        },
+        "optimal": {
+          "decisionPolicy": "optimal",
+          "tomb": {
+            "expeditions": 19405,
+            "actions": 174645,
+            "roomsOpened": 116430,
+            "basePoints": 29107500,
+            "roomPoints": 63784500,
+            "relicExtraPoints": 0,
+            "finalePoints": 60627600,
+            "payoutPoints": 153519600,
+            "payoutCents": 3837990000
+          },
+          "observedTombMeanMultiplier": 26.371141458387015,
+          "observedRtp": 1.2775692666666667,
+          "paidReelRtp": 0.63278285,
+          "earnedReelRtp": 0.13305441666666667,
+          "tombRtp": 0.511732,
+          "blockConfidence95": {
+            "lower": 1.2737525849941924,
+            "upper": 1.281385948339141,
+            "standardError": 0.0019235203597073659,
+            "halfWidth": 0.0038166816724742258,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": 0.14029497934411517
+          }
+        }
+      },
+      "residualResources": {
+        "energy": 5,
+        "pity": 5,
+        "nativeRemaining": 0,
+        "legacyRemaining": 0,
+        "carry": null,
+        "specialPoints": 24055,
+        "sealCounts": {
+          "sync": 18,
+          "rows": 16,
+          "paw": 3,
+          "rand": 11
+        },
+        "sealWagerPoints": {
+          "sync": 5400,
+          "rows": 4800,
+          "paw": 900,
+          "rand": 3300
+        },
+        "tombFunding": {
+          "sigils": 1,
+          "requiredSigils": 6,
+          "averageWagerPoints": 300
+        },
+        "sigilWagerPointTotal": 300,
+        "unredeemedTickets": 0,
+        "note": "Partial sigils, collections, energy and pity are carried through every block and left unvalued at the final boundary; no new paid spins were manufactured to complete them."
+      },
+      "confidenceMethod": {
+        "kind": "continuous nonoverlapping paid-cycle block ratio means",
+        "batchSize": 10000,
+        "completedBlocks": 100,
+        "note": "Approximate Student-t interval from long blocks, retaining serial game state; a single smoke block has no meaningful confidence interval."
+      },
+      "blocks": [
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47395150,
+          "earnedReelCents": 9811525,
+          "tombCents": {
+            "coins": 29002500,
+            "keys": 36742500,
+            "random": 24742500,
+            "optimal": 37125000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46378325,
+          "earnedReelCents": 10476225,
+          "tombCents": {
+            "coins": 30405000,
+            "keys": 38977500,
+            "random": 25650000,
+            "optimal": 38100000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47485600,
+          "earnedReelCents": 9490275,
+          "tombCents": {
+            "coins": 30975000,
+            "keys": 39592500,
+            "random": 26880000,
+            "optimal": 39225000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47677825,
+          "earnedReelCents": 9474600,
+          "tombCents": {
+            "coins": 29895000,
+            "keys": 37290000,
+            "random": 25807500,
+            "optimal": 37050000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48917475,
+          "earnedReelCents": 9850025,
+          "tombCents": {
+            "coins": 28890000,
+            "keys": 36390000,
+            "random": 23872500,
+            "optimal": 36232500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47090475,
+          "earnedReelCents": 9936975,
+          "tombCents": {
+            "coins": 31807500,
+            "keys": 39712500,
+            "random": 27367500,
+            "optimal": 40027500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46917750,
+          "earnedReelCents": 10576100,
+          "tombCents": {
+            "coins": 30960000,
+            "keys": 38565000,
+            "random": 26527500,
+            "optimal": 38662500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48568175,
+          "earnedReelCents": 9939875,
+          "tombCents": {
+            "coins": 31912500,
+            "keys": 39997500,
+            "random": 27300000,
+            "optimal": 39247500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46660450,
+          "earnedReelCents": 9984800,
+          "tombCents": {
+            "coins": 31027500,
+            "keys": 38962500,
+            "random": 26460000,
+            "optimal": 39195000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48329725,
+          "earnedReelCents": 10363875,
+          "tombCents": {
+            "coins": 31080000,
+            "keys": 39187500,
+            "random": 26835000,
+            "optimal": 39000000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 49839275,
+          "earnedReelCents": 9304250,
+          "tombCents": {
+            "coins": 30622500,
+            "keys": 39337500,
+            "random": 26887500,
+            "optimal": 38422500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47973475,
+          "earnedReelCents": 9914425,
+          "tombCents": {
+            "coins": 30630000,
+            "keys": 38782500,
+            "random": 25770000,
+            "optimal": 38370000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47360725,
+          "earnedReelCents": 10168025,
+          "tombCents": {
+            "coins": 30142500,
+            "keys": 38820000,
+            "random": 26010000,
+            "optimal": 38002500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47450025,
+          "earnedReelCents": 10276825,
+          "tombCents": {
+            "coins": 32137500,
+            "keys": 40237500,
+            "random": 26145000,
+            "optimal": 41032500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47135825,
+          "earnedReelCents": 10286625,
+          "tombCents": {
+            "coins": 30990000,
+            "keys": 38602500,
+            "random": 25507500,
+            "optimal": 39367500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47736350,
+          "earnedReelCents": 9798925,
+          "tombCents": {
+            "coins": 30930000,
+            "keys": 39307500,
+            "random": 25927500,
+            "optimal": 39337500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47242150,
+          "earnedReelCents": 9519575,
+          "tombCents": {
+            "coins": 28627500,
+            "keys": 36367500,
+            "random": 25005000,
+            "optimal": 36247500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46284325,
+          "earnedReelCents": 10444700,
+          "tombCents": {
+            "coins": 29430000,
+            "keys": 37320000,
+            "random": 24615000,
+            "optimal": 37387500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47684675,
+          "earnedReelCents": 11051225,
+          "tombCents": {
+            "coins": 30735000,
+            "keys": 39592500,
+            "random": 25342500,
+            "optimal": 38670000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48125200,
+          "earnedReelCents": 10341575,
+          "tombCents": {
+            "coins": 29280000,
+            "keys": 36532500,
+            "random": 24315000,
+            "optimal": 37057500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47983825,
+          "earnedReelCents": 10193800,
+          "tombCents": {
+            "coins": 31125000,
+            "keys": 39382500,
+            "random": 26947500,
+            "optimal": 39555000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47553125,
+          "earnedReelCents": 10813550,
+          "tombCents": {
+            "coins": 30337500,
+            "keys": 37710000,
+            "random": 25950000,
+            "optimal": 38032500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46901875,
+          "earnedReelCents": 10681800,
+          "tombCents": {
+            "coins": 30465000,
+            "keys": 38160000,
+            "random": 25762500,
+            "optimal": 38130000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47305375,
+          "earnedReelCents": 9480625,
+          "tombCents": {
+            "coins": 29362500,
+            "keys": 37080000,
+            "random": 25440000,
+            "optimal": 37282500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47072050,
+          "earnedReelCents": 9246225,
+          "tombCents": {
+            "coins": 30637500,
+            "keys": 38235000,
+            "random": 25920000,
+            "optimal": 37987500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47303275,
+          "earnedReelCents": 10042450,
+          "tombCents": {
+            "coins": 31215000,
+            "keys": 39487500,
+            "random": 25867500,
+            "optimal": 39450000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46830650,
+          "earnedReelCents": 9930600,
+          "tombCents": {
+            "coins": 30457500,
+            "keys": 37095000,
+            "random": 25305000,
+            "optimal": 38512500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47097925,
+          "earnedReelCents": 10733375,
+          "tombCents": {
+            "coins": 29295000,
+            "keys": 37080000,
+            "random": 25200000,
+            "optimal": 37072500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48407700,
+          "earnedReelCents": 9009350,
+          "tombCents": {
+            "coins": 30105000,
+            "keys": 37552500,
+            "random": 25605000,
+            "optimal": 37387500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47118675,
+          "earnedReelCents": 11179875,
+          "tombCents": {
+            "coins": 30720000,
+            "keys": 38610000,
+            "random": 26167500,
+            "optimal": 38430000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46862700,
+          "earnedReelCents": 9708925,
+          "tombCents": {
+            "coins": 31065000,
+            "keys": 39247500,
+            "random": 25395000,
+            "optimal": 39315000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47932000,
+          "earnedReelCents": 10755750,
+          "tombCents": {
+            "coins": 29970000,
+            "keys": 38377500,
+            "random": 25785000,
+            "optimal": 38040000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46840400,
+          "earnedReelCents": 9053575,
+          "tombCents": {
+            "coins": 30562500,
+            "keys": 38587500,
+            "random": 25860000,
+            "optimal": 38617500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46419150,
+          "earnedReelCents": 9908075,
+          "tombCents": {
+            "coins": 31852500,
+            "keys": 40162500,
+            "random": 27765000,
+            "optimal": 40657500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48185775,
+          "earnedReelCents": 10447525,
+          "tombCents": {
+            "coins": 30795000,
+            "keys": 38977500,
+            "random": 26257500,
+            "optimal": 38512500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48772900,
+          "earnedReelCents": 9558200,
+          "tombCents": {
+            "coins": 31432500,
+            "keys": 38925000,
+            "random": 26880000,
+            "optimal": 39150000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47061475,
+          "earnedReelCents": 10762150,
+          "tombCents": {
+            "coins": 29580000,
+            "keys": 36675000,
+            "random": 24937500,
+            "optimal": 36622500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47087375,
+          "earnedReelCents": 9786225,
+          "tombCents": {
+            "coins": 30277500,
+            "keys": 38827500,
+            "random": 25905000,
+            "optimal": 38565000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46999900,
+          "earnedReelCents": 10046150,
+          "tombCents": {
+            "coins": 30795000,
+            "keys": 38655000,
+            "random": 25650000,
+            "optimal": 39367500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47677200,
+          "earnedReelCents": 9888325,
+          "tombCents": {
+            "coins": 30697500,
+            "keys": 38235000,
+            "random": 25657500,
+            "optimal": 38925000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46467675,
+          "earnedReelCents": 9480575,
+          "tombCents": {
+            "coins": 30015000,
+            "keys": 38197500,
+            "random": 25650000,
+            "optimal": 37080000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47925850,
+          "earnedReelCents": 10065525,
+          "tombCents": {
+            "coins": 30022500,
+            "keys": 38025000,
+            "random": 25440000,
+            "optimal": 37162500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47569325,
+          "earnedReelCents": 10367125,
+          "tombCents": {
+            "coins": 30270000,
+            "keys": 38032500,
+            "random": 26377500,
+            "optimal": 38542500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48676650,
+          "earnedReelCents": 9622000,
+          "tombCents": {
+            "coins": 30892500,
+            "keys": 39075000,
+            "random": 26010000,
+            "optimal": 39847500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47736025,
+          "earnedReelCents": 10418225,
+          "tombCents": {
+            "coins": 30105000,
+            "keys": 37642500,
+            "random": 26122500,
+            "optimal": 38452500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48956525,
+          "earnedReelCents": 9368525,
+          "tombCents": {
+            "coins": 30457500,
+            "keys": 37732500,
+            "random": 26160000,
+            "optimal": 38137500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47276875,
+          "earnedReelCents": 10148525,
+          "tombCents": {
+            "coins": 30307500,
+            "keys": 38325000,
+            "random": 26167500,
+            "optimal": 38790000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 45582075,
+          "earnedReelCents": 10264250,
+          "tombCents": {
+            "coins": 30210000,
+            "keys": 38692500,
+            "random": 25927500,
+            "optimal": 38100000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47010000,
+          "earnedReelCents": 9580275,
+          "tombCents": {
+            "coins": 29662500,
+            "keys": 36592500,
+            "random": 24817500,
+            "optimal": 37095000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47190225,
+          "earnedReelCents": 9522500,
+          "tombCents": {
+            "coins": 29812500,
+            "keys": 37237500,
+            "random": 26032500,
+            "optimal": 37545000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47790825,
+          "earnedReelCents": 10084475,
+          "tombCents": {
+            "coins": 29632500,
+            "keys": 37252500,
+            "random": 25777500,
+            "optimal": 37537500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46706050,
+          "earnedReelCents": 9448800,
+          "tombCents": {
+            "coins": 30532500,
+            "keys": 38647500,
+            "random": 25530000,
+            "optimal": 38422500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47026725,
+          "earnedReelCents": 9699375,
+          "tombCents": {
+            "coins": 30345000,
+            "keys": 38355000,
+            "random": 26752500,
+            "optimal": 38182500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 49245075,
+          "earnedReelCents": 9085875,
+          "tombCents": {
+            "coins": 30090000,
+            "keys": 38002500,
+            "random": 25087500,
+            "optimal": 38002500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47071725,
+          "earnedReelCents": 11176475,
+          "tombCents": {
+            "coins": 29602500,
+            "keys": 36900000,
+            "random": 25702500,
+            "optimal": 37530000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48984950,
+          "earnedReelCents": 10553550,
+          "tombCents": {
+            "coins": 30045000,
+            "keys": 38527500,
+            "random": 26700000,
+            "optimal": 38287500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48273725,
+          "earnedReelCents": 9143375,
+          "tombCents": {
+            "coins": 29310000,
+            "keys": 36877500,
+            "random": 25020000,
+            "optimal": 37155000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47864450,
+          "earnedReelCents": 8777675,
+          "tombCents": {
+            "coins": 31245000,
+            "keys": 39547500,
+            "random": 26167500,
+            "optimal": 39682500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46820625,
+          "earnedReelCents": 10881125,
+          "tombCents": {
+            "coins": 32002500,
+            "keys": 39712500,
+            "random": 27262500,
+            "optimal": 40290000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46985000,
+          "earnedReelCents": 9718400,
+          "tombCents": {
+            "coins": 30367500,
+            "keys": 38010000,
+            "random": 26055000,
+            "optimal": 39120000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46683575,
+          "earnedReelCents": 9975725,
+          "tombCents": {
+            "coins": 30742500,
+            "keys": 38542500,
+            "random": 26640000,
+            "optimal": 39210000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47627575,
+          "earnedReelCents": 9503450,
+          "tombCents": {
+            "coins": 28537500,
+            "keys": 36232500,
+            "random": 23737500,
+            "optimal": 36037500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 45186975,
+          "earnedReelCents": 8909150,
+          "tombCents": {
+            "coins": 31125000,
+            "keys": 40320000,
+            "random": 25905000,
+            "optimal": 39262500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47058450,
+          "earnedReelCents": 9467800,
+          "tombCents": {
+            "coins": 28237500,
+            "keys": 34830000,
+            "random": 24922500,
+            "optimal": 35512500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46884675,
+          "earnedReelCents": 11253675,
+          "tombCents": {
+            "coins": 29175000,
+            "keys": 36435000,
+            "random": 24465000,
+            "optimal": 37102500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47058575,
+          "earnedReelCents": 10145925,
+          "tombCents": {
+            "coins": 31192500,
+            "keys": 39150000,
+            "random": 26970000,
+            "optimal": 39397500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48382225,
+          "earnedReelCents": 10331875,
+          "tombCents": {
+            "coins": 30465000,
+            "keys": 38325000,
+            "random": 26745000,
+            "optimal": 38400000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47481925,
+          "earnedReelCents": 9269150,
+          "tombCents": {
+            "coins": 30885000,
+            "keys": 38490000,
+            "random": 26070000,
+            "optimal": 39195000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47585800,
+          "earnedReelCents": 9808275,
+          "tombCents": {
+            "coins": 28387500,
+            "keys": 36067500,
+            "random": 24457500,
+            "optimal": 35932500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 45979425,
+          "earnedReelCents": 10691600,
+          "tombCents": {
+            "coins": 31687500,
+            "keys": 39450000,
+            "random": 26587500,
+            "optimal": 39780000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48494175,
+          "earnedReelCents": 10578850,
+          "tombCents": {
+            "coins": 30367500,
+            "keys": 39105000,
+            "random": 25537500,
+            "optimal": 38220000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46057050,
+          "earnedReelCents": 9429500,
+          "tombCents": {
+            "coins": 28860000,
+            "keys": 36315000,
+            "random": 24817500,
+            "optimal": 36795000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47591500,
+          "earnedReelCents": 9833800,
+          "tombCents": {
+            "coins": 30877500,
+            "keys": 39352500,
+            "random": 25912500,
+            "optimal": 38632500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46667300,
+          "earnedReelCents": 10742700,
+          "tombCents": {
+            "coins": 29752500,
+            "keys": 37290000,
+            "random": 24660000,
+            "optimal": 37350000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47700400,
+          "earnedReelCents": 9285025,
+          "tombCents": {
+            "coins": 30840000,
+            "keys": 39210000,
+            "random": 25882500,
+            "optimal": 38940000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46569850,
+          "earnedReelCents": 11295375,
+          "tombCents": {
+            "coins": 29850000,
+            "keys": 38107500,
+            "random": 25455000,
+            "optimal": 38235000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47193125,
+          "earnedReelCents": 10116725,
+          "tombCents": {
+            "coins": 30870000,
+            "keys": 38782500,
+            "random": 26122500,
+            "optimal": 38160000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 45508000,
+          "earnedReelCents": 10286650,
+          "tombCents": {
+            "coins": 30127500,
+            "keys": 37845000,
+            "random": 26767500,
+            "optimal": 38287500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47020075,
+          "earnedReelCents": 10710700,
+          "tombCents": {
+            "coins": 29565000,
+            "keys": 37470000,
+            "random": 24247500,
+            "optimal": 38040000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46480175,
+          "earnedReelCents": 10084200,
+          "tombCents": {
+            "coins": 31492500,
+            "keys": 39802500,
+            "random": 26857500,
+            "optimal": 39315000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48536125,
+          "earnedReelCents": 10219650,
+          "tombCents": {
+            "coins": 29947500,
+            "keys": 38520000,
+            "random": 25395000,
+            "optimal": 37470000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 45777050,
+          "earnedReelCents": 9310250,
+          "tombCents": {
+            "coins": 29737500,
+            "keys": 37215000,
+            "random": 25185000,
+            "optimal": 38032500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48626175,
+          "earnedReelCents": 9683175,
+          "tombCents": {
+            "coins": 29970000,
+            "keys": 36450000,
+            "random": 25477500,
+            "optimal": 37905000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47165350,
+          "earnedReelCents": 9053525,
+          "tombCents": {
+            "coins": 30945000,
+            "keys": 38580000,
+            "random": 26835000,
+            "optimal": 39150000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47290350,
+          "earnedReelCents": 10309350,
+          "tombCents": {
+            "coins": 30825000,
+            "keys": 38895000,
+            "random": 26355000,
+            "optimal": 38865000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47640775,
+          "earnedReelCents": 9804675,
+          "tombCents": {
+            "coins": 31620000,
+            "keys": 39922500,
+            "random": 27270000,
+            "optimal": 40470000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47690900,
+          "earnedReelCents": 10292950,
+          "tombCents": {
+            "coins": 30817500,
+            "keys": 38527500,
+            "random": 26077500,
+            "optimal": 39285000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47639650,
+          "earnedReelCents": 10845575,
+          "tombCents": {
+            "coins": 30727500,
+            "keys": 38535000,
+            "random": 25755000,
+            "optimal": 38685000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47630025,
+          "earnedReelCents": 9837125,
+          "tombCents": {
+            "coins": 29242500,
+            "keys": 36210000,
+            "random": 25807500,
+            "optimal": 36660000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48496775,
+          "earnedReelCents": 10492350,
+          "tombCents": {
+            "coins": 31387500,
+            "keys": 40125000,
+            "random": 27480000,
+            "optimal": 39907500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 47755200,
+          "earnedReelCents": 9470850,
+          "tombCents": {
+            "coins": 30675000,
+            "keys": 39210000,
+            "random": 25522500,
+            "optimal": 39067500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46518650,
+          "earnedReelCents": 8677550,
+          "tombCents": {
+            "coins": 30082500,
+            "keys": 38392500,
+            "random": 25507500,
+            "optimal": 38310000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 49065000,
+          "earnedReelCents": 9731575,
+          "tombCents": {
+            "coins": 29670000,
+            "keys": 38130000,
+            "random": 25522500,
+            "optimal": 37897500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48176525,
+          "earnedReelCents": 9785725,
+          "tombCents": {
+            "coins": 30555000,
+            "keys": 38235000,
+            "random": 26460000,
+            "optimal": 37837500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48517300,
+          "earnedReelCents": 9249675,
+          "tombCents": {
+            "coins": 30990000,
+            "keys": 39517500,
+            "random": 26205000,
+            "optimal": 39495000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48096700,
+          "earnedReelCents": 9541950,
+          "tombCents": {
+            "coins": 30735000,
+            "keys": 39135000,
+            "random": 26452500,
+            "optimal": 38505000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46949175,
+          "earnedReelCents": 9824350,
+          "tombCents": {
+            "coins": 32032500,
+            "keys": 40455000,
+            "random": 27675000,
+            "optimal": 40515000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48381675,
+          "earnedReelCents": 9850425,
+          "tombCents": {
+            "coins": 29970000,
+            "keys": 37545000,
+            "random": 26197500,
+            "optimal": 38115000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 48988925,
+          "earnedReelCents": 9541450,
+          "tombCents": {
+            "coins": 31417500,
+            "keys": 39187500,
+            "random": 27015000,
+            "optimal": 39225000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 75000000,
+          "paidReelCents": 46891500,
+          "earnedReelCents": 11022175,
+          "tombCents": {
+            "coins": 30802500,
+            "keys": 38122500,
+            "random": 26040000,
+            "optimal": 38452500
+          }
+        }
+      ],
+      "elapsedSeconds": 202.534712,
+      "paidSpinsPerSecond": 4937.425227848362
+    }
+  ]
+}

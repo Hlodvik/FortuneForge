@@ -86,6 +86,7 @@ public sealed partial class SpinService(
 
     public void ValidateRequest(string gameId, long wagerPoints, bool useFreeSpin = false)
     {
+        RejectNativeRoundGame(gameId);
         if (gameId == SlotSpecialRoundProfiles.JadeDragonGameId)
         {
             Games.JadeDragon.JadeDragonEngine.ValidateWager(wagerPoints);
@@ -113,9 +114,7 @@ public sealed partial class SpinService(
 
         var game = definitions.GetGame(gameId)
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
-        if (useFreeSpin && game.Id == SlotSpecialRoundProfiles.ArcaneArchivesGameId)
-            ArcaneLightningCollector.ValidateCarryWager(game, wagerPoints);
-        else if (useFreeSpin && gameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId)
+        if (useFreeSpin && gameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId)
             ValidateOlympusCarryWager(game, wagerPoints);
         else
             ValidateWager(game, wagerPoints);

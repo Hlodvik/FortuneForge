@@ -225,22 +225,22 @@ test.afterEach(async ({ page }, info: TestInfo) => {
 
 test.describe('wide desktop', () => {
   test.use({ viewport: { width: 1920, height: 1024 }, reducedMotion: 'no-preference' })
-  test('new Fifth Sun introduction, controls, keyboard and ambient win', async ({ page }) => {
+  test('new Sunstone Eclipse introduction, controls, keyboard and ambient win', async ({ page }) => {
     const capture = nativeCapture('paid')
     expect(capture.response.wagerPoints).toBe(12)
     const review = await mockGame(page, capture)
     await page.goto(publicRoute)
-    const intro = page.getByRole('dialog', { name: 'Welcome to Fifth Sun', exact: true })
+    const intro = page.getByRole('dialog', { name: 'Welcome to Sunstone Eclipse', exact: true })
     await expect(intro).toBeVisible()
     await ready(page)
-    await expect(intro.locator('.fifth-sun-intro__hero-copy h2')).toHaveText('Fifth Sun')
+    await expect(intro.locator('.fifth-sun-intro__hero-copy h2')).toHaveText('Sunstone Eclipse')
     await expect(intro.locator('.fifth-sun-intro__hero-art img')).toHaveAttribute('src', /sunstone-eclipse-scatter-v1/)
     await expect(intro.locator('.fifth-sun-intro__choices img')).toHaveCount(3)
     for (const image of await intro.locator('.fifth-sun-intro__choices img').all()) await expect(image).toHaveAttribute('src', /-v3/)
     const tint = await page.locator('.win-help__backdrop').evaluate(element => getComputedStyle(element).backgroundImage)
     expect(tint).toContain('url(')
     expect(tint).toContain('0.92')
-    expect(await intro.locator('h2').last().evaluate(element => getComputedStyle(element).fontFamily)).toContain('Fifth Sun Display')
+    expect(await intro.locator('h2').last().evaluate(element => getComputedStyle(element).fontFamily)).toContain('Sunstone Eclipse Display')
     await screenshot(page, 'desktop-introduction')
     const diagram = intro.locator('.fifth-sun-intro__path-board polyline')
     await intro.getByRole('button', { name: 'Eagle', exact: true }).click()
@@ -352,7 +352,7 @@ for (const viewport of [
 
 test.describe('new expanded phone bonus', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
-  test('new six-row Fifth Sun free spin keeps native wager and readable stacked panels', async ({ page }) => {
+  test('new six-row Sunstone Eclipse free spin keeps native wager and readable stacked panels', async ({ page }) => {
     const capture = nativeCapture('free')
     expect(capture.response.wagerPoints).toBe(12)
     expect(capture.response.spinFeature.contractVersion).toBe(2)

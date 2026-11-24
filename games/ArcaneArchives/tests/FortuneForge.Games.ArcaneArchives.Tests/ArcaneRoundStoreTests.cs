@@ -90,7 +90,7 @@ public sealed class ArcaneRoundStoreTests
     }
 
     [FirestoreEmulatorFact]
-    public async Task LegacyOwnedKeySignalsExactRecoveryAndDifferentKeyDiscoversPendingTerms()
+    public async Task ObsoleteLocalPreparedStateFailsClosedWithoutWalletOrFeatureChanges()
     {
         var database = Connect();
         var wallet = new IdempotentWallet();
@@ -124,22 +124,20 @@ public sealed class ArcaneRoundStoreTests
         });
         await batch.CommitAsync();
 
-        var pending = await replica.ReadStateAsync(Account, default);
-        Assert.True(pending.LegacyPending);
-        Assert.Equal(old, pending.PendingRequest);
-        var conflict = await Assert.ThrowsAsync<ArcaneRoundConflictException>(() =>
+        await Assert.ThrowsAsync<ArcaneObsoleteRoundException>(() => replica.ReadStateAsync(Account, default));
+        await Assert.ThrowsAsync<ArcaneObsoleteRoundException>(() =>
             replica.SpinAsync(Account, old with { OperationId = "brand-new-id-123456789" }, true, default));
-        Assert.Equal(old, conflict.PendingRequest);
-        await Assert.ThrowsAsync<ArcaneLegacyPreparedRoundException>(() => replica.SpinAsync(Account, old, false, default));
+        await Assert.ThrowsAsync<ArcaneObsoleteRoundException>(() => replica.SpinAsync(Account, old, false, default));
         await Assert.ThrowsAsync<ArcaneRoundConflictException>(() =>
             replica.SpinAsync(Account, old with { WagerPoints = Wager + 4 }, true, default));
 
         await guard.UpdateAsync(new Dictionary<string, object> { [SlotSpinGuard.PreparedAdmissionField] = FieldValue.Delete });
-        var unkeyed = await replica.ReadStateAsync(Account, default);
-        Assert.True(unkeyed.LegacyPending);
-        Assert.Null(unkeyed.PendingRequest);
-        await Assert.ThrowsAsync<ArcaneRoundConflictException>(() =>
+        await Assert.ThrowsAsync<ArcaneObsoleteRoundException>(() => replica.ReadStateAsync(Account, default));
+        await Assert.ThrowsAsync<ArcaneObsoleteRoundException>(() =>
             replica.SpinAsync(Account, old with { OperationId = "another-brand-new-123456" }, true, default));
+        var obsolete = await database.Collection("slotSpinAdmissions").Document(id).GetSnapshotAsync();
+        Assert.Equal("admitted", obsolete.GetValue<string>("status"));
+        Assert.False((await database.Collection(ArcaneRoundStore.RawCollectionName).GetSnapshotAsync()).Documents.Any());
         Assert.Equal(0, wallet.Calls);
     }
 

@@ -21,17 +21,18 @@ import twentyFortyEight from '../../assets/catalogue/non-slots/2048-title-v1.web
 import dropMerge from '../../assets/catalogue/non-slots/drop-merge-title-v1.webp'
 import wukong from '../../assets/catalogue/slots/wukong-journey-to-the-west-title-v2.webp'
 import rainbowRealm from '../../assets/catalogue/slots/rainbow-realm-title-v2.webp'
-import piratesFortune from '../../assets/catalogue/slots/pirates-fortune-title-v2.webp'
+import piratesFortune from '../../assets/catalogue/slots/treasure-cove-title-v1.webp'
 import godsOfOlympus from '../../assets/catalogue/slots/gods-of-olympus-title-v2.webp'
 import reelRiches from '../../assets/catalogue/slots/reel-riches-title-v2.webp'
-import highNoonFortune from '../../assets/catalogue/slots/high-noon-fortune-title-v2.webp'
+import frontierFortune from '../../assets/catalogue/slots/frontier-fortune-title.webp'
+import { canonicalSlotPath, findSlotRouteMetadata } from '../../games/slots/routeMetadata'
 import royalDraw from '../../assets/catalogue/slots/royal-draw-title-v2.webp'
 import arcaneArchives from '../../assets/catalogue/slots/arcane-archives-title-v1.webp'
-import cosmicFortune from '../../assets/catalogue/slots/cosmic-fortune-title-v1.webp'
+import pharaohsAscent from '../../assets/catalogue/slots/pharaohs-ascent-title-v1.webp'
 import goldFoundry from '../../assets/catalogue/slots/gold-foundry-title-v1.webp'
 import neonNights from '../../assets/catalogue/slots/neon-nights-title-v1.webp'
 import oceanOdyssey from '../../assets/catalogue/slots/ocean-odyssey-title-v1.webp'
-import samuraiFortune from '../../assets/catalogue/slots/samurai-fortune-title-v1.webp'
+import crookedRoad from '../../assets/catalogue/slots/crooked-road-title-v1.webp'
 import candyCarnival from '../../assets/catalogue/slots/candy-carnival-title-v2.webp'
 import phantomManor from '../../assets/catalogue/slots/phantom-manor-title-v2.webp'
 import nordicLegends from '../../assets/catalogue/slots/nordic-legends-title-v2.webp'
@@ -77,15 +78,15 @@ const artByRoute: ReadonlyMap<string, CataloguePresentationArt> = new Map([
   ['/slots/pirates-fortune', artwork(piratesFortune)],
   ['/slots/gods-of-olympus', artwork(godsOfOlympus)],
   ['/slots/reel-riches', artwork(reelRiches)],
-  ['/slots/high-noon-fortune', artwork(highNoonFortune)],
+  ['/slots/frontier-fortune', artwork(frontierFortune)],
   ['/slots/royal-draw', artwork(royalDraw)],
   ['/slots/arcane-archives', artwork(arcaneArchives)],
-  ['/slots/cosmic-fortune', artwork(cosmicFortune)],
+  ['/slots/pharaohs-ascent', artwork(pharaohsAscent)],
   ['/slots/gold-foundry', artwork(goldFoundry)],
   ['/slots/neon-nights', artwork(neonNights)],
   ['/slots/jade-dragon', artwork(jadeDragon)],
   ['/slots/ocean-odyssey', artwork(oceanOdyssey)],
-  ['/slots/samurai-fortune', artwork(samuraiFortune)],
+  ['/slots/crooked-road', artwork(crookedRoad)],
   ['/slots/candy-carnival', artwork(candyCarnival)],
   ['/slots/phantom-manor', artwork(phantomManor)],
   ['/slots/nordic-legends', artwork(nordicLegends)],
@@ -103,7 +104,8 @@ const cardDemoAliases: ReadonlyMap<string, string> = new Map([
 export function getCataloguePresentationArt(route?: string | null): CataloguePresentationArt | undefined {
   if (!route) return undefined
   const pathname = route.split(/[?#]/, 1)[0].replace(/\/+$/, '')
-  const canonical = cardDemoAliases.get(pathname)
-    ?? (pathname.startsWith('/slots/') ? pathname.replace(/\/demo$/, '') : pathname)
+  const slotPath = pathname.startsWith('/slots/') ? canonicalSlotPath(pathname) : null
+  const slotRoute = slotPath === null ? null : findSlotRouteMetadata(slotPath)
+  const canonical = cardDemoAliases.get(pathname) ?? slotRoute?.playPath ?? slotPath ?? pathname
   return artByRoute.get(canonical)
 }

@@ -4,13 +4,8 @@
 // Edited: 2026-11-18T14:49:30-06:00 | Computer: Vinnabok
 using ArcaneArchivesEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
 using ArcaneWandCollector = FortuneForge.Games.ArcaneArchives.ArcaneWandCollector;
-using FortuneForge.Server.RoundAudit;
-using FortuneForge.Server.Slots.Bonuses;
-using FortuneForge.Server.Slots.Configuration;
-using FortuneForge.Server.Slots.Evaluation;
-using FortuneForge.Server.Slots.Payouts;
-using FortuneForge.Server.Slots.Reels;
-using FortuneForge.Server.Slots.Spins;
+using FortuneForge.Games.ArcaneArchives;
+using FortuneForge.Games.Slots;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Slots;
@@ -81,8 +76,7 @@ public sealed class ArcaneArchivesPaylineTests
     public void CurrentModelProducesNaturalPaylineAndWandAwardsAndReplays()
     {
         var random = new SeededRandom();
-        var service = new SpinService(new OptionsSlotsDefinitionProvider(), new CryptoReelGenerator(random),
-            new CombinationEvaluator(), new PayoutCalculator(), random);
+        var engine = new ArcaneArchivesEngine(random);
         var game = ArcaneArchivesEngine.CreateGame();
         Assert.Empty(game.Symbols.WildSymbolId);
         Assert.Null(game.FreeGames);
@@ -93,14 +87,13 @@ public sealed class ArcaneArchivesPaylineTests
         var reelSetIds = new HashSet<string>();
         for (int i = 0; i < 100; i++)
         {
-            var result = service.Spin(game.Id, 12, "arcane-paylines", false);
-            Assert.Equal(ArcaneArchivesEngine.EngineVersion, result.EngineAudit?.EngineVersion);
+            var result = engine.Spin(12, "arcane-paylines");
+            Assert.Equal(ArcaneArchivesEngine.EngineVersion, result.Audit.EngineVersion);
             Assert.Equal(0, result.FreeSpinsAwarded);
             Assert.Equal(0, result.SpecialPointsAwarded);
-            Assert.Equal(0, result.BananaBonusPoints);
-            Assert.Equal(0, result.MoneyGrabPoints);
-            Assert.Empty(result.SealsAwarded);
-            Assert.Null(result.LightningCollection);
+            Assert.Equal(0, result.PatternBonusPoints);
+            Assert.Equal(0, result.CollectorPoints);
+            Assert.Empty(result.CollectionsAwarded);
             var ordinaryLines = result.Payout.Paylines.Where(line => line.PaylineId != ArcaneWandCollector.PaylineId);
             Assert.All(ordinaryLines.SelectMany(line => line.Matches), match =>
             {
@@ -108,11 +101,13 @@ public sealed class ArcaneArchivesPaylineTests
                 Assert.Empty(match.Match.WildPositions);
             });
             Assert.InRange(result.Reels.SelectMany(reel => reel).Count(Ingredients.Contains), 0, 3);
-            Assert.True(ArcaneWandCollector.SameCollection(
-                ArcaneWandCollector.Calculate(result.Reels, result.WagerPoints), result.ArcaneWandCollection));
-            Assert.Empty(SlotRoundAudit.Check(result, result.Payout));
-            Assert.Equal(result.ReelSetId, result.EngineAudit?.BaseGame.Math.ReelSetId);
-            Assert.Equal(result.ReelSetId, result.EngineAudit?.EffectiveGame.Math.ReelSetId);
+            var wand = ArcaneWandCollector.Calculate(result.Reels, result.WagerPoints);
+            Assert.Equal(wand?.TotalPoints ?? 0,
+                result.Payout.Paylines.Where(line => line.PaylineId == ArcaneWandCollector.PaylineId).Sum(line => line.AmountPoints));
+            ArcaneNativeReplay.Validate(result, "arcane-paylines", 12, false, result.Audit.EngineVersion,
+                ArcaneTome.Empty, null, result.Audit.PityMissesBefore);
+            Assert.Equal(result.ReelSetId, result.Audit.BaseGame.Math.ReelSetId);
+            Assert.Equal(result.ReelSetId, result.Audit.EffectiveGame.Math.ReelSetId);
             reelSetIds.Add(result.ReelSetId);
             seen.UnionWith(result.Reels.SelectMany(reel => reel));
         }
@@ -148,43 +143,39 @@ public sealed class ArcaneArchivesPaylineTests
     public void AuditRejectsATamperedConstellationPayment()
     {
         var random = new SeededRandom();
-        var service = new SpinService(new OptionsSlotsDefinitionProvider(), new CryptoReelGenerator(random),
-            new CombinationEvaluator(), new PayoutCalculator(), random);
-        var spin = Enumerable.Range(0, 200).Select(_ => service.Spin(ArcaneArchivesEngine.GameId,
-            12, "arcane-wand-audit", false)).First(outcome => outcome.ArcaneWandCollection is not null);
-
-        Assert.Empty(SlotRoundAudit.Check(spin, spin.Payout));
-        var collection = spin.ArcaneWandCollection!;
-        var corrupt = spin with { ArcaneWandCollection = collection with { TotalPoints = collection.TotalPoints + 1 } };
-        Assert.Contains(SlotRoundAudit.Check(corrupt, corrupt.Payout), finding => finding.Code == "slot-arcane-wand-mismatch");
+        var engine = new ArcaneArchivesEngine(random);
+        var spin = Enumerable.Range(0, 200).Select(_ => engine.Spin(12, "arcane-wand-audit"))
+            .First(outcome => outcome.Payout.Paylines.Any(line => line.PaylineId == ArcaneWandCollector.PaylineId));
+        void Replay(FortuneForge.Games.Slots.Runtime.ClassicSlotSpinOutcome outcome) =>
+            ArcaneNativeReplay.Validate(outcome, "arcane-wand-audit", 12, false, spin.Audit.EngineVersion,
+                ArcaneTome.Empty, null, spin.Audit.PityMissesBefore);
+        Replay(spin);
+        var corrupt = spin with { Payout = spin.Payout with { TotalPoints = spin.Payout.TotalPoints + 1 } };
+        Assert.Throws<InvalidOperationException>(() => Replay(corrupt));
     }
 
     [Fact]
     public void LegacyAwardedSpinKeepsAnOddCarryWagerWithoutExtendingTheFeature()
     {
         var random = new SeededRandom();
-        var service = new SpinService(new OptionsSlotsDefinitionProvider(), new CryptoReelGenerator(random),
-            new CombinationEvaluator(), new PayoutCalculator(), random);
-        var gameId = ArcaneArchivesEngine.GameId;
-        Assert.Throws<ArgumentOutOfRangeException>(() => service.ValidateRequest(gameId, 3));
-        service.ValidateRequest(gameId, 3, useFreeSpin: true);
-
-        var result = service.Spin(gameId, 3, "arcane-carry", false, freeSpinFeatureMode: "sync", isFreeSpin: true);
+        var engine = new ArcaneArchivesEngine(random);
+        Assert.Throws<ArgumentOutOfRangeException>(() => engine.Spin(3, "arcane-carry"));
+        var result = engine.Spin(3, "arcane-carry", isFreeSpin: true);
 
         Assert.True(result.IsFreeSpin);
-        Assert.True(result.EngineAudit?.IsDerivedFreeSpin);
         Assert.Equal(3, result.WagerPoints);
         Assert.Equal(0, result.FreeSpinsAwarded);
-        Assert.Empty(SlotRoundAudit.Check(result, result.Payout));
+        ArcaneNativeReplay.Validate(result, "arcane-carry", 3, true, result.Audit.EngineVersion,
+            ArcaneTome.Empty, null, result.Audit.PityMissesBefore);
     }
 
     [Fact]
     public void HistoricalLightningAloneDoesNotCollectLegacyCashOrOtherSeals()
     {
-        Assert.Null(ArcaneLightningCollector.Calculate([["BOLT", "PAW", "RAND_5", "SEAL_ROWS"]], 10));
+        Assert.Null(FortuneForge.Games.ArcaneArchives.ArcaneLightningCollector.Calculate([["BOLT", "PAW", "RAND_5", "SEAL_ROWS"]], 10));
     }
 
-    private sealed class SeededRandom : IRandomIndexSource
+    private sealed class SeededRandom : IGameRandomSource
     {
         private readonly Random random = new(2026);
         public int Next(int maximumExclusive) => random.Next(maximumExclusive);

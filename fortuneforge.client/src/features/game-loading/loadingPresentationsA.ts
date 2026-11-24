@@ -8,10 +8,10 @@ import rouletteArt from '../../assets/catalogue/non-slots/roulette-title-v3.webp
 import crapsArt from '../../assets/catalogue/non-slots/craps-title-v1.webp'
 import wukongJourneyToTheWestArt from '../../assets/catalogue/slots/wukong-journey-to-the-west-title-v2.webp'
 import rainbowRealmArt from '../../assets/catalogue/slots/rainbow-realm-title-v2.webp'
-import piratesFortuneArt from '../../assets/catalogue/slots/pirates-fortune-title-v2.webp'
+import piratesFortuneArt from '../../assets/catalogue/slots/treasure-cove-title-v1.webp'
 import godsOfOlympusArt from '../../assets/catalogue/slots/gods-of-olympus-title-v2.webp'
 import reelRichesArt from '../../assets/catalogue/slots/reel-riches-title-v2.webp'
-import highNoonFortuneArt from '../../assets/catalogue/slots/high-noon-fortune-title-v2.webp'
+import frontierFortuneArt from '../../assets/catalogue/slots/frontier-fortune-title.webp'
 import royalDrawArt from '../../assets/catalogue/slots/royal-draw-title-v2.webp'
 
 /** Presentation URLs only; route integration stays with the application. */
@@ -90,7 +90,7 @@ export const LOADING_PRESENTATIONS_A: readonly GameLoadingEntry[] = [
   },
   {
     id: "pirates-fortune",
-    title: "Pirates' Fortune",
+    title: "Treasure Cove",
     routes: ["/slots/pirates-fortune","/slots/pirates-fortune/demo"],
     image: piratesFortuneArt,
     background: '#241005',
@@ -114,11 +114,11 @@ export const LOADING_PRESENTATIONS_A: readonly GameLoadingEntry[] = [
   },
   {
     id: "high-noon-fortune",
-    title: "High Noon Fortune",
-    routes: ["/slots/high-noon-fortune","/slots/high-noon-fortune/demo"],
-    image: highNoonFortuneArt,
+    title: "Frontier Fortune",
+    routes: ["/slots/frontier-fortune"],
+    image: frontierFortuneArt,
     background: '#2b1512',
-    accent: '#3ed5c4',
+    accent: '#e9ba62',
   },
   {
     id: "royal-draw",

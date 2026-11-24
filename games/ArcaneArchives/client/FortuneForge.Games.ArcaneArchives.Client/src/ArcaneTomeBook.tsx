@@ -1,7 +1,7 @@
 // Edited: 2026-11-18T19:05:53-06:00 | Computer: Vinnabok
 import { useEffect, useRef, useState } from 'react'
 import { getSlotSymbolDefinition } from '@fortuneforge/slot-client-core'
-import type { SlotTomePanelProps } from '@fortuneforge/slot-game-runtime/experience'
+import type { SlotTomePanelProps } from './arcaneFeatures'
 import { ARCANE_ARCHIVES_SYMBOLS } from './symbols'
 import lectern from './assets/art/optimized/arcane-archives-lectern-blank-tome-layer-v1.webp'
 import pageTurnAtlas from './assets/art/tome/arcane-tome-page-flip-overlay-v1.png'

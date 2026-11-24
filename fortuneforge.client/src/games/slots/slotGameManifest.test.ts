@@ -21,7 +21,7 @@ import { SLOT_GAME_CATALOG } from './catalog'
 import { createSlotExperienceRouteMap, type SlotGameManifest } from './shared/slotGameManifest'
 
 const SLOT_GAME_MANIFESTS = await loadAllSlotGameManifests()
-const STANDALONE_SLOT_GAME_IDS = new Set(['dragon-hoard', 'gold-foundry', 'neon-nights'])
+const STANDALONE_SLOT_GAME_IDS = new Set(['dragon-hoard', 'gold-foundry', 'neon-nights', 'high-noon-fortune'])
 
 function requireGame(id: string): SlotGameManifest {
   const game = SLOT_GAME_MANIFESTS.find((candidate) => candidate.id === id)
@@ -45,7 +45,7 @@ const ROYAL_DRAW_SLOT_GAME = requireGame('royal-draw')
 const ARCANE_ARCHIVES_SLOT_GAME = requireGame('arcane-archives')
 const COSMIC_FORTUNE_SLOT_GAME = requireGame('cosmic-fortune')
 const GOLD_FOUNDRY_SLOT_GAME = requireGame('gold-foundry')
-const SAMURAI_FORTUNE_SLOT_GAME = requireGame('samurai-fortune')
+const CROOKED_ROAD_SLOT_GAME = requireGame('crooked-road')
 const ROBOT_REVOLUTION_SLOT_GAME = requireGame('robot-revolution')
 const PHANTOM_MANOR_SLOT_GAME = requireGame('phantom-manor')
 const OCEAN_ODYSSEY_SLOT_GAME = requireGame('ocean-odyssey')
@@ -60,7 +60,7 @@ const REEL_SYMBOL_CATALOG_GAME_IDS = [
   'gold-foundry',
   'rainbow-realm',
   'reel-riches',
-  ...SECOND_WAVE_SLOT_GAME_IDS.filter(id => id !== 'neon-nights'),
+  ...SECOND_WAVE_SLOT_GAME_IDS.filter(id => id !== 'neon-nights' && id !== 'crooked-road'),
 ] as const
 function expectDefinedSymbol(gameId: string, symbol: string) {
   const game = SLOT_GAME_MANIFESTS.find((candidate) => candidate.id === gameId)
@@ -122,6 +122,9 @@ describe('slot game manifests', () => {
         : game.id === 'arcane-archives' ? 'arcane-archives-payline-symbols-v2'
         : game.id === 'gold-foundry' ? 'gold-foundry-symbols-v1'
         : game.id === 'neon-nights' ? 'neon-arcade-symbols-v3'
+        : game.id === 'crooked-road' ? 'crooked-road-v1-symbols'
+        : game.id === 'robot-revolution' ? 'fifth-sun-symbols-v2'
+        : game.id === 'high-noon-fortune' ? 'frontier-fortune-symbols-v1'
         : game.id === 'rainbow-realm' ? 'rainbow-realm-symbols-v1' : 'classic-symbols-v3'))
     expect(GODS_TUMBLE_SYMBOLS).toContain('8')
     expect(GODS_OF_OLYMPUS_SLOT_GAME.experience.symbols.definitions['8']?.label).toBe('Olympian sapphire')
@@ -130,7 +133,7 @@ describe('slot game manifests', () => {
       expect(game.experience.rules.initialReels.flat(), game.id).not.toContain('8')
     }
     expect([...paylineCounts].sort((left, right) => left - right)).toEqual([
-      14, 16, 19, ...Array(16).fill(23),
+      10, 14, 16, 19, 20, ...Array(14).fill(23),
     ])
     for (const game of SLOT_GAME_MANIFESTS) {
       const patternIds = game.experience.help.paylinePatternIds ??
@@ -144,18 +147,20 @@ describe('slot game manifests', () => {
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/pirates-fortune/demo')
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/gods-of-olympus/demo')
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/reel-riches/demo')
-    expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/high-noon-fortune/demo')
+    expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/frontier-fortune')
+    expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).not.toHaveProperty('/slots/frontier-fortune/demo')
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/royal-draw/demo')
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/arcane-archives/demo')
-    expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/cosmic-fortune/demo')
+    expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/pharaohs-ascent')
+    expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).not.toHaveProperty('/slots/pharaohs-ascent/demo')
+    expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).not.toHaveProperty('/slots/cosmic-fortune/demo')
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/gold-foundry/demo')
   })
 
-  it('registers four complete new themed games with distinct collectors', () => {
+  it('registers three shared showcase games with distinct collectors', () => {
     const themedGames = [
       [GODS_OF_OLYMPUS_SLOT_GAME, null, 'divine-offering', 28],
       [REEL_RICHES_SLOT_GAME, 'fishing net', 'tackle-creel', 40],
-      [HIGH_NOON_FORTUNE_SLOT_GAME, 'golden lasso', null, null],
       [ROYAL_DRAW_SLOT_GAME, 'dealer chip tray', 'chip-stack', 24],
     ] as const
 
@@ -163,21 +168,42 @@ describe('slot game manifests', () => {
       expect(game.routes.play).not.toBeNull()
       if (actorName) expect(game.experience.features.moneyGrab?.actorName).toContain(actorName)
       else expect(game.experience.features.moneyGrab).toBeUndefined()
-      if (presentation && collectionTarget) {
-        expect(game.experience.features.collections?.presentation).toBe(presentation)
-        expect(game.experience.features.collections?.entries).toHaveLength(4)
-        expect(game.experience.features.collections?.entries.every(
-          (collection) => collection.requiredCount === collectionTarget,
-        )).toBe(true)
-      } else {
-        expect(game.experience.features.collections).toBeUndefined()
-      }
+      expect(game.experience.features.collections?.presentation).toBe(presentation)
+      expect(game.experience.features.collections?.entries).toHaveLength(4)
+      expect(game.experience.features.collections?.entries.every(
+        (collection) => collection.requiredCount === collectionTarget,
+      )).toBe(true)
       expect(game.experience.help.extraSections).toHaveLength(2)
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'BOLT')).toBe(Boolean(game.experience.features.energy))
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'PAW')).toBe(Boolean(game.experience.features.moneyGrab))
       for (const symbol of WUKONG_FEATURE_SYMBOL_IDS) {
         expect(game.experience.symbols.definitions[symbol]).toBeDefined()
       }
+    }
+  })
+
+  it('registers Frontier Fortune as a native paid-only western with its own twelve-symbol contract', () => {
+    const { routes, catalog, experience } = HIGH_NOON_FORTUNE_SLOT_GAME
+    expect(routes).toEqual({ play: '/slots/frontier-fortune', demo: null })
+    expect(catalog).toMatchObject({ id: 'high-noon-fortune', title: 'Frontier Fortune' })
+    expect(experience.rules.gameId).toBe('high-noon-fortune-v1')
+    expect(experience.symbols.serverSymbolSetId).toBe('frontier-fortune-symbols-v1')
+    expect(experience.help.paylineCount).toBe(20)
+    expect(experience.help.freeGames).toBeUndefined()
+    expect(experience.features).toEqual({})
+    expect(experience.rules.initialReels).toHaveLength(5)
+    expect(experience.rules.initialReels.every(column => column.length === 3)).toBe(true)
+    expect(Object.keys(experience.symbols.definitions).sort()).toEqual([
+      'J', 'Q', 'K', 'A', 'SPUR', 'HAT', 'POUCH', 'REVOLVER', 'BADGE', 'BAR', 'WILD', 'WANTED',
+    ].sort())
+    expect(experience.symbols.definitions.J?.label).toBe('Jack of clubs')
+    expect(experience.symbols.definitions.Q?.label).toBe('Queen of hearts')
+    expect(experience.symbols.definitions.K?.label).toBe('King of diamonds')
+    expect(experience.symbols.definitions.A?.label).toBe('Ace of spades')
+    expect(experience.symbols.definitions.BADGE?.image).not.toBe(experience.symbols.definitions.WILD?.image)
+    for (const symbol of Object.values(experience.symbols.definitions)) {
+      expect(symbol?.image).toContain('FortuneForge.Games.FrontierFortune.Client')
+      expect(symbol?.image).not.toContain('FortuneForge.Games.HighNoonFortune.Client')
     }
   })
 
@@ -215,20 +241,20 @@ describe('slot game manifests', () => {
       .toMatch(/arcane-archives-title-v1\.webp$/)
   })
 
-  it('registers Cosmic Fortune with its collection shelf', () => {
+  it('registers Pharaoh’s Ascent with its guardian offerings', () => {
     const newGames = [
-      [COSMIC_FORTUNE_SLOT_GAME, null, 'star-orbit'],
+      [COSMIC_FORTUNE_SLOT_GAME, null, 'divine-offering'],
     ] as const
 
     expect(SLOT_GAME_MANIFESTS).toHaveLength(19)
     for (const [game, actorName, presentation] of newGames) {
-      expect(game.routes.play).toBe(`/slots/${game.id}`)
-      expect(game.routes.demo).toBe(`/slots/${game.id}/demo`)
+      expect(game.routes.play).toBe('/slots/pharaohs-ascent')
+      expect(game.routes.demo).toBeNull()
       if (actorName) expect(game.experience.features.moneyGrab?.actorName).toContain(actorName)
       else expect(game.experience.features.moneyGrab).toBeUndefined()
       expect(game.experience.features.collections?.presentation).toBe(presentation)
       expect(game.experience.features.collections?.entries).toHaveLength(4)
-      expect(game.experience.help.extraSections).toHaveLength(2)
+      expect(game.experience.help.extraSections?.length).toBeGreaterThanOrEqual(2)
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'BOLT')).toBe(
         Boolean(game.experience.features.energy || game.experience.features.lightningCollection),
       )
@@ -242,6 +268,42 @@ describe('slot game manifests', () => {
       }
     }
 
+  })
+
+  it('registers paid-only Crooked Road catalogue metadata without a host-owned feature adapter', () => {
+    const { experience, routes, catalog } = CROOKED_ROAD_SLOT_GAME
+    expect(routes).toEqual({ play: '/slots/crooked-road', demo: null })
+    expect(catalog).toMatchObject({ id: 'crooked-road', title: 'The Crooked Road' })
+    expect(experience.rules.gameId).toBe('crooked-road-v1')
+    expect(experience.symbols.serverSymbolSetId).toBe('crooked-road-v1-symbols')
+    expect(Object.keys(experience.symbols.definitions).sort()).toEqual(['2', '3', '4', '5', '6', '7', 'ACE', 'FREE', 'POWER'])
+    expect(experience.rules.initialReels).toHaveLength(5)
+    expect(experience.rules.initialReels.every(reel => reel.length === 3)).toBe(true)
+    expect(experience.help.paylineCount).toBe(10)
+    expect(experience.help.paylinePatternIds).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    expect(experience.rules.pointValueInCents).toBe(1)
+    expect(experience.rules.wagerOptions[0]).toBe(100)
+    expect(experience.rules.wagerOptions.at(-1)).toBe(5000)
+    expect(experience.features.collections).toBeUndefined()
+    expect(experience.features.energy).toBeUndefined()
+    expect(experience.features.moneyGrab).toBeUndefined()
+    expect(experience.help.freeGames).toBeUndefined()
+    expect(experience.symbols.guideEntries.map(entry => entry.symbol).sort()).toEqual(Object.keys(experience.symbols.definitions).sort())
+    expect(experience.symbols.guideEntries.find(entry => entry.symbol === 'FREE')?.secondValue).toBe('1 funded journey ticket')
+    expect(experience.features.specialRound).toBeUndefined()
+    expect(experience.presentation?.FeaturePanel).toBeUndefined()
+    expect(experience.featureActions).toBeUndefined()
+    expect(catalog.image).toBe(experience.symbols.definitions['7']?.image)
+    expect(SLOT_GAME_MANIFESTS.some(game => game.id === 'samurai-fortune')).toBe(false)
+    expect(JSON.stringify(experience)).not.toMatch(/samurai|blade.trial|clan.crest/i)
+    const Help = experience.presentation?.winHelp?.Content
+    expect(Help).toBeTypeOf('function')
+    if (Help) {
+      const markup = renderToStaticMarkup(createElement(Help, { onClose: () => undefined }))
+      expect(markup.match(/aria-label="Line \d+: rows/g)).toHaveLength(10)
+      expect(markup).toContain('Five reels, three rows')
+      expect(markup).toContain('journey ticket')
+    }
   })
 
   it('registers Gold Foundry with cash ingots and no new free-spin features', () => {
@@ -274,10 +336,23 @@ describe('slot game manifests', () => {
     expect(new Set(SECOND_WAVE_SLOT_GAMES.map((game) => game.id)).size).toBe(9)
 
     for (const game of SECOND_WAVE_SLOT_GAMES) {
-      expect(game.routes.play).toBe(`/slots/${game.id}`)
-      expect(game.routes.demo).toBe(`/slots/${game.id}/demo`)
+      expect(game.routes.play).toBe(game.id === 'robot-revolution' ? '/slots/sunstone-eclipse' : `/slots/${game.id}`)
+      expect(game.routes.demo).toBe(game.id === 'crooked-road' ? null : game.id === 'robot-revolution' ? '/slots/sunstone-eclipse/demo' : `/slots/${game.id}/demo`)
       expect(game.experience.cabinet.backdropImage).toMatch(/\.webp$/)
-      if (game.id === 'neon-nights') continue
+      if (game.id === 'neon-nights' || game.id === 'crooked-road') continue
+      if (game.id === 'robot-revolution') {
+        expect(game.experience.features.collections).toBeUndefined()
+        expect(game.experience.features.energy).toBeUndefined()
+        expect(game.experience.features.moneyGrab).toBeUndefined()
+        expect(game.experience.help.extraSections).toHaveLength(3)
+        expect(game.experience.symbols.animationSymbolIds).toEqual([
+          'GLYPH_FLAME', 'GLYPH_RAIN', 'GLYPH_WIND', 'GLYPH_EARTH', 'GLYPH_REED',
+          'FEATHER', 'SERPENT', 'EAGLE', 'JAGUAR', 'SUNSTONE', 'WILD',
+        ])
+        expect(game.experience.symbols.guideEntries).toHaveLength(12)
+        for (const symbol of game.experience.rules.initialReels.flat()) expectDefinedSymbol(game.id, symbol)
+        continue
+      }
       const hasNoCollections = new Set([
         'robot-revolution',
         'phantom-manor',
@@ -312,7 +387,7 @@ describe('slot game manifests', () => {
       !STANDALONE_SLOT_GAME_IDS.has(game.id) && game.id !== 'wukong-journey-to-the-west' && game.id !== 'pirates-fortune',
     )
 
-    expect(themedGames).toHaveLength(14)
+    expect(themedGames).toHaveLength(13)
     for (const game of themedGames) {
       const narrative = game.experience.outcomeNarrative
       expect(narrative, `${game.id} is missing outcome copy`).toBeDefined()
@@ -322,8 +397,14 @@ describe('slot game manifests', () => {
       expect(narrative?.bigWinTitle).toBeTruthy()
       expect(narrative?.freeGameSingular).toBeTruthy()
       expect(narrative?.freeGamePlural).toBeTruthy()
-      expect(narrative?.lossNextAction).toBeTruthy()
-      expect(narrative?.winNextAction).toBeTruthy()
+      if (game.id === 'robot-revolution') {
+        expect(narrative?.lossNextAction).toBe('')
+        expect(narrative?.winNextAction).toBe('')
+        expect(game.experience.presentation?.outcomePresentation).toBe('ambient')
+      } else {
+        expect(narrative?.lossNextAction).toBeTruthy()
+        expect(narrative?.winNextAction).toBeTruthy()
+      }
       expect(narrative?.bonusNextAction).toBeTruthy()
       expect(game.experience.cabinet.celebrationEffect).toBeTruthy()
       if (!narrative) continue
@@ -358,11 +439,11 @@ describe('slot game manifests', () => {
 
   it('gives free-spin rounds distinct, named feature contracts', () => {
     const features = SLOT_GAME_MANIFESTS
-      .filter((game) => !['gold-foundry', 'neon-nights', 'arcane-archives'].includes(game.id))
+      .filter((game) => !['gold-foundry', 'neon-nights', 'arcane-archives', 'high-noon-fortune', 'crooked-road'].includes(game.id))
       .map((game) => game.experience.features.specialRound)
 
     expect(features.every(Boolean)).toBe(true)
-    expect(new Set(features.map((feature) => feature?.id)).size).toBe(16)
+    expect(new Set(features.map((feature) => feature?.id)).size).toBe(14)
     for (const feature of features) {
       expect(feature?.title).toBeTruthy()
       expect(feature?.earnLabel).toBeTruthy()
@@ -374,7 +455,7 @@ describe('slot game manifests', () => {
   it('keeps representative reel art in game manifests and title art in the lobby catalogue', () => {
     for (const gameId of REEL_SYMBOL_CATALOG_GAME_IDS) {
       const game = requireGame(gameId)
-      const reelSymbol = game.experience.symbols.definitions[gameId === 'gold-foundry' ? 'PAW' : '7']
+      const reelSymbol = game.experience.symbols.definitions[gameId === 'gold-foundry' ? 'PAW' : gameId === 'robot-revolution' ? 'SUNSTONE' : '7']
       const catalogEntry = SLOT_GAME_CATALOG.find((candidate) => candidate.id === gameId)
       const catalogueArt = getCataloguePresentationArt(game.routes.play)
 
@@ -451,10 +532,9 @@ describe('slot game manifests', () => {
     )
   })
 
-  it('gives five featured games named special rounds with matching server schemas and sound sets', () => {
+  it('gives four shared featured games named special rounds with matching server schemas and sound sets', () => {
     const featured = [
-      [COSMIC_FORTUNE_SLOT_GAME, 'cosmic-orbit', 'cosmic-fortune-audio-v1', 24, 3, 6, true],
-      [HIGH_NOON_FORTUNE_SLOT_GAME, 'high-noon-showdown', 'high-noon-fortune-audio-v1', 20, 3, 5, false],
+      [COSMIC_FORTUNE_SLOT_GAME, 'pharaoh-ascent', 'pharaohs-ascent-audio-v1', 24, 3, 6, true],
       [GODS_OF_OLYMPUS_SLOT_GAME, 'olympus-trial', 'gods-of-olympus-audio-v1', 28, 4, 6, true],
       [PIRATES_FORTUNE_SLOT_GAME, 'pirates-broadside', 'pirates-fortune-audio-v9', 25, 3, 7, true],
       [ROYAL_DRAW_SLOT_GAME, 'royal-high-stakes', 'royal-draw-audio-v1', 24, 3, 6, true],
@@ -474,10 +554,8 @@ describe('slot game manifests', () => {
     }
   })
 
-  it('gives five more themed games distinct special rounds through the shared showcase contract', () => {
+  it('gives three more themed games distinct special rounds through the shared showcase contract', () => {
     const featured = [
-      [SAMURAI_FORTUNE_SLOT_GAME, 'samurai-blade-trial', 'samurai-fortune-audio-v1', 26, 4, 6, true],
-      [ROBOT_REVOLUTION_SLOT_GAME, 'robot-overclock', 'robot-revolution-audio-v1', 24, 3, 7, false],
       [PHANTOM_MANOR_SLOT_GAME, 'phantom-midnight-seance', 'phantom-manor-audio-v1', 18, 3, 5, false],
       [OCEAN_ODYSSEY_SLOT_GAME, 'ocean-pearl-voyage', 'ocean-odyssey-audio-v1', 28, 4, 6, true],
       [DRAGON_HOARD_SLOT_GAME, 'dragon-ember-siege', 'dragon-hoard-audio-v1', 30, 3, 10, true],
@@ -495,6 +573,29 @@ describe('slot game manifests', () => {
       expect(game.experience.symbols.serverSymbolSetId).toBe(game.id === 'dragon-hoard' ? 'midnight-vault-symbols-v1' : 'classic-symbols-v3')
       expect(game.experience.sounds.id).toBe(soundId)
     }
+  })
+
+  it('keeps Sunstone Eclipse’s Sunwheel and paid Eclipse contract separate from historical free games', () => {
+    const { experience } = ROBOT_REVOLUTION_SLOT_GAME
+    expect(experience.features.specialRound).toMatchObject({
+      id: 'sunstone-eclipse', title: 'Totality', earnStyle: 'altar',
+      earnLabel: 'One Eclipse on the centre reel awakens five paid Eclipse rounds.',
+    })
+    expect(experience.features.specialRound?.activeModes).toMatchObject({
+      'solar-eclipse': 'Solar Eclipse · clockwise Sunwheel · saved wager',
+      'lunar-eclipse': 'Lunar Eclipse · anticlockwise Sunwheel · saved wager',
+    })
+    expect(experience.help.freeGames).toBeUndefined()
+    expect(experience.rules.defaultWagerRand).toBe(3)
+    expect(experience.rules.wagerOptions[0]).toBe(12)
+    expect(experience.rules.wagerOptions.at(-1)).toBe(300)
+    expect(experience.sounds.id).toBe('sunstone-eclipse-audio-v1')
+    expect(experience.presentation?.SpinFeaturePanel).toBeTypeOf('function')
+    expect(experience.presentation?.featurePaylineIds).toEqual([1001, 1002, 1003, 1010, 1011, 1012, 1013, 1021, 1022, 1023])
+    expect(experience.symbols.compatibleServerSymbolSetIds).toEqual(['fifth-sun-symbols-v1', 'classic-symbols-v3'])
+    expect(experience.symbols.guideEntries.find(entry => entry.symbol === 'SOLAR_ECLIPSE')).toMatchObject({
+      companionSymbol: 'LUNAR_ECLIPSE', firstLabel: '1 on reel 3', firstValue: '5 paid Eclipse rounds', secondValue: '3 Sunwheel alignments',
+    })
   })
 
   it('gives the remaining showcase slots matched special rounds and audio', () => {
@@ -520,18 +621,18 @@ describe('slot game manifests', () => {
 
   it('varies earn paths while limiting energy and direct multiplier tokens', () => {
     const featured = [
-      COSMIC_FORTUNE_SLOT_GAME, HIGH_NOON_FORTUNE_SLOT_GAME, GODS_OF_OLYMPUS_SLOT_GAME,
-      PIRATES_FORTUNE_SLOT_GAME, ROYAL_DRAW_SLOT_GAME, SAMURAI_FORTUNE_SLOT_GAME,
+      COSMIC_FORTUNE_SLOT_GAME, GODS_OF_OLYMPUS_SLOT_GAME,
+      PIRATES_FORTUNE_SLOT_GAME, ROYAL_DRAW_SLOT_GAME,
       ROBOT_REVOLUTION_SLOT_GAME, PHANTOM_MANOR_SLOT_GAME, OCEAN_ODYSSEY_SLOT_GAME,
       DRAGON_HOARD_SLOT_GAME, CANDY_CARNIVAL_SLOT_GAME,
       DESERT_TREASURES_SLOT_GAME, NORDIC_LEGENDS_SLOT_GAME,
     ]
 
     expect(featured.filter((game) => game.experience.features.energy)).toHaveLength(4)
-    expect(featured.filter((game) => !game.experience.features.moneyGrab)).toHaveLength(8)
-    expect(featured.filter((game) => !game.experience.features.collections)).toHaveLength(5)
+    expect(featured.filter((game) => !game.experience.features.moneyGrab)).toHaveLength(7)
+    expect(featured.filter((game) => !game.experience.features.collections)).toHaveLength(4)
     expect([...new Set(featured.map((game) => game.experience.features.specialRound?.earnStyle))].sort())
-      .toEqual(['altar', 'buckets', 'cards', 'gates', 'orbit', 'stack', 'trail'])
+      .toEqual(['altar', 'buckets', 'cards', 'gates', 'orbit', 'trail'])
   })
 
   it('defines every symbol referenced by rules, help, and optional features', () => {

@@ -1,0 +1,1915 @@
+{
+  "engineVersion": "pharaohs-ascent-sealed-tomb-v3",
+  "gameId": "cosmic-fortune-v1",
+  "wagering": {
+    "pointValueInCents": 25,
+    "minimumWagerPoints": 2,
+    "defaultWagerPoints": 12,
+    "maximumWagerPoints": 300,
+    "wagerIncrementPoints": 2
+  },
+  "pricing": {
+    "payoutMultiplier": 1,
+    "paytable": {
+      "id": "pharaohs-ascent-paytable-v3",
+      "symbolSetId": "classic-symbols-v3",
+      "rules": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 5
+        }
+      ]
+    }
+  },
+  "generatedAtUtc": "2026-11-23T02:28:39.4573234+00:00",
+  "startedAtUtc": "2026-11-23T02:24:29.3418757+00:00",
+  "elapsedSeconds": 250.1154336,
+  "options": {
+    "paidSpins": 1000000,
+    "stakes": [
+      12
+    ],
+    "batchSize": 10000,
+    "seed": 20261124,
+    "parallelism": 1,
+    "strategies": [
+      "coins",
+      "optimal"
+    ],
+    "output": "output/analysis/pharaohs-ascent/rtp-v3-earned-boosts.json",
+    "wagerPolicy": "fixed",
+    "pairedStakes": false,
+    "useEarnedBoosts": true
+  },
+  "methodology": "Exact current production CosmicFortuneEngine and CosmicFortuneRoundPolicy.Advance/SpendsLegacy; every paid cycle drains all earned carry and redeems every funded tomb ticket through SealedTombRules. One continuous state per selected stake, retained between nonoverlapping paid-spin blocks. The wager policy selects only legal new paid wagers; earned spins always use their actual locked funded wager. Strategies share only the within-stake reel/funding trace and use separate unbiased RNG streams for actual tomb outcomes. Main state retains the completed coins branch; tomb decisions do not affect reel rules or funding. Per-symbol contributions reconcile to settled reel returns and are diagnostic selected-match exposures, not an alternate payout model. Earned boosts are off by default; the explicit option spends only the actual saved special-point balance at the production activation cost on paid or earned spins. No live wallet/database/network access. Confidence intervals use actual paid-wager block ratios, not individual reel/action observations. Residual partial resources are reported and are not artificially paid out.",
+  "tombExpectations": {
+    "coins": 20.9,
+    "keys": 26.35,
+    "optimal": 26.35
+  },
+  "profiles": [
+    {
+      "stakePoints": 12,
+      "totals": {
+        "paidSpins": 1000000,
+        "earnedSpins": 241686,
+        "paidWagerPoints": 12000000,
+        "paidWagerCents": 300000000,
+        "paidReelBasePayoutPoints": 7581960,
+        "paidReelPayoutPoints": 7621110,
+        "paidReelPayoutCents": 190527750,
+        "paidEnergyExtraPoints": 39150,
+        "earnedReelBasePayoutPoints": 1617828,
+        "earnedReelPayoutPoints": 1629588,
+        "earnedReelPayoutCents": 40739700,
+        "earnedEnergyExtraPoints": 11760,
+        "paidSigilQualifyingSpins": 38334,
+        "pityTriggeredSpins": 74274,
+        "paidPityTriggeredSpins": 69548,
+        "paidPityTriggeredWagerPoints": 834576,
+        "generationAttempts": 4265850,
+        "scatterSpinsAwarded": 58944,
+        "collectionSpinsAwarded": 182742,
+        "energyMultiplierEvents": 3793,
+        "maximumEarnedSpinsInOnePaidCycle": 65,
+        "oddFundedEarnedSpins": 0,
+        "minimumBetPaidSpins": 0,
+        "selectedHighBetPaidSpins": 1000000,
+        "paidEnergyMultiplierEvents": 2890,
+        "paidEnergyMultiplierWagerPoints": 34680,
+        "paidBoostSpins": 2423,
+        "earnedBoostSpins": 610,
+        "specialPointsSpent": 24264,
+        "specialPointsAwarded": 24271
+      },
+      "strategies": {
+        "coins": {
+          "decisionPolicy": "coins",
+          "tomb": {
+            "expeditions": 6389,
+            "actions": 51112,
+            "roomsOpened": 38334,
+            "basePoints": 383340,
+            "roomPoints": 1217724,
+            "relicExtraPoints": 0,
+            "finalePoints": 0,
+            "payoutPoints": 1601064,
+            "payoutCents": 40026600,
+            "fundedWagerPoints": 76668
+          },
+          "observedTombMeanMultiplier": 20.883080294255752,
+          "observedRtp": 0.9043135,
+          "paidReelRtp": 0.6350925,
+          "earnedReelRtp": 0.135799,
+          "tombRtp": 0.133422,
+          "blockConfidence95": {
+            "lower": 0.9014620605849925,
+            "upper": 0.9071649394150075,
+            "standardError": 0.001437060315717507,
+            "halfWidth": 0.0028514394150075243,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": -0.003412181062368613
+          }
+        },
+        "optimal": {
+          "decisionPolicy": "optimal",
+          "tomb": {
+            "expeditions": 6389,
+            "actions": 57501,
+            "roomsOpened": 38334,
+            "basePoints": 383340,
+            "roomPoints": 840048,
+            "relicExtraPoints": 0,
+            "finalePoints": 799584,
+            "payoutPoints": 2022972,
+            "payoutCents": 50574300,
+            "fundedWagerPoints": 76668
+          },
+          "observedTombMeanMultiplier": 26.386132415088433,
+          "observedRtp": 0.9394725,
+          "paidReelRtp": 0.6350925,
+          "earnedReelRtp": 0.135799,
+          "tombRtp": 0.168581,
+          "blockConfidence95": {
+            "lower": 0.9364769044351005,
+            "upper": 0.9424680955648996,
+            "standardError": 0.0015097117215956272,
+            "halfWidth": 0.0029955955648996377,
+            "degreesOfFreedom": 99,
+            "tCritical": 1.98421693496131,
+            "blockLagOneCorrelation": 0.08601895742998615
+          }
+        }
+      },
+      "residualResources": {
+        "energy": 16,
+        "pity": 6,
+        "nativeRemaining": 0,
+        "legacyRemaining": 0,
+        "carry": null,
+        "specialPoints": 7,
+        "sealCounts": {
+          "sync": 16,
+          "rows": 3,
+          "paw": 18,
+          "rand": 8
+        },
+        "sealWagerPoints": {
+          "sync": 192,
+          "rows": 36,
+          "paw": 216,
+          "rand": 96
+        },
+        "tombFunding": {
+          "sigils": 0,
+          "requiredSigils": 6,
+          "averageWagerPoints": 0,
+          "minimumScarabs": 3
+        },
+        "sigilWagerPointTotal": 0,
+        "unredeemedTickets": 0,
+        "note": "Partial sigils, collections, energy and pity are carried through every block and left unvalued at the final boundary; no new paid spins were manufactured to complete them."
+      },
+      "confidenceMethod": {
+        "kind": "continuous nonoverlapping paid-cycle block ratio means",
+        "batchSize": 10000,
+        "completedBlocks": 100,
+        "note": "Approximate Student-t interval from long blocks, retaining serial game state; a single smoke block has no meaningful confidence interval."
+      },
+      "blocks": [
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1846200,
+          "earnedReelCents": 415200,
+          "tombCents": {
+            "coins": 409200,
+            "optimal": 518400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1900050,
+          "earnedReelCents": 363900,
+          "tombCents": {
+            "coins": 376500,
+            "optimal": 472500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1937400,
+          "earnedReelCents": 389250,
+          "tombCents": {
+            "coins": 399000,
+            "optimal": 491400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1901400,
+          "earnedReelCents": 388650,
+          "tombCents": {
+            "coins": 399000,
+            "optimal": 500700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1867800,
+          "earnedReelCents": 464850,
+          "tombCents": {
+            "coins": 369000,
+            "optimal": 453300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1874250,
+          "earnedReelCents": 413850,
+          "tombCents": {
+            "coins": 372900,
+            "optimal": 461100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1926150,
+          "earnedReelCents": 434850,
+          "tombCents": {
+            "coins": 408600,
+            "optimal": 517200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1914450,
+          "earnedReelCents": 398400,
+          "tombCents": {
+            "coins": 396000,
+            "optimal": 513600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1854300,
+          "earnedReelCents": 400050,
+          "tombCents": {
+            "coins": 382200,
+            "optimal": 486300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1936200,
+          "earnedReelCents": 403350,
+          "tombCents": {
+            "coins": 437700,
+            "optimal": 525900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1903650,
+          "earnedReelCents": 391800,
+          "tombCents": {
+            "coins": 357300,
+            "optimal": 462900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1923600,
+          "earnedReelCents": 418650,
+          "tombCents": {
+            "coins": 386100,
+            "optimal": 506100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1923900,
+          "earnedReelCents": 428700,
+          "tombCents": {
+            "coins": 387300,
+            "optimal": 501900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1930500,
+          "earnedReelCents": 400350,
+          "tombCents": {
+            "coins": 413700,
+            "optimal": 502200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1924650,
+          "earnedReelCents": 468000,
+          "tombCents": {
+            "coins": 376500,
+            "optimal": 462600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1868400,
+          "earnedReelCents": 409800,
+          "tombCents": {
+            "coins": 408000,
+            "optimal": 508800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1961700,
+          "earnedReelCents": 395850,
+          "tombCents": {
+            "coins": 380100,
+            "optimal": 489300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1848900,
+          "earnedReelCents": 390150,
+          "tombCents": {
+            "coins": 407100,
+            "optimal": 522300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1911900,
+          "earnedReelCents": 439200,
+          "tombCents": {
+            "coins": 383100,
+            "optimal": 482400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1968600,
+          "earnedReelCents": 415650,
+          "tombCents": {
+            "coins": 442500,
+            "optimal": 549300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1852350,
+          "earnedReelCents": 379650,
+          "tombCents": {
+            "coins": 376200,
+            "optimal": 480000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1897650,
+          "earnedReelCents": 386850,
+          "tombCents": {
+            "coins": 355800,
+            "optimal": 449700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1927950,
+          "earnedReelCents": 450450,
+          "tombCents": {
+            "coins": 382200,
+            "optimal": 488100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1888950,
+          "earnedReelCents": 359550,
+          "tombCents": {
+            "coins": 401400,
+            "optimal": 520500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1956150,
+          "earnedReelCents": 386400,
+          "tombCents": {
+            "coins": 414000,
+            "optimal": 516600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1895250,
+          "earnedReelCents": 424350,
+          "tombCents": {
+            "coins": 373200,
+            "optimal": 468300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1930200,
+          "earnedReelCents": 359700,
+          "tombCents": {
+            "coins": 426000,
+            "optimal": 521700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1950150,
+          "earnedReelCents": 416250,
+          "tombCents": {
+            "coins": 359400,
+            "optimal": 464100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1924350,
+          "earnedReelCents": 384900,
+          "tombCents": {
+            "coins": 394500,
+            "optimal": 512100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1913850,
+          "earnedReelCents": 384450,
+          "tombCents": {
+            "coins": 413700,
+            "optimal": 510000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1867350,
+          "earnedReelCents": 420750,
+          "tombCents": {
+            "coins": 387300,
+            "optimal": 504300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1886700,
+          "earnedReelCents": 405600,
+          "tombCents": {
+            "coins": 419700,
+            "optimal": 540600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1872450,
+          "earnedReelCents": 428400,
+          "tombCents": {
+            "coins": 417900,
+            "optimal": 545400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1902300,
+          "earnedReelCents": 397800,
+          "tombCents": {
+            "coins": 424500,
+            "optimal": 528900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1864350,
+          "earnedReelCents": 424500,
+          "tombCents": {
+            "coins": 415500,
+            "optimal": 502200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1845300,
+          "earnedReelCents": 382050,
+          "tombCents": {
+            "coins": 364200,
+            "optimal": 459000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1862550,
+          "earnedReelCents": 413400,
+          "tombCents": {
+            "coins": 390300,
+            "optimal": 484800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1873950,
+          "earnedReelCents": 429000,
+          "tombCents": {
+            "coins": 417900,
+            "optimal": 519600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1884450,
+          "earnedReelCents": 419250,
+          "tombCents": {
+            "coins": 383700,
+            "optimal": 491700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1895250,
+          "earnedReelCents": 402900,
+          "tombCents": {
+            "coins": 393900,
+            "optimal": 498600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1908300,
+          "earnedReelCents": 401400,
+          "tombCents": {
+            "coins": 429900,
+            "optimal": 535500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1954800,
+          "earnedReelCents": 420750,
+          "tombCents": {
+            "coins": 379800,
+            "optimal": 465900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1932900,
+          "earnedReelCents": 408300,
+          "tombCents": {
+            "coins": 443100,
+            "optimal": 555300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1856850,
+          "earnedReelCents": 407100,
+          "tombCents": {
+            "coins": 410700,
+            "optimal": 518100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1922550,
+          "earnedReelCents": 450600,
+          "tombCents": {
+            "coins": 414000,
+            "optimal": 518100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1929150,
+          "earnedReelCents": 372000,
+          "tombCents": {
+            "coins": 399300,
+            "optimal": 531900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1886550,
+          "earnedReelCents": 374700,
+          "tombCents": {
+            "coins": 400500,
+            "optimal": 504600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1908600,
+          "earnedReelCents": 368250,
+          "tombCents": {
+            "coins": 433500,
+            "optimal": 540900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1891200,
+          "earnedReelCents": 399150,
+          "tombCents": {
+            "coins": 392400,
+            "optimal": 518400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1951650,
+          "earnedReelCents": 422250,
+          "tombCents": {
+            "coins": 382500,
+            "optimal": 477900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1906650,
+          "earnedReelCents": 374250,
+          "tombCents": {
+            "coins": 421800,
+            "optimal": 536100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1844700,
+          "earnedReelCents": 442800,
+          "tombCents": {
+            "coins": 397800,
+            "optimal": 514200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1919700,
+          "earnedReelCents": 384900,
+          "tombCents": {
+            "coins": 350400,
+            "optimal": 468900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1920150,
+          "earnedReelCents": 399600,
+          "tombCents": {
+            "coins": 376200,
+            "optimal": 481800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1866000,
+          "earnedReelCents": 402300,
+          "tombCents": {
+            "coins": 451200,
+            "optimal": 570900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1935150,
+          "earnedReelCents": 433050,
+          "tombCents": {
+            "coins": 391200,
+            "optimal": 497700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1857150,
+          "earnedReelCents": 382950,
+          "tombCents": {
+            "coins": 398100,
+            "optimal": 506100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1899750,
+          "earnedReelCents": 437250,
+          "tombCents": {
+            "coins": 389400,
+            "optimal": 479400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1903950,
+          "earnedReelCents": 420000,
+          "tombCents": {
+            "coins": 392100,
+            "optimal": 477000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1911600,
+          "earnedReelCents": 393600,
+          "tombCents": {
+            "coins": 412800,
+            "optimal": 523500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1913100,
+          "earnedReelCents": 432150,
+          "tombCents": {
+            "coins": 387900,
+            "optimal": 480300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1936950,
+          "earnedReelCents": 399900,
+          "tombCents": {
+            "coins": 392400,
+            "optimal": 503400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1912200,
+          "earnedReelCents": 350700,
+          "tombCents": {
+            "coins": 438000,
+            "optimal": 550200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1888800,
+          "earnedReelCents": 441450,
+          "tombCents": {
+            "coins": 372900,
+            "optimal": 480300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1859850,
+          "earnedReelCents": 424050,
+          "tombCents": {
+            "coins": 389700,
+            "optimal": 485400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1905600,
+          "earnedReelCents": 430950,
+          "tombCents": {
+            "coins": 337500,
+            "optimal": 411600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1918950,
+          "earnedReelCents": 395250,
+          "tombCents": {
+            "coins": 408900,
+            "optimal": 501600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1891500,
+          "earnedReelCents": 416400,
+          "tombCents": {
+            "coins": 403500,
+            "optimal": 512700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1916850,
+          "earnedReelCents": 428250,
+          "tombCents": {
+            "coins": 403200,
+            "optimal": 509700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1925550,
+          "earnedReelCents": 392250,
+          "tombCents": {
+            "coins": 371400,
+            "optimal": 474900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1935000,
+          "earnedReelCents": 438450,
+          "tombCents": {
+            "coins": 431700,
+            "optimal": 531900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1958550,
+          "earnedReelCents": 436500,
+          "tombCents": {
+            "coins": 407700,
+            "optimal": 512700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1939350,
+          "earnedReelCents": 428100,
+          "tombCents": {
+            "coins": 444300,
+            "optimal": 551100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1894950,
+          "earnedReelCents": 401250,
+          "tombCents": {
+            "coins": 429300,
+            "optimal": 527400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1902000,
+          "earnedReelCents": 416550,
+          "tombCents": {
+            "coins": 393900,
+            "optimal": 507000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1926750,
+          "earnedReelCents": 405900,
+          "tombCents": {
+            "coins": 404100,
+            "optimal": 519600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1899450,
+          "earnedReelCents": 387750,
+          "tombCents": {
+            "coins": 423300,
+            "optimal": 519300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1909050,
+          "earnedReelCents": 429300,
+          "tombCents": {
+            "coins": 421500,
+            "optimal": 545700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1908450,
+          "earnedReelCents": 406500,
+          "tombCents": {
+            "coins": 434400,
+            "optimal": 561000
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1914150,
+          "earnedReelCents": 426150,
+          "tombCents": {
+            "coins": 431700,
+            "optimal": 555300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1863300,
+          "earnedReelCents": 451350,
+          "tombCents": {
+            "coins": 415800,
+            "optimal": 535200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1924500,
+          "earnedReelCents": 399750,
+          "tombCents": {
+            "coins": 387600,
+            "optimal": 472500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1883700,
+          "earnedReelCents": 411450,
+          "tombCents": {
+            "coins": 395100,
+            "optimal": 491100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1950150,
+          "earnedReelCents": 399150,
+          "tombCents": {
+            "coins": 390900,
+            "optimal": 488700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1902450,
+          "earnedReelCents": 403950,
+          "tombCents": {
+            "coins": 425700,
+            "optimal": 532200
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1935750,
+          "earnedReelCents": 396600,
+          "tombCents": {
+            "coins": 415500,
+            "optimal": 533700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1902900,
+          "earnedReelCents": 405600,
+          "tombCents": {
+            "coins": 386700,
+            "optimal": 493500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1905450,
+          "earnedReelCents": 403350,
+          "tombCents": {
+            "coins": 390900,
+            "optimal": 492300
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1944000,
+          "earnedReelCents": 376350,
+          "tombCents": {
+            "coins": 414300,
+            "optimal": 518700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1878750,
+          "earnedReelCents": 418200,
+          "tombCents": {
+            "coins": 384000,
+            "optimal": 499800
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1954200,
+          "earnedReelCents": 374850,
+          "tombCents": {
+            "coins": 421800,
+            "optimal": 533700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1880700,
+          "earnedReelCents": 448500,
+          "tombCents": {
+            "coins": 385800,
+            "optimal": 495900
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1893900,
+          "earnedReelCents": 397350,
+          "tombCents": {
+            "coins": 373500,
+            "optimal": 473400
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1903500,
+          "earnedReelCents": 406950,
+          "tombCents": {
+            "coins": 377100,
+            "optimal": 468600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1869450,
+          "earnedReelCents": 380400,
+          "tombCents": {
+            "coins": 410100,
+            "optimal": 517500
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1899150,
+          "earnedReelCents": 407850,
+          "tombCents": {
+            "coins": 411000,
+            "optimal": 528600
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1919700,
+          "earnedReelCents": 394650,
+          "tombCents": {
+            "coins": 444900,
+            "optimal": 566700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1926150,
+          "earnedReelCents": 390900,
+          "tombCents": {
+            "coins": 391500,
+            "optimal": 497100
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1907250,
+          "earnedReelCents": 398850,
+          "tombCents": {
+            "coins": 415800,
+            "optimal": 527700
+          }
+        },
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1902900,
+          "earnedReelCents": 403950,
+          "tombCents": {
+            "coins": 391500,
+            "optimal": 509700
+          }
+        }
+      ],
+      "elapsedSeconds": 250.0432855,
+      "paidSpinsPerSecond": 3999.307542295174,
+      "wagerPolicy": "fixed",
+      "payoutContributions": [
+        {
+          "kind": "paytable",
+          "symbolId": "2",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 32391,
+            "earnedMatches": 6931,
+            "paidMatchedWagerPoints": 388692,
+            "earnedMatchedWagerPoints": 83172,
+            "energyMatchedWagerPoints": 4344,
+            "energyBoostExposurePoints": 2172.0,
+            "paidBasePoints": 388692,
+            "earnedBasePoints": 83172,
+            "paidSettledPoints": 390390,
+            "earnedSettledPoints": 83646,
+            "energyExtraPoints": 2172
+          },
+          "paidRtp": 0.0325325,
+          "earnedRtp": 0.0069705,
+          "totalRtp": 0.039503,
+          "selectedMatchLinearRtpPerMultiplier": 0.039503
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "2",
+          "matchLength": 4,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 30801,
+            "earnedMatches": 6224,
+            "paidMatchedWagerPoints": 369612,
+            "earnedMatchedWagerPoints": 74688,
+            "energyMatchedWagerPoints": 3780,
+            "energyBoostExposurePoints": 1890.0,
+            "paidBasePoints": 369612,
+            "earnedBasePoints": 74688,
+            "paidSettledPoints": 371010,
+            "earnedSettledPoints": 75180,
+            "energyExtraPoints": 1890
+          },
+          "paidRtp": 0.0309175,
+          "earnedRtp": 0.006265,
+          "totalRtp": 0.0371825,
+          "selectedMatchLinearRtpPerMultiplier": 0.0371825
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "2",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 2,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 17227,
+            "earnedMatches": 3706,
+            "paidMatchedWagerPoints": 206724,
+            "earnedMatchedWagerPoints": 44472,
+            "energyMatchedWagerPoints": 3216,
+            "energyBoostExposurePoints": 1608.0,
+            "paidBasePoints": 413448,
+            "earnedBasePoints": 88944,
+            "paidSettledPoints": 416028,
+            "earnedSettledPoints": 89580,
+            "energyExtraPoints": 3216
+          },
+          "paidRtp": 0.034669,
+          "earnedRtp": 0.007465,
+          "totalRtp": 0.042134,
+          "selectedMatchLinearRtpPerMultiplier": 0.021067
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "3",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 83923,
+            "earnedMatches": 16337,
+            "paidMatchedWagerPoints": 1007076,
+            "earnedMatchedWagerPoints": 196044,
+            "energyMatchedWagerPoints": 11148,
+            "energyBoostExposurePoints": 5574.0,
+            "paidBasePoints": 1007076,
+            "earnedBasePoints": 196044,
+            "paidSettledPoints": 1011324,
+            "earnedSettledPoints": 197370,
+            "energyExtraPoints": 5574
+          },
+          "paidRtp": 0.084277,
+          "earnedRtp": 0.0164475,
+          "totalRtp": 0.1007245,
+          "selectedMatchLinearRtpPerMultiplier": 0.1007245
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "3",
+          "matchLength": 4,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 108331,
+            "earnedMatches": 19414,
+            "paidMatchedWagerPoints": 1299972,
+            "earnedMatchedWagerPoints": 232968,
+            "energyMatchedWagerPoints": 14976,
+            "energyBoostExposurePoints": 7488.0,
+            "paidBasePoints": 1299972,
+            "earnedBasePoints": 232968,
+            "paidSettledPoints": 1306098,
+            "earnedSettledPoints": 234330,
+            "energyExtraPoints": 7488
+          },
+          "paidRtp": 0.1088415,
+          "earnedRtp": 0.0195275,
+          "totalRtp": 0.128369,
+          "selectedMatchLinearRtpPerMultiplier": 0.128369
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "3",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 2,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 70489,
+            "earnedMatches": 12808,
+            "paidMatchedWagerPoints": 845868,
+            "earnedMatchedWagerPoints": 153696,
+            "energyMatchedWagerPoints": 11772,
+            "energyBoostExposurePoints": 5886.0,
+            "paidBasePoints": 1691736,
+            "earnedBasePoints": 307392,
+            "paidSettledPoints": 1701372,
+            "earnedSettledPoints": 309528,
+            "energyExtraPoints": 11772
+          },
+          "paidRtp": 0.141781,
+          "earnedRtp": 0.025794,
+          "totalRtp": 0.167575,
+          "selectedMatchLinearRtpPerMultiplier": 0.0837875
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "4",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 24457,
+            "earnedMatches": 5470,
+            "paidMatchedWagerPoints": 293484,
+            "earnedMatchedWagerPoints": 65640,
+            "energyMatchedWagerPoints": 3732,
+            "energyBoostExposurePoints": 1866.0,
+            "paidBasePoints": 293484,
+            "earnedBasePoints": 65640,
+            "paidSettledPoints": 294822,
+            "earnedSettledPoints": 66168,
+            "energyExtraPoints": 1866
+          },
+          "paidRtp": 0.0245685,
+          "earnedRtp": 0.005514,
+          "totalRtp": 0.0300825,
+          "selectedMatchLinearRtpPerMultiplier": 0.0300825
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "4",
+          "matchLength": 4,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 21383,
+            "earnedMatches": 4393,
+            "paidMatchedWagerPoints": 256596,
+            "earnedMatchedWagerPoints": 52716,
+            "energyMatchedWagerPoints": 3468,
+            "energyBoostExposurePoints": 1734.0,
+            "paidBasePoints": 256596,
+            "earnedBasePoints": 52716,
+            "paidSettledPoints": 257898,
+            "earnedSettledPoints": 53148,
+            "energyExtraPoints": 1734
+          },
+          "paidRtp": 0.0214915,
+          "earnedRtp": 0.004429,
+          "totalRtp": 0.0259205,
+          "selectedMatchLinearRtpPerMultiplier": 0.0259205
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "4",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 3,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 11426,
+            "earnedMatches": 2588,
+            "paidMatchedWagerPoints": 137112,
+            "earnedMatchedWagerPoints": 31056,
+            "energyMatchedWagerPoints": 2424,
+            "energyBoostExposurePoints": 1212.0,
+            "paidBasePoints": 411336,
+            "earnedBasePoints": 93168,
+            "paidSettledPoints": 414018,
+            "earnedSettledPoints": 94122,
+            "energyExtraPoints": 3636
+          },
+          "paidRtp": 0.0345015,
+          "earnedRtp": 0.0078435,
+          "totalRtp": 0.042345,
+          "selectedMatchLinearRtpPerMultiplier": 0.014115
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "5",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 2,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 4749,
+            "earnedMatches": 1190,
+            "paidMatchedWagerPoints": 56988,
+            "earnedMatchedWagerPoints": 14280,
+            "energyMatchedWagerPoints": 708,
+            "energyBoostExposurePoints": 354.0,
+            "paidBasePoints": 113976,
+            "earnedBasePoints": 28560,
+            "paidSettledPoints": 114504,
+            "earnedSettledPoints": 28740,
+            "energyExtraPoints": 708
+          },
+          "paidRtp": 0.009542,
+          "earnedRtp": 0.002395,
+          "totalRtp": 0.011937,
+          "selectedMatchLinearRtpPerMultiplier": 0.0059685
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "5",
+          "matchLength": 4,
+          "paytableRuleLength": 3,
+          "multiplier": 2,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 2337,
+            "earnedMatches": 650,
+            "paidMatchedWagerPoints": 28044,
+            "earnedMatchedWagerPoints": 7800,
+            "energyMatchedWagerPoints": 252,
+            "energyBoostExposurePoints": 126.0,
+            "paidBasePoints": 56088,
+            "earnedBasePoints": 15600,
+            "paidSettledPoints": 56220,
+            "earnedSettledPoints": 15720,
+            "energyExtraPoints": 252
+          },
+          "paidRtp": 0.004685,
+          "earnedRtp": 0.00131,
+          "totalRtp": 0.005995,
+          "selectedMatchLinearRtpPerMultiplier": 0.0029975
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "5",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 6,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 989,
+            "earnedMatches": 352,
+            "paidMatchedWagerPoints": 11868,
+            "earnedMatchedWagerPoints": 4224,
+            "energyMatchedWagerPoints": 216,
+            "energyBoostExposurePoints": 108.0,
+            "paidBasePoints": 71208,
+            "earnedBasePoints": 25344,
+            "paidSettledPoints": 71676,
+            "earnedSettledPoints": 25524,
+            "energyExtraPoints": 648
+          },
+          "paidRtp": 0.005973,
+          "earnedRtp": 0.002127,
+          "totalRtp": 0.0081,
+          "selectedMatchLinearRtpPerMultiplier": 0.00135
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "6",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 2,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 4754,
+            "earnedMatches": 1184,
+            "paidMatchedWagerPoints": 57048,
+            "earnedMatchedWagerPoints": 14208,
+            "energyMatchedWagerPoints": 780,
+            "energyBoostExposurePoints": 390.0,
+            "paidBasePoints": 114096,
+            "earnedBasePoints": 28416,
+            "paidSettledPoints": 114696,
+            "earnedSettledPoints": 28596,
+            "energyExtraPoints": 780
+          },
+          "paidRtp": 0.009558,
+          "earnedRtp": 0.002383,
+          "totalRtp": 0.011941,
+          "selectedMatchLinearRtpPerMultiplier": 0.0059705
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "6",
+          "matchLength": 4,
+          "paytableRuleLength": 3,
+          "multiplier": 2,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 2335,
+            "earnedMatches": 713,
+            "paidMatchedWagerPoints": 28020,
+            "earnedMatchedWagerPoints": 8556,
+            "energyMatchedWagerPoints": 396,
+            "energyBoostExposurePoints": 198.0,
+            "paidBasePoints": 56040,
+            "earnedBasePoints": 17112,
+            "paidSettledPoints": 56328,
+            "earnedSettledPoints": 17220,
+            "energyExtraPoints": 396
+          },
+          "paidRtp": 0.004694,
+          "earnedRtp": 0.001435,
+          "totalRtp": 0.006129,
+          "selectedMatchLinearRtpPerMultiplier": 0.0030645
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "6",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 8,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 995,
+            "earnedMatches": 350,
+            "paidMatchedWagerPoints": 11940,
+            "earnedMatchedWagerPoints": 4200,
+            "energyMatchedWagerPoints": 192,
+            "energyBoostExposurePoints": 96.0,
+            "paidBasePoints": 95520,
+            "earnedBasePoints": 33600,
+            "paidSettledPoints": 95952,
+            "earnedSettledPoints": 33936,
+            "energyExtraPoints": 768
+          },
+          "paidRtp": 0.007996,
+          "earnedRtp": 0.002828,
+          "totalRtp": 0.010824,
+          "selectedMatchLinearRtpPerMultiplier": 0.001353
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "7",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 3,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 782,
+            "earnedMatches": 289,
+            "paidMatchedWagerPoints": 9384,
+            "earnedMatchedWagerPoints": 3468,
+            "energyMatchedWagerPoints": 168,
+            "energyBoostExposurePoints": 84.0,
+            "paidBasePoints": 28152,
+            "earnedBasePoints": 10404,
+            "paidSettledPoints": 28332,
+            "earnedSettledPoints": 10476,
+            "energyExtraPoints": 252
+          },
+          "paidRtp": 0.002361,
+          "earnedRtp": 0.000873,
+          "totalRtp": 0.003234,
+          "selectedMatchLinearRtpPerMultiplier": 0.001078
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "7",
+          "matchLength": 4,
+          "paytableRuleLength": 3,
+          "multiplier": 3,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 186,
+            "earnedMatches": 87,
+            "paidMatchedWagerPoints": 2232,
+            "earnedMatchedWagerPoints": 1044,
+            "energyMatchedWagerPoints": 48,
+            "energyBoostExposurePoints": 24.0,
+            "paidBasePoints": 6696,
+            "earnedBasePoints": 3132,
+            "paidSettledPoints": 6696,
+            "earnedSettledPoints": 3204,
+            "energyExtraPoints": 72
+          },
+          "paidRtp": 0.000558,
+          "earnedRtp": 0.000267,
+          "totalRtp": 0.000825,
+          "selectedMatchLinearRtpPerMultiplier": 0.000275
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "7",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 11,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 88,
+            "earnedMatches": 55,
+            "paidMatchedWagerPoints": 1056,
+            "earnedMatchedWagerPoints": 660,
+            "energyMatchedWagerPoints": 12,
+            "energyBoostExposurePoints": 6.0,
+            "paidBasePoints": 11616,
+            "earnedBasePoints": 7260,
+            "paidSettledPoints": 11682,
+            "earnedSettledPoints": 7260,
+            "energyExtraPoints": 66
+          },
+          "paidRtp": 0.0009735,
+          "earnedRtp": 0.000605,
+          "totalRtp": 0.0015785,
+          "selectedMatchLinearRtpPerMultiplier": 0.0001435
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 5,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 49,
+            "earnedMatches": 202,
+            "paidMatchedWagerPoints": 588,
+            "earnedMatchedWagerPoints": 2424,
+            "energyMatchedWagerPoints": 36,
+            "energyBoostExposurePoints": 18.0,
+            "paidBasePoints": 2940,
+            "earnedBasePoints": 12120,
+            "paidSettledPoints": 2940,
+            "earnedSettledPoints": 12210,
+            "energyExtraPoints": 90
+          },
+          "paidRtp": 0.000245,
+          "earnedRtp": 0.0010175,
+          "totalRtp": 0.0012625,
+          "selectedMatchLinearRtpPerMultiplier": 0.0002525
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 18,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 1,
+            "earnedMatches": 0,
+            "paidMatchedWagerPoints": 12,
+            "earnedMatchedWagerPoints": 0,
+            "energyMatchedWagerPoints": 0,
+            "energyBoostExposurePoints": 0,
+            "paidBasePoints": 216,
+            "earnedBasePoints": 0,
+            "paidSettledPoints": 216,
+            "earnedSettledPoints": 0,
+            "energyExtraPoints": 0
+          },
+          "paidRtp": 1.8E-05,
+          "earnedRtp": 0,
+          "totalRtp": 1.8E-05,
+          "selectedMatchLinearRtpPerMultiplier": 0.000001
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 14218,
+            "earnedMatches": 3626,
+            "paidMatchedWagerPoints": 170616,
+            "earnedMatchedWagerPoints": 43512,
+            "energyMatchedWagerPoints": 2736,
+            "energyBoostExposurePoints": 1368.0,
+            "paidBasePoints": 170616,
+            "earnedBasePoints": 43512,
+            "paidSettledPoints": 171600,
+            "earnedSettledPoints": 43896,
+            "energyExtraPoints": 1368
+          },
+          "paidRtp": 0.0143,
+          "earnedRtp": 0.003658,
+          "totalRtp": 0.017958,
+          "selectedMatchLinearRtpPerMultiplier": 0.017958
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "POWER",
+          "matchLength": 4,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 9849,
+            "earnedMatches": 2545,
+            "paidMatchedWagerPoints": 118188,
+            "earnedMatchedWagerPoints": 30540,
+            "energyMatchedWagerPoints": 1584,
+            "energyBoostExposurePoints": 792.0,
+            "paidBasePoints": 118188,
+            "earnedBasePoints": 30540,
+            "paidSettledPoints": 118794,
+            "earnedSettledPoints": 30726,
+            "energyExtraPoints": 792
+          },
+          "paidRtp": 0.0098995,
+          "earnedRtp": 0.0025605,
+          "totalRtp": 0.01246,
+          "selectedMatchLinearRtpPerMultiplier": 0.01246
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 5,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 4987,
+            "earnedMatches": 1570,
+            "paidMatchedWagerPoints": 59844,
+            "earnedMatchedWagerPoints": 18840,
+            "energyMatchedWagerPoints": 1236,
+            "energyBoostExposurePoints": 618.0,
+            "paidBasePoints": 299220,
+            "earnedBasePoints": 94200,
+            "paidSettledPoints": 301530,
+            "earnedSettledPoints": 94980,
+            "energyExtraPoints": 3090
+          },
+          "paidRtp": 0.0251275,
+          "earnedRtp": 0.007915,
+          "totalRtp": 0.0330425,
+          "selectedMatchLinearRtpPerMultiplier": 0.0066085
+        },
+        {
+          "kind": "scarab-trail",
+          "symbolId": "BANANA",
+          "matchLength": 3,
+          "paytableRuleLength": null,
+          "multiplier": 3,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 5610,
+            "earnedMatches": 1347,
+            "paidMatchedWagerPoints": 67320,
+            "earnedMatchedWagerPoints": 16164,
+            "energyMatchedWagerPoints": 888,
+            "energyBoostExposurePoints": 444.0,
+            "paidBasePoints": 201960,
+            "earnedBasePoints": 48492,
+            "paidSettledPoints": 202968,
+            "earnedSettledPoints": 48816,
+            "energyExtraPoints": 1332
+          },
+          "paidRtp": 0.016914,
+          "earnedRtp": 0.004068,
+          "totalRtp": 0.020982,
+          "selectedMatchLinearRtpPerMultiplier": 0.006994
+        },
+        {
+          "kind": "scarab-trail",
+          "symbolId": "BANANA",
+          "matchLength": 4,
+          "paytableRuleLength": null,
+          "multiplier": 5,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 1323,
+            "earnedMatches": 303,
+            "paidMatchedWagerPoints": 15876,
+            "earnedMatchedWagerPoints": 3636,
+            "energyMatchedWagerPoints": 264,
+            "energyBoostExposurePoints": 132.0,
+            "paidBasePoints": 79380,
+            "earnedBasePoints": 18180,
+            "paidSettledPoints": 79680,
+            "earnedSettledPoints": 18540,
+            "energyExtraPoints": 660
+          },
+          "paidRtp": 0.00664,
+          "earnedRtp": 0.001545,
+          "totalRtp": 0.008185,
+          "selectedMatchLinearRtpPerMultiplier": 0.001637
+        },
+        {
+          "kind": "scarab-trail",
+          "symbolId": "BANANA",
+          "matchLength": 5,
+          "paytableRuleLength": null,
+          "multiplier": 8,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 251,
+            "earnedMatches": 69,
+            "paidMatchedWagerPoints": 3012,
+            "earnedMatchedWagerPoints": 828,
+            "energyMatchedWagerPoints": 72,
+            "energyBoostExposurePoints": 36.0,
+            "paidBasePoints": 24096,
+            "earnedBasePoints": 6624,
+            "paidSettledPoints": 24336,
+            "earnedSettledPoints": 6672,
+            "energyExtraPoints": 288
+          },
+          "paidRtp": 0.002028,
+          "earnedRtp": 0.000556,
+          "totalRtp": 0.002584,
+          "selectedMatchLinearRtpPerMultiplier": 0.000323
+        }
+      ]
+    }
+  ]
+}

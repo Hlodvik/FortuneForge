@@ -1,0 +1,74 @@
+{
+  "localOnly": true,
+  "engineVersion": "pharaohs-ascent-sealed-tomb-v3",
+  "initial": "Change bet, currently R3",
+  "minimum": "Change bet, currently R0.5",
+  "maximum": "Change bet, currently R75",
+  "limits": "R0.5\nR75",
+  "reset": "Change bet, currently R3",
+  "balance": "R 10,044.75",
+  "paytable": [
+    {
+      "symbol": "Lapis ankh",
+      "values": [
+        "1×",
+        "2×"
+      ]
+    },
+    {
+      "symbol": "Eye of Horus",
+      "values": [
+        "1×",
+        "2×"
+      ]
+    },
+    {
+      "symbol": "Winged scarab",
+      "values": [
+        "1×",
+        "3×"
+      ]
+    },
+    {
+      "symbol": "Ruby lotus",
+      "values": [
+        "2×",
+        "6×"
+      ]
+    },
+    {
+      "symbol": "Golden falcon",
+      "values": [
+        "2×",
+        "8×"
+      ]
+    },
+    {
+      "symbol": "Pharaoh’s mask",
+      "values": [
+        "3×",
+        "11×"
+      ]
+    },
+    {
+      "symbol": "Pharaoh wild3 wilds pay; 4 wilds do not",
+      "values": [
+        "5×",
+        "18×"
+      ]
+    },
+    {
+      "symbol": "Cobra sun disk",
+      "values": [
+        "1×",
+        "5×"
+      ]
+    }
+  ],
+  "tombMinimumScarabs": 3,
+  "sunfireFundingCopy": true,
+  "accountUnchanged": true,
+  "stateUnchanged": true,
+  "posts": [],
+  "errors": []
+}

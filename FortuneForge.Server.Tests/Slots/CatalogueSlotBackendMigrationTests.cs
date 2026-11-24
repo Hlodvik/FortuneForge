@@ -7,8 +7,6 @@ using System.Text.Json.Nodes;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.Hosting;
 using FortuneForge.Games.Slots;
-using FortuneForge.Games.SamuraiFortune;
-using FortuneForge.Games.SamuraiFortune.Server;
 using FortuneForge.Games.CandyCarnival;
 using FortuneForge.Games.CandyCarnival.Server;
 using FortuneForge.Games.PhantomManor;
@@ -71,7 +69,7 @@ public sealed class CatalogueSlotBackendMigrationTests(MidnightVaultPaidEmulator
     private const string LegacyPath = "/api/slots/spins/";
     private static readonly string[] Ids =
     [
-        SamuraiFortuneEngine.GameId, CandyCarnivalEngine.GameId, PhantomManorEngine.GameId,
+        CandyCarnivalEngine.GameId, PhantomManorEngine.GameId,
         NordicLegendsEngine.GameId, DesertTreasuresEngine.GameId, RobotRevolutionEngine.GameId,
         WukongEngine.GameId, RainbowRealmEngine.GameId, PiratesFortuneEngine.GameId,
         GodsOfOlympusEngine.GameId, ReelRichesEngine.GameId, HighNoonFortuneEngine.GameId
@@ -373,10 +371,6 @@ public sealed class CatalogueSlotBackendMigrationTests(MidnightVaultPaidEmulator
     }
     private static GameSpec Spec(string gameId) => gameId switch
     {
-        SamuraiFortuneEngine.GameId => new(gameId, "SamuraiFortune", SamuraiFortunePaidRouteContract.AuditGameId,
-            SamuraiFortunePaidRouteContract.StatePath, SamuraiFortuneRoundStateCodec.OwnerField,
-            services => services.AddSingleton<SamuraiFortuneRoundStore>().AddSingleton<SamuraiFortuneRoundService>(),
-            app => app.MapSamuraiFortunePaidRounds(GameWorkerAuthentication.GetAccountId)),
         CandyCarnivalEngine.GameId => new(gameId, "CandyCarnival", CandyCarnivalPaidRouteContract.AuditGameId,
             CandyCarnivalPaidRouteContract.StatePath, CandyCarnivalRoundStateCodec.OwnerField,
             services => services.AddSingleton<CandyCarnivalRoundStore>().AddSingleton<CandyCarnivalRoundService>(),

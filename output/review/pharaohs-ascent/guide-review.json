@@ -1,0 +1,44 @@
+{
+  "localOnly": true,
+  "source": "standalone production game",
+  "errors": [],
+  "posts": [],
+  "layouts": [
+    {
+      "label": "desktop",
+      "viewport": {
+        "width": 1500,
+        "height": 1000
+      },
+      "overlay": {
+        "position": "fixed",
+        "x": 0,
+        "y": 0,
+        "width": 1500,
+        "height": 1000
+      },
+      "scrollWidth": 1262,
+      "clientWidth": 1262,
+      "clippedElements": [],
+      "brokenImages": []
+    },
+    {
+      "label": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overlay": {
+        "position": "fixed",
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "scrollWidth": 380,
+      "clientWidth": 380,
+      "clippedElements": [],
+      "brokenImages": []
+    }
+  ]
+}

@@ -14,9 +14,14 @@ internal static class CosmicFortuneRoundPolicy
     internal static CosmicFortunePreparedRound Prepare(string account, CosmicFortuneRoundRequest request,
         ClassicSlotRoundState before, DateTime started, GameRequestObservation? observation, IGameRandomSource random)
     {
-        var (mode, wagerCents, spendsLegacy) = Terms(request, before);
+        if (request.TombAction is not null)
+            return SealedTombRoundPolicy.Prepare(account, request, before, started, observation, random);
+        if (!request.UseFreeSpin) PharaohsAscentWagering.ValidateNewPaidWager(request.WagerPoints);
+        var version = EngineVersionForSpin(before, request.UseFreeSpin);
+        var (mode, wagerCents, spendsLegacy) = Terms(request, before, version);
         var engine = CosmicFortuneSpinEvidence.Record(random, account, request.WagerPoints, request.UseSpecialBoost,
-            before.Energy, mode, before.Pity, request.UseFreeSpin);
+            EnergyBeforeSpin(before, request.WagerPoints, version), mode,
+            PityBeforeSpin(before, request.WagerPoints, version), request.UseFreeSpin, version);
         var outcome = engine.Outcome;
         var progress = Advance(before, outcome, spendsLegacy);
         var round = new CosmicFortunePreparedRound(Guid.NewGuid(), account, request, before, engine, progress,
@@ -30,7 +35,12 @@ internal static class CosmicFortuneRoundPolicy
     {
         try
         {
-            var (mode, wagerCents, spendsLegacy) = Terms(round.Request, round.Before);
+            if (round.Request.TombAction is not null)
+            {
+                SealedTombRoundPolicy.Validate(round);
+                return;
+            }
+            var (mode, wagerCents, spendsLegacy) = Terms(round.Request, round.Before, round.Outcome.Audit.EngineVersion);
             var progress = Advance(round.Before, round.Outcome, spendsLegacy);
             ValidateRound(round, mode, wagerCents, spendsLegacy, progress);
         }
@@ -45,11 +55,12 @@ internal static class CosmicFortuneRoundPolicy
     {
         var outcome = round.Outcome;
         var audit = outcome.Audit;
-        if (round.AdmissionId == Guid.Empty || outcome.SpinId == Guid.Empty || outcome.GameId != CosmicFortuneEngine.GameId ||
-            audit.EngineVersion != CosmicFortuneEngine.EngineVersion || audit.FeatureMode != mode ||
+        if (round.TombEvidence is not null || round.Engine is null || round.AdmissionId == Guid.Empty || outcome.SpinId == Guid.Empty || outcome.GameId != CosmicFortuneEngine.GameId ||
+            !CosmicFortuneEngine.SupportsEngineVersion(audit.EngineVersion) || audit.FeatureMode != mode ||
             outcome.WagerPoints != round.Request.WagerPoints || outcome.IsFreeSpin != round.Request.UseFreeSpin ||
-            outcome.SpecialBoostApplied != round.Request.UseSpecialBoost || audit.EnergyBalanceBefore != round.Before.Energy ||
-            audit.PityMissesBefore != round.Before.Pity || audit.GeneratedAtUtc.Kind != DateTimeKind.Utc ||
+            outcome.SpecialBoostApplied != round.Request.UseSpecialBoost ||
+            audit.EnergyBalanceBefore != EnergyBeforeSpin(round.Before, round.Request.WagerPoints, audit.EngineVersion) ||
+            audit.PityMissesBefore != PityBeforeSpin(round.Before, round.Request.WagerPoints, audit.EngineVersion) || audit.GeneratedAtUtc.Kind != DateTimeKind.Utc ||
             audit.GeneratedAtUtc < round.StartedAtUtc || round.SpendsLegacy != spendsLegacy || round.WagerCents != wagerCents ||
             outcome.PointValueInCents != CosmicFortuneEngine.WagerPointValueInCents || outcome.Payout.TotalPoints < 0 ||
             progress.SettledPayout.TotalPoints < 0 ||
@@ -67,8 +78,13 @@ internal static class CosmicFortuneRoundPolicy
         CosmicFortuneSpinEvidence.Validate(round.Engine, round.AccountId);
     }
 
-    private static (string? Mode, long WagerCents, bool SpendsLegacy) Terms(CosmicFortuneRoundRequest request, ClassicSlotRoundState before)
+    private static (string? Mode, long WagerCents, bool SpendsLegacy) Terms(CosmicFortuneRoundRequest request,
+        ClassicSlotRoundState before, string engineVersion)
     {
+        var tomb = SealedTombState.Parse(before.NativeStateJson);
+        ValidateFundedQueue(before, tomb);
+        if (tomb.ActiveRun is not null || tomb.LastRun is not null)
+            throw new SealedTombConflictException("tomb-expedition-active", "Finish The Sealed Tomb and review its treasure before spinning the reels.");
         var carry = before.Carry;
         if (request.UseFreeSpin && carry is null) throw new CosmicFortuneFreeSpinsUnavailableException();
         if (!request.UseFreeSpin && carry is not null) throw new CosmicFortuneFreeSpinsRequiredException();
@@ -79,8 +95,9 @@ internal static class CosmicFortuneRoundPolicy
 
         // Unpinned historical credits choose a legal cash wager on their first free spin.
         CosmicFortuneEngine.ValidateWager(request.WagerPoints, isFreeSpin: carry?.WagerPoints is not null);
-        if (request.UseSpecialBoost && before.SpecialPoints < BoostCost)
-            throw new CosmicFortuneInsufficientSpecialPointsException(before.SpecialPoints, BoostCost);
+        var boostPoints = BoostPointsAvailable(before, request.WagerPoints, engineVersion);
+        if (request.UseSpecialBoost && boostPoints < BoostCost)
+            throw new CosmicFortuneInsufficientSpecialPointsException(boostPoints, BoostCost);
 
         var wagerCents = request.UseFreeSpin ? 0 : ToCents(request.WagerPoints, CosmicFortuneEngine.WagerPointValueInCents);
         return (carry?.Mode, wagerCents, SpendsLegacy(before, request.UseFreeSpin));
@@ -89,9 +106,76 @@ internal static class CosmicFortuneRoundPolicy
     internal static bool SpendsLegacy(ClassicSlotRoundState before, bool freeSpin) =>
         ClassicSlotRoundProgression.SpendsLegacy(before, freeSpin);
 
-    internal static ClassicSlotActiveRoundProgress Advance(ClassicSlotRoundState before, ClassicSlotSpinOutcome outcome, bool spendsLegacy) =>
-        ClassicSlotRoundProgression.AdvanceEnergyAndCollections(before, outcome, CosmicFortuneEngine.Profile, BoostCost,
-            CosmicFortuneEngine.MinimumWagerPoints, spendsLegacy);
+    internal static ClassicSlotActiveRoundProgress Advance(ClassicSlotRoundState before, ClassicSlotSpinOutcome outcome, bool spendsLegacy)
+    {
+        var current = outcome.Audit.EngineVersion == CosmicFortuneEngine.EngineVersion;
+        var savedTomb = SealedTombState.Parse(before.NativeStateJson);
+        var sunfire = current ? PharaohsAscentSunfire.Settle(before.Energy, outcome.EnergyAwarded,
+            outcome.WagerPoints, outcome.Payout, savedTomb.Sunfire) : null;
+        var progress = ClassicSlotRoundProgression.AdvanceEnergyAndCollections(before, outcome,
+            CosmicFortuneEngine.ProfileForVersion(outcome.Audit.EngineVersion), BoostCost,
+            CosmicFortuneEngine.MinimumWagerPoints, spendsLegacy, sunfire?.Settlement,
+            sunfire?.CompletionWagerPoints, roundFundedWagerDown: current);
+        if (!CosmicFortuneEngine.UsesSealedTombFunding(outcome.Audit.EngineVersion)) return progress;
+        var tomb = SealedTombRules.Accrue(savedTomb, outcome.SpinId,
+            outcome.WagerPoints, outcome.IsFreeSpin, outcome.Reels.Sum(reel => reel.Count(symbol => symbol == PharaohsAscentScarabs.SymbolId)),
+            outcome.Audit.EngineVersion);
+        if (current)
+        {
+            var boostFunding = PharaohsAscentBoosts.AfterSpin(savedTomb, outcome.WagerPoints,
+                before.SpecialPoints, outcome.SpecialBoostApplied, outcome.SpecialPointsAwarded);
+            if (PharaohsAscentBoosts.Total(boostFunding) != progress.After.SpecialPoints)
+                throw new InvalidOperationException("The funded boost credits disagree with the settled point balance.");
+            var collections = ClassicSlotCollections.Advance(CosmicFortuneEngine.Profile,
+                ClassicSlotCollections.TrackIds.Select(mode => new SlotCollectionState(mode,
+                    checked((int)before.SealCounts.GetValueOrDefault(mode)), before.SealWagerPoints.GetValueOrDefault(mode))).ToArray(),
+                outcome.CollectionsAwarded, outcome.WagerPoints, sunfire!.Settlement.MultiplierApplied,
+                sunfire.CompletionWagerPoints, roundFundedWagerDown: true);
+            var awards = new List<PharaohsAscentFreeSpinBatch>();
+            if (outcome.FreeSpinsAwarded > 0)
+                awards.Add(new(outcome.FreeSpinsAwarded, outcome.WagerPoints, CosmicFortuneEngine.Profile.ScatterFeatureMode));
+            awards.AddRange((collections.FundedAwards ?? []).Select(award =>
+                new PharaohsAscentFreeSpinBatch(award.Spins, Math.Max(CosmicFortuneEngine.MinimumWagerPoints, award.WagerPoints), award.Mode)));
+            var batches = PharaohsAscentFreeSpins.Advance(savedTomb.FreeSpinBatches, outcome.IsFreeSpin, awards);
+            var remaining = batches.Sum(batch => batch.Remaining);
+            if (progress.After.LegacyRemaining != 0 || remaining != progress.After.NativeRemaining)
+                throw new InvalidOperationException("The funded spin batches disagree with the free-game bank.");
+            var carry = remaining == 0 ? null : new ClassicSlotRoundCarry(remaining, batches[0].WagerPoints, batches[0].Mode);
+            progress = progress with { After = progress.After with { Carry = carry } };
+            tomb = tomb with { Sunfire = sunfire.FundingAfter, FreeSpinBatches = batches,
+                BoostFunding = boostFunding,
+                PityByWager = PharaohsAscentPity.AfterSpin(savedTomb, outcome.WagerPoints, outcome.ConsecutiveFiveMisses) };
+        }
+        return progress with { After = progress.After with { NativeStateJson = SealedTombState.Serialize(tomb) } };
+    }
+
+    internal static int PityBeforeSpin(ClassicSlotRoundState state, long wagerPoints, string? engineVersion = null) =>
+        (engineVersion ?? CosmicFortuneEngine.EngineVersion) == CosmicFortuneEngine.EngineVersion
+            ? PharaohsAscentPity.BeforeSpin(SealedTombState.Parse(state.NativeStateJson), wagerPoints, state.Pity)
+            : state.Pity;
+
+    internal static int BoostPointsAvailable(ClassicSlotRoundState state, long wagerPoints, string? engineVersion = null) =>
+        (engineVersion ?? CosmicFortuneEngine.EngineVersion) == CosmicFortuneEngine.EngineVersion
+            ? PharaohsAscentBoosts.BeforeSpin(SealedTombState.Parse(state.NativeStateJson), wagerPoints, state.SpecialPoints)
+            : state.SpecialPoints;
+
+    internal static long EnergyBeforeSpin(ClassicSlotRoundState state, long wagerPoints, string? engineVersion = null) =>
+        (engineVersion ?? CosmicFortuneEngine.EngineVersion) == CosmicFortuneEngine.EngineVersion
+            ? PharaohsAscentSunfire.AppearanceEnergy(state.Energy, wagerPoints, SealedTombState.Parse(state.NativeStateJson).Sunfire)
+            : state.Energy;
+
+    internal static string EngineVersionForSpin(ClassicSlotRoundState state, bool useFreeSpin) =>
+        useFreeSpin && state.Carry is not null && SealedTombState.Parse(state.NativeStateJson).FreeSpinBatches is null
+            ? CosmicFortuneEngine.PreviousTombEngineVersion : CosmicFortuneEngine.EngineVersion;
+
+    private static void ValidateFundedQueue(ClassicSlotRoundState state, SealedTombState tomb)
+    {
+        if (tomb.FreeSpinBatches is not { } batches) return;
+        var remaining = batches.Sum(batch => batch.Remaining);
+        if (state.LegacyRemaining != 0 || remaining != state.NativeRemaining ||
+            (remaining == 0 ? state.Carry is not null : state.Carry != new ClassicSlotRoundCarry(remaining, batches[0].WagerPoints, batches[0].Mode)))
+            throw new InvalidOperationException("The saved funded spin batches disagree with their active bank.");
+    }
 
     internal static string OutcomeDigest(ClassicSlotSpinOutcome outcome) =>
         GameSecurityEventDocuments.Hash(JsonSerializer.Serialize(outcome, RoundAuditCapture.Json));

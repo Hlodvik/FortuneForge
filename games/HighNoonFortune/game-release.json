@@ -1,9 +1,8 @@
 {
   "id": "high-noon-fortune",
   "frontend": {
-    "directory": "client/FortuneForge.Games.HighNoonFortune.Client",
-    "entry": "src/manifest.ts",
-    "manifestExport": "HIGH_NOON_FORTUNE_SLOT_GAME"
+    "directory": "client/FortuneForge.Games.FrontierFortune.Client",
+    "entry": "src/browser.ts"
   },
   "backend": {
     "kind": "packaged-game"

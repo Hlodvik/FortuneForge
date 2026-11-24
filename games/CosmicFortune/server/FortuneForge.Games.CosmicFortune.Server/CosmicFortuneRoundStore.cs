@@ -21,10 +21,29 @@ public sealed class CosmicFortuneRoundStore(FirestoreDb database, IGameRandomSou
         IGameWalletClient wallet, IGameWalletAccountReader accounts, CancellationToken token) =>
         persistence.SpinAsync(account, request, allowStart, wallet, accounts, token);
 
+    internal async Task<CosmicFortuneRoundStateReply> ActAsync(string account, string operationId, SealedTombAction action,
+        IGameWalletClient wallet, IGameWalletAccountReader accounts, CancellationToken token)
+    {
+        if (!CosmicFortuneRoundRequest.IsValidOperationId(operationId))
+            throw new ArgumentException("Include one valid Sealed Tomb action operation ID.");
+        var balance = await accounts.GetStateAsync(account, token);
+        var (_, pending) = await persistence.ReadStateAsync(account, balance.LegacyFreeGamesRemaining, token);
+        CosmicFortuneRoundRequest request;
+        if (pending is not null)
+        {
+            if (pending.TombAction != action)
+                throw new SealedTombConflictException("tomb-operation-pending", "Retry the pending tomb action before choosing another room.");
+            request = pending;
+        }
+        else request = new(operationId, 0, false) { TombAction = action };
+        var result = await persistence.SpinAsync(account, request, true, wallet, accounts, token);
+        return result.Features ?? throw new GameWalletUnavailableException();
+    }
+
     private sealed class Persistence(FirestoreDb database, IGameRandomSource random, TimeProvider clock)
         : ClassicSlotPaidRoundStore<CosmicFortuneRoundRequest, CosmicFortunePreparedRound, CosmicFortuneRoundResult>(
             database, clock, CosmicFortuneRoundStateCodec.Storage, new(CosmicFortuneEngine.GameId, CosmicFortunePaidRouteContract.AuditGameId,
-                CosmicFortuneEngine.GameId, "Cosmic Fortune", RawCollectionName, CosmicFortuneRoundStateCodec.OwnerField))
+                CosmicFortuneEngine.GameId, "Pharaoh's Ascent", RawCollectionName, CosmicFortuneRoundStateCodec.OwnerField))
     {
         protected override CosmicFortunePreparedRound PrepareRound(string account, CosmicFortuneRoundRequest request,
             ClassicSlotRoundState before, DateTime now, GameRequestObservation? observation, bool importing) =>
@@ -46,7 +65,11 @@ public sealed class CosmicFortuneRoundStore(FirestoreDb database, IGameRandomSou
             result with { Round = round };
 
         protected override void Report(Transaction transaction, FirestoreDb database, CosmicFortunePreparedRound round, CosmicFortuneRoundResult result,
-            DateTime completed) => CosmicFortuneSpinReport.Write(transaction, database, round, result, completed);
+            DateTime completed)
+        {
+            if (round.TombEvidence is not null) SealedTombEvidence.Write(transaction, database, round, result.Wallet, completed);
+            else CosmicFortuneSpinReport.Write(transaction, database, round, result, completed);
+        }
 
         protected override Exception Conflict(string message, CosmicFortuneRoundRequest? pending = null) =>
             new CosmicFortuneRoundConflictException(message, pending);

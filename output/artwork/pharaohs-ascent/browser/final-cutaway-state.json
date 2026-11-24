@@ -1,0 +1,51 @@
+{
+  "beforeBalance": 10020.5,
+  "afterBalance": 10020.5,
+  "tomb": {
+    "contractVersion": 1,
+    "revision": 136,
+    "funding": {
+      "sigils": 0,
+      "requiredSigils": 6,
+      "averageWagerPoints": 0
+    },
+    "tickets": [],
+    "activeRun": {
+      "id": "tomb-f41460329a9b43d081512cbbeaf99c89",
+      "fundedWagerPoints": 12,
+      "choices": [
+        {
+          "id": "tomb-f41460329a9b43d081512cbbeaf99c89-0-coin",
+          "kind": "coin",
+          "relic": null
+        },
+        {
+          "id": "tomb-f41460329a9b43d081512cbbeaf99c89-0-relic",
+          "kind": "relic",
+          "relic": "sun"
+        },
+        {
+          "id": "tomb-f41460329a9b43d081512cbbeaf99c89-0-key",
+          "kind": "key",
+          "relic": null
+        }
+      ],
+      "path": [],
+      "torchesRemaining": 6,
+      "keys": 0,
+      "relics": {
+        "sun": 0,
+        "moon": 0,
+        "serpent": 0
+      },
+      "relicMultiplier": 1,
+      "basePoints": 60,
+      "roomPoints": 0,
+      "bankedPoints": 60,
+      "phase": "explore"
+    },
+    "lastRun": null,
+    "pendingAction": null
+  },
+  "browserErrors": []
+}

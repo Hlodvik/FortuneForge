@@ -1,7 +1,7 @@
 import type { SlotSoundCue, SlotSoundSet } from './soundSets'
 
 export const THEMED_AUDIO_GAME_SLUGS = [
-  'cosmic-fortune', 'high-noon-fortune', 'gods-of-olympus', 'royal-draw', 'samurai-fortune',
+  'high-noon-fortune', 'gods-of-olympus', 'royal-draw',
   'robot-revolution', 'phantom-manor', 'ocean-odyssey', 'candy-carnival',
   'desert-treasures', 'nordic-legends', 'rainbow-realm', 'arcane-archives',
   'reel-riches',

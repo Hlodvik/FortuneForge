@@ -1,0 +1,504 @@
+{
+  "engineVersion": "pharaohs-ascent-sealed-tomb-v2",
+  "gameId": "cosmic-fortune-v1",
+  "generatedAtUtc": "2026-11-23T01:36:54.0266922+00:00",
+  "startedAtUtc": "2026-11-23T01:36:47.3854628+00:00",
+  "elapsedSeconds": 6.6411915,
+  "options": {
+    "paidSpins": 10000,
+    "stakes": [
+      2,
+      12,
+      2000
+    ],
+    "batchSize": 10000,
+    "seed": 20261122,
+    "parallelism": 2,
+    "strategies": [
+      "coins",
+      "keys",
+      "random",
+      "optimal"
+    ],
+    "output": "output/analysis/pharaohs-ascent/rtp-smoke.json"
+  },
+  "methodology": "Exact current production CosmicFortuneEngine and CosmicFortuneRoundPolicy.Advance/SpendsLegacy; every paid cycle drains all earned carry and redeems every funded tomb ticket through SealedTombRules. One continuous state per stake, retained between nonoverlapping paid-spin blocks. Strategies share only the within-stake reel/funding trace and use separate unbiased RNG streams for actual tomb outcomes. Main state retains the completed coins branch; tomb decisions do not affect reel rules or funding. No boosts. No live wallet/database/network access. Confidence intervals use block ratios, not individual reel/action observations. Residual partial resources are reported and are not artificially paid out.",
+  "tombExpectations": {
+    "coins": 20.9,
+    "keys": 26.35,
+    "optimal": 26.35
+  },
+  "profiles": [
+    {
+      "stakePoints": 2,
+      "totals": {
+        "paidSpins": 10000,
+        "earnedSpins": 2429,
+        "paidWagerPoints": 20000,
+        "paidWagerCents": 500000,
+        "paidReelBasePayoutPoints": 12446,
+        "paidReelPayoutPoints": 12526,
+        "paidReelPayoutCents": 313150,
+        "paidEnergyExtraPoints": 80,
+        "earnedReelBasePayoutPoints": 3000,
+        "earnedReelPayoutPoints": 3019,
+        "earnedReelPayoutCents": 75475,
+        "earnedEnergyExtraPoints": 19,
+        "paidSigilQualifyingSpins": 1120,
+        "pityTriggeredSpins": 730,
+        "paidPityTriggeredSpins": 695,
+        "generationAttempts": 42884,
+        "scatterSpinsAwarded": 630,
+        "collectionSpinsAwarded": 1799,
+        "energyMultiplierEvents": 38,
+        "maximumEarnedSpinsInOnePaidCycle": 39
+      },
+      "strategies": {
+        "coins": {
+          "decisionPolicy": "coins",
+          "tomb": {
+            "expeditions": 186,
+            "actions": 1488,
+            "roomsOpened": 1116,
+            "basePoints": 1860,
+            "roomPoints": 5968,
+            "relicExtraPoints": 0,
+            "finalePoints": 0,
+            "payoutPoints": 7828,
+            "payoutCents": 195700
+          },
+          "observedTombMeanMultiplier": 21.043010752688172,
+          "observedRtp": 1.16865,
+          "paidReelRtp": 0.6263,
+          "earnedReelRtp": 0.15095,
+          "tombRtp": 0.3914,
+          "blockConfidence95": null
+        },
+        "keys": {
+          "decisionPolicy": "three coin rooms, then three key rooms, then sarcophagus",
+          "tomb": {
+            "expeditions": 186,
+            "actions": 1674,
+            "roomsOpened": 1116,
+            "basePoints": 1860,
+            "roomPoints": 4106,
+            "relicExtraPoints": 0,
+            "finalePoints": 3816,
+            "payoutPoints": 9782,
+            "payoutCents": 244550
+          },
+          "observedTombMeanMultiplier": 26.295698924731184,
+          "observedRtp": 1.26635,
+          "paidReelRtp": 0.6263,
+          "earnedReelRtp": 0.15095,
+          "tombRtp": 0.4891,
+          "blockConfidence95": null
+        },
+        "random": {
+          "decisionPolicy": "random",
+          "tomb": {
+            "expeditions": 186,
+            "actions": 1468,
+            "roomsOpened": 1039,
+            "basePoints": 1860,
+            "roomPoints": 3252,
+            "relicExtraPoints": 212,
+            "finalePoints": 1192,
+            "payoutPoints": 6516,
+            "payoutCents": 162900
+          },
+          "observedTombMeanMultiplier": 17.516129032258064,
+          "observedRtp": 1.10305,
+          "paidReelRtp": 0.6263,
+          "earnedReelRtp": 0.15095,
+          "tombRtp": 0.3258,
+          "blockConfidence95": null
+        },
+        "optimal": {
+          "decisionPolicy": "optimal",
+          "tomb": {
+            "expeditions": 186,
+            "actions": 1674,
+            "roomsOpened": 1116,
+            "basePoints": 1860,
+            "roomPoints": 4040,
+            "relicExtraPoints": 0,
+            "finalePoints": 4064,
+            "payoutPoints": 9964,
+            "payoutCents": 249100
+          },
+          "observedTombMeanMultiplier": 26.78494623655914,
+          "observedRtp": 1.27545,
+          "paidReelRtp": 0.6263,
+          "earnedReelRtp": 0.15095,
+          "tombRtp": 0.4982,
+          "blockConfidence95": null
+        }
+      },
+      "residualResources": {
+        "energy": 42,
+        "pity": 1,
+        "nativeRemaining": 0,
+        "legacyRemaining": 0,
+        "carry": null,
+        "specialPoints": 203,
+        "sealCounts": {
+          "sync": 19,
+          "rows": 14,
+          "paw": 20,
+          "rand": 18
+        },
+        "sealWagerPoints": {
+          "sync": 38,
+          "rows": 28,
+          "paw": 40,
+          "rand": 36
+        },
+        "tombFunding": {
+          "sigils": 4,
+          "requiredSigils": 6,
+          "averageWagerPoints": 2
+        },
+        "sigilWagerPointTotal": 8,
+        "unredeemedTickets": 0,
+        "note": "Partial sigils, collections, energy and pity are carried through every block and left unvalued at the final boundary; no new paid spins were manufactured to complete them."
+      },
+      "confidenceMethod": {
+        "kind": "continuous nonoverlapping paid-cycle block ratio means",
+        "batchSize": 10000,
+        "completedBlocks": 1,
+        "note": "Approximate Student-t interval from long blocks, retaining serial game state; a single smoke block has no meaningful confidence interval."
+      },
+      "blocks": [
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000,
+          "paidReelCents": 313150,
+          "earnedReelCents": 75475,
+          "tombCents": {
+            "coins": 195700,
+            "keys": 244550,
+            "random": 162900,
+            "optimal": 249100
+          }
+        }
+      ],
+      "elapsedSeconds": 4.8052071,
+      "paidSpinsPerSecond": 2081.0757130306474
+    },
+    {
+      "stakePoints": 12,
+      "totals": {
+        "paidSpins": 10000,
+        "earnedSpins": 2308,
+        "paidWagerPoints": 120000,
+        "paidWagerCents": 3000000,
+        "paidReelBasePayoutPoints": 73948,
+        "paidReelPayoutPoints": 74343,
+        "paidReelPayoutCents": 1858575,
+        "paidEnergyExtraPoints": 395,
+        "earnedReelBasePayoutPoints": 15358,
+        "earnedReelPayoutPoints": 15408,
+        "earnedReelPayoutCents": 385200,
+        "earnedEnergyExtraPoints": 50,
+        "paidSigilQualifyingSpins": 1159,
+        "pityTriggeredSpins": 729,
+        "paidPityTriggeredSpins": 703,
+        "generationAttempts": 40885,
+        "scatterSpinsAwarded": 516,
+        "collectionSpinsAwarded": 1792,
+        "energyMultiplierEvents": 37,
+        "maximumEarnedSpinsInOnePaidCycle": 28
+      },
+      "strategies": {
+        "coins": {
+          "decisionPolicy": "coins",
+          "tomb": {
+            "expeditions": 193,
+            "actions": 1544,
+            "roomsOpened": 1158,
+            "basePoints": 11580,
+            "roomPoints": 36648,
+            "relicExtraPoints": 0,
+            "finalePoints": 0,
+            "payoutPoints": 48228,
+            "payoutCents": 1205700
+          },
+          "observedTombMeanMultiplier": 20.82383419689119,
+          "observedRtp": 1.149825,
+          "paidReelRtp": 0.619525,
+          "earnedReelRtp": 0.1284,
+          "tombRtp": 0.4019,
+          "blockConfidence95": null
+        },
+        "keys": {
+          "decisionPolicy": "three coin rooms, then three key rooms, then sarcophagus",
+          "tomb": {
+            "expeditions": 193,
+            "actions": 1737,
+            "roomsOpened": 1158,
+            "basePoints": 11580,
+            "roomPoints": 25128,
+            "relicExtraPoints": 0,
+            "finalePoints": 24816,
+            "payoutPoints": 61524,
+            "payoutCents": 1538100
+          },
+          "observedTombMeanMultiplier": 26.564766839378237,
+          "observedRtp": 1.260625,
+          "paidReelRtp": 0.619525,
+          "earnedReelRtp": 0.1284,
+          "tombRtp": 0.5127,
+          "blockConfidence95": null
+        },
+        "random": {
+          "decisionPolicy": "random",
+          "tomb": {
+            "expeditions": 193,
+            "actions": 1539,
+            "roomsOpened": 1079,
+            "basePoints": 11580,
+            "roomPoints": 20412,
+            "relicExtraPoints": 1164,
+            "finalePoints": 9504,
+            "payoutPoints": 42660,
+            "payoutCents": 1066500
+          },
+          "observedTombMeanMultiplier": 18.419689119170986,
+          "observedRtp": 1.103425,
+          "paidReelRtp": 0.619525,
+          "earnedReelRtp": 0.1284,
+          "tombRtp": 0.3555,
+          "blockConfidence95": null
+        },
+        "optimal": {
+          "decisionPolicy": "optimal",
+          "tomb": {
+            "expeditions": 193,
+            "actions": 1737,
+            "roomsOpened": 1158,
+            "basePoints": 11580,
+            "roomPoints": 25368,
+            "relicExtraPoints": 0,
+            "finalePoints": 24816,
+            "payoutPoints": 61764,
+            "payoutCents": 1544100
+          },
+          "observedTombMeanMultiplier": 26.66839378238342,
+          "observedRtp": 1.262625,
+          "paidReelRtp": 0.619525,
+          "earnedReelRtp": 0.1284,
+          "tombRtp": 0.5147,
+          "blockConfidence95": null
+        }
+      },
+      "residualResources": {
+        "energy": 41,
+        "pity": 1,
+        "nativeRemaining": 0,
+        "legacyRemaining": 0,
+        "carry": null,
+        "specialPoints": 222,
+        "sealCounts": {
+          "sync": 12,
+          "rows": 9,
+          "paw": 6,
+          "rand": 15
+        },
+        "sealWagerPoints": {
+          "sync": 144,
+          "rows": 108,
+          "paw": 72,
+          "rand": 180
+        },
+        "tombFunding": {
+          "sigils": 1,
+          "requiredSigils": 6,
+          "averageWagerPoints": 12
+        },
+        "sigilWagerPointTotal": 12,
+        "unredeemedTickets": 0,
+        "note": "Partial sigils, collections, energy and pity are carried through every block and left unvalued at the final boundary; no new paid spins were manufactured to complete them."
+      },
+      "confidenceMethod": {
+        "kind": "continuous nonoverlapping paid-cycle block ratio means",
+        "batchSize": 10000,
+        "completedBlocks": 1,
+        "note": "Approximate Student-t interval from long blocks, retaining serial game state; a single smoke block has no meaningful confidence interval."
+      },
+      "blocks": [
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1858575,
+          "earnedReelCents": 385200,
+          "tombCents": {
+            "coins": 1205700,
+            "keys": 1538100,
+            "random": 1066500,
+            "optimal": 1544100
+          }
+        }
+      ],
+      "elapsedSeconds": 4.7617403,
+      "paidSpinsPerSecond": 2100.072397895845
+    },
+    {
+      "stakePoints": 2000,
+      "totals": {
+        "paidSpins": 10000,
+        "earnedSpins": 2471,
+        "paidWagerPoints": 20000000,
+        "paidWagerCents": 500000000,
+        "paidReelBasePayoutPoints": 12098704,
+        "paidReelPayoutPoints": 12146640,
+        "paidReelPayoutCents": 303666000,
+        "paidEnergyExtraPoints": 47936,
+        "earnedReelBasePayoutPoints": 2768304,
+        "earnedReelPayoutPoints": 2806824,
+        "earnedReelPayoutCents": 70170600,
+        "earnedEnergyExtraPoints": 38520,
+        "paidSigilQualifyingSpins": 1162,
+        "pityTriggeredSpins": 726,
+        "paidPityTriggeredSpins": 700,
+        "generationAttempts": 41707,
+        "scatterSpinsAwarded": 630,
+        "collectionSpinsAwarded": 1841,
+        "energyMultiplierEvents": 38,
+        "maximumEarnedSpinsInOnePaidCycle": 39
+      },
+      "strategies": {
+        "coins": {
+          "decisionPolicy": "coins",
+          "tomb": {
+            "expeditions": 193,
+            "actions": 1544,
+            "roomsOpened": 1158,
+            "basePoints": 1930000,
+            "roomPoints": 6118000,
+            "relicExtraPoints": 0,
+            "finalePoints": 0,
+            "payoutPoints": 8048000,
+            "payoutCents": 201200000
+          },
+          "observedTombMeanMultiplier": 20.849740932642487,
+          "observedRtp": 1.1500732,
+          "paidReelRtp": 0.607332,
+          "earnedReelRtp": 0.1403412,
+          "tombRtp": 0.4024,
+          "blockConfidence95": null
+        },
+        "keys": {
+          "decisionPolicy": "three coin rooms, then three key rooms, then sarcophagus",
+          "tomb": {
+            "expeditions": 193,
+            "actions": 1737,
+            "roomsOpened": 1158,
+            "basePoints": 1930000,
+            "roomPoints": 4160000,
+            "relicExtraPoints": 0,
+            "finalePoints": 3920000,
+            "payoutPoints": 10010000,
+            "payoutCents": 250250000
+          },
+          "observedTombMeanMultiplier": 25.932642487046632,
+          "observedRtp": 1.2481732,
+          "paidReelRtp": 0.607332,
+          "earnedReelRtp": 0.1403412,
+          "tombRtp": 0.5005,
+          "blockConfidence95": null
+        },
+        "random": {
+          "decisionPolicy": "random",
+          "tomb": {
+            "expeditions": 193,
+            "actions": 1542,
+            "roomsOpened": 1095,
+            "basePoints": 1930000,
+            "roomPoints": 3344000,
+            "relicExtraPoints": 226000,
+            "finalePoints": 1272000,
+            "payoutPoints": 6772000,
+            "payoutCents": 169300000
+          },
+          "observedTombMeanMultiplier": 17.5440414507772,
+          "observedRtp": 1.0862732,
+          "paidReelRtp": 0.607332,
+          "earnedReelRtp": 0.1403412,
+          "tombRtp": 0.3386,
+          "blockConfidence95": null
+        },
+        "optimal": {
+          "decisionPolicy": "optimal",
+          "tomb": {
+            "expeditions": 193,
+            "actions": 1737,
+            "roomsOpened": 1158,
+            "basePoints": 1930000,
+            "roomPoints": 4250000,
+            "relicExtraPoints": 0,
+            "finalePoints": 4032000,
+            "payoutPoints": 10212000,
+            "payoutCents": 255300000
+          },
+          "observedTombMeanMultiplier": 26.4559585492228,
+          "observedRtp": 1.2582732,
+          "paidReelRtp": 0.607332,
+          "earnedReelRtp": 0.1403412,
+          "tombRtp": 0.5106,
+          "blockConfidence95": null
+        }
+      },
+      "residualResources": {
+        "energy": 44,
+        "pity": 11,
+        "nativeRemaining": 0,
+        "legacyRemaining": 0,
+        "carry": null,
+        "specialPoints": 231,
+        "sealCounts": {
+          "sync": 1,
+          "rows": 12,
+          "paw": 5,
+          "rand": 7
+        },
+        "sealWagerPoints": {
+          "sync": 2000,
+          "rows": 24000,
+          "paw": 10000,
+          "rand": 14000
+        },
+        "tombFunding": {
+          "sigils": 4,
+          "requiredSigils": 6,
+          "averageWagerPoints": 2000
+        },
+        "sigilWagerPointTotal": 8000,
+        "unredeemedTickets": 0,
+        "note": "Partial sigils, collections, energy and pity are carried through every block and left unvalued at the final boundary; no new paid spins were manufactured to complete them."
+      },
+      "confidenceMethod": {
+        "kind": "continuous nonoverlapping paid-cycle block ratio means",
+        "batchSize": 10000,
+        "completedBlocks": 1,
+        "note": "Approximate Student-t interval from long blocks, retaining serial game state; a single smoke block has no meaningful confidence interval."
+      },
+      "blocks": [
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 500000000,
+          "paidReelCents": 303666000,
+          "earnedReelCents": 70170600,
+          "tombCents": {
+            "coins": 201200000,
+            "keys": 250250000,
+            "random": 169300000,
+            "optimal": 255300000
+          }
+        }
+      ],
+      "elapsedSeconds": 1.8322684,
+      "paidSpinsPerSecond": 5457.715394877989
+    }
+  ]
+}

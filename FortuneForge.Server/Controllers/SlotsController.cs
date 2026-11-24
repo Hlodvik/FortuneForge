@@ -211,7 +211,6 @@ public sealed class SlotsController(
         SpinRequest request,
         CancellationToken cancellationToken)
     {
-        var preparedOperationPending = false;
         try
         {
             var accountResult = await accountService.GetProfileAsync(
@@ -287,40 +286,8 @@ public sealed class SlotsController(
 
             if (!ArcaneWorkerRoundsEnabled)
                 throw new GameWorkerUnavailableException(request.GameId);
-            var forwarded = await ArcanePaidWorkerGateway.SpinAsync(workers, HttpContext, account.UserId,
+            return await ArcanePaidWorkerGateway.SpinAsync(workers, HttpContext, account.UserId,
                 new(request.GameId, request.WagerPoints, request.UseFreeSpin, request.UseSpecialBoost), operationId, cancellationToken);
-            if (forwarded is not null) return forwarded;
-            if (operationId is null)
-                throw new GameWorkerUnavailableException(request.GameId);
-
-            var pointValueInCents = spinService.GetPointValueInCents(request.GameId);
-            var specialBoostCost = request.UseSpecialBoost
-                ? spinService.GetSpecialBoostCost(request.GameId)
-                : 0;
-            var admission = await accountService.BeginSlotSpinAsync(
-                account.UserId,
-                request.GameId,
-                request.WagerPoints,
-                pointValueInCents,
-                request.UseFreeSpin,
-                request.UseSpecialBoost,
-                specialBoostCost,
-                DateTime.UtcNow,
-                TimeSpan.Zero,
-                cancellationToken,
-                operationId: operationId,
-                allowNewPrepared: false);
-            var result = admission.ResolvedOutcome ??
-                throw new InvalidOperationException("The original Arcane spin outcome is unavailable.");
-            preparedOperationPending = true;
-            var settlement = await accountService.RecordSlotSpinAsync(
-                account.UserId,
-                result,
-                admission,
-                // Admission has consumed any free/boost credit. Complete settlement
-                // even if the player navigates away or the HTTP request disconnects.
-                CancellationToken.None);
-            return Ok(ApplySettlement(result, settlement, admission.IsFreeSpin, admission.ChargedWagerCents));
         }
         catch (GameWorkerUnavailableException exception)
         {
@@ -329,14 +296,6 @@ public sealed class SlotsController(
         catch (KeyNotFoundException exception)
         {
             return NotFound(new { error = exception.Message });
-        }
-        catch (SlotPreparedOperationConflictException exception)
-        {
-            return Conflict(new { code = "slot-operation-conflict", error = exception.Message, pendingOperation = exception.PendingOperation });
-        }
-        catch (SlotPreparedStartPausedException exception)
-        {
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { code = "slot-prepared-start-paused", error = exception.Message });
         }
         catch (InvalidOperationException exception)
         {
@@ -349,8 +308,7 @@ public sealed class SlotsController(
                 code = "insufficient-slot-credits",
                 error = exception.Message,
                 available = exception.Available,
-                required = exception.Required,
-                preparedOperationPending
+                required = exception.Required
             });
         }
         catch (NoFreeSpinsException exception)
@@ -365,15 +323,6 @@ public sealed class SlotsController(
         catch (SlotFreeSpinsRequiredException exception)
         {
             return Conflict(new { code = "free-spins-required", error = exception.Message });
-        }
-        catch (ArcaneTomeActivationRequiredException exception)
-        {
-            return Conflict(new { code = "arcane-tome-required", error = exception.Message });
-        }
-        catch (ArcanePotionWagerLockedException exception)
-        {
-            return Conflict(new { code = "arcane-potion-wager-locked", error = exception.Message,
-                lockedWagerPoints = exception.LockedWagerPoints });
         }
         catch (NeonNitroChoiceConflictException exception)
         {
@@ -450,9 +399,6 @@ public sealed class SlotsController(
             PayoutMultiplier = settlement.PayoutMultiplier,
             SealCollections = settlement.SealCollections,
             FreeSpinFeatureMode = settlement.FreeSpinFeatureMode,
-            ArcaneTome = ArcaneTome.ToView(settlement.ArcaneTome),
-            ArcanePotions = settlement.ArcanePotions is { } potions ? ArcanePotionView.FromState(potions) : null,
-            ArcaneIngredientsAwarded = settlement.ArcaneIngredientsAwarded,
             BonusRound = settlement.BonusRound,
             QueuedBonusRounds = settlement.QueuedBonusRounds,
             AwardedBonusRounds = settlement.AwardedBonusRounds

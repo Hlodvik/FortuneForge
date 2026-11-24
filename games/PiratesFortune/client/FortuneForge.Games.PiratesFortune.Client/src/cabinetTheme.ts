@@ -1,3 +1,4 @@
+import { TREASURE_COVE_TITLE } from './identity'
 import goldPirateCoin from './assets/art/optimized/responsive/192/gold-pirate-coin.webp'
 import pearl from './assets/art/optimized/responsive/192/pearl.webp'
 import piratesCove from './assets/art/optimized/pirates-cove.png'
@@ -6,9 +7,9 @@ import type { SlotCabinetTheme } from '@fortuneforge/slot-client-core'
 export const PIRATES_FORTUNE_CABINET_THEME: SlotCabinetTheme = {
   id: 'pirates-fortune-moonlit-cove-v1',
   chrome: 'ornate',
-  accessibleName: "Pirates' Fortune slot machine",
+  accessibleName: `${TREASURE_COVE_TITLE} slot machine`,
   eyebrow: 'Fortune Forge presents',
-  title: "Pirates' Fortune",
+  title: TREASURE_COVE_TITLE,
   subtitle: 'Plunder the Moonlit Cove',
   emblemImage: pearl,
   accentImage: goldPirateCoin,

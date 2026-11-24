@@ -1,0 +1,809 @@
+{
+  "engineVersion": "pharaohs-ascent-sealed-tomb-v3",
+  "gameId": "cosmic-fortune-v1",
+  "wagering": {
+    "pointValueInCents": 25,
+    "minimumWagerPoints": 2,
+    "defaultWagerPoints": 12,
+    "maximumWagerPoints": 300,
+    "wagerIncrementPoints": 2
+  },
+  "pricing": {
+    "payoutMultiplier": 1,
+    "paytable": {
+      "id": "pharaohs-ascent-paytable-v3",
+      "symbolSetId": "classic-symbols-v3",
+      "rules": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 5
+        }
+      ]
+    }
+  },
+  "generatedAtUtc": "2026-11-23T02:33:35.6884826+00:00",
+  "startedAtUtc": "2026-11-23T02:33:30.3870766+00:00",
+  "elapsedSeconds": 5.3013529,
+  "options": {
+    "paidSpins": 10000,
+    "stakes": [
+      12
+    ],
+    "batchSize": 10000,
+    "seed": 20261124,
+    "parallelism": 1,
+    "strategies": [
+      "coins",
+      "optimal"
+    ],
+    "output": "output/analysis/pharaohs-ascent/rtp-v3-equivalence-boosts.json",
+    "wagerPolicy": "fixed",
+    "pairedStakes": false,
+    "useEarnedBoosts": true
+  },
+  "methodology": "Exact current production CosmicFortuneEngine and CosmicFortuneRoundPolicy.Advance/SpendsLegacy; every paid cycle drains all earned carry and redeems every funded tomb ticket through SealedTombRules. One continuous state per selected stake, retained between nonoverlapping paid-spin blocks. The wager policy selects only legal new paid wagers; earned spins always use their actual locked funded wager. Strategies share only the within-stake reel/funding trace and use separate unbiased RNG streams for actual tomb outcomes. Main state retains the completed coins branch; tomb decisions do not affect reel rules or funding. Per-symbol contributions reconcile to settled reel returns and are diagnostic selected-match exposures, not an alternate payout model. Earned boosts are off by default; the explicit option spends only the actual saved special-point balance at the production activation cost on paid or earned spins. No live wallet/database/network access. Confidence intervals use actual paid-wager block ratios, not individual reel/action observations. Residual partial resources are reported and are not artificially paid out.",
+  "tombExpectations": {
+    "coins": 20.9,
+    "keys": 26.35,
+    "optimal": 26.35
+  },
+  "profiles": [
+    {
+      "stakePoints": 12,
+      "totals": {
+        "paidSpins": 10000,
+        "earnedSpins": 2409,
+        "paidWagerPoints": 120000,
+        "paidWagerCents": 3000000,
+        "paidReelBasePayoutPoints": 73512,
+        "paidReelPayoutPoints": 73848,
+        "paidReelPayoutCents": 1846200,
+        "paidEnergyExtraPoints": 336,
+        "earnedReelBasePayoutPoints": 16428,
+        "earnedReelPayoutPoints": 16608,
+        "earnedReelPayoutCents": 415200,
+        "earnedEnergyExtraPoints": 180,
+        "paidSigilQualifyingSpins": 390,
+        "pityTriggeredSpins": 754,
+        "paidPityTriggeredSpins": 699,
+        "paidPityTriggeredWagerPoints": 8388,
+        "generationAttempts": 43523,
+        "scatterSpinsAwarded": 582,
+        "collectionSpinsAwarded": 1827,
+        "energyMultiplierEvents": 38,
+        "maximumEarnedSpinsInOnePaidCycle": 40,
+        "oddFundedEarnedSpins": 0,
+        "minimumBetPaidSpins": 0,
+        "selectedHighBetPaidSpins": 10000,
+        "paidEnergyMultiplierEvents": 26,
+        "paidEnergyMultiplierWagerPoints": 312,
+        "paidBoostSpins": 23,
+        "earnedBoostSpins": 4,
+        "specialPointsSpent": 216,
+        "specialPointsAwarded": 222
+      },
+      "strategies": {
+        "coins": {
+          "decisionPolicy": "coins",
+          "tomb": {
+            "expeditions": 65,
+            "actions": 520,
+            "roomsOpened": 390,
+            "basePoints": 3900,
+            "roomPoints": 12468,
+            "relicExtraPoints": 0,
+            "finalePoints": 0,
+            "payoutPoints": 16368,
+            "payoutCents": 409200,
+            "fundedWagerPoints": 780
+          },
+          "observedTombMeanMultiplier": 20.984615384615385,
+          "observedRtp": 0.8902,
+          "paidReelRtp": 0.6154,
+          "earnedReelRtp": 0.1384,
+          "tombRtp": 0.1364,
+          "blockConfidence95": null
+        },
+        "optimal": {
+          "decisionPolicy": "optimal",
+          "tomb": {
+            "expeditions": 65,
+            "actions": 585,
+            "roomsOpened": 390,
+            "basePoints": 3900,
+            "roomPoints": 8580,
+            "relicExtraPoints": 0,
+            "finalePoints": 8256,
+            "payoutPoints": 20736,
+            "payoutCents": 518400,
+            "fundedWagerPoints": 780
+          },
+          "observedTombMeanMultiplier": 26.584615384615386,
+          "observedRtp": 0.9266,
+          "paidReelRtp": 0.6154,
+          "earnedReelRtp": 0.1384,
+          "tombRtp": 0.1728,
+          "blockConfidence95": null
+        }
+      },
+      "residualResources": {
+        "energy": 21,
+        "pity": 2,
+        "nativeRemaining": 0,
+        "legacyRemaining": 0,
+        "carry": null,
+        "specialPoints": 6,
+        "sealCounts": {
+          "sync": 20,
+          "rows": 21,
+          "paw": 23,
+          "rand": 4
+        },
+        "sealWagerPoints": {
+          "sync": 240,
+          "rows": 252,
+          "paw": 276,
+          "rand": 48
+        },
+        "tombFunding": {
+          "sigils": 0,
+          "requiredSigils": 6,
+          "averageWagerPoints": 0,
+          "minimumScarabs": 3
+        },
+        "sigilWagerPointTotal": 0,
+        "unredeemedTickets": 0,
+        "note": "Partial sigils, collections, energy and pity are carried through every block and left unvalued at the final boundary; no new paid spins were manufactured to complete them."
+      },
+      "confidenceMethod": {
+        "kind": "continuous nonoverlapping paid-cycle block ratio means",
+        "batchSize": 10000,
+        "completedBlocks": 1,
+        "note": "Approximate Student-t interval from long blocks, retaining serial game state; a single smoke block has no meaningful confidence interval."
+      },
+      "blocks": [
+        {
+          "paidSpins": 10000,
+          "paidWagerCents": 3000000,
+          "paidReelCents": 1846200,
+          "earnedReelCents": 415200,
+          "tombCents": {
+            "coins": 409200,
+            "optimal": 518400
+          }
+        }
+      ],
+      "elapsedSeconds": 5.2110271,
+      "paidSpinsPerSecond": 1919.0074463629742,
+      "wagerPolicy": "fixed",
+      "payoutContributions": [
+        {
+          "kind": "paytable",
+          "symbolId": "2",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 319,
+            "earnedMatches": 67,
+            "paidMatchedWagerPoints": 3828,
+            "earnedMatchedWagerPoints": 804,
+            "energyMatchedWagerPoints": 36,
+            "energyBoostExposurePoints": 18.0,
+            "paidBasePoints": 3828,
+            "earnedBasePoints": 804,
+            "paidSettledPoints": 3840,
+            "earnedSettledPoints": 810,
+            "energyExtraPoints": 18
+          },
+          "paidRtp": 0.032,
+          "earnedRtp": 0.00675,
+          "totalRtp": 0.03875,
+          "selectedMatchLinearRtpPerMultiplier": 0.03875
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "2",
+          "matchLength": 4,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 277,
+            "earnedMatches": 55,
+            "paidMatchedWagerPoints": 3324,
+            "earnedMatchedWagerPoints": 660,
+            "energyMatchedWagerPoints": 84,
+            "energyBoostExposurePoints": 42.0,
+            "paidBasePoints": 3324,
+            "earnedBasePoints": 660,
+            "paidSettledPoints": 3348,
+            "earnedSettledPoints": 678,
+            "energyExtraPoints": 42
+          },
+          "paidRtp": 0.0279,
+          "earnedRtp": 0.00565,
+          "totalRtp": 0.03355,
+          "selectedMatchLinearRtpPerMultiplier": 0.03355
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "2",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 2,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 147,
+            "earnedMatches": 29,
+            "paidMatchedWagerPoints": 1764,
+            "earnedMatchedWagerPoints": 348,
+            "energyMatchedWagerPoints": 24,
+            "energyBoostExposurePoints": 12.0,
+            "paidBasePoints": 3528,
+            "earnedBasePoints": 696,
+            "paidSettledPoints": 3528,
+            "earnedSettledPoints": 720,
+            "energyExtraPoints": 24
+          },
+          "paidRtp": 0.0294,
+          "earnedRtp": 0.006,
+          "totalRtp": 0.0354,
+          "selectedMatchLinearRtpPerMultiplier": 0.0177
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "3",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 829,
+            "earnedMatches": 168,
+            "paidMatchedWagerPoints": 9948,
+            "earnedMatchedWagerPoints": 2016,
+            "energyMatchedWagerPoints": 72,
+            "energyBoostExposurePoints": 36.0,
+            "paidBasePoints": 9948,
+            "earnedBasePoints": 2016,
+            "paidSettledPoints": 9984,
+            "earnedSettledPoints": 2016,
+            "energyExtraPoints": 36
+          },
+          "paidRtp": 0.0832,
+          "earnedRtp": 0.0168,
+          "totalRtp": 0.1,
+          "selectedMatchLinearRtpPerMultiplier": 0.1
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "3",
+          "matchLength": 4,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 1075,
+            "earnedMatches": 194,
+            "paidMatchedWagerPoints": 12900,
+            "earnedMatchedWagerPoints": 2328,
+            "energyMatchedWagerPoints": 144,
+            "energyBoostExposurePoints": 72.0,
+            "paidBasePoints": 12900,
+            "earnedBasePoints": 2328,
+            "paidSettledPoints": 12954,
+            "earnedSettledPoints": 2346,
+            "energyExtraPoints": 72
+          },
+          "paidRtp": 0.10795,
+          "earnedRtp": 0.01955,
+          "totalRtp": 0.1275,
+          "selectedMatchLinearRtpPerMultiplier": 0.1275
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "3",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 2,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 717,
+            "earnedMatches": 156,
+            "paidMatchedWagerPoints": 8604,
+            "earnedMatchedWagerPoints": 1872,
+            "energyMatchedWagerPoints": 132,
+            "energyBoostExposurePoints": 66.0,
+            "paidBasePoints": 17208,
+            "earnedBasePoints": 3744,
+            "paidSettledPoints": 17316,
+            "earnedSettledPoints": 3768,
+            "energyExtraPoints": 132
+          },
+          "paidRtp": 0.1443,
+          "earnedRtp": 0.0314,
+          "totalRtp": 0.1757,
+          "selectedMatchLinearRtpPerMultiplier": 0.08785
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "4",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 253,
+            "earnedMatches": 54,
+            "paidMatchedWagerPoints": 3036,
+            "earnedMatchedWagerPoints": 648,
+            "energyMatchedWagerPoints": 60,
+            "energyBoostExposurePoints": 30.0,
+            "paidBasePoints": 3036,
+            "earnedBasePoints": 648,
+            "paidSettledPoints": 3048,
+            "earnedSettledPoints": 666,
+            "energyExtraPoints": 30
+          },
+          "paidRtp": 0.0254,
+          "earnedRtp": 0.00555,
+          "totalRtp": 0.03095,
+          "selectedMatchLinearRtpPerMultiplier": 0.03095
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "4",
+          "matchLength": 4,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 240,
+            "earnedMatches": 46,
+            "paidMatchedWagerPoints": 2880,
+            "earnedMatchedWagerPoints": 552,
+            "energyMatchedWagerPoints": 12,
+            "energyBoostExposurePoints": 6.0,
+            "paidBasePoints": 2880,
+            "earnedBasePoints": 552,
+            "paidSettledPoints": 2886,
+            "earnedSettledPoints": 552,
+            "energyExtraPoints": 6
+          },
+          "paidRtp": 0.02405,
+          "earnedRtp": 0.0046,
+          "totalRtp": 0.02865,
+          "selectedMatchLinearRtpPerMultiplier": 0.02865
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "4",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 3,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 103,
+            "earnedMatches": 26,
+            "paidMatchedWagerPoints": 1236,
+            "earnedMatchedWagerPoints": 312,
+            "energyMatchedWagerPoints": 24,
+            "energyBoostExposurePoints": 12.0,
+            "paidBasePoints": 3708,
+            "earnedBasePoints": 936,
+            "paidSettledPoints": 3744,
+            "earnedSettledPoints": 936,
+            "energyExtraPoints": 36
+          },
+          "paidRtp": 0.0312,
+          "earnedRtp": 0.0078,
+          "totalRtp": 0.039,
+          "selectedMatchLinearRtpPerMultiplier": 0.013
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "5",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 2,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 53,
+            "earnedMatches": 13,
+            "paidMatchedWagerPoints": 636,
+            "earnedMatchedWagerPoints": 156,
+            "energyMatchedWagerPoints": 0,
+            "energyBoostExposurePoints": 0,
+            "paidBasePoints": 1272,
+            "earnedBasePoints": 312,
+            "paidSettledPoints": 1272,
+            "earnedSettledPoints": 312,
+            "energyExtraPoints": 0
+          },
+          "paidRtp": 0.0106,
+          "earnedRtp": 0.0026,
+          "totalRtp": 0.0132,
+          "selectedMatchLinearRtpPerMultiplier": 0.0066
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "5",
+          "matchLength": 4,
+          "paytableRuleLength": 3,
+          "multiplier": 2,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 29,
+            "earnedMatches": 6,
+            "paidMatchedWagerPoints": 348,
+            "earnedMatchedWagerPoints": 72,
+            "energyMatchedWagerPoints": 0,
+            "energyBoostExposurePoints": 0,
+            "paidBasePoints": 696,
+            "earnedBasePoints": 144,
+            "paidSettledPoints": 696,
+            "earnedSettledPoints": 144,
+            "energyExtraPoints": 0
+          },
+          "paidRtp": 0.0058,
+          "earnedRtp": 0.0012,
+          "totalRtp": 0.007,
+          "selectedMatchLinearRtpPerMultiplier": 0.0035
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "5",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 6,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 7,
+            "earnedMatches": 5,
+            "paidMatchedWagerPoints": 84,
+            "earnedMatchedWagerPoints": 60,
+            "energyMatchedWagerPoints": 0,
+            "energyBoostExposurePoints": 0,
+            "paidBasePoints": 504,
+            "earnedBasePoints": 360,
+            "paidSettledPoints": 504,
+            "earnedSettledPoints": 360,
+            "energyExtraPoints": 0
+          },
+          "paidRtp": 0.0042,
+          "earnedRtp": 0.003,
+          "totalRtp": 0.0072,
+          "selectedMatchLinearRtpPerMultiplier": 0.0012
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "6",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 2,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 45,
+            "earnedMatches": 11,
+            "paidMatchedWagerPoints": 540,
+            "earnedMatchedWagerPoints": 132,
+            "energyMatchedWagerPoints": 12,
+            "energyBoostExposurePoints": 6.0,
+            "paidBasePoints": 1080,
+            "earnedBasePoints": 264,
+            "paidSettledPoints": 1092,
+            "earnedSettledPoints": 264,
+            "energyExtraPoints": 12
+          },
+          "paidRtp": 0.0091,
+          "earnedRtp": 0.0022,
+          "totalRtp": 0.0113,
+          "selectedMatchLinearRtpPerMultiplier": 0.00565
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "6",
+          "matchLength": 4,
+          "paytableRuleLength": 3,
+          "multiplier": 2,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 27,
+            "earnedMatches": 7,
+            "paidMatchedWagerPoints": 324,
+            "earnedMatchedWagerPoints": 84,
+            "energyMatchedWagerPoints": 0,
+            "energyBoostExposurePoints": 0,
+            "paidBasePoints": 648,
+            "earnedBasePoints": 168,
+            "paidSettledPoints": 648,
+            "earnedSettledPoints": 168,
+            "energyExtraPoints": 0
+          },
+          "paidRtp": 0.0054,
+          "earnedRtp": 0.0014,
+          "totalRtp": 0.0068,
+          "selectedMatchLinearRtpPerMultiplier": 0.0034
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "6",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 8,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 6,
+            "earnedMatches": 2,
+            "paidMatchedWagerPoints": 72,
+            "earnedMatchedWagerPoints": 24,
+            "energyMatchedWagerPoints": 0,
+            "energyBoostExposurePoints": 0,
+            "paidBasePoints": 576,
+            "earnedBasePoints": 192,
+            "paidSettledPoints": 576,
+            "earnedSettledPoints": 192,
+            "energyExtraPoints": 0
+          },
+          "paidRtp": 0.0048,
+          "earnedRtp": 0.0016,
+          "totalRtp": 0.0064,
+          "selectedMatchLinearRtpPerMultiplier": 0.0008
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "7",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 3,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 11,
+            "earnedMatches": 4,
+            "paidMatchedWagerPoints": 132,
+            "earnedMatchedWagerPoints": 48,
+            "energyMatchedWagerPoints": 0,
+            "energyBoostExposurePoints": 0,
+            "paidBasePoints": 396,
+            "earnedBasePoints": 144,
+            "paidSettledPoints": 396,
+            "earnedSettledPoints": 144,
+            "energyExtraPoints": 0
+          },
+          "paidRtp": 0.0033,
+          "earnedRtp": 0.0012,
+          "totalRtp": 0.0045,
+          "selectedMatchLinearRtpPerMultiplier": 0.0015
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 124,
+            "earnedMatches": 29,
+            "paidMatchedWagerPoints": 1488,
+            "earnedMatchedWagerPoints": 348,
+            "energyMatchedWagerPoints": 48,
+            "energyBoostExposurePoints": 24.0,
+            "paidBasePoints": 1488,
+            "earnedBasePoints": 348,
+            "paidSettledPoints": 1494,
+            "earnedSettledPoints": 366,
+            "energyExtraPoints": 24
+          },
+          "paidRtp": 0.01245,
+          "earnedRtp": 0.00305,
+          "totalRtp": 0.0155,
+          "selectedMatchLinearRtpPerMultiplier": 0.0155
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "POWER",
+          "matchLength": 4,
+          "paytableRuleLength": 3,
+          "multiplier": 1,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 102,
+            "earnedMatches": 30,
+            "paidMatchedWagerPoints": 1224,
+            "earnedMatchedWagerPoints": 360,
+            "energyMatchedWagerPoints": 12,
+            "energyBoostExposurePoints": 6.0,
+            "paidBasePoints": 1224,
+            "earnedBasePoints": 360,
+            "paidSettledPoints": 1224,
+            "earnedSettledPoints": 366,
+            "energyExtraPoints": 6
+          },
+          "paidRtp": 0.0102,
+          "earnedRtp": 0.00305,
+          "totalRtp": 0.01325,
+          "selectedMatchLinearRtpPerMultiplier": 0.01325
+        },
+        {
+          "kind": "paytable",
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "paytableRuleLength": 5,
+          "multiplier": 5,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 44,
+            "earnedMatches": 12,
+            "paidMatchedWagerPoints": 528,
+            "earnedMatchedWagerPoints": 144,
+            "energyMatchedWagerPoints": 24,
+            "energyBoostExposurePoints": 12.0,
+            "paidBasePoints": 2640,
+            "earnedBasePoints": 720,
+            "paidSettledPoints": 2670,
+            "earnedSettledPoints": 750,
+            "energyExtraPoints": 60
+          },
+          "paidRtp": 0.02225,
+          "earnedRtp": 0.00625,
+          "totalRtp": 0.0285,
+          "selectedMatchLinearRtpPerMultiplier": 0.0057
+        },
+        {
+          "kind": "scarab-trail",
+          "symbolId": "BANANA",
+          "matchLength": 3,
+          "paytableRuleLength": null,
+          "multiplier": 3,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 52,
+            "earnedMatches": 22,
+            "paidMatchedWagerPoints": 624,
+            "earnedMatchedWagerPoints": 264,
+            "energyMatchedWagerPoints": 12,
+            "energyBoostExposurePoints": 6.0,
+            "paidBasePoints": 1872,
+            "earnedBasePoints": 792,
+            "paidSettledPoints": 1872,
+            "earnedSettledPoints": 810,
+            "energyExtraPoints": 18
+          },
+          "paidRtp": 0.0156,
+          "earnedRtp": 0.00675,
+          "totalRtp": 0.02235,
+          "selectedMatchLinearRtpPerMultiplier": 0.00745
+        },
+        {
+          "kind": "scarab-trail",
+          "symbolId": "BANANA",
+          "matchLength": 4,
+          "paytableRuleLength": null,
+          "multiplier": 5,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 11,
+            "earnedMatches": 4,
+            "paidMatchedWagerPoints": 132,
+            "earnedMatchedWagerPoints": 48,
+            "energyMatchedWagerPoints": 0,
+            "energyBoostExposurePoints": 0,
+            "paidBasePoints": 660,
+            "earnedBasePoints": 240,
+            "paidSettledPoints": 660,
+            "earnedSettledPoints": 240,
+            "energyExtraPoints": 0
+          },
+          "paidRtp": 0.0055,
+          "earnedRtp": 0.002,
+          "totalRtp": 0.0075,
+          "selectedMatchLinearRtpPerMultiplier": 0.0015
+        },
+        {
+          "kind": "scarab-trail",
+          "symbolId": "BANANA",
+          "matchLength": 5,
+          "paytableRuleLength": null,
+          "multiplier": 8,
+          "payoutScale": 1,
+          "totals": {
+            "paidMatches": 1,
+            "earnedMatches": 0,
+            "paidMatchedWagerPoints": 12,
+            "earnedMatchedWagerPoints": 0,
+            "energyMatchedWagerPoints": 0,
+            "energyBoostExposurePoints": 0,
+            "paidBasePoints": 96,
+            "earnedBasePoints": 0,
+            "paidSettledPoints": 96,
+            "earnedSettledPoints": 0,
+            "energyExtraPoints": 0
+          },
+          "paidRtp": 0.0008,
+          "earnedRtp": 0,
+          "totalRtp": 0.0008,
+          "selectedMatchLinearRtpPerMultiplier": 0.0001
+        }
+      ]
+    }
+  ]
+}

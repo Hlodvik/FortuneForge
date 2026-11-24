@@ -1,0 +1,15 @@
+{
+  "entry": "assets/browser-BGNcKjKW.js",
+  "exports": [
+    "default"
+  ],
+  "modules": 77,
+  "foreignImplementationModules": [],
+  "hostPorts": [
+    "account",
+    "authenticatedFetch",
+    "renderShell",
+    "onSpinStateChange"
+  ],
+  "published": false
+}

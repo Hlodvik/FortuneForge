@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "engineVersion": "pharaohs-ascent-sealed-tomb-v3",
+  "legalStakes": 150,
+  "paidCyclesPerStake": 1000,
+  "totalPaidCycles": 150000,
+  "seed": 20261125,
+  "pairedStakes": true,
+  "scope": "Exact scaled financial totals, outcome/progression counters, tomb strategies and terminal resources; no new game requests."
+}

@@ -1,7 +1,7 @@
 using FortuneForge.Games.GodsOfOlympus;
 using FortuneForge.Games.GodsOfOlympus.Server;
-using FortuneForge.Games.HighNoonFortune;
-using FortuneForge.Games.HighNoonFortune.Server;
+using FortuneForge.Games.FrontierFortune;
+using FortuneForge.Games.FrontierFortune.Server;
 using FortuneForge.Games.PiratesFortune;
 using FortuneForge.Games.PiratesFortune.Server;
 using FortuneForge.Games.RainbowRealm;
@@ -14,8 +14,8 @@ using FortuneForge.Games.CosmicFortune;
 using FortuneForge.Games.CosmicFortune.Server;
 using FortuneForge.Games.OceanOdyssey;
 using FortuneForge.Games.OceanOdyssey.Server;
-using FortuneForge.Games.SamuraiFortune;
-using FortuneForge.Games.SamuraiFortune.Server;
+using FortuneForge.Games.CrookedRoad;
+using FortuneForge.Games.CrookedRoad.Server;
 using FortuneForge.Games.CandyCarnival;
 using FortuneForge.Games.CandyCarnival.Server;
 using FortuneForge.Games.PhantomManor;
@@ -44,11 +44,11 @@ public sealed class PreparedSlotWorkerOwnershipTests(MidnightVaultPaidEmulatorFi
     [InlineData(PiratesFortuneEngine.GameId, PiratesFortuneEngine.GameId, PiratesRoundStateCodec.OwnerField)]
     [InlineData(GodsOfOlympusEngine.GameId, GodsOfOlympusEngine.GameId, OlympusRoundStateCodec.OwnerField)]
     [InlineData(ReelRichesEngine.GameId, ReelRichesEngine.GameId, ReelRichesRoundStateCodec.OwnerField)]
-    [InlineData(HighNoonFortuneEngine.GameId, HighNoonFortuneEngine.GameId, HighNoonRoundStateCodec.OwnerField)]
+    [InlineData(FrontierFortuneEngine.GameId, FrontierFortuneEngine.GameId, FrontierRoundStore.OwnerField)]
     [InlineData(RoyalDrawEngine.GameId, RoyalDrawEngine.GameId, RoyalDrawRoundStateCodec.OwnerField)]
     [InlineData(CosmicFortuneEngine.GameId, CosmicFortuneEngine.GameId, CosmicFortuneRoundStateCodec.OwnerField)]
     [InlineData(OceanOdysseyEngine.GameId, OceanOdysseyEngine.GameId, OceanOdysseyRoundStateCodec.OwnerField)]
-    [InlineData(SamuraiFortuneEngine.GameId, SamuraiFortuneEngine.GameId, SamuraiFortuneRoundStateCodec.OwnerField)]
+    [InlineData(CrookedRoadRules.GameId, CrookedRoadRules.GameId, CrookedRoadRoundStateCodec.OwnerField)]
     [InlineData(CandyCarnivalEngine.GameId, CandyCarnivalEngine.GameId, CandyCarnivalRoundStateCodec.OwnerField)]
     [InlineData(PhantomManorEngine.GameId, PhantomManorEngine.GameId, PhantomManorRoundStateCodec.OwnerField)]
     [InlineData(NordicLegendsEngine.GameId, NordicLegendsEngine.GameId, NordicLegendsRoundStateCodec.OwnerField)]

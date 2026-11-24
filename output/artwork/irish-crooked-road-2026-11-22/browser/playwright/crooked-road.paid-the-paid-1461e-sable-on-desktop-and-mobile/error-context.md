@@ -1,0 +1,183 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - link "Fortune Forge home" [ref=e7]:
+        - /url: /home
+        - img [ref=e8]
+        - strong [ref=e10]: FORTUNE FORGE
+      - link "Other Games" [ref=e11]:
+        - /url: /home
+    - generic [ref=e12]:
+      - link "Balance R10,008.72. Add funds" [ref=e13]:
+        - /url: /balance
+        - generic [ref=e14]: Balance
+        - strong [ref=e15]: R10,008.72
+      - generic [ref=e16]:
+        - generic: L
+        - group [ref=e18]
+  - generic [ref=e21]:
+    - generic [ref=e22]:
+      - main [ref=e23]:
+        - heading "The Crooked Road" [level=1] [ref=e24]
+        - generic [ref=e26]:
+          - region "The Crooked Road themed slot machine" [ref=e28]:
+            - generic "5-reel slot container" [ref=e32]:
+              - group "Reel 1" [ref=e33]:
+                - generic [ref=e35]:
+                  - generic "Four-leaf clover" [ref=e36]:
+                    - generic:
+                      - img
+                  - generic "Irish fiddle" [ref=e37]:
+                    - generic:
+                      - img
+                  - generic "Clever fox" [ref=e38]:
+                    - generic:
+                      - img
+              - group "Reel 2" [ref=e39]:
+                - generic [ref=e41]:
+                  - generic "Golden horseshoe" [ref=e42]:
+                    - generic:
+                      - img
+                  - generic "Finbar’s wild hat" [ref=e43]:
+                    - generic:
+                      - img
+                  - generic "Brass lantern" [ref=e44]:
+                    - generic:
+                      - img
+              - group "Reel 3" [ref=e45]:
+                - generic [ref=e47]:
+                  - generic "Golden harp" [ref=e48]:
+                    - generic:
+                      - img
+                  - generic "Four-leaf clover" [ref=e49]:
+                    - generic:
+                      - img
+                  - generic "Enchanted trail" [ref=e50]:
+                    - generic:
+                      - img
+              - group "Reel 4" [ref=e51]:
+                - generic [ref=e53]:
+                  - generic "Brass lantern" [ref=e54]:
+                    - generic:
+                      - img
+                  - generic "Clever fox" [ref=e55]:
+                    - generic:
+                      - img
+                  - generic "Irish fiddle" [ref=e56]:
+                    - generic:
+                      - img
+              - group "Reel 5" [ref=e57]:
+                - generic [ref=e59]:
+                  - generic "Four-leaf clover" [ref=e60]:
+                    - generic:
+                      - img
+                  - generic "Golden harp" [ref=e61]:
+                    - generic:
+                      - img
+                  - generic "Fairy-door ticket" [ref=e62]:
+                    - generic:
+                      - img
+          - generic "Wager and spin controls" [ref=e63]:
+            - generic "Autospin, bet, and spin controls" [ref=e64]:
+              - button "Start autospin" [ref=e65]:
+                - img [ref=e66]
+              - button "Change bet, currently R3" [ref=e70]:
+                - img [ref=e71]
+              - button "Spin the reels" [ref=e78]:
+                - img [ref=e79]
+              - generic [ref=e83]:
+                - text: BET
+                - strong [ref=e84]: R3
+            - paragraph [ref=e86]: Spin the reels. Shape the road. Follow your fortune.
+          - region "Finbar’s road map" [ref=e87]:
+            - generic [ref=e88]:
+              - img "Finbar the Wayward" [ref=e89]
+              - generic [ref=e90]:
+                - generic [ref=e91]: Build a path. Find the Otherworld.
+                - heading "Finbar’s road map" [level=2] [ref=e92]
+              - generic [ref=e93]:
+                - text: "4"
+                - generic [ref=e94]: journeys
+            - generic [ref=e95]:
+              - generic [ref=e96]:
+                - generic [ref=e97]: Wishing Well
+                - generic [ref=e98]: Fairy Fort
+                - generic [ref=e99]: Hollow Hill
+                - group "Three by three road map" [ref=e100]:
+                  - 'button "Row 1, column 1: Bend facing north and east" [ref=e101]'
+                  - 'button "Row 1, column 2: Straight facing north and south" [ref=e102]'
+                  - 'button "Row 1, column 3: empty; place selected tile" [ref=e103]':
+                    - generic [ref=e104]: +
+                  - 'button "Row 2, column 1: empty; place selected tile" [ref=e105]':
+                    - generic [ref=e106]: +
+                  - 'button "Row 2, column 2: Junction facing north and east and south" [ref=e107]'
+                  - 'button "Row 2, column 3: empty; place selected tile" [ref=e108]':
+                    - generic [ref=e109]: +
+                  - 'button "Row 3, column 1: empty; place selected tile" [ref=e110]':
+                    - generic [ref=e111]: +
+                  - 'button "Row 3, column 2: Junction facing north and east and south" [ref=e112]'
+                  - 'button "Row 3, column 3: empty; place selected tile" [ref=e113]':
+                    - generic [ref=e114]: +
+                - generic [ref=e115]: Finbar starts here ↑
+              - complementary "Road tiles and journey tickets" [ref=e116]:
+                - heading "Ready tiles" [level=3] [ref=e117]
+                - group "Select a road tile" [ref=e118]:
+                  - button "Select Bend tile 1" [pressed] [ref=e119]:
+                    - generic [ref=e120]: Bend
+                  - button "Select Junction tile 2" [ref=e121]:
+                    - generic [ref=e122]: Junction
+                - button "↻ Turn tile" [ref=e123]
+                - paragraph [ref=e124]: 96 queued · 84 in reserve
+                - generic "Next queued tiles" [ref=e125]:
+                  - generic [ref=e127]: Bend
+                  - generic [ref=e129]: Junction
+                  - generic [ref=e131]: Bend
+                  - generic [ref=e133]: Junction
+                - group "Edit selected road tile" [ref=e134]:
+                  - button "↻ Rotate" [disabled] [ref=e135]
+                  - button "Remove tile" [disabled] [ref=e136]
+                - generic [ref=e137]:
+                  - strong [ref=e138]: 1 journey ticket
+                  - generic [ref=e139]: 0 / 20 to next ticket
+                  - progressbar [ref=e140]
+            - generic "Choose a connected destination" [ref=e141]:
+              - article [ref=e142]:
+                - button "Set off to Wishing Well" [disabled] [ref=e143]:
+                  - strong [ref=e144]: Wishing Well
+                  - generic [ref=e145]: Set off
+                - generic [ref=e146]: Build a route
+              - article [ref=e147]:
+                - button "Set off to Fairy Fort" [ref=e148]:
+                  - strong [ref=e149]: Fairy Fort
+                  - generic [ref=e150]: Set off →
+                - generic [ref=e151]: Connected
+              - article [ref=e152]:
+                - button "Set off to Hollow Hill" [disabled] [ref=e153]:
+                  - strong [ref=e154]: Hollow Hill
+                  - generic [ref=e155]: Set off
+                - generic [ref=e156]: Build a route
+            - group [ref=e157]
+            - status [ref=e159]: The game request failed (500).
+      - group "Game options" [ref=e160]:
+        - button "How to win" [ref=e161]:
+          - generic [ref=e162]: "?"
+        - button "Open settings" [ref=e163]:
+          - img [ref=e164]
+      - group "Keyboard controls" [ref=e167]:
+        - generic [ref=e168]:
+          - generic [ref=e169]: Space
+          - text: Spin / stop
+        - generic [ref=e170]:
+          - generic [ref=e171]: ←
+          - generic [ref=e172]: →
+          - text: Wager
+        - button "Mute" [ref=e173]:
+          - generic [ref=e174]: M
+          - text: Mute
+    - group "Game help and reporting" [ref=e175]:
+      - button "Report this game" [ref=e176]:
+        - img [ref=e177]
+```

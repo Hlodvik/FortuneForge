@@ -4,7 +4,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import type { SlotPotionSoundEvent } from '@fortuneforge/slot-client-core'
-import type { SlotPotionBottle, SlotPotionState, SlotTomePanelProps } from '@fortuneforge/slot-game-runtime/experience'
+import type { SlotPotionBottle, SlotPotionState, SlotTomePanelProps } from './arcaneFeatures'
 import { cauldronOpening } from './ArcaneIngredientFlights'
 import { ArcanePotionPour } from './ArcanePotionPour'
 import { getPotionArtwork, type PotionArtwork } from './potionArtwork'

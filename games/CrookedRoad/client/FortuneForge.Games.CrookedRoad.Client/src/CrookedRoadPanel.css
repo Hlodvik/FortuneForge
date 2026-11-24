@@ -1,0 +1,166 @@
+.crooked-road {
+  --road-gold: #e9ca7c;
+  --road-ink: #061e19;
+  --road-mint: #b2ddba;
+  position: relative;
+  width: 100%;
+  margin: 0;
+  padding: .8rem;
+  border: 1px solid #d9ba686b;
+  border-radius: 1.1rem;
+  background: linear-gradient(145deg, #102f29f5, #061b18f5);
+  box-shadow: 0 1rem 3rem #0005, inset 0 0 0 4px #b4ce9210;
+  color: #fff2d2;
+  font-family: Georgia, 'Times New Roman', serif;
+  box-sizing: border-box;
+}
+.crooked-road *, .crooked-road *::before, .crooked-road *::after { box-sizing: border-box; }
+.crooked-road h2, .crooked-road h3, .crooked-road p { margin: 0; }
+.crooked-road h2 { color: var(--road-gold); font-size: clamp(1.1rem, 1.7vw, 1.4rem); }
+.crooked-road h3 { color: var(--road-gold); font-size: 1.05rem; }
+.crooked-road button { font: inherit; color: inherit; cursor: pointer; }
+.crooked-road button:disabled { cursor: default; }
+.crooked-road button:focus-visible { outline: 3px solid #ffe29b; outline-offset: 4px; z-index: 3; }
+.crooked-road__heading { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: .5rem; align-items: center; margin-bottom: .35rem; }
+.crooked-road__portrait { width: 48px; height: 66px; object-fit: contain; filter: drop-shadow(0 2px 5px #0008); }
+.crooked-road__eyebrow { display: block; color: var(--road-mint); font: .52rem/1.5 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.crooked-road__journey-count { color: #e9cf88; font: 1.1rem/1.2 Georgia, serif; text-align: center; }
+.crooked-road__journey-count > span { display: block; color: #b9cbb3; font: .5rem/1.5 system-ui, sans-serif; }
+.crooked-road__layout { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(112px, .43fr); gap: .45rem; align-items: center; }
+.crooked-road__map-wrap {
+  position: relative;
+  min-width: 0;
+  aspect-ratio: 1;
+  border-radius: .6rem;
+  background: linear-gradient(#07251c55, #07251c55), var(--crooked-map-art) center / cover;
+  box-shadow: inset 0 0 2rem #00190eb3;
+}
+.crooked-road__map { position: absolute; inset: 22.3% 20.7% 20.4%; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 4px; }
+.crooked-road__cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  padding: 0;
+  background: #0d3029f2;
+  border: 1px solid #b9a7738c;
+  border-radius: 7%;
+  box-shadow: inset 0 0 .9rem #0005;
+}
+.crooked-road__cell:disabled { opacity: 1; }
+.crooked-road__cell[data-selected] { border-color: #fff0ad; box-shadow: 0 0 0 2px #f0d18a, inset 0 0 1rem #edcc7140; }
+.crooked-road__cell[data-on-path] { background: #285239f2; }
+.crooked-road__empty { color: #d1d7a75e; font: 1.4rem/1 system-ui, sans-serif; }
+.crooked-road__map-destination { position: absolute; z-index: 1; font: 700 clamp(.5rem, 1.2vw, .7rem)/1.15 system-ui, sans-serif; color: #fff0b8; text-shadow: 0 1px 4px #000, 0 0 6px #000; }
+.crooked-road__map-destination--fort { top: 17%; left: 50%; transform: translateX(-50%); }
+.crooked-road__map-destination--well { left: 1%; top: 67%; width: 18%; text-align: center; }
+.crooked-road__map-destination--hill { right: 1%; top: 65%; width: 18%; text-align: center; }
+.crooked-road__entrance { position: absolute; bottom: 4%; left: 50%; transform: translateX(-50%); color: #fff0b8; font: .6rem/1 system-ui, sans-serif; white-space: nowrap; text-shadow: 0 1px 4px #000; }
+.crooked-road__tile { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; }
+.crooked-road__tile > img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 2px #0006); }
+.crooked-road__corner-inlay { position: absolute; left: 14%; top: 42%; width: 34%; height: 17%; background: #23472d var(--road-tile-texture) 13% 65% / 410% 410%; border-radius: 0 30% 30% 0; box-shadow: 1px 0 2px #233d20; }
+.crooked-road__finbar { position: absolute; z-index: 2; width: 27%; height: 36%; object-fit: contain; object-position: center bottom; transform: translate(-50%, -72%); filter: drop-shadow(0 2px 3px #000b); pointer-events: none; transition: left .28s ease-in-out, top .28s ease-in-out; }
+.crooked-road__finbar[data-idle] { visibility: hidden; }
+.crooked-road__satchel { align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: .35rem; }
+.crooked-road__satchel > h3 { font-size: .8rem; }
+.crooked-road__hand { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+.crooked-road__hand button { position: relative; display: grid; place-items: center; min-width: 44px; min-height: 64px; aspect-ratio: .82; border: 1px solid #9eac7580; border-radius: .5rem; background: linear-gradient(#103126, #071f1a); }
+.crooked-road__hand button .crooked-road__tile { inset: 0 0 20%; }
+.crooked-road__hand button > span:last-child { position: absolute; bottom: .25rem; font-size: .58rem; }
+.crooked-road__hand button:disabled { opacity: .5; }
+.crooked-road__hand button[aria-pressed='true'] { border-color: #f7dd9a; box-shadow: inset 0 0 1rem #ffe4a325; }
+.crooked-road__turn-hand, .crooked-road__edit-actions button { border: 1px solid #bcaa6b99; border-radius: .45rem; background: linear-gradient(#2c5740, #123425); box-shadow: inset 0 0 0 2px #e4d6a00b, 0 2px 4px #0003; min-height: 44px; padding: .35rem .25rem; font-size: .65rem !important; }
+.crooked-road__turn-hand:disabled, .crooked-road__edit-actions button:disabled { opacity: .4; }
+.crooked-road__edit-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; }
+.crooked-road__queue { color: #bbcfb7; font: .6rem/1.4 system-ui, sans-serif; }
+.crooked-road__queued-tiles { display: flex; gap: .35rem; }
+.crooked-road__queued-tiles > span { position: relative; width: 32px; aspect-ratio: 1; background: #183c2d; border: 1px solid #a1b67b66; border-radius: .25rem; }
+.crooked-road__funding { display: grid; gap: .3rem; margin-top: .1rem; padding-top: .4rem; border-top: 1px solid #d5bd7044; }
+.crooked-road__funding > strong { color: var(--road-gold); font-size: .85rem; }
+.crooked-road__funding label, .crooked-road__funding small { color: #cfdbbf; font: .65rem/1.5 system-ui, sans-serif; }
+.crooked-road__funding progress { width: 100%; height: .5rem; accent-color: #cfb963; }
+.crooked-road__instructions { color: #c4d6bf; font: .7rem/1.6 system-ui, sans-serif; margin: .5rem 0 0 !important; border-top: 1px solid #b9ad6b33; }
+.crooked-road__instructions summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; color: #d9c48d; font-size: .68rem; }
+.crooked-road__instructions summary::before { content: '✦'; margin-right: .5rem; }
+.crooked-road__instructions p { margin: .35rem 0 .7rem; }
+.crooked-road__destinations { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; margin-top: .65rem; }
+.crooked-road__destinations article { display: flex; flex-direction: column; gap: .3rem; text-align: center; }
+.crooked-road__destinations button { display: grid; justify-items: center; align-content: center; gap: .25rem; padding: .5rem .2rem; min-height: 60px; border: 1px solid #d4b46c; border-radius: .55rem; background: linear-gradient(165deg, #3b6848, #173b2a 58%, #0b281d); box-shadow: inset 0 0 0 2px #ecd19112, 0 2px 5px #0005; color: #ffe4a4; }
+.crooked-road__destinations button strong { font-size: .78rem; }
+.crooked-road__destinations button > span { font: .55rem/1.3 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+.crooked-road__destinations button:disabled { opacity: .58; }
+.crooked-road__destinations article[data-connected] button:not(:disabled) { background: linear-gradient(#edcf88, #b79547); color: #122d1e; box-shadow: 0 0 .7rem #e8d98d38, inset 0 0 0 2px #fff1bb40; }
+.crooked-road__destinations small { color: #baceaf; font: .55rem/1.3 system-ui, sans-serif; }
+.crooked-road__status { padding-top: .4rem; color: #ffdfa4; font: .7rem/1.5 system-ui, sans-serif; }
+.crooked-road__status:empty { display: none; }
+.crooked-road__bonus { margin-top: .9rem; padding: clamp(.85rem, 2vw, 1.3rem); border: 1px solid #d9bd73a3; border-radius: .85rem; background-position: center; background-size: cover; box-shadow: inset 0 0 3rem #051b18; }
+.crooked-road__bonus--well { background-image: linear-gradient(#052d2cde, #052d2ced), url('./assets/art/irish/backgrounds/crooked-road-wishing-well-v1.webp'); }
+.crooked-road__bonus--fort { background-image: linear-gradient(#172d16e8, #10200fe8), url('./assets/art/irish/backgrounds/crooked-road-fairy-fort-v1.webp'); }
+.crooked-road__bonus--hill { background-image: linear-gradient(#211d38dd, #151022ed), url('./assets/art/irish/backgrounds/crooked-road-hollow-hill-v1.webp'); }
+.crooked-road__bonus-heading { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
+.crooked-road__bonus h3 { font-size: clamp(1.3rem, 2.5vw, 1.9rem); }
+.crooked-road__bonus-total { text-align: right; }
+.crooked-road__bonus-total span { display: block; color: #d8ddb9; font: .65rem/1.5 system-ui, sans-serif; }
+.crooked-road__bonus-total strong { color: #ffe49b; font-size: 1.4rem; font-variant-numeric: tabular-nums; }
+.crooked-road__bonus p { font: .8rem/1.6 system-ui, sans-serif; color: #e3e6c9; margin-top: .7rem; }
+.crooked-road__funded-stake { font-size: .65rem !important; color: #bacbb4 !important; }
+.crooked-road__spring-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin-top: .8rem; }
+.crooked-road__spring-choices button { display: grid; justify-items: center; gap: .4rem; border: 1px solid #a4d9cd7a; border-radius: .6rem; padding: .8rem .3rem; background: #174f4b99; font-size: .75rem; }
+.crooked-road__spring-choices button > span { color: #a5ffe1; font-size: 1.9rem; }
+.crooked-road__spring-choices button[aria-pressed='true'] { border-color: #ffe5a0; box-shadow: inset 0 0 1.3rem #c6ffe333; }
+.crooked-road__spring-choices button:disabled:not([aria-pressed='true']) { opacity: .5; }
+.crooked-road__ripple-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: .3rem; max-width: 450px; margin: .8rem auto; }
+.crooked-road__ripple-reel { display: grid; grid-template-rows: repeat(3, 1fr); gap: .3rem; }
+.crooked-road__ripple-symbol { display: grid; place-items: center; aspect-ratio: 1; background: #03231cd9; border: 1px solid #4b908060; border-radius: .35rem; overflow: hidden; }
+.crooked-road__ripple-symbol img { width: 90%; height: 90%; object-fit: contain; }
+.crooked-road__ripple-symbol[data-wild] { border-color: #e6d07c; box-shadow: inset 0 0 .8rem #ffe48a55; }
+.crooked-road__fort-play { display: grid; grid-template-columns: minmax(0, 280px) 1fr; gap: 1.2rem; align-items: center; max-width: 540px; margin: .9rem auto; }
+.crooked-road__coin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; }
+.crooked-road__coin-cell { position: relative; display: grid; place-items: center; aspect-ratio: 1; border: 1px solid #859b6359; border-radius: .5rem; background: #0d2119d9; }
+.crooked-road__coin-cell > span { color: #aac78659; font-size: 2rem; }
+.crooked-road__coin-cell[data-held] { border-color: #e0c272c4; background: #345025b3; }
+.crooked-road__coin-cell img { width: 86%; height: 86%; object-fit: contain; opacity: .7; }
+.crooked-road__coin-cell strong { position: absolute; inset: auto 0 12%; text-align: center; color: #fff3b4; font: 800 clamp(.9rem, 2vw, 1.35rem)/1 system-ui, sans-serif; text-shadow: 0 1px 4px #000; }
+.crooked-road__respins { text-align: center; display: grid; justify-items: center; gap: .3rem; }
+.crooked-road__respins > strong { color: #ffe7a4; font-size: 3.6rem; line-height: 1; }
+.crooked-road__respins > span { color: #e0e6bb; font-size: .85rem; }
+.crooked-road__respins > div { display: flex; gap: .3rem; }
+.crooked-road__respins > div span { opacity: .25; font-size: 1.8rem; color: #c7ed86; }
+.crooked-road__respins > div span[data-lit] { opacity: 1; }
+.crooked-road__respins small { font: .6rem/1.5 system-ui, sans-serif; color: #bdc9a3; }
+.crooked-road__doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; max-width: 560px; margin: 1rem auto; }
+.crooked-road__doors button { display: flex; flex-direction: column; align-items: center; gap: .5rem; border: 1px solid #b8a3cb66; border-radius: .65rem; background: #211b34b3; padding: .6rem; font-size: .85rem; }
+.crooked-road__doors img { width: 100%; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 0 .5rem #9c69b838); }
+.crooked-road__doors button[aria-pressed='true'] { border-color: #ffda8d; box-shadow: inset 0 0 1.8rem #f7d57b2b; }
+.crooked-road__doors button:disabled:not([aria-pressed='true']):not([data-revealed]) { opacity: .45; }
+.crooked-road__doors strong { color: #ffe3a4; font-size: 1rem; }
+.crooked-road__next-step { text-align: center; color: #ffe4a6 !important; }
+.crooked-road__return { display: block; min-height: 44px; margin: .75rem auto 0; padding: .65rem 1.2rem; border: 1px solid #eccb7c; border-radius: .5rem; background: linear-gradient(#f0d28c, #b99c55); color: #183b25 !important; font-weight: 700 !important; }
+.crooked-road[data-bonus-active]:not([data-travelling]) > :is(.crooked-road__layout, .crooked-road__destinations, .crooked-road__instructions) { display: none; }
+.crooked-road[data-travelling] > .crooked-road__bonus { display: none; }
+.crooked-road[data-feature-kind] .crooked-road__bonus-heading h3 { display: none; }
+.crooked-road__previous-door { margin: .7rem 0 !important; color: #e9d1a1; font: .75rem/1.5 system-ui, sans-serif; }
+.crooked-road__sr { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (max-width: 600px) {
+  .crooked-road__layout { grid-template-columns: 1fr; gap: .8rem; }
+  .crooked-road__map-wrap { width: min(100%, 380px); margin: 0 auto; }
+  .crooked-road__satchel { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem .8rem; align-items: center; }
+  .crooked-road__satchel > h3 { grid-column: 1; }
+  .crooked-road__hand { grid-column: 1; grid-row: 2 / span 2; }
+  .crooked-road__turn-hand { grid-column: 2; grid-row: 2; }
+  .crooked-road__queue { grid-column: 2; grid-row: 3; }
+  .crooked-road__edit-actions { grid-column: 1 / -1; }
+  .crooked-road__funding { grid-column: 1 / -1; }
+  .crooked-road__destinations { gap: .35rem; }
+  .crooked-road__destinations article { padding: .6rem .4rem; }
+  .crooked-road__destinations h3 { font-size: .85rem; }
+  .crooked-road__destinations p { font-size: .6rem; }
+  .crooked-road__destinations button { font-size: .75rem; }
+  .crooked-road__journey-count { font-size: .6rem; }
+  .crooked-road__fort-play { grid-template-columns: 1.4fr 1fr; gap: .7rem; }
+  .crooked-road__doors { gap: .3rem; }
+  .crooked-road__doors button { padding: .4rem; font-size: .7rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .crooked-road__finbar { transition: none; }
+}

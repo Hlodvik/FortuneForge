@@ -3,13 +3,8 @@
 // Edited: 2026-11-18T16:30:05-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T16:35:09-06:00 | Computer: Vinnabok
 using System.Text.Json;
-using ArcanePotions = FortuneForge.Games.ArcaneArchives.ArcanePotions;
-using ArcanePotionState = FortuneForge.Games.ArcaneArchives.ArcanePotionState;
-using ArcaneTome = FortuneForge.Games.ArcaneArchives.ArcaneTome;
-using ArcaneTomeState = FortuneForge.Games.ArcaneArchives.ArcaneTomeState;
-using ArcaneTomeProgress = FortuneForge.Games.ArcaneArchives.ArcaneTomeProgress;
-using ArcaneArchivesEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
-using ArcaneWandCollector = FortuneForge.Games.ArcaneArchives.ArcaneWandCollector;
+using FortuneForge.Games.FrontierFortune.Server;
+using FortuneForge.Games.ArcaneArchives.Server;
 using FortuneForge.Games.GodsOfOlympus;
 using FortuneForge.Games.GodsOfOlympus.Server;
 using FortuneForge.Games.HighNoonFortune;
@@ -29,8 +24,7 @@ using FortuneForge.Games.CosmicFortune;
 using FortuneForge.Games.CosmicFortune.Server;
 using FortuneForge.Games.OceanOdyssey;
 using FortuneForge.Games.OceanOdyssey.Server;
-using FortuneForge.Games.SamuraiFortune;
-using FortuneForge.Games.SamuraiFortune.Server;
+using FortuneForge.Games.CrookedRoad.Server;
 using FortuneForge.Games.CandyCarnival;
 using FortuneForge.Games.CandyCarnival.Server;
 using FortuneForge.Games.PhantomManor;
@@ -62,6 +56,44 @@ internal static class SlotEvidenceReplayAudit
 {
     internal static IReadOnlyList<RoundAuditFinding> Inspect(RoundAuditSummary summary, string payloadJson)
     {
+        if (summary.GameId == ArcaneFeatureEndpoints.AuditGameId)
+        {
+            try
+            {
+                using var arcaneDocument = JsonDocument.Parse(payloadJson);
+                var data = arcaneDocument.RootElement.TryGetProperty("data", out var paidData)
+                    ? paidData : arcaneDocument.RootElement;
+                return ArcaneSpinEvidence.InspectNative(summary, data);
+            }
+            catch (Exception error) when (error is JsonException or KeyNotFoundException or InvalidOperationException)
+            {
+                return [new("slot-arcane-native-proof-mismatch", "error", "The native Arcane evidence could not be read.")];
+            }
+        }
+        if (SealedTombEvidence.IsNative(summary))
+        {
+            try
+            {
+                using var tombDocument = JsonDocument.Parse(payloadJson);
+                return SealedTombEvidence.Inspect(summary, tombDocument.RootElement.GetProperty("data"));
+            }
+            catch (Exception error) when (error is JsonException or KeyNotFoundException or InvalidOperationException)
+            {
+                return [new("pharaoh-sealed-tomb-proof-mismatch", "error", "The Sealed Tomb's saved settlement evidence could not be read.")];
+            }
+        }
+        if (summary.GameId == FrontierPaidRouteContract.AuditGameId && FrontierEvidence.IsNative(summary))
+        {
+            try
+            {
+                using var frontierDocument = JsonDocument.Parse(payloadJson);
+                return FrontierEvidence.Inspect(summary, frontierDocument.RootElement.GetProperty("data"));
+            }
+            catch (Exception error) when (error is JsonException or KeyNotFoundException or InvalidOperationException)
+            {
+                return [new("slot-frontier-native-proof-mismatch", "error", "Frontier Fortune's saved evidence could not be read.")];
+            }
+        }
         if (summary.AuditorVersion != SlotRoundAudit.AuditorVersion ||
             !AcceptedGameActivityReader.SlotIds.Values.Contains(summary.GameId, StringComparer.Ordinal))
             return [];
@@ -72,6 +104,8 @@ internal static class SlotEvidenceReplayAudit
             var demo = summary.EvidenceKind == "slot-demo-nonfinancial-v1";
             var root = document.RootElement;
             var data = demo ? root : root.GetProperty("data");
+            if (!demo && summary.GameId == CrookedRoadPaidRouteContract.AuditGameId)
+                return CrookedRoadEvidence.Inspect(summary, data);
             var result = data.GetProperty(demo ? "engineResult" : "result")
                 .Deserialize<SpinResult>(RoundAuditCapture.Json)
                 ?? throw new JsonException("Missing slot result.");
@@ -106,9 +140,6 @@ internal static class SlotEvidenceReplayAudit
             if (!demo && result.GameId == OceanOdysseyEngine.GameId && summary.GameId == OceanOdysseyPaidRouteContract.AuditGameId &&
                 OceanOdysseySpinEvidence.IsNative(data))
                 return OceanOdysseySpinEvidence.InspectNative(summary, data);
-            if (!demo && result.GameId == SamuraiFortuneEngine.GameId && summary.GameId == SamuraiFortunePaidRouteContract.AuditGameId &&
-                SamuraiFortuneSpinEvidence.IsNative(data))
-                return SamuraiFortuneSpinEvidence.InspectNative(summary, data);
             if (!demo && result.GameId == CandyCarnivalEngine.GameId && summary.GameId == CandyCarnivalPaidRouteContract.AuditGameId &&
                 CandyCarnivalSpinEvidence.IsNative(data))
                 return CandyCarnivalSpinEvidence.InspectNative(summary, data);
@@ -192,9 +223,6 @@ internal static class SlotEvidenceReplayAudit
                 findings.AddRange(InspectDemo(data, result, response!, engineAudit));
             else if (usesOlympusTumble)
                 findings.AddRange(InspectOlympusSettlement(root, data, result, engineAudit, settledPayout, summary));
-            else if (engineAudit.EngineVersion == ArcaneLightningCollector.EngineVersion ||
-                ArcaneArchivesEngine.IsWandEngineVersion(engineAudit.EngineVersion))
-                findings.AddRange(InspectArcaneSettlement(data, result, engineAudit, settledPayout, summary));
             else if (GoldFoundrySlotDefinitions.IsModel(engineAudit.BaseGame))
             {
                 findings.AddRange(GoldFoundryAudit.InspectPaidSettlement(data, result, engineAudit, settledPayout, summary));
@@ -344,71 +372,6 @@ internal static class SlotEvidenceReplayAudit
             participant.PayoutCents != payoutCents || participant.NetCents != netCents)
             return [new("slot-olympus-tumble-financial-mismatch", "error",
                 "The Olympus stake and replayed payout differ from the paid settlement receipt.")];
-        return [];
-    }
-
-    private static IReadOnlyList<RoundAuditFinding> InspectArcaneSettlement(
-        JsonElement data, SpinResult result, SlotSpinEngineAudit audit, SpinPayout settled, RoundAuditSummary summary)
-    {
-        var isFreeSpin = data.GetProperty("isFreeSpin").GetBoolean();
-        var wagerCents = isFreeSpin ? 0 : RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
-        var payoutCents = RandMoney.PointsToCents(settled.TotalPoints, result.PointValueInCents);
-        if (isFreeSpin != result.IsFreeSpin || isFreeSpin != audit.IsDerivedFreeSpin ||
-            ArcaneArchivesEngine.IsWandEngineVersion(audit.EngineVersion) && result.ChargedWagerCents != wagerCents ||
-            summary.Participants.Count != 1 ||
-            summary.Participants[0].WagerCents != wagerCents || summary.Participants[0].PayoutCents != payoutCents ||
-            summary.Participants[0].NetCents != payoutCents - wagerCents)
-            return [new("slot-arcane-financial-mismatch", "error",
-                "The Arcane Archives stake and payout do not balance with the paid round summary.")];
-        var usesPotions = ArcaneArchivesEngine.SupportsPotionEngineVersion(audit.EngineVersion);
-        if (data.TryGetProperty("arcaneTome", out var tome) && tome.ValueKind != JsonValueKind.Null)
-        {
-            var before = tome.GetProperty("before").Deserialize<ArcaneTomeState>(RoundAuditCapture.Json)
-                ?? throw new JsonException("Missing admitted Arcane Tome state.");
-            var progress = tome.GetProperty("progress").Deserialize<ArcaneTomeProgress>(RoundAuditCapture.Json)
-                ?? throw new JsonException("Missing settled Arcane Tome state.");
-            if (!ArcaneArchivesEngine.IsWandEngineVersion(audit.EngineVersion) ||
-                !ArcaneArchivesEngine.MatchesTomeState(result.ReelSetId, before))
-                return [new("slot-arcane-tome-mismatch", "error",
-                    "The Arcane Archives reel set does not match the admitted Tome and ingredient state.")];
-            var expected = ArcaneTome.CompleteSpin(before, result.Reels, isFreeSpin,
-                requireIngredient: audit.EngineVersion == ArcaneArchivesEngine.PreviousWandEngineVersion);
-            ArcaneTome.ValidateState(progress.State);
-            if (!ArcaneTome.SameState(progress.State, expected.State) || !SameMap(progress.IngredientsAwarded, expected.IngredientsAwarded))
-                return [new("slot-arcane-tome-mismatch", "error",
-                    "The Arcane Archives Tome progression does not match the captured reel symbols and page.")];
-            if (usesPotions)
-                return InspectArcanePotionProgress(data, result, audit, before, isFreeSpin);
-        }
-        else if (usesPotions || ArcaneArchivesEngine.IsBoostedReelSet(result.ReelSetId))
-            return [new("slot-arcane-tome-mismatch", "error",
-                "The Arcane Archives spin requires captured Tome state for its reel set.")];
-        return [];
-    }
-
-    private static IReadOnlyList<RoundAuditFinding> InspectArcanePotionProgress(
-        JsonElement data, SpinResult result, SlotSpinEngineAudit audit, ArcaneTomeState tome, bool isFreeSpin)
-    {
-        if (!data.TryGetProperty("arcanePotions", out var potions))
-            return [new("slot-arcane-potion-mismatch", "error", "The captured Arcane potion progression is missing.")];
-
-        var before = potions.GetProperty("before").Deserialize<ArcanePotionState>(RoundAuditCapture.Json)
-            ?? throw new JsonException("Missing admitted Arcane potion state.");
-        var after = potions.GetProperty("after").Deserialize<ArcanePotionState>(RoundAuditCapture.Json)
-            ?? throw new JsonException("Missing settled Arcane potion state.");
-        var tracked = potions.TryGetProperty("wagerTracked", out var marker) && marker.GetBoolean();
-        if (tracked && ArcanePotions.LockedWagerForSpin(before, isFreeSpin) is { } lockedWager &&
-            result.WagerPoints != lockedWager)
-            return [new("slot-arcane-potion-wager-mismatch", "error",
-                "The Arcane potion spin does not match the bottle's earned wager.")];
-        var expected = ArcanePotions.CompleteSpin(before,
-            ArcaneTome.OrderedIngredientUnits(tome, result.Reels, isFreeSpin), isFreeSpin,
-            tracked ? result.WagerPoints : null,
-            allowRareRecipes: ArcaneArchivesEngine.SupportsRarePotions(audit.EngineVersion));
-        if (audit.ArcanePotionApplied != ArcanePotions.ForSpin(before, isFreeSpin) ||
-            !ArcanePotions.SameState(after, expected))
-            return [new("slot-arcane-potion-mismatch", "error",
-                "The Arcane potion in use or brewed potion progression differs from the admitted state and reel symbols.")];
         return [];
     }
 
@@ -651,8 +614,10 @@ internal static class SlotEvidenceReplayAudit
         engine.MonkeyPawCount == response.MonkeyPawCount &&
         engine.MoneyGrabPoints == response.MoneyGrabPoints &&
         engine.BananaBonusPoints == response.BananaBonusPoints &&
-        SlotRoundAudit.SameLightningCollection(engine.LightningCollection, response.LightningCollection) &&
-        ArcaneWandCollector.SameCollection(engine.ArcaneWandCollection, response.ArcaneWandCollection) &&
+        JsonSerializer.Serialize(engine.LightningCollection, RoundAuditCapture.Json) ==
+            JsonSerializer.Serialize(response.LightningCollection, RoundAuditCapture.Json) &&
+        JsonSerializer.Serialize(engine.ArcaneWandCollection, RoundAuditCapture.Json) ==
+            JsonSerializer.Serialize(response.ArcaneWandCollection, RoundAuditCapture.Json) &&
         (engine.OlympusTumble is null && response.OlympusTumble is null ||
          JsonSerializer.Serialize(engine.OlympusTumble, RoundAuditCapture.Json) ==
              JsonSerializer.Serialize(response.OlympusTumble, RoundAuditCapture.Json)) &&

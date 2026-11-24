@@ -8,7 +8,7 @@ using CandyEngine = FortuneForge.Games.CandyCarnival.CandyCarnivalEngine;
 using CosmicEngine = FortuneForge.Games.CosmicFortune.CosmicFortuneEngine;
 using DesertEngine = FortuneForge.Games.DesertTreasures.DesertTreasuresEngine;
 using OlympusEngine = FortuneForge.Games.GodsOfOlympus.GodsOfOlympusEngine;
-using HighNoonEngine = FortuneForge.Games.HighNoonFortune.HighNoonFortuneEngine;
+using FrontierEngine = FortuneForge.Games.FrontierFortune.FrontierFortuneEngine;
 using NordicEngine = FortuneForge.Games.NordicLegends.NordicLegendsEngine;
 using OceanEngine = FortuneForge.Games.OceanOdyssey.OceanOdysseyEngine;
 using PhantomEngine = FortuneForge.Games.PhantomManor.PhantomManorEngine;
@@ -17,7 +17,6 @@ using RainbowEngine = FortuneForge.Games.RainbowRealm.RainbowRealmEngine;
 using ReelRichesEngine = FortuneForge.Games.ReelRiches.ReelRichesEngine;
 using RobotEngine = FortuneForge.Games.RobotRevolution.RobotRevolutionEngine;
 using RoyalEngine = FortuneForge.Games.RoyalDraw.RoyalDrawEngine;
-using SamuraiEngine = FortuneForge.Games.SamuraiFortune.SamuraiFortuneEngine;
 using WukongEngine = FortuneForge.Games.Wukong.WukongEngine;
 
 namespace FortuneForge.Server.Slots.Bonuses;
@@ -57,11 +56,10 @@ public static class SlotSpecialRoundProfiles
     public const string WukongGameId = WukongEngine.GameId;
     public const string RainbowRealmGameId = RainbowEngine.GameId;
     public const string CosmicFortuneGameId = CosmicEngine.GameId;
-    public const string HighNoonFortuneGameId = HighNoonEngine.GameId;
+    public const string HighNoonFortuneGameId = FrontierEngine.GameId;
     public const string GodsOfOlympusGameId = OlympusEngine.GameId;
     public const string PiratesFortuneGameId = PiratesEngine.GameId;
     public const string RoyalDrawGameId = RoyalEngine.GameId;
-    public const string SamuraiFortuneGameId = SamuraiEngine.GameId;
     public const string RobotRevolutionGameId = RobotEngine.GameId;
     public const string PhantomManorGameId = PhantomEngine.GameId;
     public const string OceanOdysseyGameId = OceanEngine.GameId;
@@ -82,11 +80,9 @@ public static class SlotSpecialRoundProfiles
             [WukongGameId] = FromPackage(WukongEngine.Profile),
             [RainbowRealmGameId] = FromPackage(RainbowEngine.Profile),
             [CosmicFortuneGameId] = FromPackage(CosmicEngine.Profile),
-            [HighNoonFortuneGameId] = FromPackage(HighNoonEngine.Profile),
             [GodsOfOlympusGameId] = FromPackage(OlympusEngine.Profile),
             [PiratesFortuneGameId] = FromPackage(PiratesEngine.Profile),
             [RoyalDrawGameId] = FromPackage(RoyalEngine.Profile),
-            [SamuraiFortuneGameId] = FromPackage(SamuraiEngine.Profile),
             [RobotRevolutionGameId] = FromPackage(RobotEngine.Profile),
             [PhantomManorGameId] = FromPackage(PhantomEngine.Profile),
             [OceanOdysseyGameId] = FromPackage(OceanEngine.Profile),

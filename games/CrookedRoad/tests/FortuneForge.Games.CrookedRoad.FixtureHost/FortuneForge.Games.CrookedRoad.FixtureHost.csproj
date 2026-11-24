@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../server/FortuneForge.Games.CrookedRoad.Server/FortuneForge.Games.CrookedRoad.Server.csproj" />
+    <Compile Include="../FortuneForge.Games.CrookedRoad.Tests/Support/CrookedRoadTestWallet.cs" Link="Support/CrookedRoadTestWallet.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,18 @@
+{
+  "imageWidth": 1600,
+  "imageHeight": 960,
+  "centerAlpha": 0,
+  "maximumApertureAlpha": 1,
+  "safeOpening": {
+    "left": 82,
+    "top": 100,
+    "width": 1435,
+    "height": 777
+  },
+  "insetPercent": {
+    "top": 10.416666666666668,
+    "right": 5.1875,
+    "bottom": 8.645833333333334,
+    "left": 5.125
+  }
+}

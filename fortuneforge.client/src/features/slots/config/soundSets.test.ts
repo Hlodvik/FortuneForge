@@ -8,7 +8,6 @@ import { COSMIC_FORTUNE_SOUNDS } from '@fortuneforge/games-cosmic-fortune/sounds
 import { DESERT_TREASURES_SOUNDS } from '@fortuneforge/games-desert-treasures/sounds'
 import { GODS_OF_OLYMPUS_SOUNDS } from '@fortuneforge/games-gods-of-olympus/sounds'
 import { GOLD_FOUNDRY_SOUNDS } from '@fortuneforge/games-gold-foundry/manifest'
-import { HIGH_NOON_FORTUNE_SOUNDS } from '@fortuneforge/games-high-noon-fortune/sounds'
 import { NORDIC_LEGENDS_SOUNDS } from '@fortuneforge/games-nordic-legends/sounds'
 import { OCEAN_ODYSSEY_SOUNDS } from '@fortuneforge/games-ocean-odyssey/sounds'
 import { PHANTOM_MANOR_SOUNDS } from '@fortuneforge/games-phantom-manor/sounds'
@@ -17,11 +16,12 @@ import { RAINBOW_REALM_SOUNDS } from '@fortuneforge/games-rainbow-realm/sounds'
 import { REEL_RICHES_SOUNDS } from '@fortuneforge/games-reel-riches/sounds'
 import { ROBOT_REVOLUTION_SOUNDS } from '@fortuneforge/games-robot-revolution/sounds'
 import { ROYAL_DRAW_SOUNDS } from '@fortuneforge/games-royal-draw/sounds'
-import { SAMURAI_FORTUNE_SOUNDS } from '@fortuneforge/games-samurai-fortune/sounds'
+import { CROOKED_ROAD_SOUNDS } from '@fortuneforge/games-crooked-road/sounds'
 import { WUKONG_TREASURES_SOUNDS } from '@fortuneforge/games-wukong/sounds'
 import { DEFAULT_SLOT_SOUNDS, type SlotSoundCue, type SlotSoundCueId, type SlotSoundSet } from './soundSets'
 import { useSlotAudio } from '../hooks/useSlotAudio'
 import { loadAllSlotGameManifests } from '../../../games/slots/routeRegistry'
+import { createThemedSlotAudio } from './themedSlotAudio'
 
 const requiredCue = (sounds: SlotSoundSet, id: SlotSoundCueId): SlotSoundCue => {
   const cue = sounds.cues[id]
@@ -44,6 +44,14 @@ const pirateEventCueIds = [
 ]
 const pirateCueSources = definedCues(PIRATES_FORTUNE_SOUNDS).map(({ source }) => source)
 const pirateSpecialCueIds = Object.values(PIRATES_FORTUNE_SOUNDS.events.specialResults ?? {}).flat()
+
+describe('Pharaoh’s Ascent sound set', () => {
+  it('retains its original Egyptian suite under the stable game key', () => {
+    expect(COSMIC_FORTUNE_SOUNDS.id).toBe('pharaohs-ascent-audio-v1')
+    expect(createThemedSlotAudio('cosmic-fortune', COSMIC_FORTUNE_SOUNDS)).toBe(COSMIC_FORTUNE_SOUNDS)
+    expect(definedCues(COSMIC_FORTUNE_SOUNDS).every(cue => cue.source.includes('/pharaoh-'))).toBe(true)
+  })
+})
 
 describe('Pirates\' Fortune sound set', () => {
   it('retains its voyage identity without playing it and keeps distinct CC0 Broadside Run cues', () => {
@@ -134,13 +142,12 @@ describe('catalogue audio provenance and allocation', () => {
     'pirates-fortune': PIRATES_FORTUNE_SOUNDS,
     'gods-of-olympus': GODS_OF_OLYMPUS_SOUNDS,
     'reel-riches': REEL_RICHES_SOUNDS,
-    'high-noon-fortune': HIGH_NOON_FORTUNE_SOUNDS,
     'royal-draw': ROYAL_DRAW_SOUNDS,
     'arcane-archives': ARCANE_ARCHIVES_SOUNDS,
     'cosmic-fortune': COSMIC_FORTUNE_SOUNDS,
     'gold-foundry': GOLD_FOUNDRY_SOUNDS,
     'ocean-odyssey': OCEAN_ODYSSEY_SOUNDS,
-    'samurai-fortune': SAMURAI_FORTUNE_SOUNDS,
+    'crooked-road': CROOKED_ROAD_SOUNDS,
     'candy-carnival': CANDY_CARNIVAL_SOUNDS,
     'phantom-manor': PHANTOM_MANOR_SOUNDS,
     'nordic-legends': NORDIC_LEGENDS_SOUNDS,
@@ -152,10 +159,10 @@ describe('catalogue audio provenance and allocation', () => {
   const foundryAmbienceSource = requiredCue(GOLD_FOUNDRY_SOUNDS, 'ambience').source
 
   it('uses package-owned audio contracts for every standalone game', async () => {
-    const manifests = (await loadAllSlotGameManifests()).filter(game => !['neon-nights', 'dragon-hoard'].includes(game.id))
-    expect(manifests).toHaveLength(17)
-    expect(packageSoundSets).toHaveLength(17)
-    expect(allSoundSets).toHaveLength(18)
+    const manifests = (await loadAllSlotGameManifests()).filter(game => !['neon-nights', 'dragon-hoard', 'high-noon-fortune'].includes(game.id))
+    expect(manifests).toHaveLength(16)
+    expect(packageSoundSets).toHaveLength(16)
+    expect(allSoundSets).toHaveLength(17)
     for (const game of manifests) {
       const sounds = game.experience.sounds
       expect(sounds).toBe(packageSoundSetsByGameId[game.id as keyof typeof packageSoundSetsByGameId])
@@ -180,6 +187,13 @@ describe('catalogue audio provenance and allocation', () => {
       }
     }
   }, 30_000)
+
+  it('keeps the native Frontier client free of the retired HighNoon audio contract', async () => {
+    const frontier = (await loadAllSlotGameManifests()).find(game => game.id === 'high-noon-fortune')!
+    expect(frontier.experience.sounds.id).toBe('frontier-fortune-sounds-v1')
+    expect(frontier.experience.sounds.cues).toBeUndefined()
+    expect(JSON.stringify(frontier.experience.sounds)).not.toContain('high-noon-fortune-audio')
+  })
 
   it('gives Gold Foundry its own workshop ambience and button and reel cues', () => {
     const { cues, events } = GOLD_FOUNDRY_SOUNDS

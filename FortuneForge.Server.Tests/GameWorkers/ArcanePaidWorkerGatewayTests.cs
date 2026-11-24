@@ -16,10 +16,10 @@ namespace FortuneForge.Server.Tests.GameWorkers;
 public sealed class ArcanePaidWorkerGatewayTests
 {
     [Theory]
-    [InlineData("arcane-legacy-prepared-round", "past-round-operation", true)]
-    [InlineData("arcane-legacy-prepared-round", null, false)]
-    [InlineData("slot-operation-conflict", "past-round-operation", false)]
-    public async Task OnlyTheExplicitLegacyReplyCanRouteAKeyedRequestToRecovery(string code, string? operationId, bool recover)
+    [InlineData("arcane-legacy-prepared-round", "past-round-operation")]
+    [InlineData("arcane-obsolete-round", null)]
+    [InlineData("slot-operation-conflict", "past-round-operation")]
+    public async Task EveryWorkerConflictIsForwardedWithoutEmbeddedRecovery(string code, string? operationId)
     {
         using var transport = new RecordingTransport(HttpStatusCode.Conflict, "{\"code\":\"" + code + "\"}");
         using var http = new HttpClient(transport);
@@ -30,8 +30,10 @@ public sealed class ArcanePaidWorkerGatewayTests
         var response = await ArcanePaidWorkerGateway.SpinAsync(Client(http), context,
             "account-1", request, operationId, default);
 
-        Assert.Equal(recover, response is null);
-        if (response is not null) Assert.Equal(409, response.StatusCode);
+        Assert.NotNull(response);
+        Assert.Equal(409, response.StatusCode);
+        Assert.Equal("{\"code\":\"" + code + "\"}", response.Content);
+        Assert.Equal(1, transport.Calls);
         Assert.Equal(context.Request.Path.Value, transport.Path);
         Assert.NotNull(transport.Assertion);
         if (operationId is null)

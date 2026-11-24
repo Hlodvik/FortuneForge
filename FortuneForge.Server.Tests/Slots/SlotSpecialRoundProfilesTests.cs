@@ -19,7 +19,6 @@ public sealed class SlotSpecialRoundProfilesTests
     [InlineData(SlotSpecialRoundProfiles.GodsOfOlympusGameId, 4, 6, 28, 6)]
     [InlineData(SlotSpecialRoundProfiles.PiratesFortuneGameId, 3, 7, 25, 10)]
     [InlineData(SlotSpecialRoundProfiles.RoyalDrawGameId, 3, 6, 24, 7)]
-    [InlineData(SlotSpecialRoundProfiles.SamuraiFortuneGameId, 4, 6, 26, 7)]
     [InlineData(SlotSpecialRoundProfiles.RobotRevolutionGameId, 3, 7, 24, 8)]
     [InlineData(SlotSpecialRoundProfiles.PhantomManorGameId, 3, 5, 18, 9)]
     [InlineData(SlotSpecialRoundProfiles.OceanOdysseyGameId, 4, 6, 28, 6)]
@@ -58,7 +57,6 @@ public sealed class SlotSpecialRoundProfilesTests
             SlotSpecialRoundProfiles.GodsOfOlympusGameId,
             SlotSpecialRoundProfiles.PiratesFortuneGameId,
             SlotSpecialRoundProfiles.RoyalDrawGameId,
-            SlotSpecialRoundProfiles.SamuraiFortuneGameId,
             SlotSpecialRoundProfiles.RobotRevolutionGameId,
             SlotSpecialRoundProfiles.PhantomManorGameId,
             SlotSpecialRoundProfiles.OceanOdysseyGameId,
@@ -125,22 +123,27 @@ public sealed class SlotSpecialRoundProfilesTests
         Assert.Equal(expectedCount, game.Math.PaylinePayoutSteps.Count);
     }
 
-    [Fact]
-    public void DemoSettlement_CompletesACollectionIntoTheCorrectEnhancedRound()
+    [Theory]
+    [InlineData("sync", "SEAL_SYNC")]
+    [InlineData("rows", "SEAL_ROWS")]
+    [InlineData("paw", "SEAL_PAW")]
+    [InlineData("rand", "SEAL_RAND")]
+    public void PharaohAscent_CollectionCompletionUsesItsOwnGuardianMode(string guardian, string symbol)
     {
-        SlotSpecialRoundProfiles.TryGet(SlotSpecialRoundProfiles.CosmicFortuneGameId, out var profile);
+        Assert.True(SlotSpecialRoundProfiles.TryGet(SlotSpecialRoundProfiles.CosmicFortuneGameId, out var profile));
+        Assert.Null(profile.CollectionFeatureMode);
 
         var result = SlotSpecialRoundProfiles.SettleDemo(
             profile,
-            [new SlotSealCollection("sync", 23, 40, 24)],
-            new Dictionary<string, int> { ["SEAL_SYNC"] = 1 },
+            [new SlotSealCollection(guardian, 23, 40, 24)],
+            new Dictionary<string, int> { [symbol] = 1 },
             wagerPoints: 40,
             energyCompleted: false);
 
         Assert.Equal(7, result.FreeSpinsAwarded);
-        Assert.Equal("sync-rows", result.FeatureMode);
+        Assert.Equal(guardian, result.FeatureMode);
         Assert.Contains(result.Collections, collection =>
-            collection.SealId == "sync" && collection.Count == 0 && collection.RequiredCount == 24);
+            collection.SealId == guardian && collection.Count == 0 && collection.RequiredCount == 24);
     }
 
     [Fact]

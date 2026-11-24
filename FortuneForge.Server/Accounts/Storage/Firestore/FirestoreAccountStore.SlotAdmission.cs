@@ -9,8 +9,6 @@ using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Games.Abstractions.Auditing;
-using FortuneForge.Games.ArcaneArchives;
-using FortuneForge.Games.ArcaneArchives.Server;
 using FortuneForge.Games.JadeDragon;
 using FortuneForge.Games.Slots;
 using Google.Cloud.Firestore;
@@ -30,18 +28,13 @@ public sealed partial class FirestoreAccountStore
         DateTime startedAtUtc,
         TimeSpan cooldown,
         CancellationToken cancellationToken,
-        Func<SlotSpinAdmission, CancellationToken, Task<SpinResult>>? resolveOutcome = null,
-        string? operationId = null,
-        bool allowNewPrepared = true)
+        Func<SlotSpinAdmission, CancellationToken, Task<SpinResult>>? resolveOutcome = null)
     {
+        RejectRemovedSlotRuntime(gameId);
         if (gameId == GoldFoundrySlotDefinitions.GameId)
             GoldFoundrySlotDefinitions.ValidateSpinRequest(useFreeSpin);
 
         var admissionId = Guid.NewGuid();
-        var isArcane = gameId == ArcaneArchivesEngine.GameId;
-        var preparedOperation = isArcane && operationId is not null
-            ? PrepareOperation(userId, gameId, operationId, wagerPoints, pointValueInCents, useFreeSpin, useSpecialBoost, specialBoostCost)
-            : null;
         var isJade = gameId == JadeDragonEngine.GameId;
         var isOlympusTumble = gameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId && !useFreeSpin;
         if (isOlympusTumble && useSpecialBoost)
@@ -72,18 +65,6 @@ public sealed partial class FirestoreAccountStore
                     transaction.GetSnapshotAsync(energyReference, cancellationToken));
                 var guardSnapshot = snapshots[0];
                 RejectWorkerOwnedSlot(gameId, guardSnapshot);
-                if (preparedOperation is not null)
-                {
-                    var index = await transaction.GetSnapshotAsync(preparedOperation.Reference, cancellationToken);
-                    if (index.Exists)
-                        return await ReadPreparedOperationAsync(transaction, preparedOperation, index, guardSnapshot,
-                            userId, gameId, cancellationToken);
-                }
-                if (isArcane && ReadActivePreparedAdmission(guardSnapshot) is { } activePrepared)
-                    throw await PendingPreparedOperationAsync(transaction, activePrepared, userId, gameId, cancellationToken);
-                if (preparedOperation is not null && !allowNewPrepared)
-                    throw new SlotPreparedStartPausedException();
-
                 var pityMissesBefore = checked((int)ReadLong(guardSnapshot, "consecutiveFiveMisses"));
                 if (pityMissesBefore < 0)
                     throw new InvalidOperationException("Slot pity state is invalid.");
@@ -169,9 +150,6 @@ public sealed partial class FirestoreAccountStore
                         freeGamesAvailable = restoredCount;
                     }
                 }
-
-                var arcaneFeatures = isArcane
-                    ? ArcaneFeatureStore.Admit(guardSnapshot, wagerPoints, useFreeSpin) : null;
 
                 var availableCents = ReadRandBalanceCents(slotsCreditsSnapshot);
                 var storedFreeSpinWagerCents = ReadLong(guardSnapshot, "freeSpinWagerCents");
@@ -288,15 +266,9 @@ public sealed partial class FirestoreAccountStore
                     MathModelId = mathModelId,
                     BonusRound = admittedRound,
                     BonusRoundsBeforeAdmission = roundsBefore,
-                    ArcaneTomeBefore = arcaneFeatures?.Tome,
-                    ArcanePotionsBefore = arcaneFeatures?.Potions,
-                    ArcanePotionWagerTracked = arcaneFeatures?.TracksIngredientWagers == true,
-                    PreparedRequestObservation = preparedOperation is null ? null : requestObservation,
                 };
                 // The worker only computes outcomes. Failure aborts this transaction before
                 // any admission, wallet, or entitlement change can become durable.
-                if (preparedOperation is not null && resolveOutcome is null)
-                    throw new InvalidOperationException("Preparing an Arcane Archives spin requires an authoritative outcome resolver.");
                 if (resolveOutcome is not null)
                     admission = admission with { ResolvedOutcome = await resolveOutcome(admission, cancellationToken) };
                 var pendingNitroResult = isNeon && admission.ResolvedOutcome?.NeonNitroWild?.RequiresChoice == true
@@ -379,8 +351,6 @@ public sealed partial class FirestoreAccountStore
                     ["freeSpinMathModelId"] = remainingAfterAdmission > 0 ? mathModelId ?? string.Empty : string.Empty,
                     ["updatedAt"] = Timestamp.FromDateTime(startedAtUtc)
                 };
-                if (preparedOperation is not null)
-                    guardData[SlotSpinGuard.PreparedAdmissionField] = admissionId.ToString("N");
                 if (isMidnight)
                     foreach (var pair in MidnightBonusGuardData(roundsAfter, pointValueInCents)) guardData[pair.Key] = pair.Value;
                 if (isNeon)
@@ -444,10 +414,6 @@ public sealed partial class FirestoreAccountStore
                     admissionData["midnightBonusRoundsAfter"] = MidnightRoundsData(roundsAfter);
                     admissionData["midnightAdmittedRound"] = admittedRound is null ? null! : MidnightRoundData(admittedRound);
                 }
-                if (arcaneFeatures is not null)
-                    ArcaneFeatureStore.WriteAdmission(admissionData, arcaneFeatures);
-                if (preparedOperation is not null)
-                    WritePreparedOperation(transaction, preparedOperation, admission, admissionData);
                 transaction.Create(admissionReference, admissionData);
                 return admission;
             },

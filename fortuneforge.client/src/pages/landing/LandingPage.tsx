@@ -14,7 +14,7 @@ const discoveries: ReadonlyArray<{ title: string; route: string; category: Categ
   { title: 'Fortune Blackjack', route: '/cards/blackjack', category: 'Card games' },
   { title: 'Dragon Tiger', route: '/games/dragon-tiger', category: 'Card games' },
   { title: 'Mines', route: '/games/mines', category: 'All games', label: 'Casino game' },
-  { title: 'Cosmic Fortune', route: '/slots/cosmic-fortune', category: 'Slots' },
+  { title: 'Pharaoh’s Ascent', route: '/slots/pharaohs-ascent', category: 'Slots' },
   { title: 'Baccarat', route: '/games/baccarat', category: 'Card games' },
   { title: 'Roulette', route: '/games/roulette', category: 'Table & dice' },
   { title: 'Craps', route: '/games/craps', category: 'Table & dice' },

@@ -1,5 +1,4 @@
 // Edited: 2026-11-18T16:26:20-06:00 | Computer: Vinnabok
-using ArcaneArchivesEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Models;
 
@@ -75,8 +74,7 @@ public sealed class CryptoReelGenerator(IRandomIndexSource random) : IReelGenera
         GameDefinition game,
         IReadOnlyList<string> source)
     {
-        if (game.Energy is not null || ArcaneLightningCollector.IsModel(game) ||
-            ArcaneArchivesEngine.IsPaylineModel(game))
+        if (game.Energy is not null)
             return source;
 
         return source

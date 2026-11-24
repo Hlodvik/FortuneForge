@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { formatRand } from '@fortuneforge/slot-client-core'
-import type { SlotPotionWagerReadoutProps } from '@fortuneforge/slot-game-runtime/experience'
+import type { SlotPotionWagerReadoutProps } from './arcaneFeatures'
 import './potionWager.css'
 
 export function ArcanePotionWager({

@@ -9,7 +9,6 @@ import type {
   GridPosition,
   LightningCollection,
   SlotCabinetTheme,
-  SlotPotionSoundEvent,
   SlotSoundSet,
   SlotSymbolId,
   SlotSymbolSet,
@@ -57,57 +56,6 @@ export type SlotPresentationFlyover = {
   chestDropHeight: number
 }
 
-export type SlotTomeState = {
-  selectedPage: string
-  activePage: string | null
-  boostedSpinsRemaining: number
-  grimoireReady: boolean
-  ingredients: Readonly<Record<string, number>>
-  pages: readonly Readonly<{ id: string; label: string; ingredients: readonly string[] }>[]
-}
-
-export type SlotPotionPreview = Readonly<{
-  ingredientId: SlotSymbolId
-  name: string
-  effect: string
-  potency: number
-}>
-
-export type SlotPotionBottle = SlotPotionPreview & Readonly<{
-  id: number
-  lockedWagerPoints?: number
-  variantId?: string
-}>
-
-export type SlotPotionState = Readonly<{
-  capacity: number
-  majority: number
-  pot: readonly SlotSymbolId[]
-  bottles: readonly SlotPotionBottle[]
-  active: Readonly<{ bottle: SlotPotionBottle; spinsRemaining: number }> | null
-  preview: SlotPotionPreview | null
-}>
-
-export type SlotTomePanelProps = {
-  state: SlotTomeState
-  potions: SlotPotionState | null
-  awarded: Readonly<Record<string, number>>
-  cabinetRef: RefObject<HTMLDivElement | null>
-  settledSpin: Readonly<{
-    key: number
-    reels: readonly (readonly SlotSymbolId[])[]
-  }> | null
-  reducedMotion: boolean
-  disabled: boolean
-  error: string | null
-  pointValueInCents: number
-  onOpen: () => void
-  onChangePage: (page: string, activate: boolean) => void
-  onUsePotion: (id: number) => void
-  confirmedPotionUse?: number | null
-  onPotionCue?: (event: SlotPotionSoundEvent) => void
-}
-
 export type SlotWinHelpContentProps = {
   onClose: () => void
 }
@@ -131,22 +79,35 @@ export type SlotSpinFeaturePanelProps = Readonly<{
   onPresentationBusyChange?: (busy: boolean) => void
 }>
 
-export type SlotPotionWagerReadoutProps = Readonly<{
-  wager: number
-  selectedWager: number
-  lockedPotionId: number | null
-  confirmedPotionUse: number | null
+/** Persistent game-owned interaction; the host owns transport and account lifecycle. */
+export type SlotGameFeaturePanelProps = Readonly<{
+  state: unknown | null
+  feature: unknown | null
+  spinKey: number | null
+  isSpinning: boolean
   reducedMotion: boolean
+  pointValueInCents: number
+  actionPending: boolean
+  disabled?: boolean
+  error: string | null
+  onAction: (action: unknown) => Promise<void>
+  onOpen?: () => void
+  onPresentationBusyChange?: (busy: boolean) => void
+}>
+
+export type SlotGameFeatureActions = Readonly<{
+  path: string
 }>
 
 export type SlotExperiencePresentation = {
   paymentAlerts?: boolean
   outcomePresentation?: 'banner' | 'ambient'
   symbolValueGuide?: Readonly<{
-    mode?: 'auto' | 'on-demand' | 'modal'
+    mode?: 'auto' | 'on-demand' | 'modal' | 'none'
     className?: string
   }>
   SpinFeaturePanel?: ComponentType<SlotSpinFeaturePanelProps>
+  FeaturePanel?: ComponentType<SlotGameFeaturePanelProps>
   /** Synthetic awards are shown by the game's panel rather than reel paylines. */
   featurePaylineIds?: readonly number[]
   winHelp?: Readonly<{
@@ -156,9 +117,6 @@ export type SlotExperiencePresentation = {
     theme?: string
     firstOpenStorageKey?: string
   }>
-  TomePanel?: ComponentType<SlotTomePanelProps>
-  PotionWagerReadout?: ComponentType<SlotPotionWagerReadoutProps>
-  tomeTriggerSymbol?: SlotSymbolId
   winPresentation?: 'payline-popups'
   mainWordmark?: Readonly<{ src: string; width: number; height: number; className: string }>
   stageWordmark?: Readonly<{ src: string; width: number; height: number; className: string }>
@@ -193,6 +151,7 @@ export type SlotExperienceSet = {
   sounds: SlotSoundSet
   rules: SlotRulesSet
   presentation?: SlotExperiencePresentation
+  featureActions?: SlotGameFeatureActions
 }
 
 const BASE_SLOT_RULES_SET: Omit<SlotRulesSet, 'gameId'> = {

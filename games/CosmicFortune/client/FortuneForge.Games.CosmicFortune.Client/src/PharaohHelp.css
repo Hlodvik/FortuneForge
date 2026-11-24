@@ -1,0 +1,324 @@
+.win-help__backdrop[data-slot-dialog-theme='pharaohs-ascent'] {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: clamp(.35rem, 1.8vw, 1.5rem);
+  background: #020b10e8;
+  backdrop-filter: blur(12px);
+}
+
+.win-help[data-slot-dialog-theme='pharaohs-ascent'] {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: min(79rem, 100%);
+  height: min(76rem, 94svh);
+  max-height: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #c9a65c;
+  border-radius: .85rem;
+  background: #071c20;
+  box-shadow: 0 1.5rem 7rem #000d, 0 0 0 5px #b7974a12;
+}
+
+.win-help[data-slot-dialog-theme='pharaohs-ascent'] :is(.win-help__eyebrow, #win-help-title) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.win-help[data-slot-dialog-theme='pharaohs-ascent'] .win-help__close {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  top: .65rem;
+  right: .65rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  z-index: 4;
+  border: 1px solid #e1bd7044;
+  background: #092326e8;
+  color: #f7dca0;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.pharaoh-guide {
+  --guide-ink: #faf0d8;
+  --guide-soft: #bdc9c1;
+  --guide-gold: #e7bd73;
+  --guide-teal: #75d7c5;
+  --guide-serif: 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  color: var(--guide-ink);
+  background: radial-gradient(ellipse at 12% 30%, #164b4833, transparent 35rem), radial-gradient(ellipse at 90% 70%, #4d3c1933, transparent 35rem), #071c20;
+  font: 1rem/1.65 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  scrollbar-color: #997b42 #071c20;
+  scroll-behavior: smooth;
+  scroll-padding-top: 4.5rem;
+}
+
+.pharaoh-guide *, .pharaoh-guide *::before, .pharaoh-guide *::after { box-sizing: border-box; }
+.pharaoh-guide img { display: block; max-width: 100%; object-fit: contain; }
+.pharaoh-guide figure { margin: 0; }
+.pharaoh-guide p { margin: .9rem 0 0; color: var(--guide-soft); }
+.pharaoh-guide strong { color: #f4d79c; font-weight: 700; }
+.pharaoh-guide button, .pharaoh-guide a { font: inherit; }
+.pharaoh-guide a { color: inherit; text-underline-offset: .25em; }
+.pharaoh-guide button { cursor: pointer; }
+.pharaoh-guide :is(button, a, summary):focus-visible { outline: 2px solid #ffde91; outline-offset: 5px; }
+.pharaoh-guide :is(h2, h3) { text-wrap: balance; }
+.win-help[data-slot-dialog-theme='pharaohs-ascent'] .pharaoh-guide h2, .pharaoh-guide h2 {
+  margin: .6rem 0 0;
+  color: var(--guide-ink);
+  font: 400 clamp(2.5rem, 4.2vw, 4.4rem)/1.04 var(--guide-serif);
+  letter-spacing: -.045em;
+  text-transform: none;
+}
+.win-help[data-slot-dialog-theme='pharaohs-ascent'] .pharaoh-guide h3, .pharaoh-guide h3 {
+  margin: 0;
+  color: #f3d49b;
+  font: 500 clamp(1.35rem, 2.3vw, 2rem)/1.2 var(--guide-serif);
+  letter-spacing: -.02em;
+}
+.pharaoh-guide__overline { display: block; color: var(--guide-gold); font-size: .71rem; font-weight: 700; line-height: 1.5; letter-spacing: .19em; text-transform: uppercase; }
+
+.pharaoh-guide__masthead {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  justify-items: center;
+  min-height: 26rem;
+  padding: 0 1rem 3.7rem;
+  text-align: center;
+  background: linear-gradient(#071c2022, #071c2066 36%, #071c20 100%), var(--guide-temple) center 43% / cover;
+}
+.pharaoh-guide__masthead::after { position: absolute; z-index: -1; inset: 0; content: ''; background: radial-gradient(ellipse at 50% 53%, #03403a50, #03111511 38%, #041013a0); }
+.pharaoh-guide__masthead-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; padding: 1rem 3.5rem 1rem 1rem; color: #e4cca4; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; }
+.pharaoh-guide__wordmark { width: min(47rem, 87%); height: auto; margin-top: 2.6rem; filter: drop-shadow(0 .4rem .8rem #000c); }
+.pharaoh-guide__masthead > p { margin: 1rem 0 0; color: #e1d6ba; font: 400 clamp(1.3rem, 2.7vw, 2rem)/1.3 var(--guide-serif); }
+.pharaoh-guide__masthead em { color: #f2d28f; font-style: normal; }
+.pharaoh-guide__begin { display: inline-flex; align-items: center; gap: 1rem; margin-top: 1.5rem; color: var(--guide-gold) !important; font-size: .83rem !important; font-weight: 600 !important; text-decoration: none; }
+.pharaoh-guide__begin span { font-size: 1.3rem; }
+
+.pharaoh-guide__navigation { position: sticky; top: 0; z-index: 3; display: flex; justify-content: center; flex-wrap: wrap; gap: .4rem 2rem; padding: .9rem 3.5rem; border-block: 1px solid #bda15f30; background: #071b20f2; backdrop-filter: blur(10px); }
+.pharaoh-guide__navigation a { color: #ddc795; font-size: .8rem; font-weight: 600; text-decoration: none; }
+.pharaoh-guide__navigation a:hover { color: #fff0c0; text-decoration: underline; }
+.pharaoh-guide__story { max-width: 76rem; padding: 0 clamp(1.15rem, 5.4vw, 5rem); margin-inline: auto; }
+.pharaoh-guide__scene { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: clamp(2rem, 5.5vw, 5.5rem); min-height: 31rem; padding-block: 4rem; scroll-margin-top: 1rem; }
+.pharaoh-guide__scene--reverse > :first-child { grid-column: 2; grid-row: 1; }
+.pharaoh-guide__scene--reverse > :last-child { grid-column: 1; grid-row: 1; }
+.pharaoh-guide__copy { min-width: 0; }
+.pharaoh-guide__copy > p { font-size: clamp(1rem, 1.4vw, 1.12rem); line-height: 1.75; }
+.pharaoh-guide .pharaoh-guide__whisper { margin-top: 1.3rem; color: #90aaa3; font-size: .86rem; line-height: 1.7; }
+.pharaoh-guide__section-heading { max-width: 45rem; margin-inline: auto; text-align: center; }
+.pharaoh-guide__section-heading > p { max-width: 39rem; margin: 1.15rem auto 0; font-size: 1.05rem; line-height: 1.75; }
+
+.pharaoh-guide__entrance-art { position: relative; isolation: isolate; text-align: center; }
+.pharaoh-guide__entrance-art > img { width: 90%; margin-inline: auto; filter: drop-shadow(0 .7rem 1.8rem #0006); }
+.pharaoh-guide__halo { position: absolute; z-index: -1; width: 90%; left: 5%; top: 5%; aspect-ratio: 1; border: 1px solid #e4bb6430; border-radius: 50%; background: radial-gradient(ellipse, #cf9a2b20, transparent 65%), repeating-conic-gradient(from -5deg, #c7a75512 0deg 1deg, transparent 1deg 20deg); }
+.pharaoh-guide__halo::before, .pharaoh-guide__halo::after { position: absolute; content: ''; inset: 8%; border: 1px dashed #a2854e35; border-radius: 50%; }
+.pharaoh-guide__halo::after { inset: 17%; border-style: solid; }
+.pharaoh-guide__sigils { display: flex; align-items: center; justify-content: center; gap: .3rem; margin-top: .8rem; }
+.pharaoh-guide__sigils > span { position: relative; width: 13%; }
+.pharaoh-guide__sigils img { width: 100%; filter: drop-shadow(0 0 .6rem #b9882b28); }
+.pharaoh-guide__sigils small { color: #ad986b; font-size: .6rem; }
+.pharaoh-guide__entrance-art figcaption { margin-top: .7rem; color: #bcae83; font-size: .75rem; }
+
+.pharaoh-guide__guarantee { display: grid; grid-template-columns: 8rem 1fr; align-items: center; gap: 1.75rem; padding: 2.4rem 0; border-block: 1px solid #d6b56a3d; background: radial-gradient(ellipse at 40% 50%, #9c70151a, transparent 70%); }
+.pharaoh-guide__guarantee-coin { position: relative; width: 8rem; aspect-ratio: 1; }
+.pharaoh-guide__guarantee-coin img { width: 100%; opacity: .4; }
+.pharaoh-guide__guarantee-coin strong { position: absolute; inset: 0; display: grid; place-items: center; padding-bottom: .2rem; color: #fff0b7; text-shadow: 0 .2rem .2rem #130a00, 0 0 1rem #b87916; font: 500 3.3rem var(--guide-serif); }
+.pharaoh-guide__guarantee h2 { font-size: clamp(2rem, 3.2vw, 3rem) !important; }
+.pharaoh-guide__guarantee p { max-width: 47rem; }
+.pharaoh-guide__torches { grid-column: 1 / -1; display: flex; justify-content: center; gap: clamp(1rem, 4vw, 3rem); margin-top: 1rem; }
+.pharaoh-guide__torches > span { display: grid; justify-items: center; gap: .4rem; color: #a48c5b; }
+.pharaoh-guide__torches i { display: block; width: .42rem; height: 1.8rem; margin-top: .75rem; border-radius: 2px; background: linear-gradient(90deg, #78502f, #cfab6d, #523f28); }
+.pharaoh-guide__torches i::before { display: block; content: ''; width: .7rem; height: 1.1rem; margin: -.9rem -.14rem 0; border-radius: 80% 20% 65% 35%; background: linear-gradient(#ffe3a2, #ffb14e 65%, #de6d22); box-shadow: 0 0 1.3rem #ffb14577; transform: rotate(12deg); }
+.pharaoh-guide__torches small { font-size: .65rem; }
+
+.pharaoh-guide__passages { padding-block: 5rem 2rem; }
+.pharaoh-guide__passage-scene { display: grid; grid-template-columns: 7.5rem minmax(0, 1.1fr) minmax(0, .9fr); align-items: center; gap: 1.5rem; margin-top: 2.2rem; }
+.pharaoh-guide__passage-tabs { display: flex; flex-direction: column; gap: .7rem; }
+.pharaoh-guide__passage-tabs button { display: grid; gap: .2rem; min-height: 4rem; padding: .85rem .6rem; border: 0; border-left: 2px solid #b99e6444; color: #b9bba7; background: transparent; text-align: left; transition: color .15s, background .15s; }
+.pharaoh-guide__passage-tabs button span { color: inherit; font: 500 1.25rem var(--guide-serif); }
+.pharaoh-guide__passage-tabs button small { font-size: .63rem; }
+.pharaoh-guide__passage-tabs button[aria-selected='true'] { color: #f1d49a; border-color: #ebc779; background: linear-gradient(90deg, #ca9e3820, transparent); }
+.pharaoh-guide__passage-art { position: relative; isolation: isolate; min-width: 0; }
+.pharaoh-guide__passage-art img { width: 100%; filter: drop-shadow(0 1rem 1.8rem #0006); }
+.pharaoh-guide__passage-description { min-width: 0; }
+.pharaoh-guide__passage-description > p { font-size: .95rem; line-height: 1.8; }
+.pharaoh-guide__passage-description > small { display: block; margin-top: 1.2rem; color: #8aa79f; font-size: .75rem; line-height: 1.7; }
+.pharaoh-guide__passage-value { display: inline-block; margin-top: .85rem; color: var(--guide-teal) !important; font-size: 1rem; font-weight: 500 !important; letter-spacing: .06em; }
+
+.pharaoh-guide__relic-lesson { padding: 1rem 0; }
+.pharaoh-guide__relic-ring { position: relative; display: flex; align-items: center; justify-content: center; gap: 1rem; padding: 2rem 0 1.7rem; border-bottom: 1px solid #d2aa6340; background: radial-gradient(ellipse, #1a665627, transparent 70%); }
+.pharaoh-guide__relic-ring > span { display: grid; justify-items: center; width: 29%; color: #d4c7a4; }
+.pharaoh-guide__relic-ring img { width: 100%; aspect-ratio: 1; }
+.pharaoh-guide__relic-ring small { margin-top: .7rem; font-size: .7rem; letter-spacing: .09em; text-transform: uppercase; }
+.pharaoh-guide__moon { display: block; width: 80%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(ellipse at 35% 30%, #fff5d3, #d7bd79 60%, #9b7e42); mask: radial-gradient(circle at 75% 26%, transparent 44%, #000 45%); filter: drop-shadow(0 0 .75rem #fae4a333); }
+.pharaoh-guide__set-selector { display: flex; justify-content: center; flex-wrap: wrap; gap: .4rem; margin-top: 1.4rem; }
+.pharaoh-guide__set-selector button, .pharaoh-guide__example-controls button { padding: .48rem .7rem; border: 1px solid #a8905550; border-radius: .3rem; background: #112b2b; color: #b9c5b6; font-size: .74rem; }
+.pharaoh-guide__set-selector button[aria-pressed='true'], .pharaoh-guide__example-controls button[aria-pressed='true'] { border-color: #e4c382; background: #b5964e1c; color: #fae3a7; }
+.pharaoh-guide__multiplier { display: grid; justify-items: center; gap: .25rem; padding: 1.6rem 0 0; }
+.pharaoh-guide__multiplier > span { color: #a7c8ba; font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; }
+.pharaoh-guide__multiplier strong { color: #e8d29a; font: 500 4.3rem/1.05 var(--guide-serif); }
+.pharaoh-guide__multiplier small { color: #97b5a8; font-size: .76rem; }
+.pharaoh-guide__bank-example { margin-top: 1.4rem; padding: .8rem 0 .8rem 1rem; border-left: 2px solid #bfa15d66; }
+.pharaoh-guide__bank-example > small { color: #9bac9c; font-size: .65rem; letter-spacing: .04em; }
+.pharaoh-guide__bank-example > p { margin-top: .25rem; color: #b9c7b7; font-size: .82rem; }
+.pharaoh-guide__bank-example b { color: #cfc3a0; font-weight: 500; }
+.pharaoh-guide__bank-example strong { margin-inline: .15rem; color: #f0d294; font-size: 1.2rem; }
+.pharaoh-guide__sarcophagus > img { width: 92%; margin-inline: auto; filter: drop-shadow(0 0 1.75rem #bc8c2530); }
+.pharaoh-guide__keys { display: flex; justify-content: center; gap: 1rem; margin-top: .5rem; }
+.pharaoh-guide__keys > span { display: grid; justify-items: center; width: 25%; color: #b2bbac; }
+.pharaoh-guide__keys svg { width: 3.2rem; height: 3.2rem; fill: none; stroke: #e9c77d; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 .4rem #e9bf4e33); }
+.pharaoh-guide__keys small { font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; }
+.pharaoh-guide__reward-equation { display: flex; align-items: center; justify-content: space-between; gap: .4rem; margin-top: 1.5rem; padding: 1rem 0; border-block: 1px solid #b3945338; }
+.pharaoh-guide__reward-equation > span { display: grid; color: #a5b9a9; font-size: .65rem; text-align: center; }
+.pharaoh-guide__reward-equation b { color: #e9cb88; font-size: .88rem; font-weight: 600; }
+.pharaoh-guide__reward-equation > i { color: #c9ac6c; font-size: 1.2rem; font-style: normal; }
+
+.pharaoh-guide__guardians { padding-block: 3rem; border-block: 1px solid #b5995d30; }
+.pharaoh-guide__guardian-procession { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.3rem; margin-top: 2.5rem; }
+.pharaoh-guide__guardian-procession > section { position: relative; text-align: center; }
+.pharaoh-guide__guardian-procession img { width: min(100%, 12rem); margin: 0 auto 1rem; filter: drop-shadow(0 .6rem .7rem #0005); }
+.pharaoh-guide__guardian-procession h3 { color: var(--guardian-tint) !important; font-size: 1.6rem !important; }
+.pharaoh-guide__guardian-procession p { margin-top: .6rem; color: #aabbb1; font-size: .82rem; line-height: 1.7; }
+.pharaoh-guide__blessings { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4rem; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #a58e5530; }
+.pharaoh-guide__blessings > section { display: grid; grid-template-columns: 5rem 1fr; align-items: center; gap: 1rem; }
+.pharaoh-guide__blessings img { width: 100%; }
+.pharaoh-guide__blessings h3 { font-size: 1.35rem !important; }
+.pharaoh-guide__blessings p { margin-top: .5rem; font-size: .82rem; line-height: 1.75; }
+
+.pharaoh-guide__scarab-map { display: grid; grid-template-columns: repeat(5, 1fr); gap: .25rem; padding: .6rem; border: 1px solid #bba26844; border-radius: .65rem; background: #051517; box-shadow: 0 .6rem 2.5rem #0005; }
+.pharaoh-guide__scarab-map > span { display: grid; place-items: center; aspect-ratio: 1; border: 1px solid #8b774c1a; border-radius: .3rem; background: #0b2829; }
+.pharaoh-guide__scarab-map > span[data-found] { border-color: #d4ae634d; background: radial-gradient(ellipse, #67471e33, #0b2829); }
+.pharaoh-guide__scarab-map img { width: 86%; }
+.pharaoh-guide__example-controls { display: flex; justify-content: center; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; }
+.pharaoh-guide__example-caption { min-height: 2.5em; font-size: .77rem; text-align: center; }
+.pharaoh-guide__trail-values { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; padding-top: 1.5rem; }
+.pharaoh-guide__trail-values > span { display: grid; justify-items: center; padding: .6rem 0; border-block: 1px solid #b79a5a44; }
+.pharaoh-guide__trail-values small { color: #b9bda3; font-size: .72rem; }
+.pharaoh-guide__trail-values strong { color: #f2d18a; font: 500 2.5rem var(--guide-serif); }
+
+.pharaoh-guide__reels { padding-block: 2.5rem 3rem; border-bottom: 1px solid #b5995d30; }
+.pharaoh-guide__payline-explorer { display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: 2.5rem; margin-top: 2.5rem; }
+.pharaoh-guide__payline-stage { min-width: 0; }
+.pharaoh-guide__payline-drawing { display: block; width: 100%; height: auto; border-radius: .4rem; }
+.pharaoh-guide__payline-pager { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: .8rem; }
+.pharaoh-guide__payline-pager button { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 1px solid #b89d5d55; border-radius: 50%; background: transparent; color: #efd398; }
+.pharaoh-guide__payline-pager > span { color: #b8c3b4; font-size: .8rem; }
+.pharaoh-guide__payline-pager strong { color: #ecd196; }
+.pharaoh-guide__payline-lesson .pharaoh-guide__example-controls { justify-content: flex-start; margin: 0 0 1.25rem; }
+.pharaoh-guide__payline-lesson h3 { font-size: 1.8rem !important; }
+.pharaoh-guide__payline-lesson p { font-size: .92rem; line-height: 1.8; }
+.pharaoh-guide__payline-lesson small { display: block; margin-top: .8rem; color: #8faa9e; font-size: .73rem; }
+.pharaoh-guide__shape-gallery { margin-top: 2.5rem; border-block: 1px solid #b99c5c3d; }
+.pharaoh-guide__shape-gallery summary { padding: 1rem .1rem; color: #e8cc8e; font-size: .88rem; cursor: pointer; }
+.pharaoh-guide__shape-gallery > div { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .5rem; padding-bottom: 1rem; }
+.pharaoh-guide__shape-gallery button { padding: .35rem; border: 1px solid #ac8e4930; border-radius: .3rem; background: #091c20; color: #aeae91; }
+.pharaoh-guide__shape-gallery button[aria-pressed='true'] { border-color: #ebc774; color: #f5d797; background: #8065261c; }
+.pharaoh-guide__shape-gallery button > span { display: block; font-size: .65rem; }
+.pharaoh-guide__paytable-heading { padding-top: 2.5rem; text-align: center; }
+.pharaoh-guide__paytable-heading h3 { font-size: 2rem !important; }
+.pharaoh-guide__paytable-heading p { font-size: .86rem; }
+.pharaoh-guide__paytable { margin-top: 1.5rem; overflow: auto; }
+.pharaoh-guide__paytable table { width: 100%; border-collapse: collapse; }
+.pharaoh-guide__paytable thead th { padding: .9rem .6rem; border-bottom: 1px solid #ceb16b65; color: #c8ab6d; font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-align: center; text-transform: uppercase; }
+.pharaoh-guide__paytable thead th:first-child { text-align: left; }
+.pharaoh-guide__paytable tbody tr { border-bottom: 1px solid #bba16222; }
+.pharaoh-guide__paytable tbody th { padding: .75rem .5rem .75rem 0; color: #e0d6bb; font-size: .9rem; font-weight: 400; text-align: left; }
+.pharaoh-guide__paytable tbody th > img { display: inline-block; width: 3.8rem; height: 3.8rem; margin-right: 1rem; vertical-align: middle; }
+.pharaoh-guide__paytable tbody th > span { display: inline-block; max-width: calc(100% - 5.2rem); vertical-align: middle; }
+.pharaoh-guide__paytable tbody th small { display: block; margin-top: .25rem; color: #8da89c; font-size: .64rem; }
+.pharaoh-guide__paytable td { padding: .7rem .4rem; color: #f3d796; font-size: .98rem; text-align: center; white-space: nowrap; }
+.pharaoh-guide .pharaoh-guide__rounding { margin-top: 1.3rem; color: #8ea69c; font-size: .76rem; line-height: 1.8; }
+
+.pharaoh-guide__ending { display: grid; justify-items: center; padding: 4.5rem 0 3.5rem; text-align: center; }
+.pharaoh-guide__ending > img { width: 7rem; margin-bottom: 1.3rem; }
+.pharaoh-guide__ending > p { margin-top: 1rem; font-size: 1rem; }
+.pharaoh-guide__ending button { display: inline-flex; justify-content: center; align-items: center; gap: 2rem; min-height: 3.3rem; margin-top: 1.75rem; padding: .75rem 1.75rem; border: 1px solid #efd38a; border-radius: .3rem; background: linear-gradient(135deg, #eacb80, #be944b); color: #1d211b; font-weight: 700; box-shadow: 0 .4rem 1.7rem #bc93471c; }
+.pharaoh-guide__ending button:hover { background: #f0d593; }
+.pharaoh-guide__ending > a { margin-top: 1.2rem; color: #a8b6a2; font-size: .7rem; text-decoration: none; }
+
+@media (max-width: 860px) {
+  .pharaoh-guide__story { padding-inline: 2rem; }
+  .pharaoh-guide__scene { gap: 2rem; padding-block: 3.5rem; }
+  .pharaoh-guide__passage-scene { grid-template-columns: 6rem minmax(0, 1fr); gap: 1rem; }
+  .pharaoh-guide__passage-description { grid-column: 1 / -1; max-width: 33rem; margin-inline: auto; text-align: center; }
+  .pharaoh-guide__passage-art img { width: min(100%, 23rem); margin-inline: auto; }
+  .pharaoh-guide__passage-number { margin-top: .5rem; }
+  .pharaoh-guide__blessings { gap: 1.5rem; }
+  .pharaoh-guide__blessings > section { grid-template-columns: 3.5rem 1fr; }
+  .pharaoh-guide__payline-explorer { gap: 1.6rem; }
+  .pharaoh-guide__shape-gallery > div { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+@media (max-width: 620px) {
+  .win-help__backdrop[data-slot-dialog-theme='pharaohs-ascent'] { padding: .25rem; }
+  .win-help[data-slot-dialog-theme='pharaohs-ascent'] { height: 97svh; border-radius: .55rem; }
+  .pharaoh-guide { scroll-padding-top: 6rem; }
+  .pharaoh-guide__masthead { min-height: 21rem; padding-bottom: 2.7rem; }
+  .pharaoh-guide__masthead-bar { padding-left: 0; padding-right: 2.8rem; font-size: .53rem; gap: .5rem; letter-spacing: .08em; }
+  .pharaoh-guide__wordmark { width: 100%; margin-top: 2.4rem; }
+  .pharaoh-guide__navigation { gap: .45rem 1rem; padding: .7rem 3.3rem .7rem .7rem; }
+  .pharaoh-guide__navigation a { font-size: .67rem; }
+  .pharaoh-guide__story { padding-inline: 1.1rem; }
+  .pharaoh-guide__scene { grid-template-columns: 1fr; gap: 2rem; min-height: 0; padding-block: 2.75rem; }
+  .pharaoh-guide__scene--reverse > :first-child, .pharaoh-guide__scene--reverse > :last-child { grid-column: auto; grid-row: auto; }
+  .pharaoh-guide__scene--reverse > :last-child { grid-row: 1; }
+  .pharaoh-guide__copy { max-width: 32rem; margin-inline: auto; }
+  .pharaoh-guide__copy > p { font-size: 1rem; }
+  .pharaoh-guide__entrance-art { max-width: 24rem; margin-inline: auto !important; }
+  .pharaoh-guide__guarantee { grid-template-columns: 4.8rem 1fr; gap: 1rem; padding-block: 2rem; }
+  .pharaoh-guide__guarantee-coin { width: 4.8rem; }
+  .pharaoh-guide__guarantee-coin strong { font-size: 2.5rem; }
+  .pharaoh-guide__guarantee h2 { font-size: 1.9rem !important; }
+  .pharaoh-guide__guarantee p { font-size: .87rem; }
+  .pharaoh-guide__torches { gap: 1.8rem; }
+  .pharaoh-guide__passages { padding-top: 3rem; }
+  .pharaoh-guide__section-heading > p { font-size: .95rem; }
+  .pharaoh-guide__passage-scene { grid-template-columns: 1fr; margin-top: 1.8rem; }
+  .pharaoh-guide__passage-tabs { flex-direction: row; gap: .4rem; }
+  .pharaoh-guide__passage-tabs button { flex: 1; padding: .6rem .3rem; min-height: 3.9rem; border-left: 0; border-bottom: 2px solid #b99e6444; text-align: center; }
+  .pharaoh-guide__passage-tabs button[aria-selected='true'] { background: linear-gradient(0deg, #ca9e3820, transparent); }
+  .pharaoh-guide__passage-tabs button span { font-size: 1.15rem; }
+  .pharaoh-guide__passage-art img { max-width: 22rem; }
+  .pharaoh-guide__relic-lesson { max-width: 28rem; margin-inline: auto; }
+  .pharaoh-guide__sarcophagus { max-width: 24rem; margin-inline: auto !important; }
+  .pharaoh-guide__guardian-procession { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.9rem 1.2rem; }
+  .pharaoh-guide__guardian-procession img { max-width: 9rem; }
+  .pharaoh-guide__blessings { grid-template-columns: 1fr; gap: 2rem; }
+  .pharaoh-guide__blessings > section { grid-template-columns: 5rem 1fr; }
+  .pharaoh-guide__scarab-lesson { max-width: 27rem; margin-inline: auto; }
+  .pharaoh-guide__scene--scarabs > :last-child { grid-row: 1; }
+  .pharaoh-guide__payline-explorer { grid-template-columns: 1fr; gap: 1.5rem; }
+  .pharaoh-guide__payline-lesson .pharaoh-guide__example-controls { justify-content: center; }
+  .pharaoh-guide__shape-gallery > div { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .35rem; }
+  .pharaoh-guide__paytable thead th { padding-inline: .2rem; font-size: .6rem; letter-spacing: .02em; }
+  .pharaoh-guide__paytable tbody th { font-size: .75rem; }
+  .pharaoh-guide__paytable tbody th > img { width: 2.65rem; height: 2.65rem; margin-right: .45rem; }
+  .pharaoh-guide__paytable tbody th > span { max-width: calc(100% - 3.2rem); }
+  .pharaoh-guide__paytable td { padding-inline: .2rem; font-size: .85rem; }
+  .pharaoh-guide__ending { padding-block: 3rem; }
+  .pharaoh-guide__ending button { width: min(100%, 21rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pharaoh-guide { scroll-behavior: auto; }
+  .pharaoh-guide * { transition: none !important; animation: none !important; }
+}

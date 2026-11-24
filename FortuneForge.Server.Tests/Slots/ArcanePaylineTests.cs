@@ -99,8 +99,8 @@ public sealed class ArcanePaylineTests
         Assert.NotNull(paytable);
         Assert.Equal(scribeTripleMultiplier,
             Assert.Single(paytable.Rules, rule => rule.SymbolId == "4" && rule.MatchLength == 3).Multiplier);
-        var settled = StandaloneSlotPackageRegistry.MapOutcome(outcome, potion);
-        Assert.Empty(SlotRoundAudit.Check(settled, settled.Payout, isPaid: true));
+        var tome = ArcaneTome.SelectPage(ArcaneTome.Empty with { GrimoireReady = true }, "herbalism", true);
+        ArcaneNativeReplay.Validate(outcome, "arcane-payline-test", Wager, false, version, tome, potion, 0);
 
         GridPosition[] four = [new(0, 0), new(1, 0), new(2, 0), new(3, 0)];
         var comparison = PriceAndCompareWithHost(outcome.Audit.BaseGame, ReelWindow(four));
@@ -118,9 +118,9 @@ public sealed class ArcanePaylineTests
             SymbolSetId = paytable.SymbolSetId,
             Rules = paytable.Rules.Skip(1).ToList(),
         };
-        var tampered = settled with { EngineAudit = settled.EngineAudit! with { Paytable = tamperedPaytable } };
-        var finding = Assert.Single(SlotRoundAudit.Check(tampered, tampered.Payout, isPaid: true));
-        Assert.Equal("slot-arcane-paytable-mismatch", finding.Code);
+        var tampered = outcome with { Audit = outcome.Audit with { Paytable = tamperedPaytable } };
+        Assert.Throws<InvalidOperationException>(() => ArcaneNativeReplay.Validate(tampered,
+            "arcane-payline-test", Wager, false, version, tome, potion, 0));
     }
 
     private static IReadOnlyList<IReadOnlyList<string>> ReelWindow(IEnumerable<GridPosition> positions, string symbolId = "2")

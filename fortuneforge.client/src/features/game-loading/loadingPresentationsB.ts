@@ -6,12 +6,12 @@ import videoPoker from '../../assets/catalogue/non-slots/video-poker-title-v1.we
 import keno from '../../assets/catalogue/non-slots/keno-title-v1.webp'
 import sicBo from '../../assets/catalogue/non-slots/sic-bo-title-v1.webp'
 import arcaneArchives from '../../assets/catalogue/slots/arcane-archives-title-v1.webp'
-import cosmicFortune from '../../assets/catalogue/slots/cosmic-fortune-title-v1.webp'
+import pharaohsAscent from '../../assets/catalogue/slots/pharaohs-ascent-title-v1.webp'
 import goldFoundry from '../../assets/catalogue/slots/gold-foundry-title-v1.webp'
 import neonNights from '../../assets/catalogue/slots/neon-nights-title-v1.webp'
 import jadeDragon from '../../assets/catalogue/slots/jade-dragon-title-v1.webp'
 import oceanOdyssey from '../../assets/catalogue/slots/ocean-odyssey-title-v1.webp'
-import samuraiFortune from '../../assets/catalogue/slots/samurai-fortune-title-v1.webp'
+import crookedRoad from '../../assets/catalogue/slots/crooked-road-title-v1.webp'
 import type { GameLoadingEntry } from './types'
 
 /** Standalone presentation data for parent review; existing routes remain unchanged. */
@@ -50,9 +50,9 @@ export const LOADING_PRESENTATIONS_B: readonly GameLoadingEntry[] = [
     image: arcaneArchives, background: '#120a28', accent: '#c084fc',
   },
   {
-    id: 'cosmic-fortune', title: 'Cosmic Fortune',
-    routes: ['/slots/cosmic-fortune', '/slots/cosmic-fortune/demo'],
-    image: cosmicFortune, background: '#05081e', accent: '#54d9ff',
+    id: 'cosmic-fortune', title: 'Pharaoh’s Ascent',
+    routes: ['/slots/pharaohs-ascent'],
+    image: pharaohsAscent, background: '#111a20', accent: '#e8c780',
   },
   {
     id: 'gold-foundry', title: 'Gold Foundry',
@@ -75,8 +75,8 @@ export const LOADING_PRESENTATIONS_B: readonly GameLoadingEntry[] = [
     image: oceanOdyssey, background: '#031629', accent: '#69eaff',
   },
   {
-    id: 'samurai-fortune', title: 'Samurai Fortune',
-    routes: ['/slots/samurai-fortune', '/slots/samurai-fortune/demo'],
-    image: samuraiFortune, background: '#180b0c', accent: '#e6bd63',
+    id: 'crooked-road', title: 'The Crooked Road',
+    routes: ['/slots/crooked-road', '/slots/crooked-road/demo'],
+    image: crookedRoad, background: '#061f19', accent: '#e6bd63',
   },
 ]

@@ -25,12 +25,12 @@ export function slotPackageIsolation(root: string): Plugin[] {
   return [
     ...(inventory.games ?? [])
       .filter(({ routeId, clientPackage, clientKind }) => clientPackage !== undefined && clientKind !== 'embedded-package' && !dedicatedHosts.has(routeId))
-      .map(({ folder, routeId }) => standaloneGameIsolation({
+      .map(({ folder, routeId, title, clientRoot, hostEntry }) => standaloneGameIsolation({
         root,
-        gameLabel: folder,
+        gameLabel: title ?? folder,
         pluginName: `verify-${routeId}-module-loading`,
-        clientRoot: `games/${folder}/client/FortuneForge.Games.${folder}.Client`,
-        hostEntry: `fortuneforge.client/src/games/slots/manifestLoaders/${routeId}.ts`,
+        clientRoot: clientRoot ?? `games/${folder}/client/FortuneForge.Games.${folder}.Client`,
+        hostEntry: hostEntry ?? `fortuneforge.client/src/games/slots/manifestLoaders/${routeId}.ts`,
       })),
     ...(inventory.games ?? [])
       .filter((game) => game.clientKind === 'embedded-package')

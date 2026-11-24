@@ -9,6 +9,7 @@ public static class CosmicFortunePaidRouteContract
 {
     public const string SpinPath = "/api/slots/spins";
     public const string StatePath = "/api/slots/cosmic-fortune/state";
+    public const string ActionPath = "/api/slots/cosmic-fortune/actions";
     public const string AuditGameId = "cosmic-fortune";
 }
 
@@ -24,17 +25,17 @@ public static class CosmicFortunePaidEndpoints
         {
             if (resolveAccount(context) is not { } account) return Results.Unauthorized();
             if (request.GameId != CosmicFortuneEngine.GameId)
-                return Results.BadRequest(new { error = "This endpoint accepts Cosmic Fortune spins." });
+                return Results.BadRequest(new { error = "This endpoint accepts Pharaoh's Ascent spins." });
             var ids = context.Request.Headers["Idempotency-Key"];
             if (ids.Count != 1 || !CosmicFortuneRoundRequest.IsValidOperationId(ids[0]))
-                return Results.BadRequest(new { code = "invalid-spin-operation", error = "Include one valid Cosmic Fortune spin operation ID." });
+                return Results.BadRequest(new { code = "invalid-spin-operation", error = "Include one valid Pharaoh's Ascent spin operation ID." });
 
             try
             {
                 var terms = new CosmicFortuneRoundRequest(ids[0]!, request.WagerPoints, request.UseFreeSpin, request.UseSpecialBoost);
                 var result = await rounds.SpinAsync(account, terms, configuration.GetValue<bool>("CosmicFortune:AllowNewPaidRounds"), token);
                 if (result.Wallet.LegacyFreeGamesCountMismatch)
-                    return Results.Conflict(new { code = "cosmic-fortune-legacy-free-spins-changed", error = "The available Cosmic Fortune free games changed. Refresh the game state." });
+                    return Results.Conflict(new { code = "cosmic-fortune-legacy-free-spins-changed", error = "The available Pharaoh's Ascent free games changed. Refresh the game state." });
                 if (result.Wallet.InsufficientLegacyFreeGames)
                     return Results.Conflict(new { code = "free-spins-unavailable", error = "No free spins are available.", freeSpinsRemaining = 0 });
                 if (result.Wallet.InsufficientFunds)
@@ -46,6 +47,10 @@ public static class CosmicFortunePaidEndpoints
             catch (CosmicFortuneFreeSpinsRequiredException exception)
             {
                 return Results.Conflict(new { code = "free-spins-required", error = exception.Message });
+            }
+            catch (SealedTombConflictException exception)
+            {
+                return Results.Conflict(new { code = exception.Code, error = exception.Message });
             }
             catch (CosmicFortuneFreeSpinsUnavailableException exception)
             {
@@ -97,6 +102,24 @@ public static class CosmicFortunePaidEndpoints
             try { return Results.Ok(await rounds.ReadStateAsync(account, token)); }
             catch (GameWalletUnavailableException exception) { return Retry(exception); }
         }).WithMetadata(new GameWorkerPublicRoute(CosmicFortuneEngine.GameId, CosmicFortunePaidRouteContract.StatePath, CosmicFortunePaidRouteContract.AuditGameId));
+
+        endpoints.MapPost(CosmicFortunePaidRouteContract.ActionPath, async (SealedTombAction action, HttpContext context,
+            [FromServices] CosmicFortuneRoundService rounds, CancellationToken token) =>
+        {
+            if (resolveAccount(context) is not { } account) return Results.Unauthorized();
+            var operations = context.Request.Headers["Idempotency-Key"];
+            if (operations.Count != 1 || !CosmicFortuneRoundRequest.IsValidOperationId(operations[0]))
+                return Results.BadRequest(new { code = "invalid-tomb-operation", error = "Include one valid Sealed Tomb action operation ID." });
+            try { return Results.Ok(await rounds.ActAsync(account, operations[0]!, action, token)); }
+            catch (SealedTombConflictException exception)
+            { return Results.Conflict(new { code = exception.Code, error = exception.Message }); }
+            catch (CosmicFortuneRoundConflictException exception)
+            { return Results.Conflict(new { code = "tomb-operation-pending", error = exception.Message }); }
+            catch (CosmicFortuneRoundCooldownException exception)
+            { return Results.Json(new { error = exception.Message, retryAfterMilliseconds = Math.Ceiling(exception.Remaining.TotalMilliseconds) }, statusCode: 429); }
+            catch (GameWalletUnavailableException exception) { return Retry(exception); }
+            catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
+        }).WithMetadata(new GameWorkerPublicRoute(CosmicFortuneEngine.GameId, CosmicFortunePaidRouteContract.ActionPath, CosmicFortunePaidRouteContract.AuditGameId));
 
         return endpoints;
     }

@@ -1,0 +1,46 @@
+{
+  "engineVersion": "frontier-fortune-engine-v1",
+  "gameId": "high-noon-fortune-v1",
+  "columns": 5,
+  "rows": 3,
+  "pointValueInCents": 25,
+  "minWagerPoints": 4,
+  "maxWagerPoints": 400,
+  "stepPoints": 4,
+  "payoutDivisor": 4,
+  "wildSymbol": "WILD",
+  "scatterSymbol": "WANTED",
+  "scatterTrigger": 3,
+  "symbols": [
+    {"id":"J","weight":140,"payouts":[2,8,28]},
+    {"id":"Q","weight":160,"payouts":[2,10,32]},
+    {"id":"K","weight":150,"payouts":[2,12,40]},
+    {"id":"A","weight":140,"payouts":[4,16,56]},
+    {"id":"SPUR","weight":120,"payouts":[6,20,72]},
+    {"id":"HAT","weight":100,"payouts":[8,28,88]},
+    {"id":"POUCH","weight":80,"payouts":[12,40,120]},
+    {"id":"REVOLVER","weight":50,"payouts":[16,56,180]},
+    {"id":"BADGE","weight":10,"payouts":[18,60,200]},
+    {"id":"BAR","weight":10,"payouts":[20,64,220]},
+    {"id":"WILD","weight":20,"payouts":[24,80,280]},
+    {"id":"WANTED","weight":20,"payouts":[]}
+  ],
+  "paylines": [
+    [0,0,0,0,0],[1,1,1,1,1],[2,2,2,2,2],[0,1,2,1,0],[2,1,0,1,2],
+    [0,0,1,2,2],[2,2,1,0,0],[1,0,0,0,1],[1,2,2,2,1],[0,1,1,1,0],
+    [2,1,1,1,2],[1,0,1,2,1],[1,2,1,0,1],[0,1,0,1,0],[2,1,2,1,2],
+    [0,2,0,2,0],[2,0,2,0,2],[1,1,0,1,1],[1,1,2,1,1],[0,2,2,2,0]
+  ],
+  "bonus": {
+    "startingShots":6,
+    "maximumShots":6,
+    "supplyShots":2,
+    "targets":[
+      {"kind":"pouch","count":5,"hitPoints":1,"rewardMultiplier":2},
+      {"kind":"strongbox","count":3,"hitPoints":2,"rewardMultiplier":5},
+      {"kind":"bounty","count":2,"hitPoints":2,"rewardMultiplier":20},
+      {"kind":"ricochet","count":3,"hitPoints":1,"rewardMultiplier":0},
+      {"kind":"supplies","count":2,"hitPoints":1,"rewardMultiplier":0}
+    ]
+  }
+}

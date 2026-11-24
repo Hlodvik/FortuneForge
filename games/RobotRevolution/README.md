@@ -1,10 +1,10 @@
-# Fifth Sun
+# Sunstone Eclipse
 
-Fifth Sun is a five-reel, 23-payline temple slot with a game-owned Sunwheel feature. Its existing package directory, account keys, game ID, and paid API routes are retained so saved balances, free games, and already prepared rounds remain recoverable. New paid wagers start at 12 points (R3), advance in two-point steps, and stop at 300 points (R75). A point is 25 cents. Previously locked free-game wagers retain their historical range and math.
+Sunstone Eclipse is a five-reel, 23-payline temple slot with a game-owned Sunwheel feature. Its existing package directory, account keys, game ID, and paid API routes are retained so saved balances, free games, and already prepared rounds remain recoverable. New paid wagers start at 12 points (R3), advance in two-point steps, and stop at 300 points (R75). A point is 25 cents. Previously locked free-game wagers retain their historical range and math.
 
 ## Symbols and paytable
 
-The five low symbols are Flame, Rain, Wind, Earth and Reed glyphs. The four picture symbols are Quetzal Headdress, Serpent, Eagle and Jaguar. The calendar image is the highest-paying Sunstone; the pointed Golden Sun is Wild. SOLAR_ECLIPSE and LUNAR_ECLIPSE appear only on the centre reel, with at most one Eclipse in any four-row window. One symbol starts its matching paid mode. Cacao, Earspool and the triple-sun pattern do not appear in new Fifth Sun spins.
+The five low symbols are Flame, Rain, Wind, Earth and Reed glyphs. The four picture symbols are Quetzal Headdress, Serpent, Eagle and Jaguar. The calendar image is the highest-paying Sunstone; the pointed Golden Sun is Wild. SOLAR_ECLIPSE and LUNAR_ECLIPSE appear only on the centre reel, with at most one Eclipse in any four-row window. One symbol starts its matching paid mode. Cacao, Earspool and the triple-sun pattern do not appear in new Sunstone Eclipse spins.
 
 | Wire symbol | Three / four | Five |
 | --- | ---: | ---: |
@@ -40,7 +40,7 @@ During an Eclipse round, awakened guardians remain lit and count toward the link
 
 Historical `fifth-sun-engine-v1` rounds retain their 1.14 scale, three-scatter/seven-free-spin feature, six-row bonus and doubled wheel awards. Historical `sunstone-eclipse-engine-v1` rounds retain their classic symbols, 0.874 scale and triple-sun pattern. Older `robot-revolution-engine-v1` rounds retain their frozen 1.126 scale and original rules. Already prepared historical paid spins retain their recorded wager bounds and math version.
 
-Existing `arcade-rows` carries finish under historical Fifth Sun v1, `rows-arcade` under Sunstone v1, and older carries including `rows` under Robot v1. The shared store transports an optional opaque native-state document validated by this game; other games remain opted out. The original shared codec constructor remains available for prebuilt packages.
+Existing `arcade-rows` carries finish under historical Sunstone Eclipse v1, `rows-arcade` under Sunstone v1, and older carries including `rows` under Robot v1. The shared store transports an optional opaque native-state document validated by this game; other games remain opted out. The original shared codec constructor remains available for prebuilt packages.
 
 Run only the new native paid-cycle qualification with:
 

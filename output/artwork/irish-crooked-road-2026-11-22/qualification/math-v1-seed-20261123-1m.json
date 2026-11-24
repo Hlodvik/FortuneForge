@@ -1,0 +1,149 @@
+{
+  "modelId": "crooked-road-math-v1",
+  "seed": 20261123,
+  "exactBaseReturn": 0.6265951801158,
+  "exactScatterProbability": 0.003039374563201132,
+  "analyticRtpUpperBound": 0.9448314274950068,
+  "analyticUpperNumerator": "14416983451767071409612273",
+  "analyticUpperDenominator": "15258789062500000000000000",
+  "releaseCeiling": 0.95,
+  "qualifiedByAnalyticBound": true,
+  "methodology": "Exact independent-line enumeration, exact finite Fort recurrence, exact symmetric Hill door expectation, and separately normalized Well spring policies. All awarded funded/scatter tickets redeemed; base awards, funding averages and feature payouts round down. Ideal map routing is an upper-return policy; road placements cannot add value. Monte Carlo uses the production domain engine and is a regression check, not certified RTP. Batch means retain funding state; no bonus retriggers or bonus funding.",
+  "samples": [
+    {
+      "destination": "well",
+      "wagerPoints": 100,
+      "paidSpins": 1000000,
+      "paidWagerPoints": 100000000,
+      "payoutPoints": 94301655,
+      "observedRtp": 0.94301655,
+      "approximate95PercentBatchInterval": [
+        0.9398462366458006,
+        0.9461868633541993
+      ],
+      "bonusAwardPoints": 31734140,
+      "ticketsRedeemed": 53043,
+      "bonusSteps": 159129
+    },
+    {
+      "destination": "fort",
+      "wagerPoints": 100,
+      "paidSpins": 1000000,
+      "paidWagerPoints": 100000000,
+      "payoutPoints": 94076154,
+      "observedRtp": 0.94076154,
+      "approximate95PercentBatchInterval": [
+        0.9376873162304783,
+        0.9438357637695217
+      ],
+      "bonusAwardPoints": 31776267,
+      "ticketsRedeemed": 52999,
+      "bonusSteps": 417017
+    },
+    {
+      "destination": "hill",
+      "wagerPoints": 100,
+      "paidSpins": 1000000,
+      "paidWagerPoints": 100000000,
+      "payoutPoints": 94537513,
+      "observedRtp": 0.94537513,
+      "approximate95PercentBatchInterval": [
+        0.9421501465814444,
+        0.9486001134185555
+      ],
+      "bonusAwardPoints": 31881200,
+      "ticketsRedeemed": 53045,
+      "bonusSteps": 159135
+    },
+    {
+      "destination": "well",
+      "wagerPoints": 1000,
+      "paidSpins": 1000000,
+      "paidWagerPoints": 1000000000,
+      "payoutPoints": 945755993,
+      "observedRtp": 0.945755993,
+      "approximate95PercentBatchInterval": [
+        0.9425804568479242,
+        0.9489315291520758
+      ],
+      "bonusAwardPoints": 317960834,
+      "ticketsRedeemed": 53043,
+      "bonusSteps": 159129
+    },
+    {
+      "destination": "fort",
+      "wagerPoints": 1000,
+      "paidSpins": 1000000,
+      "paidWagerPoints": 1000000000,
+      "payoutPoints": 943093262,
+      "observedRtp": 0.943093262,
+      "approximate95PercentBatchInterval": [
+        0.9400144173079812,
+        0.9461721066920188
+      ],
+      "bonusAwardPoints": 317974272,
+      "ticketsRedeemed": 52999,
+      "bonusSteps": 417017
+    },
+    {
+      "destination": "hill",
+      "wagerPoints": 1000,
+      "paidSpins": 1000000,
+      "paidWagerPoints": 1000000000,
+      "payoutPoints": 947499028,
+      "observedRtp": 0.947499028,
+      "approximate95PercentBatchInterval": [
+        0.944270010148638,
+        0.950728045851362
+      ],
+      "bonusAwardPoints": 318812000,
+      "ticketsRedeemed": 53045,
+      "bonusSteps": 159135
+    },
+    {
+      "destination": "well",
+      "wagerPoints": 5000,
+      "paidSpins": 1000000,
+      "paidWagerPoints": 5000000000,
+      "payoutPoints": 4730430375,
+      "observedRtp": 0.946086075,
+      "approximate95PercentBatchInterval": [
+        0.9429100674919417,
+        0.9492620825080582
+      ],
+      "bonusAwardPoints": 1590107331,
+      "ticketsRedeemed": 53043,
+      "bonusSteps": 159129
+    },
+    {
+      "destination": "fort",
+      "wagerPoints": 5000,
+      "paidSpins": 1000000,
+      "paidWagerPoints": 5000000000,
+      "payoutPoints": 4716814251,
+      "observedRtp": 0.9433628502,
+      "approximate95PercentBatchInterval": [
+        0.9402836345211046,
+        0.9464420658788953
+      ],
+      "bonusAwardPoints": 1589871360,
+      "ticketsRedeemed": 52999,
+      "bonusSteps": 417017
+    },
+    {
+      "destination": "hill",
+      "wagerPoints": 5000,
+      "paidSpins": 1000000,
+      "paidWagerPoints": 5000000000,
+      "payoutPoints": 4738844073,
+      "observedRtp": 0.9477688146,
+      "approximate95PercentBatchInterval": [
+        0.9445394261671369,
+        0.950998203032863
+      ],
+      "bonusAwardPoints": 1594060000,
+      "ticketsRedeemed": 53045,
+      "bonusSteps": 159135
+    }
+  ]
+}

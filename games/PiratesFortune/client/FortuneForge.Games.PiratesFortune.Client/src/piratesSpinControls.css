@@ -1,91 +1,110 @@
 @import '@fortuneforge/slot-client-core/styles/sidecarSpinControls.css';
 
-/* Shared sidecar controls reuse Pirates' existing outline-button presentation. */
-.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1']) .slots-page__stage {
-  position: relative;
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__accessible-title {
+  position: static; width: auto; height: auto; overflow: visible; clip-path: none;
+  white-space: normal; margin: 0.2rem 0 0.55rem; padding: 0; text-align: center;
+  color: #f4d58d; font: 800 clamp(1.9rem, 4.7dvh, 3.2rem)/1.05 Georgia, serif;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  text-shadow: 0 2px #462b15, 0 4px #071e20, 0 0 1.4rem #d5a34b40;
 }
-
-.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1']) .sidecar-spin-controls .spin-button--sidecar-loop {
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 1.5px solid rgb(245 249 249 / 69%);
-  border-radius: 50%;
-  background: rgb(8 15 27 / 61%);
-  box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 12%),
-    inset 0 0.15rem 0.6rem rgb(255 255 255 / 9%),
-    0 0.22rem 0.6rem rgb(0 0 0 / 40%);
-  color: #f7f9f7;
-  cursor: pointer;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  transition: background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__main {
+  padding: 0.65rem 1rem 0.25rem; overflow: visible;
 }
-
-.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1']) .sidecar-spin-controls .spin-button--sidecar-loop:hover:not(:disabled) {
-  background: rgb(20 35 54 / 78%);
-  box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 19%),
-    0 0 0.75rem rgb(224 241 249 / 30%),
-    0 0.24rem 0.7rem rgb(0 0 0 / 45%);
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'][data-slot-controls='sidecar'] .slots-page__layout {
+  display: block; grid-template-columns: none;
+  width: min(100%, 46rem, max(25rem, calc((100dvh - 24rem) * 1.7)));
+  max-width: none; margin-inline: auto;
 }
-
-.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1']) .sidecar-spin-controls .spin-button--sidecar-loop:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 3px;
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__stage {
+  position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 0.5rem;
 }
-
-.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1']) .sidecar-spin-controls .spin-button--sidecar-loop:disabled {
-  opacity: 0.48;
-  cursor: default;
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'][data-slot-controls='sidecar'] .slots-page__playbar {
+  position: relative; inset: auto; display: flex; justify-content: center;
+  width: 100%; min-width: 0; margin: 0.2rem 0 0; padding: 0;
+  border: 0; background: none; box-shadow: none;
 }
-
-.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1']) .sidecar-spin-controls .spin-button--sidecar-loop {
-  width: var(--sidecar-control-spin);
-  height: var(--sidecar-control-spin);
-  border-width: 2px;
-  background: rgb(8 15 27 / 54%);
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .sidecar-spin-controls {
+  --sidecar-bet-placement: above;
+  --sidecar-control-small: 2.8rem; --sidecar-control-spin: 4.7rem;
+  display: grid; grid-template-columns: 2.8rem 2.8rem 4.7rem; grid-template-rows: 4.7rem auto;
+  align-items: center; justify-items: center; gap: 0.2rem 0.9rem; width: max-content; background: none;
 }
-
-.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1']) .sidecar-spin-controls .spin-button--sidecar-loop.spin-button--active,
-.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1']) .sidecar-spin-controls .spin-button--sidecar-loop.spin-button--stopping {
-  background: rgb(18 32 47 / 78%);
-  border-color: rgb(245 249 249 / 75%);
-  color: #fff;
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .sidecar-spin-controls > .sidecar-spin-controls__small { grid-column: 1; grid-row: 1; }
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .sidecar-spin-controls__bet-wrap { grid-column: 2; grid-row: 1; }
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .sidecar-spin-controls__spin { grid-column: 3; grid-row: 1; margin: 0; }
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .sidecar-spin-controls__bet-readout {
+  grid-column: 1 / -1; grid-row: 2; margin: 0; text-align: center; color: #d9c493; font-size: 0.68rem;
 }
-
-@media (min-width: 1051px) {
-  /* Reserve both side margins so the control column remains on screen even
-     when a tall desktop viewport allows a full-width cabinet. */
-
-  .slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1']) .slots-page__playbar {
-    position: absolute;
-    z-index: 9;
-    top: 26%;
-    right: calc(-1 * clamp(8.15rem, 9.4vw, 10.5rem));
-    display: block;
-    width: max-content;
-    padding: 0;
-    margin: 0;
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .sidecar-spin-controls__bet-readout strong { color: #ffe1a1; }
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .sidecar-spin-controls__small,
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'][data-slot-controls='sidecar'] .sidecar-spin-controls .spin-button--sidecar-loop {
+  border: 1.5px solid #be9857; border-radius: 50%; color: #f7d994;
+  background: radial-gradient(circle at 32% 20%, #f3cb7430, transparent 55%), linear-gradient(#143c39, #061c20);
+  box-shadow: inset 0 0 0 2px #bb8b3d22, 0 0.25rem 0.65rem #0009;
+}
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'][data-slot-controls='sidecar'] .sidecar-spin-controls .spin-button--sidecar-loop {
+  width: var(--sidecar-control-spin); height: var(--sidecar-control-spin); padding: 0; border-width: 2px;
+}
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .sidecar-spin-controls__small:hover:not(:disabled),
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'][data-slot-controls='sidecar'] .sidecar-spin-controls .spin-button--sidecar-loop:hover:not(:disabled) {
+  border-color: #ffe1a1; background: #20524a; box-shadow: 0 0 1rem #dbaf4b33;
+}
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .sidecar-spin-controls__small:focus-visible,
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'][data-slot-controls='sidecar'] .sidecar-spin-controls .spin-button--sidecar-loop:focus-visible {
+  outline: 2px solid #f7d994; outline-offset: 4px;
+}
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .sidecar-spin-controls__bet-menu {
+  border-color: #aa874f; background: linear-gradient(#123732, #061c20); color: #fae3b4;
+}
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .slots-page__utility-buttons { display: contents; }
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .symbol-value-guide__trigger,
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .slots-page__utility-buttons > button {
+  position: fixed; z-index: 40; bottom: max(1rem, env(safe-area-inset-bottom));
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 2.8rem; padding: 0.65rem 0.9rem; margin: 0;
+  border: 1px solid #a6834a; border-radius: 0.35rem; color: #efd49b;
+  background: linear-gradient(#123b36, #071e20); box-shadow: inset 0 0 0 1px #b58c4320, 0 0.2rem 0.6rem #0008;
+  font: 750 0.7rem/1.15 'Trebuchet MS', sans-serif; letter-spacing: 0.04em; text-transform: uppercase;
+  transform: none;
+}
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .symbol-value-guide__trigger {
+  left: max(1rem, env(safe-area-inset-left)); right: auto; width: 9.2rem;
+}
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .slots-page__utility-buttons > .slots-page__help-button {
+  left: calc(max(1rem, env(safe-area-inset-left)) + 9.8rem); right: auto; width: 8.6rem;
+}
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__help-button-label { display: inline; }
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .slots-page__utility-buttons > .slots-page__settings-button {
+  right: calc(max(1rem, env(safe-area-inset-right)) + 3.7rem); left: auto; width: 2.8rem; padding: 0;
+}
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .slots-page__utility-buttons > .slots-page__settings-button svg { width: 1.3rem; height: 1.3rem; }
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .symbol-value-guide__trigger:hover,
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .slots-page__utility-buttons > button:hover { border-color: #f2d595; background: #205046; }
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .symbol-value-guide__trigger:focus-visible,
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .slots-page__utility-buttons > button:focus-visible { outline: 2px solid #f7d994; outline-offset: 3px; }
+.symbol-value-guide__backdrop[data-slot-dialog-theme='treasure-cove'],
+.game-settings__backdrop[data-slot-dialog-theme='treasure-cove'] { background: #031717d9; backdrop-filter: blur(7px); }
+.symbol-value-guide[data-slot-dialog-theme='treasure-cove'],
+.game-settings[data-slot-dialog-theme='treasure-cove'] {
+  border-color: #aa874f; color: #f7e6bd;
+  background: radial-gradient(ellipse at 50% 0%, #2a625047, transparent 60%), linear-gradient(#123832, #061b20);
+  box-shadow: inset 0 0 0 3px #b18b4b22, 0 1rem 4rem #000c;
+}
+.symbol-value-guide[data-slot-dialog-theme='treasure-cove'] .symbol-value-guide__item { border-color: #ae8b4a55; background: #061d20b3; }
+.symbol-value-guide[data-slot-dialog-theme='treasure-cove'] .symbol-value-guide__heading strong,
+.symbol-value-guide[data-slot-dialog-theme='treasure-cove'] .symbol-value-guide__name { color: #f5d896; }
+.symbol-value-guide[data-slot-dialog-theme='treasure-cove'] .symbol-value-guide__close,
+.game-settings[data-slot-dialog-theme='treasure-cove'] button { border-color: #aa874f; background-color: #153b34; color: #f5d896; }
+@media (max-width: 720px) {
+  .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__main { padding: 0.6rem 0.7rem 8rem; }
+  .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'][data-slot-controls='sidecar'] .slots-page__layout { width: 100%; }
+  .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__accessible-title { font-size: clamp(1.6rem, 7vw, 2.4rem); }
+  .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .symbol-value-guide__trigger,
+  .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .slots-page__utility-buttons > .slots-page__help-button {
+    width: 7rem; padding-inline: 0.35rem; gap: 0.3rem; font-size: 0.6rem;
   }
+  .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .symbol-value-guide__trigger { left: max(0.75rem, env(safe-area-inset-left)); }
+  .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .slots-page__utility-buttons > .slots-page__help-button { left: calc(max(0.75rem, env(safe-area-inset-left)) + 7.5rem); }
+  .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] > .slots-page__utility-buttons > .slots-page__settings-button { right: max(0.8rem, env(safe-area-inset-right)); bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 3.5rem); }
+  .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__keyboard-help { display: none; }
 }
-
-@media (width < 1051px) {
-  .slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1']) .slots-page__playbar {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    margin-top: 0.35rem;
-  }
-}
-
-/* Keep the new catalogue controls comfortable to tap at every viewport. */
-
-@media (prefers-reduced-motion: reduce) {
-  .slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1']) .sidecar-spin-controls .spin-button--sidecar-loop {
-    transition: none;
-  }
-}
-

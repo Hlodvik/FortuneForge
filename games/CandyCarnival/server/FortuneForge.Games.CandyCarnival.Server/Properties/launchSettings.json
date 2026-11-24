@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "FortuneForge.Games.CandyCarnival.Server": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:57359;http://localhost:57362"
+    }
+  }
+}

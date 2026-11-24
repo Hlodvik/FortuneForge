@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <GameServerProject>$(MSBuildThisFileDirectory)FortuneForge.Games.FrontierFortune.Server/FortuneForge.Games.FrontierFortune.Server.csproj</GameServerProject>
+  </PropertyGroup>
+</Project>

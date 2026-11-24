@@ -1,5 +1,6 @@
 // Edited: 2026-11-18T14:45:02-06:00 | Computer: Vinnabok
 using FortuneForge.Games.Slots;
+using System.Text.Json.Serialization;
 
 namespace FortuneForge.Games.Slots.Runtime;
 
@@ -59,17 +60,23 @@ public sealed record ClassicSlotEngineOptions
     public bool HeavyPawFeature { get; init; }
     public int SinglePawDivisor { get; init; } = 14;
     public Func<int, int>? DirectValueCountFromRoll { get; init; }
+    public Func<int, int>? PatternCountFromRoll { get; init; }
     public Func<long, int>? CollectionAppearanceChance { get; init; }
     public Func<IReadOnlyList<IReadOnlyList<string>>, long, decimal, ClassicFeaturePayout>?
         FeaturePayoutCalculator { get; init; }
 }
 
 public sealed record SlotCollectionState(string Mode, int Count, long WagerPointTotal);
+public sealed record SlotFundedCollectionAward(string Mode, int Spins, long WagerPoints);
 public sealed record SlotCollectionProgress(
     int FreeSpinsAwarded,
     string? FeatureMode,
     long FreeSpinWagerPoints,
-    IReadOnlyList<SlotCollectionState> Collections);
+    IReadOnlyList<SlotCollectionState> Collections)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<SlotFundedCollectionAward>? FundedAwards { get; init; }
+}
 
 public static class ClassicSlotCollections
 {
@@ -87,7 +94,12 @@ public static class ClassicSlotCollections
 
     public static SlotCollectionProgress Advance(SlotProfile profile,
         IReadOnlyList<SlotCollectionState> current, IReadOnlyDictionary<string, int> awarded,
-        long wagerPoints, bool energyCompleted)
+        long wagerPoints, bool energyCompleted) =>
+        Advance(profile, current, awarded, wagerPoints, energyCompleted, null, false);
+
+    public static SlotCollectionProgress Advance(SlotProfile profile,
+        IReadOnlyList<SlotCollectionState> current, IReadOnlyDictionary<string, int> awarded,
+        long wagerPoints, bool energyCompleted, long? energyCompletionWagerPoints, bool roundFundedWagerDown = false)
     {
         ArgumentNullException.ThrowIfNull(profile);
         ArgumentNullException.ThrowIfNull(current);
@@ -116,23 +128,26 @@ public static class ClassicSlotCollections
             states[mode] = states[mode] with
             {
                 Count = checked(states[mode].Count + missing),
-                WagerPointTotal = checked(states[mode].WagerPointTotal + wagerPoints * missing)
+                WagerPointTotal = checked(states[mode].WagerPointTotal + (energyCompletionWagerPoints ?? wagerPoints) * missing)
             };
         }
 
         var freeSpins = 0;
         var freeSpinWager = 0L;
+        var fundedAwards = new List<SlotFundedCollectionAward>();
         string? featureMode = null;
         foreach (var mode in Modes)
         {
             var state = states[mode];
             if (state.Count < profile.CollectionTarget) continue;
-            var average = state.Count == 0 ? 0 :
-                (long)Math.Round(state.WagerPointTotal / (decimal)state.Count,
-                    MidpointRounding.AwayFromZero);
+            var average = state.Count == 0 ? 0 : roundFundedWagerDown ? state.WagerPointTotal / state.Count :
+                (long)Math.Round(state.WagerPointTotal / (decimal)state.Count, MidpointRounding.AwayFromZero);
             freeSpins = checked(freeSpins + profile.CollectionAwardedSpins);
             featureMode ??= profile.CollectionFeatureMode ?? mode;
             if (freeSpinWager == 0) freeSpinWager = average > 0 ? average : wagerPoints;
+            if (roundFundedWagerDown)
+                fundedAwards.Add(new(profile.CollectionFeatureMode ?? mode, profile.CollectionAwardedSpins,
+                    average > 0 ? average : wagerPoints));
             var overflow = state.Count - profile.CollectionTarget;
             states[mode] = state with
             {
@@ -140,6 +155,7 @@ public static class ClassicSlotCollections
                 WagerPointTotal = checked(overflow * average)
             };
         }
-        return new(freeSpins, featureMode, freeSpinWager, Modes.Select(mode => states[mode]).ToArray());
+        return new(freeSpins, featureMode, freeSpinWager, Modes.Select(mode => states[mode]).ToArray())
+        { FundedAwards = roundFundedWagerDown ? fundedAwards : null };
     }
 }

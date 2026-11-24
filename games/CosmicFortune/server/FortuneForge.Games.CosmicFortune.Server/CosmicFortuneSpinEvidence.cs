@@ -60,6 +60,14 @@ public static partial class CosmicFortuneSpinEvidence
                 request, source.Before, engine, progress, data.GetProperty("engineOutcomeSha256").GetString() ?? throw InvalidEvidence(),
                 wagerCents, payoutCents, source.SpendsLegacy, started, null);
             CosmicFortuneRoundPolicy.Validate(round);
+            if (audit.EngineVersion != CosmicFortuneEngine.LegacyEngineVersion &&
+                (JsonSerializer.Serialize(result.SpinFeature, RoundAuditCapture.Json) !=
+                    JsonSerializer.Serialize(PharaohsAscentFeature.From(round), RoundAuditCapture.Json) ||
+                JsonSerializer.Serialize(result.GameFeatureState, RoundAuditCapture.Json) !=
+                    JsonSerializer.Serialize(CosmicFortuneRoundStateReply.From(source.After,
+                        includeTomb: CosmicFortuneEngine.UsesSealedTombFunding(audit.EngineVersion),
+                        includeFundingRequirement: audit.EngineVersion == CosmicFortuneEngine.EngineVersion).GameFeatureState, RoundAuditCapture.Json)))
+                throw InvalidEvidence();
             return [];
         }
         catch (Exception error) when (error is JsonException or ArgumentException or InvalidOperationException or

@@ -5,7 +5,7 @@
     {
       "route": {
         "id": "wukong-journey-to-the-west",
-        "title": "Wukong\u0027s Journey to the West",
+        "title": "Wukong's Journey to the West",
         "playPath": "/slots/wukong",
         "demoPath": "/slots/wukong/demo",
         "gameId": "wukong-journey-v1"
@@ -311,7 +311,7 @@
     {
       "route": {
         "id": "pirates-fortune",
-        "title": "Pirates\u0027 Fortune",
+        "title": "Pirates' Fortune",
         "playPath": "/slots/pirates-fortune",
         "demoPath": "/slots/pirates-fortune/demo",
         "gameId": "pirates-fortune-v1"
@@ -1699,146 +1699,6 @@
     },
     {
       "route": {
-        "id": "samurai-fortune",
-        "title": "Samurai Fortune",
-        "playPath": "/slots/samurai-fortune",
-        "demoPath": "/slots/samurai-fortune/demo",
-        "gameId": "samurai-fortune-v1"
-      },
-      "statusEndpoint": 204,
-      "paylineCount": 23,
-      "profile": {
-        "gameId": "samurai-fortune-v1",
-        "scatterRequiredSymbols": 4,
-        "scatterAwardedSpins": 6,
-        "collectionTarget": 26,
-        "collectionAwardedSpins": 7,
-        "usesCollections": true,
-        "usesEnergy": false,
-        "usesDirectValueTokens": false,
-        "scatterFeatureMode": null,
-        "collectionFeatureMode": "sync-paw",
-        "baseReelSetId": null,
-        "targetHitRate": null,
-        "paylinePatternIds": null,
-        "payoutMultiplier": 1.057
-      },
-      "payoutMultiplier": 1.057,
-      "observedRows": [
-        4
-      ],
-      "scenarios": [
-        {
-          "scenario": "base-loss",
-          "seed": 0,
-          "responses": 1,
-          "triggerRows": 4,
-          "continuationRows": [],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 0,
-          "triggerMode": null,
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "base-win",
-          "seed": 1,
-          "responses": 1,
-          "triggerRows": 4,
-          "continuationRows": [],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 0,
-          "triggerMode": null,
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "scatter",
-          "seed": 106,
-          "responses": 7,
-          "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 6,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 6,
-          "triggerMode": null,
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-sync",
-          "seed": 2,
-          "responses": 8,
-          "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 7,
-          "triggerMode": "sync-paw",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-rows",
-          "seed": 29,
-          "responses": 8,
-          "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 7,
-          "triggerMode": "sync-paw",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-paw",
-          "seed": 2,
-          "responses": 8,
-          "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 7,
-          "triggerMode": "sync-paw",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-rand",
-          "seed": 1,
-          "responses": 8,
-          "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 7,
-          "triggerMode": "sync-paw",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        }
-      ],
-      "missingScenarios": [],
-      "responses": 41,
-      "unavailable": [
-        "Energy disabled in actual engine profile.",
-        "Direct-value tokens and collectors disabled in actual engine profile."
-      ]
-    },
-    {
-      "route": {
         "id": "candy-carnival",
         "title": "Candy Carnival",
         "playPath": "/slots/candy-carnival",
@@ -2488,7 +2348,7 @@
   "gameCount": 19,
   "scenarioCount": 119,
   "responseCount": 781,
-  "generator": "Actual in-process DemoSlotsController \u002B shared engine; no HTTP listener, live request, account settlement, Firestore, tuning or backend source edits.",
+  "generator": "Actual in-process DemoSlotsController + shared engine; no HTTP listener, live request, account settlement, Firestore, tuning or backend source edits.",
   "randomness": "System.Random(seed), fresh controller/service/pity state for each searched scenario; production RNG is unchanged.",
   "collectionState": "Collection cases seed the real engine track at target-1; they do not prove a complete natural collection history.",
   "boundedContinuations": 250,

@@ -94,32 +94,15 @@ async function buildFrontend(frontend, entry, directory, config) {
   const { kind = 'module', manifestExport } = config
   const isFrame = kind === 'frame'
   if (kind !== 'module' && !isFrame) throw new Error('Unknown browser release kind: ' + kind)
+  if (manifestExport !== undefined) {
+    throw new Error('Manifest-only slot releases are retired. Publish the game-owned browser component entry.')
+  }
   if (isFrame && (manifestExport !== undefined || basename(entry) !== 'index.html')) {
     throw new Error('A frame release requires index.html as its browser entry')
   }
   const requireFromWorkspace = createRequire(join(frontend, 'package.json'))
-  const { build, normalizePath } = await import(pathToFileURL(requireFromWorkspace.resolve('vite')).href)
-  const manifestEntry = 'virtual:fortuneforge-slot-release'
-  const resolvedManifestEntry = '\0' + manifestEntry
-  const plugins = []
-  if (manifestExport !== undefined) {
-    if (typeof manifestExport !== 'string' || !/^[A-Z][A-Z0-9_]*$/.test(manifestExport)) {
-      throw new Error('Invalid slot manifest export: ' + manifestExport)
-    }
-    plugins.push({
-      name: 'fortuneforge-slot-release-entry',
-      resolveId(id) { if (id === manifestEntry) return resolvedManifestEntry },
-      load(id) {
-        if (id !== resolvedManifestEntry) return
-        return [
-          'import { ' + manifestExport + ' as manifest } from ' + JSON.stringify(normalizePath(entry)),
-          'export default function SlotRelease({ renderSlot }) { return renderSlot(manifest) }',
-        ].join('\n')
-      },
-    })
-  }
+  const { build } = await import(pathToFileURL(requireFromWorkspace.resolve('vite')).href)
   const bundle = await build({
-    plugins,
     root: frontend,
     configFile: false,
     envDir: false,
@@ -132,7 +115,7 @@ async function buildFrontend(frontend, entry, directory, config) {
       cssCodeSplit: false,
       modulePreload: false,
       rolldownOptions: {
-        input: plugins.length ? manifestEntry : entry,
+        input: entry,
         ...(isFrame ? {} : {
           external: Object.keys(gameHostRuntime),
           preserveEntrySignatures: 'strict',

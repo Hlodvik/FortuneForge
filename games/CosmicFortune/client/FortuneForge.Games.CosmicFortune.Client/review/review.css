@@ -1,0 +1,6 @@
+:root { color-scheme:dark; font-family:system-ui,sans-serif; }
+.pharaoh-review-shell { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.7rem 1.25rem; min-height:4.25rem; box-sizing:border-box; border-bottom:1px solid #a78b5055; color:#f2d395; background:#081d22; }
+.pharaoh-review-shell > span { font:600 1.15rem Georgia,serif; letter-spacing:.07em; }
+.pharaoh-review-shell small { display:block; margin-top:.25rem; color:#abc0b6; font:400 .6rem system-ui,sans-serif; letter-spacing:.08em; }
+.pharaoh-review-shell strong { color:#fff0c9; font-size:1.1rem; font-variant-numeric:tabular-nums; }
+body { margin:0; }

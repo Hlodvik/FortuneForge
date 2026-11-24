@@ -1,0 +1,8 @@
+{
+  "id": "crooked-road",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.CrookedRoad.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": { "kind": "packaged-game" }
+}

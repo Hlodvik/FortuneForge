@@ -2,8 +2,8 @@ using FortuneForge.Games.GodsOfOlympus;
 using FortuneForge.Games.GodsOfOlympus.Server;
 using FortuneForge.Games.GoldFoundry;
 using FortuneForge.Games.GoldFoundry.Server;
-using FortuneForge.Games.HighNoonFortune;
-using FortuneForge.Games.HighNoonFortune.Server;
+using FortuneForge.Games.FrontierFortune;
+using FortuneForge.Games.FrontierFortune.Server;
 using FortuneForge.Games.Hosting;
 using FortuneForge.Games.JadeDragon;
 using FortuneForge.Games.JadeDragon.Server;
@@ -22,8 +22,8 @@ using FortuneForge.Games.CosmicFortune;
 using FortuneForge.Games.CosmicFortune.Server;
 using FortuneForge.Games.OceanOdyssey;
 using FortuneForge.Games.OceanOdyssey.Server;
-using FortuneForge.Games.SamuraiFortune;
-using FortuneForge.Games.SamuraiFortune.Server;
+using FortuneForge.Games.CrookedRoad;
+using FortuneForge.Games.CrookedRoad.Server;
 using FortuneForge.Games.CandyCarnival;
 using FortuneForge.Games.CandyCarnival.Server;
 using FortuneForge.Games.PhantomManor;
@@ -70,16 +70,16 @@ internal static class PreparedSlotWorkerRegistry
             OlympusPaidRouteContract.StatePath, OlympusRoundStateCodec.OwnerField),
         [ReelRichesEngine.GameId] = new("Slots:ReelRichesWorkerRoundsEnabled", ReelRichesPaidRouteContract.SpinPath,
             ReelRichesPaidRouteContract.StatePath, ReelRichesRoundStateCodec.OwnerField),
-        [HighNoonFortuneEngine.GameId] = new("Slots:HighNoonFortuneWorkerRoundsEnabled", HighNoonPaidRouteContract.SpinPath,
-            HighNoonPaidRouteContract.StatePath, HighNoonRoundStateCodec.OwnerField),
+        [FrontierFortuneEngine.GameId] = new("Slots:FrontierFortuneWorkerRoundsEnabled", FrontierPaidRouteContract.SpinPath,
+            FrontierPaidRouteContract.StatePath, FrontierRoundStore.OwnerField),
         [RoyalDrawEngine.GameId] = new("Slots:RoyalDrawWorkerRoundsEnabled", RoyalDrawPaidRouteContract.SpinPath,
             RoyalDrawPaidRouteContract.StatePath, RoyalDrawRoundStateCodec.OwnerField),
         [CosmicFortuneEngine.GameId] = new("Slots:CosmicFortuneWorkerRoundsEnabled", CosmicFortunePaidRouteContract.SpinPath,
             CosmicFortunePaidRouteContract.StatePath, CosmicFortuneRoundStateCodec.OwnerField),
         [OceanOdysseyEngine.GameId] = new("Slots:OceanOdysseyWorkerRoundsEnabled", OceanOdysseyPaidRouteContract.SpinPath,
             OceanOdysseyPaidRouteContract.StatePath, OceanOdysseyRoundStateCodec.OwnerField),
-        [SamuraiFortuneEngine.GameId] = new("Slots:SamuraiFortuneWorkerRoundsEnabled", SamuraiFortunePaidRouteContract.SpinPath,
-            SamuraiFortunePaidRouteContract.StatePath, SamuraiFortuneRoundStateCodec.OwnerField),
+        [CrookedRoadRules.GameId] = new("Slots:CrookedRoadWorkerRoundsEnabled", CrookedRoadPaidRouteContract.SpinPath,
+            CrookedRoadPaidRouteContract.StatePath, CrookedRoadRoundStateCodec.OwnerField),
         [CandyCarnivalEngine.GameId] = new("Slots:CandyCarnivalWorkerRoundsEnabled", CandyCarnivalPaidRouteContract.SpinPath,
             CandyCarnivalPaidRouteContract.StatePath, CandyCarnivalRoundStateCodec.OwnerField),
         [PhantomManorEngine.GameId] = new("Slots:PhantomManorWorkerRoundsEnabled", PhantomManorPaidRouteContract.SpinPath,

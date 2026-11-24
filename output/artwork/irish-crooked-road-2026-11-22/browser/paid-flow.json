@@ -1,0 +1,17 @@
+{
+  "localOnly": true,
+  "projectId": "crooked-road-browser-8b3d9b40ccb848de975793b8c25b261b",
+  "account": "crooked-road-local-paid-test",
+  "gameId": "crooked-road-v1",
+  "engineVersion": "crooked-road-engine-v1",
+  "initialWalletCents": 1000000,
+  "finalWalletCents": 1000583,
+  "expectedWalletCents": 1000583,
+  "paidRounds": 60,
+  "bonusRounds": 16,
+  "chargedWagerCents": 6200,
+  "payoutCents": 6783,
+  "completedJourneys": 3,
+  "browserErrors": [],
+  "mobileHorizontalOverflow": false
+}

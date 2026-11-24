@@ -1,7 +1,6 @@
 // Edited: 2026-11-18T18:01:37-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T16:30:57-06:00 | Computer: Vinnabok
 using System.Collections.Concurrent;
-using ArcanePotions = FortuneForge.Games.ArcaneArchives.ArcanePotions;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
@@ -27,6 +26,7 @@ public sealed partial class SpinService
         bool isNeonDiscoPlay = false,
         int neonDiscoMultiplier = NeonDiscoCascade.InitialMultiplier)
     {
+        RejectNativeRoundGame(gameId);
         if (gameId == SlotSpecialRoundProfiles.NeonNightsGameId)
             return neonNightsEngine.Spin(wagerPoints, playerId, specialBoostApplied,
                 currentEnergyBalance, freeSpinFeatureMode, persistedPityMisses, isFreeSpin,
@@ -58,6 +58,7 @@ public sealed partial class SpinService
 
     public SpinResult SpinAdmitted(string gameId, SlotSpinAdmission admission, string playerId)
     {
+        RejectNativeRoundGame(gameId);
         if (admission.AdmissionId == Guid.Empty || admission.CooldownRemaining is not null)
             throw new ArgumentException("An accepted slot admission is required.", nameof(admission));
         if (gameId == SlotSpecialRoundProfiles.JadeDragonGameId)
@@ -108,14 +109,6 @@ public sealed partial class SpinService
                 admission.PityMissesBefore, admission.IsFreeSpin);
             return foundry with { ChargedWagerCents = admission.ChargedWagerCents };
         }
-        if (useStandaloneSlotPackages && gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId &&
-            admission.ArcaneTomeBefore is { } tome)
-        {
-            var arcane = standaloneSlotPackages.SpinArcaneTome(admission.WagerPoints, playerId,
-                admission.EnergyBalance, admission.PityMissesBefore, admission.IsFreeSpin, tome.ActivePage is not null,
-                ArcanePotions.ForSpin(admission.ArcanePotionsBefore, admission.IsFreeSpin));
-            return arcane with { ChargedWagerCents = admission.ChargedWagerCents };
-        }
         if (useStandaloneSlotPackages && standaloneSlotPackages.TrySpin(gameId,
                 admission.WagerPoints, playerId, admission.SpecialBoostApplied,
                 admission.EnergyBalance, admission.FreeSpinFeatureMode,
@@ -142,12 +135,10 @@ public sealed partial class SpinService
         int? persistedPityMisses, bool derivedFreeSpin,
         WukongPawPrototypeEvidence? pawPrototype = null, bool isFreeSpin = false)
     {
+        RejectNativeRoundGame(gameId);
         var game = definitions.GetGame(gameId)
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
-        if (derivedFreeSpin && ArcaneLightningCollector.IsModel(game))
-            ArcaneLightningCollector.ValidateCarryWager(game, wagerPoints);
-        else
-            ValidateWager(game, wagerPoints);
+        ValidateWager(game, wagerPoints);
         if (string.IsNullOrWhiteSpace(playerId))
         {
             throw new ArgumentException("An authenticated player id is required.", nameof(playerId));
@@ -206,6 +197,14 @@ public sealed partial class SpinService
         }
     }
 
+    private static void RejectNativeRoundGame(string gameId)
+    {
+        if (gameId == FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine.GameId)
+            throw new ArgumentException("Arcane Archives requires its dedicated game package and native round endpoints.", nameof(gameId));
+        if (gameId == FortuneForge.Games.FrontierFortune.FrontierFortuneEngine.GameId)
+            throw new ArgumentException("Frontier Fortune requires its dedicated game worker and native round endpoints.", nameof(gameId));
+    }
+
     private SpinResult SpinWithPity(
         GameDefinition game,
         ReelSetDefinition reelSet,
@@ -220,7 +219,6 @@ public sealed partial class SpinService
         WukongPawPrototypeEvidence? pawPrototype = null)
     {
         var rainbowHarvest = RainbowRealmSlotDefinitions.IsModel(game);
-        var arcaneLightning = ArcaneLightningCollector.IsModel(game);
         var effectiveGame = CreateEffectiveSpinGame(game, freeSpinFeatureMode);
         var pityTriggered = string.IsNullOrWhiteSpace(freeSpinFeatureMode) &&
             game.Math.FiveMatchPityMissLimit is { } pityLimit &&
@@ -240,7 +238,7 @@ public sealed partial class SpinService
             rawOutcome = reelGenerator.Generate(effectiveGame, reelSet, symbolSet);
             frequencyOutcome = FreeGameFrequency.Apply(rawOutcome, effectiveGame, random);
             outcome = frequencyOutcome;
-            outcome = ApplyFeatureSymbols(outcome, effectiveGame, arcaneLightning ? 0 : currentEnergyBalance, freeSpinFeatureMode);
+            outcome = ApplyFeatureSymbols(outcome, effectiveGame, currentEnergyBalance, freeSpinFeatureMode);
             if (pawPrototype is not null)
                 outcome = ApplyWukongPawPrototype(outcome, pawPrototype);
             evaluations = combinationEvaluator.Evaluate(outcome.VisibleReels, effectiveGame, symbolSet);
@@ -269,13 +267,6 @@ public sealed partial class SpinService
             wagerPoints,
             game.Math.PayoutMultiplier,
             collectWithEveryPaw: pawPrototype is not null);
-        var lightningCollection = arcaneLightning
-            ? ArcaneLightningCollector.Calculate(outcome.VisibleReels, wagerPoints) : null;
-        if (lightningCollection is not null)
-            featurePayout = featurePayout with
-            {
-                Paylines = [.. featurePayout.Paylines, ArcaneLightningCollector.CreatePayout(lightningCollection, wagerPoints)]
-            };
         payout = AddFeaturePayout(payout, featurePayout);
         var freeSpinsAwarded = CountFreeGameSymbols(outcome.VisibleReels, effectiveGame) >=
             (effectiveGame.FreeGames?.RequiredSymbols ?? int.MaxValue)
@@ -306,7 +297,6 @@ public sealed partial class SpinService
             IsFreeSpin = isFreeSpin,
             EngineAudit = new SlotSpinEngineAudit(
                 rainbowHarvest ? RainbowRealmSlotDefinitions.EngineVersion :
-                    arcaneLightning ? ArcaneLightningCollector.EngineVersion :
                     pawPrototype is null ? AuditEngineVersion : WukongPawPrototypeEvidence.EngineVersion,
                 DateTime.UtcNow, game, effectiveGame, reelSet,
                 symbolSet, paytable, featureProfile, pityMissesBefore,
@@ -318,7 +308,6 @@ public sealed partial class SpinService
             MonkeyPawCount = featurePayout.MonkeyPawCount,
             MoneyGrabPoints = featurePayout.MoneyGrabPoints,
             BananaBonusPoints = featurePayout.BananaBonusPoints,
-            LightningCollection = lightningCollection,
             SealsAwarded = CountSealSymbols(outcome.VisibleReels)
         };
     }

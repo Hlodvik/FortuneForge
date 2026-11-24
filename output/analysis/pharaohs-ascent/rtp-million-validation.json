@@ -1,0 +1,70 @@
+{
+  "checkedAtLocal": "2026-11-22T19:44:27.5316471-06:00",
+  "computer": "Vinnabok",
+  "originalReport": "rtp-million.json",
+  "reportSha256": "75a4c36e23b5eba46c7f95734beafd3c3cb7508cfd60d0a20b9d4103599fe6ee",
+  "sourceFiles": 41,
+  "sourceChangesAfterOriginalRun": null,
+  "accounting": [
+    {
+      "stakePoints": 2,
+      "strategy": "coins",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 2,
+      "strategy": "keys",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 2,
+      "strategy": "random",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 2,
+      "strategy": "optimal",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 12,
+      "strategy": "coins",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 12,
+      "strategy": "keys",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 12,
+      "strategy": "random",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 12,
+      "strategy": "optimal",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 2000,
+      "strategy": "coins",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 2000,
+      "strategy": "keys",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 2000,
+      "strategy": "random",
+      "accountingPassed": true
+    },
+    {
+      "stakePoints": 2000,
+      "strategy": "optimal",
+      "accountingPassed": true
+    }
+  ]
+}

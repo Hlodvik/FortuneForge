@@ -16,7 +16,7 @@ export type SlotGameManifest = {
   id: string
   routes: {
     play: string | null
-    demo: string
+    demo: string | null
   }
   catalog: SlotGameCatalogDefinition
   experience: SlotExperienceSet

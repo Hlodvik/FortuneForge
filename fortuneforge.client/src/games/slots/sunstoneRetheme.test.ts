@@ -2,17 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { SLOT_GAME_CATALOG } from './catalog'
 import { canonicalSlotPath, findSlotRouteMetadata } from './routeMetadata'
 
-describe('Fifth Sun catalogue identity', () => {
+describe('Sunstone Eclipse catalogue identity', () => {
   it('publishes the new identity while preserving the existing player activity key', () => {
     const game = SLOT_GAME_CATALOG.find(entry => entry.id === 'robot-revolution')
     expect(game).toMatchObject({
-      title: 'Fifth Sun',
-      shortTitle: 'Fifth Sun',
+      title: 'Sunstone Eclipse',
+      shortTitle: 'Sunstone Eclipse',
       playHref: '/slots/sunstone-eclipse',
       demoHref: '/slots/sunstone-eclipse/demo',
       serverGameIds: ['robot-revolution-v1'],
     })
-    expect(game?.image).toContain('fifth-sun-title-v2.webp')
+    expect(game?.image).toContain('sunstone-eclipse-title-v1.webp')
     expect(game?.description).toMatch(/Sunwheel/)
     expect(SLOT_GAME_CATALOG.some(entry => entry.title === 'Robot Revolution')).toBe(false)
     expect(SLOT_GAME_CATALOG).toHaveLength(20)

@@ -24,17 +24,17 @@ public static class RobotRevolutionPaidEndpoints
         {
             if (resolveAccount(context) is not { } account) return Results.Unauthorized();
             if (request.GameId != RobotRevolutionEngine.GameId)
-                return Results.BadRequest(new { error = "This endpoint accepts Fifth Sun spins." });
+                return Results.BadRequest(new { error = "This endpoint accepts Sunstone Eclipse spins." });
             var ids = context.Request.Headers["Idempotency-Key"];
             if (ids.Count != 1 || !RobotRevolutionRoundRequest.IsValidOperationId(ids[0]))
-                return Results.BadRequest(new { code = "invalid-spin-operation", error = "Include one valid Fifth Sun spin operation ID." });
+                return Results.BadRequest(new { code = "invalid-spin-operation", error = "Include one valid Sunstone Eclipse spin operation ID." });
 
             try
             {
                 var terms = new RobotRevolutionRoundRequest(ids[0]!, request.WagerPoints, request.UseFreeSpin, request.UseSpecialBoost);
                 var result = await rounds.SpinAsync(account, terms, configuration.GetValue<bool>("RobotRevolution:AllowNewPaidRounds"), token);
                 if (result.Wallet.LegacyFreeGamesCountMismatch)
-                    return Results.Conflict(new { code = "robot-revolution-legacy-free-spins-changed", error = "The available Fifth Sun free games changed. Refresh the game state." });
+                    return Results.Conflict(new { code = "robot-revolution-legacy-free-spins-changed", error = "The available Sunstone Eclipse free games changed. Refresh the game state." });
                 if (result.Wallet.InsufficientLegacyFreeGames)
                     return Results.Conflict(new { code = "free-spins-unavailable", error = "No free spins are available.", freeSpinsRemaining = 0 });
                 if (result.Wallet.InsufficientFunds)

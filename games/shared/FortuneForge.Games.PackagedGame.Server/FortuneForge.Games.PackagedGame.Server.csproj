@@ -9,9 +9,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <EnableDefaultItems>false</EnableDefaultItems>
     <GameServerDirectory>../../$(GamePackage)/server</GameServerDirectory>
-    <GameServerProject>$(GameServerDirectory)/FortuneForge.Games.$(GamePackage).Server/FortuneForge.Games.$(GamePackage).Server.csproj</GameServerProject>
+    <GameServerProject Condition="'$(GameServerProject)' == ''">$(GameServerDirectory)/FortuneForge.Games.$(GamePackage).Server/FortuneForge.Games.$(GamePackage).Server.csproj</GameServerProject>
     <GameWorkerModule>$(GameServerDirectory)/GameWorkerModule.cs</GameWorkerModule>
   </PropertyGroup>
+  <Import Project="$(GameServerDirectory)/worker.props" Condition="Exists('$(GameServerDirectory)/worker.props')" />
   <ItemGroup>
     <Compile Include="Program.cs;GameBackendPackage.cs;DemoGameAccount.cs;GameWorkerAccountResolver.cs;GameWorkerFirestore.cs" />
     <ProjectReference Include="../FortuneForge.Games.Hosting/FortuneForge.Games.Hosting.csproj" />

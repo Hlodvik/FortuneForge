@@ -3,7 +3,7 @@ using FortuneForge.Games.Slots.Runtime;
 
 namespace FortuneForge.Games.RobotRevolution;
 
-/// <summary>The Fifth Sun vocabulary, paying rules and immutable reel strips belong only to this game.</summary>
+/// <summary>The Sunstone Eclipse vocabulary, paying rules and immutable reel strips belong only to this game.</summary>
 public static class FifthSunDefinitions
 {
     public const string SymbolSetId = "fifth-sun-symbols-v1";

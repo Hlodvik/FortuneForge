@@ -36,7 +36,7 @@ public static class RobotRevolutionSpinReport
             checked(wallet.BalanceAfterCents - wallet.BalanceAfterWagerCents) != round.PayoutCents ||
             round.PayoutCents != RobotRevolutionRoundPolicy.ToCents(outcome.Payout.TotalPoints, outcome.PointValueInCents) ||
             round.OutcomeSha256 != RobotRevolutionRoundPolicy.OutcomeDigest(outcome) || completedAtUtc < audit.GeneratedAtUtc)
-            throw new InvalidOperationException("The Fifth Sun report does not match its settled wallet receipt.");
+            throw new InvalidOperationException("The Sunstone Eclipse report does not match its settled wallet receipt.");
 
         var rulesSha256 = GameSecurityEventDocuments.Hash(JsonSerializer.Serialize(new
         {

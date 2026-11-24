@@ -94,7 +94,7 @@ describe('public landing page', () => {
     expect(markup).toContain('blackjack-title-v2.webp')
     expect(markup).toContain('dragon-tiger-title-v1.webp')
     expect(markup).toContain('mines-title-v2.webp')
-    expect(markup).toContain('cosmic-fortune-title-v1.webp')
+    expect(markup).toContain('pharaohs-ascent-title-v1.webp')
     expect(markup).toContain('loading="lazy" decoding="async"')
     expect(markup).not.toContain('player count')
   })
@@ -109,7 +109,7 @@ describe('public landing page', () => {
   })
 
   it('does not invent games when visibility is unavailable', () => {
-    state.hidden = ['/cards/blackjack', '/games/dragon-tiger', '/games/mines', '/slots/cosmic-fortune', '/games/baccarat', '/games/roulette', '/games/craps', '/slots/rainbow-realm', '/games/2048', '/games/drop-merge']
+    state.hidden = ['/cards/blackjack', '/games/dragon-tiger', '/games/mines', '/slots/pharaohs-ascent', '/games/baccarat', '/games/roulette', '/games/craps', '/slots/rainbow-realm', '/games/2048', '/games/drop-merge']
     state.error = 'Offline'
     const markup = renderToStaticMarkup(createElement(LandingPage))
     expect(markup).toContain('Games could not be checked')

@@ -205,9 +205,11 @@ describe('account home', () => {
     if (label !== 'Popular') expect(host.querySelector('.game-catalogue-rail__arrow')).toBeNull()
     if (label === 'Slots') {
       const routes = Array.from(host.querySelectorAll('.home-lobby__game-card')).map(card => card.getAttribute('href'))
-      expect(routes.slice(0, 9)).toEqual([
-        '/slots/neon-nights', '/slots/jade-dragon', '/slots/gods-of-olympus', '/slots/arcane-archives', '/slots/gold-foundry',
-        '/slots/rainbow-realm', '/slots/pirates-fortune', '/slots/candy-carnival', '/slots/wukong',
+      expect(routes.slice(0, 14)).toEqual([
+        '/slots/neon-nights', '/slots/jade-dragon', '/slots/gods-of-olympus', '/slots/arcane-archives',
+        '/slots/sunstone-eclipse', '/slots/crooked-road', '/slots/frontier-fortune', '/slots/gold-foundry',
+        '/slots/dragon-hoard', '/slots/pirates-fortune', '/slots/reel-riches', '/slots/rainbow-realm',
+        '/slots/candy-carnival', '/slots/wukong',
       ])
     }
   })

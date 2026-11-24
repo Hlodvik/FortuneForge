@@ -39,19 +39,33 @@ public interface IClassicSlotRoundResult
 public sealed record ClassicSlotRoundStorageScope(
     string GameId, string AuditGameId, string StorageGameId, string GameName, string RawCollection, string OwnerField);
 
+public sealed record ClassicSlotPaidRoundStoreOptions(bool TracksLegacyFreeGames, GameWalletTransactionIdLayout TransactionIdLayout)
+{
+    public ClassicSlotPaidRoundStoreOptions(bool TracksLegacyFreeGames = true)
+        : this(TracksLegacyFreeGames, GameWalletTransactionIdLayout.LegacyOperation) { }
+}
+
 /// <summary>Persists and settles a classic round without selecting game rules or interpreting its result.</summary>
 public abstract class ClassicSlotPaidRoundStore<TRequest, TPrepared, TResult>(
-    FirestoreDb database, TimeProvider clock, ClassicSlotRoundStateCodec state, ClassicSlotRoundStorageScope scope)
+    FirestoreDb database, TimeProvider clock, ClassicSlotRoundStateCodec state, ClassicSlotRoundStorageScope scope,
+    ClassicSlotPaidRoundStoreOptions? options)
     where TRequest : class, IClassicSlotRoundRequest
     where TPrepared : class, IClassicSlotPreparedRound<TRequest>
     where TResult : class, IClassicSlotRoundResult
 {
+    public ClassicSlotPaidRoundStore(FirestoreDb database, TimeProvider clock,
+        ClassicSlotRoundStateCodec state, ClassicSlotRoundStorageScope scope)
+        : this(database, clock, state, scope, null) { }
+
     private const string Operations = "slotPreparedOperations";
     private const string Pending = "pending";
     private const string Settled = "settled";
     private const string Declined = "declined";
     private static readonly TimeSpan Cooldown = TimeSpan.FromMilliseconds(500);
     private static readonly JsonSerializerOptions Json = RoundAuditCapture.Json;
+    private bool TracksLegacyFreeGames => options?.TracksLegacyFreeGames ?? true;
+    private readonly GameWalletTransactionIdLayout transactionIdLayout = GameWalletTransactionIds.ValidateLayout(
+        options?.TransactionIdLayout ?? GameWalletTransactionIdLayout.LegacyOperation);
 
     private sealed record StoredRound(TPrepared Round, TResult? Final);
 
@@ -59,10 +73,12 @@ public abstract class ClassicSlotPaidRoundStore<TRequest, TPrepared, TResult>(
         string account, long signedLegacyCount, CancellationToken token) =>
         database.RunTransactionAsync(async transaction =>
         {
+            ValidateLegacyCount(signedLegacyCount);
             var guard = await transaction.GetSnapshotAsync(Guard(account), token);
             var pending = await ReadPendingAsync(transaction, guard, account, token);
             var before = pending?.StateBefore ?? await state.ReadAsync(transaction, database,
                 guard, account, signedLegacyCount, token);
+            ValidateLegacyCount(before.LegacyRemaining);
             return (before, pending?.Request);
         }, cancellationToken: token);
 
@@ -78,15 +94,18 @@ public abstract class ClassicSlotPaidRoundStore<TRequest, TPrepared, TResult>(
         {
             if (!allowStart) throw Paused();
             var balance = await accounts.GetStateAsync(account, token);
+            ValidateLegacyCount(balance.LegacyFreeGamesRemaining);
             saved = await PrepareAsync(account, request, balance.LegacyFreeGamesRemaining, token);
         }
         if (saved.Final is { } final) return final;
         var round = saved.Round;
+        ValidateLegacyTerms(round);
         GameWalletSettlementReceipt receipt;
         try
         {
             receipt = await wallet.SettleAsync(account, new(round.SpinId.ToString("N"), round.OutcomeSha256,
-                round.WagerCents, round.PayoutCents, round.SpendsLegacy, round.StateBefore.LegacyRemaining), token);
+                round.WagerCents, round.PayoutCents, round.SpendsLegacy,
+                TracksLegacyFreeGames ? round.StateBefore.LegacyRemaining : null), token);
         }
         catch (GameWalletConflictException exception)
         {
@@ -152,6 +171,7 @@ public abstract class ClassicSlotPaidRoundStore<TRequest, TPrepared, TResult>(
 
             var before = await state.ReadAsync(transaction, database, current, account, legacyCount, token);
             var round = PrepareRound(account, request, before, now, observed, Text(current, scope.OwnerField) is null);
+            ValidateLegacyTerms(round);
             var raw = Identity(round);
             raw["status"] = Pending;
             raw["startedAtUtc"] = Timestamp.FromDateTime(now);
@@ -267,6 +287,7 @@ public abstract class ClassicSlotPaidRoundStore<TRequest, TPrepared, TResult>(
         if (operation is null || CheckIdentity(snapshot, account, operation) != admission)
             throw new GameWalletUnavailableException();
         var round = ReadChecked<TPrepared>(snapshot, "prepared");
+        ValidateLegacyTerms(round);
         if (round.AdmissionId != admission || round.AccountId != account || round.Request.OperationId != operation ||
             round.SpinId.ToString("N") != Text(snapshot, "spinId"))
             throw new GameWalletUnavailableException();
@@ -284,20 +305,38 @@ public abstract class ClassicSlotPaidRoundStore<TRequest, TPrepared, TResult>(
     private void ValidateWallet(TPrepared round, GameWalletSettlementReceipt wallet)
     {
         var spin = round.SpinId.ToString("N");
+        var settlementId = GameWalletSettlementIdentity.CreateId(scope.GameId, round.AccountId, spin);
+        var transactionIds = GameWalletTransactionIds.Create(spin, settlementId, transactionIdLayout);
         var declined = IsDecline(wallet);
         var beforeLegacy = round.StateBefore.LegacyRemaining;
-        var countOkay = wallet.LegacyFreeGamesCountMismatch
-            ? wallet.LegacyFreeGamesRemaining >= 0 && wallet.LegacyFreeGamesRemaining != beforeLegacy
-            : wallet.LegacyFreeGamesRemaining == beforeLegacy - (!declined && round.SpendsLegacy ? 1 : 0);
-        if (wallet.SettlementId != GameWalletSettlementIdentity.CreateId(scope.GameId, round.AccountId, spin) ||
+        var countOkay = TracksLegacyFreeGames
+            ? wallet.LegacyFreeGamesCountMismatch
+                ? wallet.LegacyFreeGamesRemaining >= 0 && wallet.LegacyFreeGamesRemaining != beforeLegacy
+                : wallet.LegacyFreeGamesRemaining == beforeLegacy - (!declined && round.SpendsLegacy ? 1 : 0)
+            : !round.SpendsLegacy && beforeLegacy == 0 && round.StateAfter.LegacyRemaining == 0 &&
+                wallet.LegacyFreeGamesRemaining is null or 0 && !wallet.InsufficientLegacyFreeGames &&
+                !wallet.LegacyFreeGamesCountMismatch && wallet.LegacyFreeGameTransactionId is null;
+        if (wallet.SettlementId != settlementId ||
             !countOkay || wallet.BalanceBeforeCents < 0 || wallet.BalanceAfterWagerCents < 0 || wallet.BalanceAfterCents < 0 ||
             (wallet.InsufficientFunds ? 1 : 0) + (wallet.InsufficientLegacyFreeGames ? 1 : 0) +
                 (wallet.LegacyFreeGamesCountMismatch ? 1 : 0) > 1 ||
-            wallet.WagerTransactionId != (!declined && round.WagerCents > 0 ? $"{spin}-wager" : null) ||
-            wallet.PayoutTransactionId != (!declined && round.PayoutCents > 0 ? $"{spin}-payout" : null) ||
-            wallet.LegacyFreeGameTransactionId != (!declined && round.SpendsLegacy ? $"{spin}-free-game-use" : null) ||
+            wallet.WagerTransactionId != (!declined && round.WagerCents > 0 ? transactionIds.WagerId : null) ||
+            wallet.PayoutTransactionId != (!declined && round.PayoutCents > 0 ? transactionIds.PayoutId : null) ||
+            wallet.LegacyFreeGameTransactionId != (!declined && round.SpendsLegacy ? transactionIds.LegacyFreeGameUseId : null) ||
             wallet.BalanceAfterWagerCents != checked(wallet.BalanceBeforeCents - (declined ? 0 : round.WagerCents)) ||
             wallet.BalanceAfterCents != checked(wallet.BalanceAfterWagerCents + (declined ? 0 : round.PayoutCents)))
+            throw new GameWalletUnavailableException();
+    }
+
+    private void ValidateLegacyCount(long count)
+    {
+        if (!TracksLegacyFreeGames && count != 0) throw new GameWalletUnavailableException();
+    }
+
+    private void ValidateLegacyTerms(TPrepared round)
+    {
+        if (TracksLegacyFreeGames) return;
+        if (round.SpendsLegacy || round.StateBefore.LegacyRemaining != 0 || round.StateAfter.LegacyRemaining != 0)
             throw new GameWalletUnavailableException();
     }
 

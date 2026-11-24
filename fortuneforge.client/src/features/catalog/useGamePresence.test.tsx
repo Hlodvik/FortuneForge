@@ -47,7 +47,12 @@ describe('foreground game presence', () => {
     expect(presenceGameId('/cards/free-solitaire')).toBe('free-solitaire')
     expect(HOME_GAME_CATALOG.some(game => game.id === 'liars-dice')).toBe(false)
     expect(presenceGameId('/games/liars-dice')).toBe('liars-dice')
-    for (const game of SLOT_ROUTE_DEFINITIONS) expect(presenceGameId(game.demoPath)).toBeUndefined()
+    for (const game of SLOT_ROUTE_DEFINITIONS) {
+      if (game.demoPath !== null) expect(presenceGameId(game.demoPath)).toBeUndefined()
+    }
+    expect(SLOT_ROUTE_DEFINITIONS.find(game => game.id === 'crooked-road')?.demoPath).toBeNull()
+    expect(presenceGameId('/slots/crooked-road')).toBe('crooked-road')
+    expect(presenceGameId('/slots/crooked-road/demo')).toBeUndefined()
     for (const route of ['/home', '/cards', '/slots', '/games', '/games/unknown', '/demo/cards/blackjack', '/cards/hearts/rules'])
       expect(presenceGameId(route)).toBeUndefined()
   })

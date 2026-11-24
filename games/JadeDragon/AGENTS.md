@@ -5,11 +5,17 @@ Empty Slots scaffold has been retired. Game ID: `empty-slots-v1`. Engine version
 `jade-dragon-cascade-v2` for new rounds. `empty-slots-engine-v1` remains the
 legacy model for previously awarded free games and replay.
 
+Follow the required slot structure and server-authority rules in the repository
+root `AGENTS.md`. Existing Jade-specific code in host routes, API adapters and
+server bridges is unfinished migration work, not the intended ownership boundary.
+
 ## Start here
 
 New cascade rules and random-draw replay live in `JadeDragonCascadeRules.cs`
-and `JadeDragonCascadeEngine.cs`. The host owns the admission and wallet
-transaction. V2 wagers use 25-cent points and v2 payouts use whole cents.
+and `JadeDragonCascadeEngine.cs`. Jade's server package must own game-specific
+admission, round state and settlement orchestration. The platform supplies
+generic authentication, wallet/ledger and storage services. V2 wagers use
+25-cent points and v2 payouts use whole cents.
 The notes and sample below describe the legacy engine.
 
 1. Read `games/JadeDragon/SYMBOLS.md` and the embedded
@@ -19,9 +25,11 @@ The notes and sample below describe the legacy engine.
 3. Use `JadeDragonEngine.SymbolMetadata` and `Paytable` for the exact roles and
    payouts. Treat `S01`–`S23` as stable protocol IDs. Give them names and artwork
    only in the new client mapping.
-4. Work on the standalone presentation in `games/JadeDragon/client/jade-dragon`.
-   `fortuneforge.client/src/app/routes/JadeDragonRoute.tsx` is only the authenticated
-   host bridge and shared navbar.
+4. Work on the game client in `games/JadeDragon/client/jade-dragon`. Its screen,
+   controller, game-specific API contract/validation and request recovery must
+   be package-owned. The current host `JadeDragonRoute.tsx` and `jadeDragonApi.ts`
+   contain Jade-specific behavior that still needs moving into the game package;
+   the host should retain only generic authentication, mounting and the navbar.
 
 ## Backend API
 
@@ -62,19 +70,26 @@ pity count. `FreeSpinsAwarded`, `SpecialPointsAwarded` and
 - `JadeDragonCollections.AdvancePaid` accepts exact collection counts and wager
   totals in native points. It returns next counts/totals, awarded spins, feature
   mode, and the bonus wager. Call it within the existing settlement transaction.
-- `SettleCollections` preserves the separate nonfinancial demo progression.
+- Do not expose or reinstate public demo/practice gameplay. Historical demo
+  helpers are not an approved local-testing implementation; use the production
+  paid flow with isolated test accounts, funds and infrastructure.
 - An awarded collection feature mode is `copy-expand-wild`; ordinary scatter
   spins have no feature mode. Persist the admitted mode and locked bonus wager.
 - The current native point value is 25 cents. New paid wagers are capped at 400
-  points (R100) by the Jade host admission policy; special-point boosts cost 8 points.
-- Keep Firebase identity, wallet admission and Firestore settlement in the
-  application's existing platform layer. The new game should not import any
-  other game's rules.
+  points (R100) under the current Jade admission policy; special-point boosts
+  cost 8 points. These game-specific limits belong in Jade's server package and
+  must be validated there regardless of browser checks.
+- Keep account authentication, wallet ledger execution and storage
+  infrastructure in the platform. Jade owns game-specific admission,
+  progression, persistence/recovery and wallet-settlement orchestration through
+  generic ports. Do not import another game's rules or duplicate the wallet.
 
-The FortuneForge host bridge is in `FortuneForge.Server/Slots/Games/JadeDragon`.
-Its shared HTTP envelope has legacy property names; the independent package
-above uses neutral names such as `PatternPayoutPoints`, `CollectionProgress`
-and `CollectionSymbolsAwarded`. Preserve that translation at the host boundary.
+The existing host bridge is in `FortuneForge.Server/Slots/Games/JadeDragon`.
+Its shared HTTP envelope has legacy property names; the engine uses names such
+as `PatternPayoutPoints`, `CollectionProgress` and `CollectionSymbolsAwarded`.
+Preserve public contracts and historical replay while moving Jade-specific
+translations and validation into Jade's package. Their current host location
+does not satisfy standalone ownership.
 
 The existing paid endpoints are `GET /api/slots/state?gameId=empty-slots-v1`
 and `POST /api/slots/spins` with `{gameId,wagerPoints,useFreeSpin,useSpecialBoost}`.

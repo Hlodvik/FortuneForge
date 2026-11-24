@@ -19,7 +19,6 @@ public sealed class ArcaneRoundStore(FirestoreDb database, IGameRandomSource? ra
     private const string GuardOwner = "arcanePaidRoundOwner";
     private const string Operations = "slotPreparedOperations";
     public const string RawCollectionName = "arcanePreparedRounds";
-    private const string LegacyAdmissions = "slotSpinAdmissions";
     private const string Pending = "pending";
     private const string Settled = "settled";
     private const string Declined = "declined";
@@ -53,7 +52,7 @@ public sealed class ArcaneRoundStore(FirestoreDb database, IGameRandomSource? ra
                 if (Text(index, "requestSha256") != requestedTerms)
                     throw new ArcaneRoundConflictException("This spin operation ID was already used for different spin options.");
                 if (Number(index, "schemaVersion") == LegacyIndexSchema && Text(index, "owner") is null && AdmissionId(index) != Guid.Empty)
-                    throw new ArcaneLegacyPreparedRoundException();
+                    throw new ArcaneObsoleteRoundException();
                 ValidateIndex(index, accountId, request.OperationId);
                 var existingId = AdmissionId(index);
                 var existingRecord = await transaction.GetSnapshotAsync(RoundDocument(existingId), cancellationToken);
@@ -72,7 +71,7 @@ public sealed class ArcaneRoundStore(FirestoreDb database, IGameRandomSource? ra
             }
 
             var now = UtcNow();
-            if (await ReadPendingAsync(transaction, guardSnapshot, accountId, now, cancellationToken) is { } pending)
+            if (await ReadPendingAsync(transaction, guardSnapshot, accountId, cancellationToken) is { } pending)
                 throw new ArcaneRoundConflictException("Finish the prepared Arcane Archives spin before starting a new spin.", pending.Request);
             if (!allowStart)
                 throw new ArcaneRoundStartPausedException();
@@ -190,12 +189,9 @@ public sealed class ArcaneRoundStore(FirestoreDb database, IGameRandomSource? ra
         return database.RunTransactionAsync(async transaction =>
         {
             var guard = await transaction.GetSnapshotAsync(GuardDocument(accountId), cancellationToken);
-            var unkeyedLegacy = Text(guard, GuardOwner) is null &&
-                Text(guard, SlotSpinGuard.ActiveAdmissionField) is { } active &&
-                active != Text(guard, SlotSpinGuard.PreparedAdmissionField);
-            var pending = unkeyedLegacy ? null : await ReadPendingAsync(transaction, guard, accountId, UtcNow(), cancellationToken);
+            var pending = await ReadPendingAsync(transaction, guard, accountId, cancellationToken);
             return new ArcaneRoundState(ArcaneFeatureStore.ReadTome(guard), ArcaneFeatureStore.ReadPotions(guard),
-                pending?.Request, unkeyedLegacy || pending?.IsLegacy == true,
+                pending?.Request, false,
                 ReadCarryWager(guard), Text(guard, "freeSpinFeatureMode"));
         }, cancellationToken: cancellationToken);
     }
@@ -231,7 +227,7 @@ public sealed class ArcaneRoundStore(FirestoreDb database, IGameRandomSource? ra
     }
 
     private async Task<ArcanePendingRound?> ReadPendingAsync(Transaction transaction, DocumentSnapshot guard,
-        string userId, DateTime now, CancellationToken cancellationToken)
+        string userId, CancellationToken cancellationToken)
     {
         if (Text(guard, SlotSpinGuard.ActiveAdmissionField) is not { } active)
         {
@@ -245,29 +241,10 @@ public sealed class ArcaneRoundStore(FirestoreDb database, IGameRandomSource? ra
                 throw Unavailable();
             var own = await ReadRoundAsync(transaction, id, userId, null, cancellationToken);
             if (own.Final is not null) throw Unavailable();
-            return new(own.Prepared.Round.Request, false);
+            return new(own.Prepared.Round.Request);
         }
-        if (Text(guard, GuardOwner) is not null)
-            throw Unavailable();
-
-        if (active != Text(guard, SlotSpinGuard.PreparedAdmissionField))
-        {
-            if (!guard.TryGetValue<Timestamp>(SlotSpinGuard.LastSpinStartedField, out var started))
-                throw Unavailable();
-            var remaining = started.ToDateTime().Add(SlotSpinGuard.ActiveAdmissionTimeout) - now;
-            if (remaining > TimeSpan.Zero) throw new ArcaneRoundCooldownException(remaining);
-            throw new ArcaneRoundConflictException("An unfinished legacy Arcane spin still owns this account's game state.");
-        }
-
-        if (!Guid.TryParseExact(active, "N", out var legacyId)) throw Unavailable();
-        var legacy = await transaction.GetSnapshotAsync(database.Collection(LegacyAdmissions)
-            .Document(legacyId.ToString("N")), cancellationToken);
-        var operationId = Text(legacy, "preparedOperationId");
-        if (!ArcaneRoundRequest.IsValidOperationId(operationId) || Text(legacy, "userId") != userId ||
-            Text(legacy, "gameId") != GameId || Text(legacy, "admissionId") != active || Text(legacy, "status") != "admitted")
-            throw Unavailable();
-        return new(new ArcaneRoundRequest(operationId!, Number(legacy, "requestedWagerPoints"),
-            legacy.GetValue<bool>("isFreeSpin"), legacy.GetValue<bool>("specialBoostApplied")), true);
+        if (Text(guard, GuardOwner) is not null) throw Unavailable();
+        throw new ArcaneObsoleteRoundException();
     }
 
     private async Task<ArcaneStoredRound> ReadRoundAsync(Transaction transaction, Guid id, string userId, string? operationId,
@@ -467,4 +444,4 @@ public sealed class ArcaneRoundStore(FirestoreDb database, IGameRandomSource? ra
 internal sealed record ArcaneFrozenPreparation(ArcanePreparedRound Round, ArcaneFeatureSettlement Settlement);
 internal sealed record ArcaneFinalReceipt(bool Approved, GameWalletSettlementReceipt Wallet);
 internal sealed record ArcaneStoredRound(ArcaneFrozenPreparation Prepared, ArcaneRoundResult? Final);
-internal sealed record ArcanePendingRound(ArcaneRoundRequest Request, bool IsLegacy);
+internal sealed record ArcanePendingRound(ArcaneRoundRequest Request);

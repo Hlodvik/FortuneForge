@@ -1,0 +1,59 @@
+.pharaoh-ascent {
+  --pharaoh-gold: #e1c28a;
+  position: relative; min-width: 0; padding: 1.15rem 1rem .85rem; color: #e4dac4;
+  border: 1px solid #b995526b; border-radius: .5rem;
+  background: radial-gradient(ellipse at 50% 30%, #416f5833, transparent 65%), linear-gradient(155deg, #163733f2, #071d24f7 80%);
+  box-shadow: inset 0 0 0 4px #b9984d0d, 0 .75rem 2rem #0007;
+}
+.pharaoh-ascent__heading { text-align: center; }
+.pharaoh-ascent__eyebrow { font-size: .57rem; line-height: 1.4; letter-spacing: .15em; text-transform: uppercase; color: #c1ad7f; }
+.pharaoh-ascent__heading h2 { font: 600 1.6rem/1.15 Georgia, serif; color: #ffe4ad; margin: .3rem 0; }
+.pharaoh-ascent__heading p { font-size: .7rem; color: #a2c2b8; margin: .3rem 0 .5rem; }
+.pharaoh-ascent__monument { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; gap: .3rem; padding: 2.7rem .1rem .5rem; margin: .3rem 0 .6rem; }
+.pharaoh-ascent__pyramid { position: absolute; z-index: -1; inset: .9rem -.15rem 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); background: repeating-linear-gradient(0deg, #a685391e 0 1px, transparent 1px 18px), linear-gradient(110deg, #b28c3b26, #d1b15738 49.7%, #0003 50%, #66572b22); border-bottom: 3px solid #aa8a4d66; }
+.pharaoh-ascent__capstone { position: absolute; width: 3.3rem; height: 3.3rem; top: -.25rem; object-fit: contain; filter: drop-shadow(0 0 .65rem #e8ba4b25); }
+.pharaoh-ascent__chamber { position: relative; display: grid; grid-template-columns: 2.2rem minmax(0, 1fr) auto; grid-template-rows: auto .18rem; gap: .05rem .3rem; align-items: center; width: var(--tier-width); box-sizing: border-box; min-height: 2.65rem; padding: .17rem .45rem .17rem .2rem; border: 1px solid #a38b535c; border-radius: .22rem; background: linear-gradient(100deg, #122d29f7, #102928ee); color: #d2c7aa; cursor: pointer; font: inherit; }
+.pharaoh-ascent__chamber > img { width: 2.2rem; height: 2.2rem; object-fit: contain; grid-row: 1 / span 2; filter: saturate(.7) brightness(.8); }
+.pharaoh-ascent__guardian-name { font: 600 .9rem Georgia, serif; text-align: left; }
+.pharaoh-ascent__seal-count { font-size: .82rem; color: #f3dfab; font-variant-numeric: tabular-nums; }
+.pharaoh-ascent__seal-count small { font-size: .56rem; color: #b4baa4; }
+.pharaoh-ascent__seal-track { grid-column: 2 / span 2; display: block; height: .18rem; background: #00151c; border-radius: 2px; overflow: hidden; }
+.pharaoh-ascent__seal-track i { display: block; height: 100%; background: var(--guardian-color); transition: width .65s ease; }
+.pharaoh-ascent__chamber[aria-pressed='true'] { border-color: var(--guardian-color); background: linear-gradient(100deg, #264840, #18362fee); box-shadow: 0 0 .6rem #b6a35816; }
+.pharaoh-ascent__chamber[aria-pressed='true'] > img { filter: drop-shadow(0 0 .2rem #ffeeb331); }
+.pharaoh-ascent__chamber[data-awake] { box-shadow: 0 0 .6rem color-mix(in srgb, var(--guardian-color), transparent 65%); border-color: var(--guardian-color); }
+.pharaoh-ascent button:focus-visible, .pharaoh-ascent summary:focus-visible, .pharaoh-help button:focus-visible, .pharaoh-help summary:focus-visible { outline: 2px solid #f5d795; outline-offset: 4px; }
+.pharaoh-ascent__guardian-detail { min-height: 4.6rem; padding: .55rem .65rem; border-left: 2px solid var(--guardian-color); background: #091c2180; }
+.pharaoh-ascent__guardian-detail .pharaoh-ascent__eyebrow { color: var(--guardian-color); letter-spacing: .07em; font-size: .56rem; }
+.pharaoh-ascent__guardian-detail p { margin: .3rem 0; font-size: .72rem; line-height: 1.45; }
+.pharaoh-ascent__guardian-detail > span:last-child { font-size: .61rem; color: #b6c1ad; }
+.pharaoh-ascent__sunfire { display: flex; align-items: center; gap: .5rem; margin-top: .55rem; }
+.pharaoh-ascent__sunfire > img { width: 2.2rem; height: 2.2rem; object-fit: contain; }
+.pharaoh-ascent__sunfire > div { flex: 1; }
+.pharaoh-ascent__sunfire span { display: flex; justify-content: space-between; gap: 1rem; color: #b6d5c7; font-size: .68rem; }
+.pharaoh-ascent__sunfire strong { color: #e9d8a4; font-weight: 500; }
+.pharaoh-ascent__sunfire [role='progressbar'] { margin-top: .3rem; height: .3rem; border: 1px solid #6fa89a44; background: #04151b; border-radius: 3px; overflow: hidden; }
+.pharaoh-ascent__sunfire [role='progressbar'] i { display: block; height: 100%; background: linear-gradient(90deg, #428675, #bce8b6); transition: width .65s; }
+.pharaoh-ascent__sunfire { flex-wrap: wrap; }
+.pharaoh-ascent__sunfire > small { flex-basis: 100%; color: #a6b8a9; font-size: .59rem; line-height: 1.4; }
+.pharaoh-ascent__tomb-status { display: flex; gap: .5rem; align-items: center; margin: .6rem 0; padding: .5rem 0; border-block: 1px solid #b7985733; }
+.pharaoh-ascent__tomb-status > img { width: 2.7rem; height: 2.7rem; object-fit: contain; }
+.pharaoh-ascent__tomb-status strong { display: block; color: #f4d398; font: 600 .88rem Georgia, serif; }
+.pharaoh-ascent__tomb-status small { display: block; margin-top: .2rem; color: #abc0b4; font-size: .6rem; line-height: 1.4; }
+.pharaoh-ascent__trail summary { display: flex; align-items: center; gap: .4rem; min-height: 2.2rem; cursor: pointer; list-style: none; font-size: .8rem; color: #f1d89f; }
+.pharaoh-ascent__trail summary::-webkit-details-marker { display: none; }
+.pharaoh-ascent__trail summary img { width: 2rem; height: 2rem; object-fit: contain; }
+.pharaoh-ascent__trail summary strong { margin-left: auto; font-size: .7rem; color: #a8d5b9; }
+.pharaoh-ascent__trail p { margin: .4rem 0; font-size: .7rem; line-height: 1.5; color: #c9cdb8; }
+.pharaoh-ascent__trail small, .pharaoh-help small { display: block; color: #a6b8a9; font-size: .6rem; line-height: 1.5; }
+.pharaoh-ascent__trail-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; margin: .6rem 0; }
+.pharaoh-ascent__trail-tiers > span { padding: .4rem .1rem; border-top: 1px solid #bf9d5a77; background: #d4b56308; text-align: center; font-size: .6rem; color: #b3c7b6; }
+.pharaoh-ascent__trail-tiers b { display: block; margin-top: .2rem; color: #f6d691; font: 600 1.2rem Georgia, serif; }
+.pharaoh-ascent__trail-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(var(--trail-rows), 1fr); aspect-ratio: 5 / var(--trail-rows); gap: 2px; max-width: 12rem; margin: .5rem auto; padding: 3px; background: #06191e; border: 1px solid #8b73414d; }
+.pharaoh-ascent__trail-grid > span { display: grid; place-items: center; border: 1px solid #30514b66; background: #102f30; }
+.pharaoh-ascent__trail-grid [data-scarab] { background: #68542d; border-color: #c9a553; }
+.pharaoh-ascent__trail-grid img { width: 90%; height: 90%; object-fit: contain; }
+
+@media (max-width: 620px) { .pharaoh-ascent__chamber { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .pharaoh-ascent * { animation: none !important; transition: none !important; } }
+.pharaoh-ascent[data-reduced-motion] * { animation: none !important; transition: none !important; }

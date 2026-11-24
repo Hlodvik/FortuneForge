@@ -41,7 +41,7 @@ public sealed class RobotRevolutionEngine
 
     public RobotRevolutionEngine(IGameRandomSource random, string engineVersion = EngineVersion)
     {
-        if (!IsSupportedVersion(engineVersion)) throw new ArgumentException("The Fifth Sun math version is unsupported.", nameof(engineVersion));
+        if (!IsSupportedVersion(engineVersion)) throw new ArgumentException("The Sunstone Eclipse math version is unsupported.", nameof(engineVersion));
         requestedVersion = engineVersion;
         engines = new();
         foreach (var version in new[] { HistoricalFifthSunEngineVersion, SunstoneEngineVersion, LegacyEngineVersion })
@@ -64,13 +64,13 @@ public sealed class RobotRevolutionEngine
     {
         EngineVersion => Profile, HistoricalFifthSunEngineVersion => HistoricalFifthSunProfile,
         SunstoneEngineVersion => SunstoneProfile, LegacyEngineVersion => LegacyProfile,
-        _ => throw new ArgumentException("The Fifth Sun math version is unsupported.", nameof(version))
+        _ => throw new ArgumentException("The Sunstone Eclipse math version is unsupported.", nameof(version))
     };
     private static FrozenSlotDefinitions DefinitionsFor(string version) => version switch
     {
         EngineVersion => Definitions, HistoricalFifthSunEngineVersion => HistoricalFifthSunDefinitions,
         SunstoneEngineVersion => SunstoneDefinitions, LegacyEngineVersion => LegacyDefinitions,
-        _ => throw new ArgumentException("The Fifth Sun math version is unsupported.", nameof(version))
+        _ => throw new ArgumentException("The Sunstone Eclipse math version is unsupported.", nameof(version))
     };
     public static string VersionForBonus(string? mode) => mode switch
     {

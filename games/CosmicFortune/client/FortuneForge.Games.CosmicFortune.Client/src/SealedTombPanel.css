@@ -1,0 +1,219 @@
+.sealed-tomb {
+  --tomb-gold: #e6c58a;
+  --tomb-light: #fff0c5;
+  --tomb-mint: #94d2be;
+  position: relative;
+  container-type: inline-size;
+  container-name: sealed-tomb;
+  isolation: isolate;
+  width: 100%;
+  min-width: 0;
+  padding: 1rem;
+  box-sizing: border-box;
+  color: #e8dfca;
+  border: 1px solid #bd965b80;
+  border-radius: .65rem;
+  background: radial-gradient(ellipse at 50% 15%, #a48a4524, transparent 65%), linear-gradient(150deg, #193b36f5, #091e25fa);
+  box-shadow: 0 .8rem 2rem #0008, inset 0 0 0 4px #d3af5610;
+}
+.sealed-tomb *, .sealed-tomb *::before, .sealed-tomb *::after { box-sizing: border-box; }
+.sealed-tomb h2, .sealed-tomb h3, .sealed-tomb p { margin: 0; }
+.sealed-tomb button { font: inherit; color: inherit; cursor: pointer; }
+.sealed-tomb button:disabled { cursor: default; }
+.sealed-tomb button:focus-visible, .sealed-tomb summary:focus-visible { outline: 3px solid #ffe6a6; outline-offset: 4px; }
+.sealed-tomb__heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.sealed-tomb__eyebrow { display: block; color: #bdb08d; font: 600 .54rem/1.5 system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; }
+.sealed-tomb__heading h2 { margin: .2rem 0; color: var(--tomb-light); font: 500 clamp(1.5rem, 2vw, 2rem)/1.08 Georgia, serif; }
+.sealed-tomb__heading p { margin-top: .3rem; color: #adc7bb; font: .68rem/1.5 system-ui, sans-serif; }
+.sealed-tomb__sigil { width: 3.4rem; height: 3.8rem; object-fit: contain; filter: drop-shadow(0 .2rem .5rem #0008); }
+.sealed-tomb__bank { display: flex; justify-content: space-between; align-items: center; gap: .6rem; margin-top: .75rem; padding: .65rem .8rem; border: 1px solid #d7b76a55; border-radius: .35rem; background: linear-gradient(115deg, #a98b3a20, #06191eaa); }
+.sealed-tomb__bank > div:first-child span { display: block; color: #bfbda0; font: .58rem/1.5 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.sealed-tomb__bank strong { display: block; margin-top: .1rem; color: #ffe5a5; font: 500 clamp(1.4rem, 3vw, 1.9rem)/1.15 Georgia, serif; font-variant-numeric: tabular-nums; }
+.sealed-tomb__bank-note { max-width: 8.3rem; color: #a5c6b7; text-align: right; font: .6rem/1.5 system-ui, sans-serif; }
+.sealed-tomb__map { position: relative; min-height: 19rem; margin: .6rem -.4rem .35rem; padding: 1.8rem 1.1rem 1.1rem; isolation: isolate; overflow: hidden; }
+.sealed-tomb__map::before { position: absolute; z-index: -2; inset: .3rem .35rem .7rem; clip-path: polygon(50% 0, 100% 100%, 0 100%); background: repeating-linear-gradient(0deg, #e2bb7226 0 1px, transparent 1px 20px), repeating-linear-gradient(90deg, #cfad6220 0 1px, transparent 1px 46px), linear-gradient(115deg, #665b35, #978052 49.5%, #675330 50%, #3c4735); content: ''; }
+.sealed-tomb__map::after { position: absolute; z-index: -1; inset: .8rem .8rem 1.05rem; clip-path: polygon(50% 0, 100% 100%, 0 100%); background: linear-gradient(#102c2fc2, #071c1ce8), url('./assets/art/pharaohs-ascent/temple-v1.webp') center / cover; content: ''; }
+.sealed-tomb__apex { position: absolute; z-index: 2; top: -.15rem; left: 50%; width: 3.5rem; height: 3.5rem; object-fit: contain; transform: translateX(-50%); filter: drop-shadow(0 0 .65rem #f4bf5760); }
+.sealed-tomb__floors { position: relative; display: flex; flex-direction: column; align-items: center; gap: .35rem; padding-top: .35rem; }
+.sealed-tomb__floor { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: var(--floor-width); min-height: 2.05rem; gap: .3rem; padding: .15rem .2rem; }
+.sealed-tomb__floor::after { position: absolute; bottom: -.2rem; left: -1rem; right: -1rem; height: 1px; background: linear-gradient(90deg, transparent, #b6a16a75, transparent); content: ''; }
+.sealed-tomb__room { position: relative; display: grid; place-items: center; min-width: 0; min-height: 1.75rem; border: 1px solid #7d805e7a; border-radius: .2rem .2rem 0 0; background: linear-gradient(#112c2d, #071b21); box-shadow: inset 0 0 .5rem #0008; }
+.sealed-tomb__room img { width: 1.7rem; height: 1.7rem; object-fit: contain; opacity: .45; filter: saturate(.65); }
+.sealed-tomb__room[data-visited] { border-color: #dfbb6a; background: radial-gradient(#af9b4d55, #1a3b30); box-shadow: 0 0 .5rem #dab35728; }
+.sealed-tomb__room[data-visited] img { opacity: 1; filter: drop-shadow(0 0 .2rem #f1d07f55); }
+.sealed-tomb__floor[data-current] .sealed-tomb__room { border-color: #96d3bbbd; background: linear-gradient(#285347, #102f2c); box-shadow: 0 0 .5rem #7cdbaf20; }
+.sealed-tomb__floor[data-current] .sealed-tomb__room img { opacity: .95; filter: none; }
+.sealed-tomb__floor[data-current] { min-height: 5.8rem; }
+.sealed-tomb__floor[data-current] .sealed-tomb__room--choice { min-width: 44px; min-height: 44px; border: 0; background: transparent; box-shadow: none; }
+.sealed-tomb__room--choice { padding: 0; align-content: center; transition: filter .18s, transform .18s; }
+.sealed-tomb__room--choice img { width: 100%; height: 4.5rem; object-fit: contain; filter: drop-shadow(0 0 .45rem #b2d49a44) !important; }
+.sealed-tomb__room--choice > span { color: #fff0be; font: .48rem/1.3 system-ui, sans-serif; text-shadow: 0 1px 3px #000; }
+.sealed-tomb__room--choice:not(:disabled):hover { transform: translateY(-3px); filter: brightness(1.2); }
+.sealed-tomb__room--choice:disabled { opacity: .5; }
+.sealed-tomb__room--choice[data-pending] { filter: brightness(1.25); opacity: .8; }
+.sealed-tomb__floor-number { position: absolute; top: 50%; left: -.9rem; color: #d2bd8a; font: .5rem/1 system-ui, sans-serif; transform: translateY(-50%); }
+.sealed-tomb__route { position: absolute; z-index: 1; inset: 3rem 1.3rem 2rem; width: calc(100% - 2.6rem); height: calc(100% - 5rem); pointer-events: none; overflow: visible; }
+.sealed-tomb__route polyline { stroke: #f3d17b; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 2 2; filter: drop-shadow(0 0 1px #fff0a8); opacity: .7; }
+.sealed-tomb__entry-mark { display: block; margin-top: .8rem; text-align: center; color: #b8c8ae; font: .51rem/1.5 system-ui, sans-serif; letter-spacing: .15em; text-transform: uppercase; }
+.sealed-tomb__inventory { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, .7fr); gap: .55rem; margin: .4rem 0 .7rem; }
+.sealed-tomb__torches, .sealed-tomb__keys { min-width: 0; padding: .5rem .55rem; border-bottom: 1px solid #bba05b66; background: linear-gradient(180deg, #c4a45805, #071b1f33); }
+.sealed-tomb__inventory-label { display: flex; justify-content: space-between; color: #c5ccb2; font: .56rem/1.4 system-ui, sans-serif; }
+.sealed-tomb__inventory-label strong { color: #f5dc9e; font-weight: 500; }
+.sealed-tomb__torch-row { display: flex; gap: .15rem; margin-top: .3rem; }
+.sealed-tomb__torch-row i { display: block; width: .6rem; height: .8rem; border-radius: 70% 30% 65% 35%; background: #60726b55; transform: rotate(-16deg); }
+.sealed-tomb__torch-row i[data-lit] { background: linear-gradient(#ffe4a1, #c98638); box-shadow: 0 0 .4rem #e9ad4d55; }
+.sealed-tomb__keys > span { display: block; margin-top: .15rem; color: #f5db99; font: 500 1rem/1.1 Georgia, serif; }
+.sealed-tomb__relics { display: flex; align-items: center; gap: .3rem; padding: .45rem 0; min-height: 2.3rem; border-block: 1px solid #a5a06b40; }
+.sealed-tomb__relics > span { margin-right: auto; color: #b4c3b4; font: .58rem/1.4 system-ui, sans-serif; }
+.sealed-tomb__relic { position: relative; display: grid; place-items: center; width: 2rem; height: 2rem; border: 1px solid #b9a36555; border-radius: 50%; background: #071d20; }
+.sealed-tomb__relic img { width: 1.7rem; height: 1.7rem; object-fit: contain; }
+.sealed-tomb__relic small { position: absolute; bottom: -.1rem; right: -.1rem; min-width: .85rem; padding: .05rem .1rem; text-align: center; border-radius: .5rem; background: #274b3a; color: #fff0b7; font: .5rem/1 system-ui, sans-serif; }
+.sealed-tomb__relic[data-empty] { opacity: .3; filter: grayscale(1); }
+.sealed-tomb__choices-heading { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; margin: .75rem 0 .5rem; }
+.sealed-tomb__choices-heading h3 { color: #ffdfa0; font: 500 1.05rem/1.2 Georgia, serif; }
+.sealed-tomb__choices-heading > span { color: #9fbfae; font: .56rem/1.4 system-ui, sans-serif; }
+.sealed-tomb__choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; }
+.sealed-tomb__choice { position: relative; display: flex; flex-direction: column; align-items: center; gap: .25rem; min-width: 0; padding: .5rem .25rem; text-align: center; border-bottom: 1px solid #ac95584d; }
+.sealed-tomb__choice > img { width: 2.5rem; height: 2.5rem; object-fit: contain; filter: drop-shadow(0 .15rem .2rem #0007); }
+.sealed-tomb__choice-kind { color: #b5ceb8; font: .48rem/1.3 system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+.sealed-tomb__choice strong { color: #ffe6ae; font: 500 .85rem/1.15 Georgia, serif; }
+.sealed-tomb__choice p { color: #b9c8b4; font: .56rem/1.5 system-ui, sans-serif; }
+.sealed-tomb__choice small { display: block; margin-top: auto; padding-top: .25rem; color: #f0d38b; font: .55rem/1.4 system-ui, sans-serif; }
+.sealed-tomb__collect { width: 100%; min-height: 2.75rem; margin-top: .55rem; padding: .5rem; border: 1px solid #b3c09a80; border-radius: .3rem; background: linear-gradient(#254d40, #12372f); color: #dbdfb8 !important; font: .68rem/1.5 system-ui, sans-serif !important; }
+.sealed-tomb__collect:disabled { opacity: .5; }
+.sealed-tomb__combo-note { margin: .4rem 0 .65rem !important; color: #9fbfad; font: .58rem/1.5 system-ui, sans-serif; }
+.sealed-tomb__funded-stake { margin-top: .55rem !important; color: #a8c3b4; text-align: center; font: .57rem/1.6 system-ui, sans-serif !important; }
+.sealed-tomb__recovery { padding: .65rem; margin-top: .6rem; border: 1px solid #d9b76d88; border-radius: .3rem; background: #80693120; }
+.sealed-tomb__recovery p { margin-bottom: .6rem; color: #e9d7a8; font: .65rem/1.5 system-ui, sans-serif; }
+.sealed-tomb__finale { text-align: center; padding: .65rem .3rem 0; }
+.sealed-tomb__finale > img { display: block; width: min(100%, 12rem); aspect-ratio: 1; object-fit: contain; margin: 0 auto .2rem; filter: drop-shadow(0 0 1rem #c3a44844); }
+.sealed-tomb__finale h3 { margin: .25rem 0 .5rem; color: #ffe5aa; font: 500 1.45rem/1.2 Georgia, serif; }
+.sealed-tomb__finale p { margin-bottom: .8rem; color: #b9cdb9; font: .7rem/1.6 system-ui, sans-serif; }
+.sealed-tomb__entry { padding-top: .25rem; text-align: center; }
+.sealed-tomb__entry p { margin: .4rem auto .6rem; max-width: 25rem; color: #b9cbbc; font: .69rem/1.6 system-ui, sans-serif; }
+.sealed-tomb__entry-button, .sealed-tomb__return { display: block; width: 100%; min-height: 2.9rem; padding: .6rem 1rem; border: 1px solid #f5d48b; border-radius: .3rem; color: #142c25 !important; background: linear-gradient(115deg, #f6dda0, #c5a257); box-shadow: inset 0 0 0 2px #fff3c633, 0 .2rem .6rem #0005; font: 600 .8rem/1.3 system-ui, sans-serif !important; letter-spacing: .025em; }
+.sealed-tomb__entry-button:disabled { opacity: .48; }
+.sealed-tomb__funding { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .3rem .6rem; margin-top: .5rem; color: #bccab6; font: .58rem/1.5 system-ui, sans-serif; }
+.sealed-tomb__funding strong { color: #e8d294; font-weight: 500; }
+.sealed-tomb__funding progress { flex-basis: 100%; width: 100%; height: .3rem; accent-color: #d9b968; }
+.sealed-tomb__funding small { flex-basis: 100%; color: #a9c0ad; font: .68rem/1.5 system-ui, sans-serif; }
+.sealed-tomb__receipt { margin-top: .7rem; padding: .65rem .75rem; border-left: 2px solid #a8d5ab; background: #82a06f13; }
+.sealed-tomb__receipt p { margin-top: .2rem; color: #c1d4bf; font: .65rem/1.55 system-ui, sans-serif; }
+.sealed-tomb__receipt strong { color: #f4d99b; font: 500 1rem/1.3 Georgia, serif; }
+.sealed-tomb__completion { margin-top: .65rem; padding: .9rem .65rem .65rem; text-align: center; border: 1px solid #d8b96877; border-radius: .35rem; background: radial-gradient(ellipse at 50% 20%, #b1a3512a, transparent 75%), #061b2099; }
+.sealed-tomb__completion > img { width: 5rem; height: 4.5rem; object-fit: contain; filter: drop-shadow(0 0 .65rem #eac86d3b); }
+.sealed-tomb__completion h3 { margin: .25rem 0; font: 500 1.5rem/1.15 Georgia, serif; color: #ffe5a6; }
+.sealed-tomb__completion > strong { display: block; margin: .35rem 0; font: 500 2.15rem/1.1 Georgia, serif; color: #ffe8a9; }
+.sealed-tomb__completion p { margin: .5rem 0 .8rem; color: #b5cdbb; font: .68rem/1.6 system-ui, sans-serif; }
+.sealed-tomb__completion .sealed-tomb__eyebrow { color: #9bd6bd; }
+.sealed-tomb__breakdown { margin: .75rem 0; padding: .5rem .15rem; border-block: 1px solid #b4a06d44; }
+.sealed-tomb__breakdown > div { display: flex; justify-content: space-between; gap: .5rem; margin: .3rem 0; color: #c7cfb6; font: .65rem/1.5 system-ui, sans-serif; }
+.sealed-tomb__breakdown dd { margin: 0; color: #eed9a5; font-variant-numeric: tabular-nums; }
+.sealed-tomb__rules { border-top: 1px solid #b79f5c33; margin-top: .6rem; color: #b3c6b9; font: .61rem/1.6 system-ui, sans-serif; }
+.sealed-tomb__rules summary { display: flex; align-items: center; min-height: 2.75rem; cursor: pointer; color: #dcc48c; }
+.sealed-tomb__rules summary::before { content: '✦'; margin-right: .5rem; color: #9cc7ad; }
+.sealed-tomb__rules p { margin: 0 0 .65rem; }
+.sealed-tomb__status { padding-top: .5rem; min-height: 1.1rem; color: #b6d9bc; font: .65rem/1.5 system-ui, sans-serif; }
+.sealed-tomb__status:empty { display: none; }
+.sealed-tomb__error { margin-top: .5rem !important; padding: .5rem .65rem; border: 1px solid #d9a27880; background: #4b2b2380; border-radius: .25rem; color: #ffe0b9; font: .65rem/1.5 system-ui, sans-serif; }
+.sealed-tomb__loading { padding: 2rem .5rem; text-align: center; color: #bfcbb8; font: .75rem/1.6 system-ui, sans-serif; }
+.sealed-tomb__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+/* A cutaway monument in the temple, with its findings engraved alongside it. */
+.sealed-tomb[data-expedition-active] { border: 0; border-radius: 0; background: radial-gradient(ellipse at 30% 55%, #6681580d, transparent 70%), linear-gradient(90deg, #061e2422, #061e24bd 68%, #061e24d6); box-shadow: none; }
+.sealed-tomb[data-expedition-active] .sealed-tomb__bank { border: 0; border-bottom: 1px solid #cfad655c; border-radius: 0; background: linear-gradient(90deg, #ceaa5b12, transparent 65%); padding: .55rem .15rem .8rem; }
+.sealed-tomb[data-expedition-active] .sealed-tomb__bank strong { font-size: clamp(1.9rem, 4vw, 2.45rem); }
+.sealed-tomb__floor::after { bottom: -.24rem; left: -.6rem; right: -.6rem; height: .38rem; background: linear-gradient(#bd9d5794, #8b754b 28%, #3c4633 48%, #071a1f 76%); border-radius: 1px; box-shadow: 0 .15rem .25rem #0009; }
+.sealed-tomb__floor:not([data-current]) .sealed-tomb__room { border: 0; border-radius: .12rem .12rem 0 0; background: linear-gradient(90deg, #a38c4b35, #07191be8 18%, #081c1df2 82%, #98834838); box-shadow: inset .15rem .12rem .25rem #000a, inset -.1rem 0 .2rem #d4b16822; }
+.sealed-tomb__room:not(.sealed-tomb__room--choice):not([data-visited]) > img { visibility: hidden; }
+.sealed-tomb__room:not(.sealed-tomb__room--choice):not([data-visited])::before { position: absolute; inset: .25rem 30% .12rem; border: 1px solid #a58f5866; border-bottom: 0; border-radius: 45% 45% 0 0; background: linear-gradient(90deg, #a9955a18, #42503b1a 48%, #c0a7652e 49%, #071a1d7a 52%); box-shadow: inset 0 .12rem .2rem #0009, 0 0 0 2px #081d2033; content: ''; }
+.sealed-tomb__floor:not([data-current]) .sealed-tomb__room[data-visited] { background: radial-gradient(ellipse at 50% 90%, #d0ad5f70, #1e4433a6 55%, #09241f 85%); box-shadow: inset 0 0 .2rem #deb96166, 0 0 .5rem #ddc57525; }
+.sealed-tomb__floor[data-current] { background: radial-gradient(ellipse at 50% 100%, #c8ae4b4d, transparent 65%); }
+.sealed-tomb__floor[data-current]::after { background: linear-gradient(#ffe3a2, #ad8e4c 35%, #3c4431 60%, #06191e); height: .5rem; }
+.sealed-tomb__room--choice:not(:disabled) > img { filter: drop-shadow(0 .2rem .25rem #000c) drop-shadow(0 0 .5rem #e6b75455) !important; }
+.sealed-tomb__route polyline { stroke-width: 1.35; stroke-dasharray: none; stroke: #efcf7c; filter: drop-shadow(0 0 2px #ffed9d); }
+.sealed-tomb__choice > img { display: none; }
+.sealed-tomb__choice { text-align: left; align-items: flex-start; border-color: #b49b5c66; padding-inline: .15rem; }
+.sealed-tomb__choice-kind { color: #8fcbb6; }
+.sealed-tomb__collect { border: 0; border-top: 1px solid #b8a26588; border-bottom: 1px solid #73684688; border-radius: 0; background: linear-gradient(#3c60451f, #a59a5c14); }
+.sealed-tomb__receipt { border-left: 1px solid #a8c99e99; background: linear-gradient(90deg, #84a07413, transparent); }
+
+@container sealed-tomb (min-width: 700px) {
+  .sealed-tomb__play { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(17rem, .85fr); gap: 1.4rem; align-items: center; }
+  .sealed-tomb__map { min-height: 28rem; margin-top: 1rem; padding-top: 2.5rem; }
+  .sealed-tomb__apex { width: 5rem; height: 5rem; top: -.3rem; }
+  .sealed-tomb__floors { gap: .65rem; padding-top: .9rem; }
+  .sealed-tomb__floor { min-height: 3rem; }
+  .sealed-tomb__room { min-height: 2.7rem; }
+  .sealed-tomb__room img { width: 2.7rem; height: 2.7rem; }
+  .sealed-tomb__interaction { padding-top: 1.2rem; }
+  .sealed-tomb__floor[data-current] { min-height: 7.5rem; }
+  .sealed-tomb__room--choice img { width: 100%; height: 6.5rem; }
+  .sealed-tomb__room--choice > span { font-size: .65rem; }
+  .sealed-tomb__choice { padding: .8rem .4rem; }
+  .sealed-tomb__choice > img { width: 3rem; height: 3rem; }
+  .sealed-tomb__choice strong { font-size: 1.1rem; }
+  .sealed-tomb__choice p { font-size: .72rem; }
+  .sealed-tomb__choice small { font-size: .68rem; }
+  .sealed-tomb__bank-note { max-width: none; }
+  .sealed-tomb__heading h2 { font-size: 2rem; }
+  .sealed-tomb__completion { margin-top: 0; }
+  .sealed-tomb__completion > img { width: 8rem; height: 7rem; }
+  .sealed-tomb__entry p { font-size: .8rem; }
+  .sealed-tomb__finale > img { width: 12rem; }
+}
+
+/* The raster monument supplies the walls; only its real room state is overlaid. */
+.sealed-tomb__map {
+  min-height: 26rem;
+  aspect-ratio: 4 / 5;
+  padding: 0;
+  margin: .65rem 0 .25rem;
+  overflow: visible;
+  filter: drop-shadow(0 .6rem .65rem #0008);
+}
+.sealed-tomb__map::before {
+  z-index: -1;
+  inset: 0;
+  clip-path: none;
+  border: 0;
+  background: url('./assets/art/pharaohs-ascent/tomb-cutaway-v1.webp') center / 100% 100% no-repeat;
+}
+.sealed-tomb__map::after, .sealed-tomb__apex { display: none; }
+.sealed-tomb__floors {
+  position: absolute;
+  inset: 22% 14% 19%;
+  padding: 0;
+  gap: .4rem;
+}
+.sealed-tomb__floor {
+  flex: 1;
+  width: calc(var(--floor-width) * .9);
+  min-height: 0;
+  padding: .08rem .16rem;
+}
+.sealed-tomb__floor::after { left: -.3rem; right: -.3rem; height: .22rem; bottom: -.17rem; }
+.sealed-tomb__floor[data-current] { flex: 1.8; min-width: 9.3rem; min-height: 0; }
+.sealed-tomb__floor[data-current] .sealed-tomb__room--choice { height: 100%; min-width: 0; min-height: 44px; display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+.sealed-tomb__room--choice > img { width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.sealed-tomb__room--choice > span { display: none; }
+.sealed-tomb__room:not(.sealed-tomb__room--choice) { height: 100%; min-height: 0; }
+.sealed-tomb__room:not(.sealed-tomb__room--choice) img { width: 100%; height: 100%; max-height: 2.8rem; object-fit: contain; }
+.sealed-tomb__entry-mark { position: absolute; inset: auto 15% 14%; margin: 0; color: #fff2b9; text-shadow: 0 1px 3px #000; font-size: .46rem; letter-spacing: .1em; }
+.sealed-tomb__route { inset: 23% 14% 20%; width: 72%; height: 57%; }
+@container sealed-tomb (min-width: 700px) {
+  .sealed-tomb__map { height: clamp(34rem, calc(100dvh - 20rem), 43rem); min-height: 0; aspect-ratio: auto; margin-top: 0; }
+  .sealed-tomb__floors { gap: .6rem; }
+  .sealed-tomb__floor[data-current] { flex: 1.9; min-height: 0; }
+  .sealed-tomb__room--choice > span { font-size: .65rem; }
+  .sealed-tomb__entry-mark { font-size: .55rem; }
+  .sealed-tomb__floor-number { font-size: .65rem; }
+}
+@media (max-width: 600px) {
+  .sealed-tomb { padding: .8rem .7rem; }
+  .sealed-tomb__map { max-width: 25rem; margin-inline: auto; }
+  .sealed-tomb__heading h2 { font-size: 1.6rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sealed-tomb *, .sealed-tomb *::before, .sealed-tomb *::after { transition: none !important; animation: none !important; }
+}

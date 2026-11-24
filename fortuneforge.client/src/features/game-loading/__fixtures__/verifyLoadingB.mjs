@@ -9,7 +9,7 @@ const output = process.env.LOADING_REVIEW_OUTPUT
 const ids = [
   'dragon-tiger', 'andar-bahar', 'hi-lo', 'casino-war', 'video-poker', 'keno', 'sic-bo',
   'arcane-archives', 'cosmic-fortune', 'gold-foundry', 'neon-nights',
-  'jungle-jackpot', 'ocean-odyssey', 'samurai-fortune',
+  'jungle-jackpot', 'ocean-odyssey', 'crooked-road',
 ]
 const fixture = `${base}/src/features/game-loading/__fixtures__/loadingB.html`
 const browser = await chromium.launch({ headless: true, channel: process.env.LOADING_REVIEW_BROWSER ?? 'chrome' })

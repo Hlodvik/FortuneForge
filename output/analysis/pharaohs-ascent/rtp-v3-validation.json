@@ -1,0 +1,132 @@
+{
+  "verifiedAtLocal": "2026-11-22T20:42:39.1949064-06:00",
+  "computer": "Vinnabok",
+  "engineVersion": "pharaohs-ascent-sealed-tomb-v3",
+  "targetRtp": 0.94,
+  "measurements": [
+    {
+      "name": "Normal paid game",
+      "report": "rtp-v3-final.json",
+      "paidSpins": 1000000,
+      "earnedSpins": 241868,
+      "rtp": 0.939072,
+      "lower95": 0.9362224355081316,
+      "upper95": 0.9419215644918685,
+      "paidReelRtp": 0.635064,
+      "earnedReelRtp": 0.135773,
+      "tombRtp": 0.168235,
+      "expeditions": 6383,
+      "seed": 20261123,
+      "reportSha256": "158dcf4e4bee3241c0be7e020b1d05e5c138fe6d441078191c9849aa7f63436b"
+    },
+    {
+      "name": "Spend earned boosts",
+      "report": "rtp-v3-earned-boosts.json",
+      "paidSpins": 1000000,
+      "earnedSpins": 241686,
+      "rtp": 0.9394725,
+      "lower95": 0.9364769044351005,
+      "upper95": 0.9424680955648996,
+      "paidReelRtp": 0.6350925,
+      "earnedReelRtp": 0.135799,
+      "tombRtp": 0.168581,
+      "expeditions": 6389,
+      "seed": 20261124,
+      "reportSha256": "191e33a4810e2a9d361bd9966bdefc9cde6cc562d3202a8df35cfde2ea730c04"
+    },
+    {
+      "name": "Switch bets using progression cues, with funded boosts",
+      "report": "rtp-v3-switch-final.json",
+      "paidSpins": 500000,
+      "earnedSpins": 117903,
+      "rtp": 0.9056294482585115,
+      "lower95": 0.8926952339192331,
+      "upper95": 0.91856366259779,
+      "paidReelRtp": 0.6351395011715188,
+      "earnedReelRtp": 0.1023531816826752,
+      "tombRtp": 0.1681367654043175,
+      "expeditions": 3202,
+      "seed": 20261126,
+      "reportSha256": "32b9488d2cf80f3f85f81b2dc7201cbf03fdaaedf5dfaeb36e2c3a8396ff610c"
+    }
+  ],
+  "accounting": [
+    {
+      "report": "rtp-v3-final.json",
+      "strategy": "coins",
+      "accountingPassed": true
+    },
+    {
+      "report": "rtp-v3-final.json",
+      "strategy": "random",
+      "accountingPassed": true
+    },
+    {
+      "report": "rtp-v3-final.json",
+      "strategy": "optimal",
+      "accountingPassed": true
+    },
+    {
+      "report": "rtp-v3-earned-boosts.json",
+      "strategy": "coins",
+      "accountingPassed": true
+    },
+    {
+      "report": "rtp-v3-earned-boosts.json",
+      "strategy": "optimal",
+      "accountingPassed": true
+    },
+    {
+      "report": "rtp-v3-switch-final.json",
+      "strategy": "coins",
+      "accountingPassed": true
+    },
+    {
+      "report": "rtp-v3-switch-final.json",
+      "strategy": "optimal",
+      "accountingPassed": true
+    }
+  ],
+  "pairedGrid": {
+    "passed": true,
+    "engineVersion": "pharaohs-ascent-sealed-tomb-v3",
+    "legalStakes": 150,
+    "paidCyclesPerStake": 1000,
+    "totalPaidCycles": 150000,
+    "seed": 20261125,
+    "pairedStakes": true,
+    "scope": "Exact scaled financial totals, outcome/progression counters, tomb strategies and terminal resources; no new game requests."
+  },
+  "fixedPolicyEquivalence": {
+    "normal": true,
+    "earnedBoosts": true,
+    "comparedPaidSpinsEach": 10000,
+    "note": "The final per-wager credit and funded-appearance guards leave fixed-stake financial behavior identical; exact same-seed blocks and native invariance tests verify this."
+  },
+  "financialSourceFingerprintStable": true,
+  "matchingSimulatorAndPreviewAssemblies": [
+    {
+      "assembly": "FortuneForge.Games.CosmicFortune.dll",
+      "identical": true,
+      "sha256": "b7442867a45efbdf65552ca88033bec5c28f5791fdba41aec35b8285afd1cc5d"
+    },
+    {
+      "assembly": "FortuneForge.Games.CosmicFortune.Server.dll",
+      "identical": true,
+      "sha256": "cc9105fa8dacec5e7aff4e6ccab823c408bbf75f0d63ae55558df29d5273166d"
+    },
+    {
+      "assembly": "FortuneForge.Games.Slots.Runtime.dll",
+      "identical": true,
+      "sha256": "5f1e63c72aeb65bc68bb93f49ef71a42c2d5083efd175d61b1f94610d870857f"
+    },
+    {
+      "assembly": "FortuneForge.Games.Slots.Persistence.dll",
+      "identical": true,
+      "sha256": "eaa624310e56e7f5f47218ed552bd1b81486a1350eded4e7076992b146e53216"
+    }
+  ],
+  "backendTestsPassed": 103,
+  "clientTestsPassed": 61,
+  "deployment": "none"
+}

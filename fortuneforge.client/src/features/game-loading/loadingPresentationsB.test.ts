@@ -9,7 +9,7 @@ import { LOADING_PRESENTATIONS_B } from './loadingPresentationsB'
 const assignedIds = [
   'dragon-tiger', 'andar-bahar', 'hi-lo', 'casino-war', 'video-poker', 'keno', 'sic-bo',
   'arcane-archives', 'cosmic-fortune', 'gold-foundry', 'neon-nights', 'empty-slots-game',
-  'ocean-odyssey', 'samurai-fortune',
+  'ocean-odyssey', 'crooked-road',
 ] as const
 
 const appRouteComponents: Readonly<Record<string, string>> = {
@@ -24,10 +24,10 @@ const appRouteComponents: Readonly<Record<string, string>> = {
 }
 
 describe('B game loading presentations', () => {
-  it('covers its fourteen assigned games and twenty unique existing paths', () => {
+  it('covers its fourteen assigned games and nineteen unique existing paths', () => {
     expect(LOADING_PRESENTATIONS_B.map((entry) => entry.id)).toEqual(assignedIds)
     const routes = LOADING_PRESENTATIONS_B.flatMap((entry) => entry.routes)
-    expect(routes).toHaveLength(20)
+    expect(routes).toHaveLength(19)
     expect(new Set(routes).size).toBe(routes.length)
 
     const appRoutes = readFileSync(new URL('../../app/AppRoutes.tsx', import.meta.url), 'utf8')

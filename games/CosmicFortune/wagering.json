@@ -1,0 +1,7 @@
+{
+  "pointValueInCents": 25,
+  "minimumWagerPoints": 2,
+  "defaultWagerPoints": 12,
+  "maximumWagerPoints": 300,
+  "wagerIncrementPoints": 2
+}

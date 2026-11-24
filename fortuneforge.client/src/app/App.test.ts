@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { SLOT_ROUTE_DEFINITIONS } from '../games/slots/routeRegistry'
+import { SLOT_ROUTE_DEFINITIONS, findSlotRoute } from '../games/slots/routeRegistry'
+import { canonicalSlotPath } from '../games/slots/routeMetadata'
 import App from './App'
 
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
@@ -22,7 +23,7 @@ describe('app shell slot media isolation', () => {
     '/home/invoices', '/home/invoices/123', '/login', '/create-account', '/verify-email',
     '/admin', '/admin/operations', '/admin/invoices', '/admin/invoices/123',
     '/games', '/cards', '/slots', '/demo', '/demo/cards', '/unknown',
-    ...SLOT_ROUTE_DEFINITIONS.flatMap(route => [route.playPath!, route.demoPath]),
+    ...SLOT_ROUTE_DEFINITIONS.flatMap(route => [route.playPath, route.demoPath].filter((path): path is string => path !== null)),
   ])('does not inherit the old cloud background at %s', pathname => {
     const markup = renderApp(pathname)
     expect(markup).not.toContain('app-shell--wukong-clouds')
@@ -105,10 +106,24 @@ describe('app shell slot media isolation', () => {
     expect(renderApp('/home')).not.toContain('app-shell--game')
   })
 
+  it('keeps Frontier Fortune paid-only and redirects its legacy paths to the paid trail', () => {
+    const frontier = SLOT_ROUTE_DEFINITIONS.find(route => route.id === 'high-noon-fortune')
+    expect(frontier).toMatchObject({ playPath: '/slots/frontier-fortune', demoPath: null })
+    expect(renderApp('/slots/frontier-fortune')).toContain('app-shell--game')
+    for (const legacy of ['/slots/high-noon-fortune', '/slots/high-noon-fortune/demo']) {
+      expect(canonicalSlotPath(legacy)).toBe('/slots/frontier-fortune')
+      expect(renderApp(legacy)).toContain('app-shell--game')
+      expect(window.history.replaceState).toHaveBeenCalledWith(null, '', '/slots/frontier-fortune')
+    }
+    expect(canonicalSlotPath('/slots/frontier-fortune/demo')).toBe('/slots/frontier-fortune/demo')
+    expect(findSlotRoute('/slots/frontier-fortune/demo')).toBeNull()
+    expect(renderApp('/slots/frontier-fortune/demo')).not.toContain('app-shell--game')
+  })
+
 })
 
 function renderApp(pathname: string): string {
-  vi.stubGlobal('window', { location: { pathname } })
+  vi.stubGlobal('window', { location: { pathname, search: '', hash: '' }, history: { state: null, replaceState: vi.fn() } })
   vi.stubGlobal('document', { visibilityState: 'visible' })
   return renderToStaticMarkup(createElement(App))
 }

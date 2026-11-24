@@ -45,6 +45,11 @@
     <Project Path="HighNoonFortune/server/FortuneForge.Games.HighNoonFortune.Server/FortuneForge.Games.HighNoonFortune.Server.csproj" />
     <Project Path="HighNoonFortune/tests/FortuneForge.Games.HighNoonFortune.Tests/FortuneForge.Games.HighNoonFortune.Tests.csproj" />
   </Folder>
+  <Folder Name="/games/FrontierFortune/">
+    <Project Path="HighNoonFortune/src/FortuneForge.Games.FrontierFortune/FortuneForge.Games.FrontierFortune.csproj" />
+    <Project Path="HighNoonFortune/server/FortuneForge.Games.FrontierFortune.Server/FortuneForge.Games.FrontierFortune.Server.csproj" />
+    <Project Path="HighNoonFortune/tests/FortuneForge.Games.FrontierFortune.Tests/FortuneForge.Games.FrontierFortune.Tests.csproj" />
+  </Folder>
   <Folder Name="/games/RoyalDraw/">
     <Project Path="RoyalDraw/src/FortuneForge.Games.RoyalDraw/FortuneForge.Games.RoyalDraw.csproj" />
   </Folder>
@@ -59,10 +64,10 @@
   <Folder Name="/games/OceanOdyssey/">
     <Project Path="OceanOdyssey/src/FortuneForge.Games.OceanOdyssey/FortuneForge.Games.OceanOdyssey.csproj" />
   </Folder>
-  <Folder Name="/games/SamuraiFortune/">
-    <Project Path="SamuraiFortune/src/FortuneForge.Games.SamuraiFortune/FortuneForge.Games.SamuraiFortune.csproj" />
-    <Project Path="SamuraiFortune/server/FortuneForge.Games.SamuraiFortune.Server/FortuneForge.Games.SamuraiFortune.Server.csproj" />
-    <Project Path="SamuraiFortune/tests/FortuneForge.Games.SamuraiFortune.Tests/FortuneForge.Games.SamuraiFortune.Tests.csproj" />
+  <Folder Name="/games/CrookedRoad/">
+    <Project Path="CrookedRoad/src/FortuneForge.Games.CrookedRoad/FortuneForge.Games.CrookedRoad.csproj" />
+    <Project Path="CrookedRoad/server/FortuneForge.Games.CrookedRoad.Server/FortuneForge.Games.CrookedRoad.Server.csproj" />
+    <Project Path="CrookedRoad/tests/FortuneForge.Games.CrookedRoad.Tests/FortuneForge.Games.CrookedRoad.Tests.csproj" />
   </Folder>
   <Folder Name="/games/CandyCarnival/">
     <Project Path="CandyCarnival/src/FortuneForge.Games.CandyCarnival/FortuneForge.Games.CandyCarnival.csproj" />

@@ -55,7 +55,7 @@ export const FIFTH_SUN_SLOT_GAME = defineSlotGame({
       ],
     },
     outcomeNarrative: {
-      lossTitle: 'The temple rests', winTitle: 'Temple treasure', greatWinTitle: 'The guardians awaken', bigWinTitle: 'The Fifth Sun rises',
+      lossTitle: 'The temple rests', winTitle: 'Temple treasure', greatWinTitle: 'The guardians awaken', bigWinTitle: 'The Sunstone Eclipse rises',
       freeGameSingular: 'Saved bonus spin', freeGamePlural: 'Saved bonus spins',
       lossNextAction: '', winNextAction: '', bonusNextAction: 'Saved bonuses retain their original wager and terms.',
     },

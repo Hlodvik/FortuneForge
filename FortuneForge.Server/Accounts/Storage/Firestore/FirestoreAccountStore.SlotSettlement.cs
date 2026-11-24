@@ -8,8 +8,6 @@ using System.Text;
 using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.JadeDragon;
-using ArcaneArchivesEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
-using FortuneForge.Games.ArcaneArchives.Server;
 using FortuneForge.Games.NeonNights;
 using FortuneForge.Games.Slots;
 using FortuneForge.Server.Accounts.Models;
@@ -33,6 +31,7 @@ public sealed partial class FirestoreAccountStore
         DateTime createdAtUtc,
         CancellationToken cancellationToken)
     {
+        RejectRemovedSlotRuntime(result.GameId);
         if (admission.AdmissionId == Guid.Empty || result.EngineAudit is null ||
             result.WagerPoints != admission.WagerPoints ||
             result.SpecialBoostApplied != admission.SpecialBoostApplied ||
@@ -106,24 +105,7 @@ public sealed partial class FirestoreAccountStore
              (result.FreeSpinsAwarded != NeonArcadeSlotDefinitions.SpecialPlaySpins ||
               !NeonArcadeSlotDefinitions.UsesCurrentDiscoMath(result.EngineAudit.EngineVersion))))
             throw new InvalidOperationException("Neon's bonus outcome differs from its accepted admission.");
-        var arcaneLightning = result.EngineAudit.EngineVersion == ArcaneLightningCollector.EngineVersion;
-        if (arcaneLightning &&
-            (!ArcaneLightningCollector.IsModel(result.EngineAudit.BaseGame) || result.IsFreeSpin != admission.IsFreeSpin))
-            throw new InvalidOperationException("Arcane Archives' outcome differs from the admitted lightning model or spin type.");
-        var arcaneWand = ArcaneArchivesEngine.IsWandEngineVersion(result.EngineAudit.EngineVersion);
-        var arcanePotionSpin = ArcaneArchivesEngine.SupportsPotionEngineVersion(result.EngineAudit.EngineVersion);
-        if (arcanePotionSpin != (admission.ArcanePotionsBefore is not null))
-            throw new InvalidOperationException("Arcane spin admission and engine potion rules do not match.");
-        if (admission.ArcaneTomeBefore is not null && !arcaneWand)
-            throw new InvalidOperationException("An Arcane Tome admission requires the current Arcane reel model.");
-        if (arcaneWand &&
-            (!ArcaneArchivesEngine.IsWandModel(result.EngineAudit.BaseGame) || result.IsFreeSpin != admission.IsFreeSpin ||
-             result.ChargedWagerCents != admission.ChargedWagerCents ||
-             admission.ChargedWagerCents != (admission.IsFreeSpin ? 0 :
-                 RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents)) ||
-             SlotRoundAudit.Check(result, result.Payout, isPaid: true).Count != 0))
-            throw new InvalidOperationException("Arcane Archives' outcome differs from the admitted wand model or payout.");
-        var ignoreLegacyEnergy = isNeon || result.GameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId ||
+        var ignoreLegacyEnergy = isNeon ||
             result.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId && result.EngineAudit.BaseGame.Energy is null;
         if (isGoldFoundry)
             GoldFoundryCrucible.ValidatePaidOutcome(result, admission);
@@ -133,8 +115,7 @@ public sealed partial class FirestoreAccountStore
              result.EngineAudit.FreeSpinFeatureMode != admission.FreeSpinFeatureMode))
             throw new InvalidOperationException("Midnight Vault's outcome differs from its admitted bonus mode.");
         var frozenSettlementField = isMidnightGame ? "midnightSettlementJson" :
-            isGoldFoundry ? "goldFoundrySettlementJson" : arcaneLightning ? "arcaneLightningSettlementJson" :
-            arcaneWand ? "arcaneWandSettlementJson" :
+            isGoldFoundry ? "goldFoundrySettlementJson" :
             isOlympusTumble ? "olympusTumbleSettlementJson" :
             isJadeCascade ? "jadeDragonCascadeSettlementJson" :
             isNeonDiscoPlay ? "neonDiscoSettlementJson" :
@@ -234,7 +215,7 @@ public sealed partial class FirestoreAccountStore
                         throw new InvalidOperationException("The Nitro choice differs from its frozen original spin.");
                 }
                 if (existingResult.Exists &&
-                    (isMidnightGame || arcaneLightning || arcaneWand || isOlympusTumble || isJadeCascade || isNeonDiscoPlay ||
+                    (isMidnightGame || isOlympusTumble || isJadeCascade || isNeonDiscoPlay ||
                         ReadString(existingResult, "engineOutcomeSha256") is not null))
                 {
                     if (admissionStatus != "settled" || ReadString(existingResult, "userId") != userId ||
@@ -325,17 +306,8 @@ public sealed partial class FirestoreAccountStore
                     throw new InvalidOperationException("Slot spin guard no longer matches the admitted spin.");
                 }
 
-                var arcaneFeatures = arcaneWand || arcanePotionSpin
-                    ? ArcaneFeatureStore.CompleteSpin(
-                        new(admission.ArcaneTomeBefore, admission.ArcanePotionsBefore, admission.ArcanePotionWagerTracked),
-                        new(result.EngineAudit.EngineVersion, result.ReelSetId, result.Reels, result.EngineAudit.ArcanePotionApplied),
-                        guardSnapshot, admissionSnapshot, admission.WagerPoints, isFreeSpin)
-                    : null;
-                var arcaneTomeProgress = arcaneFeatures?.Tome;
-                var arcanePotionState = arcaneFeatures?.Potions;
-
                 SlotSpecialRoundProfiles.TryGet(result.GameId, out var specialRoundProfile);
-                if (result.GameId is SlotSpecialRoundProfiles.RainbowRealmGameId or SlotSpecialRoundProfiles.ArcaneArchivesGameId)
+                if (result.GameId is SlotSpecialRoundProfiles.RainbowRealmGameId)
                     specialRoundProfile = result.EngineAudit.FeatureProfile ?? specialRoundProfile;
                 if (isGoldFoundry && currentEnergy != admission.EnergyBalance)
                     throw new InvalidOperationException("The crucible charge differs from the admitted spin.");
@@ -451,9 +423,6 @@ public sealed partial class FirestoreAccountStore
                     BonusRound = midnightProgress?.Rounds.FirstOrDefault(),
                     QueuedBonusRounds = midnightProgress?.Rounds.Skip(1).ToArray() ?? [],
                     AwardedBonusRounds = midnightProgress?.AwardedRounds ?? [],
-                    ArcaneTome = arcaneTomeProgress?.State,
-                    ArcanePotions = arcanePotionState,
-                    ArcaneIngredientsAwarded = arcaneTomeProgress?.IngredientsAwarded,
                     CrucibleWageredCents = crucible?.WageredCents,
                     CruciblePourValueCents = crucible?.PourValueCents,
                     CruciblePoured = crucible?.Poured,
@@ -478,7 +447,7 @@ public sealed partial class FirestoreAccountStore
                         energyBonus.PayoutMultiplier, piratesGemEvidence,
                         outcomeSchemaVersion = SlotOutcomeSchemaVersion };
                     object evidence = payload;
-                    if (isNeon || crucible is not null || arcaneTomeProgress is not null)
+                    if (isNeon || crucible is not null)
                     {
                         var json = JsonSerializer.SerializeToNode(payload, FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture.Json)!.AsObject();
                         if (isNeon)
@@ -491,15 +460,6 @@ public sealed partial class FirestoreAccountStore
                         if (crucible is not null)
                             json["crucible"] = JsonSerializer.SerializeToNode(
                                 new { wageredBeforeCents = crucibleWageredBeforeCents, settlement = crucible },
-                                FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture.Json);
-                        if (arcaneTomeProgress is not null)
-                            json["arcaneTome"] = JsonSerializer.SerializeToNode(
-                                new { before = admission.ArcaneTomeBefore, progress = arcaneTomeProgress },
-                                FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture.Json);
-                        if (arcanePotionState is not null)
-                            json["arcanePotions"] = JsonSerializer.SerializeToNode(
-                                new { before = admission.ArcanePotionsBefore, after = arcanePotionState,
-                                    wagerTracked = admission.ArcanePotionWagerTracked },
                                 FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture.Json);
                         evidence = json;
                     }
@@ -679,8 +639,6 @@ public sealed partial class FirestoreAccountStore
                     if (midnightProgress is not null)
                         foreach (var pair in MidnightBonusGuardData(midnightProgress.Rounds, result.PointValueInCents)) guardData[pair.Key] = pair.Value;
                 }
-                if (arcaneFeatures is not null)
-                    ArcaneFeatureStore.WriteSettlement(guardData, arcaneFeatures);
                 if (ReadString(guardSnapshot, SlotSpinGuard.PreparedAdmissionField) == admission.AdmissionId.ToString("N"))
                     guardData[SlotSpinGuard.PreparedAdmissionField] = FieldValue.Delete;
                 transaction.Set(guardReference, guardData, SetOptions.MergeAll);
@@ -791,9 +749,6 @@ public sealed partial class FirestoreAccountStore
         };
         var json = result.EngineAudit?.EngineVersion switch
         {
-            ArcaneLightningCollector.EngineVersion => JsonSerializer.Serialize(new { snapshot, result.LightningCollection }),
-            var version when ArcaneArchivesEngine.IsWandEngineVersion(version) =>
-                JsonSerializer.Serialize(new { snapshot, result.ArcaneWandCollection }),
             var version when OlympusTumbleDemo.SupportsPaidEngineVersion(version) =>
                 JsonSerializer.Serialize(new { snapshot, result.OlympusTumble }),
             _ when result.NeonDiscoCascade is not null =>

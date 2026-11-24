@@ -49,9 +49,9 @@ internal static class FifthSunPaidModeState
         }
         catch (Exception error) when (error is JsonException or KeyNotFoundException or ArgumentException or FormatException or OverflowException)
         {
-            throw new InvalidOperationException("The saved Fifth Sun Eclipse state is invalid.", error);
+            throw new InvalidOperationException("The saved Sunstone Eclipse state is invalid.", error);
         }
     }
 
-    private static InvalidOperationException Invalid() => new("The saved Fifth Sun Eclipse state is invalid.");
+    private static InvalidOperationException Invalid() => new("The saved Sunstone Eclipse state is invalid.");
 }

@@ -77,16 +77,30 @@ describe('home replaces separate authenticated catalogues', () => {
   })
 
   it('leaves a concrete slot route available without a catalogue redirect', async () => {
-    const slotRoute: SlotRouteDefinition = {
-      id: 'cosmic-fortune', title: 'Cosmic Fortune', shortTitle: 'Cosmic Fortune',
-      playPath: '/slots/cosmic-fortune', demoPath: '/slots/cosmic-fortune/demo',
+    const slotRoute = {
+      id: 'cosmic-fortune', title: 'Pharaoh’s Ascent', shortTitle: 'Pharaoh’s Ascent',
+      playPath: '/slots/pharaohs-ascent', demoPath: null,
       serverGameIds: ['cosmic-fortune-v1'], shellBackdrop: 'theme', load: vi.fn(),
-    }
-    await renderRoute('/slots/cosmic-fortune', slotRoute)
+    } satisfies SlotRouteDefinition
+    await renderRoute('/slots/pharaohs-ascent', slotRoute)
     expect(host.textContent).toBe('Slot game')
     expect(state.replace).not.toHaveBeenCalled()
-    await renderRoute(slotRoute.demoPath, slotRoute)
+    await renderRoute('/slots/pharaohs-ascent/demo', slotRoute)
     expect(host.textContent).toBe('Game unavailable')
+  })
+
+  it('opens the paid-only Crooked Road route and rejects an invented demo URL', async () => {
+    const slotRoute = {
+      id: 'crooked-road', title: 'The Crooked Road', shortTitle: 'The Crooked Road',
+      playPath: '/slots/crooked-road', demoPath: null,
+      serverGameIds: ['crooked-road-v1'], shellBackdrop: 'theme', load: vi.fn(),
+    } satisfies SlotRouteDefinition
+    await renderRoute(slotRoute.playPath, slotRoute)
+    expect(host.textContent).toBe('Slot game')
+    expect(state.replace).not.toHaveBeenCalled()
+    await renderRoute('/slots/crooked-road/demo', slotRoute)
+    expect(host.textContent).toBe('Game unavailable')
+    expect(state.replace).not.toHaveBeenCalled()
   })
 
   it.each(['/demo', '/demo/cards', '/demo/cards/blackjack', '/demo/cards/texas-holdem'])('retires %s', async pathname => {

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Crooked Road — local paid test</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body, #root { min-height: 100%; margin: 0; }
+      body { background: #061b15; color: #f2eed7; font-family: system-ui, sans-serif; }
+      .local-shell { min-height: 100dvh; }
+      .local-navbar { height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0 1rem; background: #0b241b; border-bottom: 1px solid #d1b36b66; }
+      .local-navbar a { color: inherit; font-weight: 700; text-decoration: none; }
+      .local-navbar__balance { margin: 0; font-variant-numeric: tabular-nums; }
+      .local-navbar__balance span { color: #b4c4b5; margin-right: .5rem; }
+      .local-status { max-width: 38rem; margin: 4rem auto; padding: 1.5rem; line-height: 1.6; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/main.tsx"></script>
+  </body>
+</html>

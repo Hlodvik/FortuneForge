@@ -1,25 +1,15 @@
 {
   "id": "cosmic-fortune",
-  "title": "Cosmic Fortune",
-  "file": "cosmic-fortune-title-v1.webp",
+  "title": "Pharaoh’s Ascent",
+  "file": "pharaohs-ascent-title-v1.webp",
   "width": 768,
   "height": 384,
-  "bytes": 85822,
-  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated slot-game catalogue title card.\nPrimary request: Create ONE original polished \"Cosmic Fortune\" key-art image, WIDE 2:1 landscape, opaque.\nScene/backdrop: sweeping electric-cyan and violet nebula clouds against deep navy star fields, a distant softly lit ringed planet. Minimal curved metallic observation-window frame at extreme edges with antique-gold details, matching the game's blue/cyan/violet/gold space identity.\nSubject: one sleek retro-futurist silver-and-royal-blue rocket with gold fin trim, a round blue porthole and short bright orange exhaust plume, flying diagonally upward through space. The rocket AND entire short flame together occupy at most 55% of image HEIGHT, fully visible, compact silhouette. No astronaut or new character.\nComposition/framing: spacious wide 2:1 illustrated key art. Large two-line title balanced with rocket and planet. Keep ALL title letters and ENTIRE rocket/flame in x12–88%, y18–82%; leave generous dark outer space margins all around. Do NOT enlarge the rocket to fill the canvas. Nebula remains quiet behind title. Planet is secondary and does not obscure words.\nStyle/medium: sophisticated professionally painted sci-fi game illustration, tangible polished metal, precise fins, restrained cinematic bloom and depth; coherent premium catalogue feel.\nText (verbatim): \"Cosmic Fortune\". Exactly once, two lines, large cream-gold serif lettering with subtle cool-blue reflected edges, high contrast and legible at 256x128.\nConstraints: no extra text/numerals, no slogans, payout promises, reels, buttons, interface, logo or watermark, no unrelated cultural/religious additions. One image only.",
+  "bytes": 106614,
   "generator": "built-in imagegen",
-  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-751d405c-aaed-48ff-beac-1a6d7940f156.png",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a205ae-2f9a-7751-8f06-0f285893bf36/exec-d0a02baa-3936-4ddb-b925-f1ce4ca7f772.png",
   "referencePaths": [
     "games/CosmicFortune/client/FortuneForge.Games.CosmicFortune.Client/src/catalog.ts",
-    "games/CosmicFortune/client/FortuneForge.Games.CosmicFortune.Client/src/cabinetTheme.ts",
-    "games/CosmicFortune/client/FortuneForge.Games.CosmicFortune.Client/src/symbols.ts",
-    "games/CosmicFortune/client/FortuneForge.Games.CosmicFortune.Client/src/assets/art/optimized/cosmic-fortune-observation-deck-v2.webp",
-    "games/CosmicFortune/client/FortuneForge.Games.CosmicFortune.Client/src/assets/art/optimized/cosmic-fortune-rocket-v2.webp"
+    "games/CosmicFortune/client/FortuneForge.Games.CosmicFortune.Client/src/cabinetTheme.ts"
   ],
-  "visualCheck": {
-    "fullSize": "Inspected master and 768x384 WebP. Exact Cosmic Fortune title. Silver/blue/gold rocket, orange exhaust, ringed planet, cyan/violet nebula and observation-window frame preserve identity. No fake UI, extra words or claims.",
-    "thumbnail256x128": "Inspected 256x128. Both title words legible and rocket recognizable.",
-    "crop": "Title, complete rocket body and main flame remain within central 80% width / 70% height. Secondary distant planet and nebula extend toward edges.",
-    "compression": "85,822 bytes; quality 84; below ideal 120 KB."
-  },
-  "status": "ready-for-parent-review"
+  "status": "runtime-catalogue-export"
 }

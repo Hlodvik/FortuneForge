@@ -8,11 +8,11 @@ public static class CosmicFortuneRoundStateCodec
     public const string Owner = CosmicFortuneEngine.GameId;
 
     internal static readonly ClassicSlotRoundStateCodec Storage = new(Owner, OwnerField, Owner,
-        "cosmicFortuneRoundState", "Cosmic Fortune", usesEnergy: true,
+        "cosmicFortuneRoundState", "Pharaoh's Ascent", usesEnergy: true,
         pointValueInCents: CosmicFortuneEngine.WagerPointValueInCents,
         validateCarryWager: static wager =>
         {
             // Keep an unplayable historical one-point lock visible for reconciliation.
             if (wager != 1) CosmicFortuneEngine.ValidateWager(wager, isFreeSpin: true);
-        });
+        }, validateNativeState: static native => _ = SealedTombState.Parse(native));
 }

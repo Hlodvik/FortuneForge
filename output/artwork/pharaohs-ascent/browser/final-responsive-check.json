@@ -1,0 +1,59 @@
+{
+  "desktop": {
+    "viewport": 1500,
+    "width": 1500,
+    "brokenImages": [],
+    "doors": [
+      {
+        "label": "Open Golden hoard",
+        "x": 356.71875,
+        "y": 767.9375,
+        "width": 118.40625,
+        "height": 93.09375
+      },
+      {
+        "label": "Open Serpent relic",
+        "x": 479.921875,
+        "y": 767.9375,
+        "width": 118.40625,
+        "height": 93.09375
+      },
+      {
+        "label": "Open Hidden key",
+        "x": 603.125,
+        "y": 767.9375,
+        "width": 118.40625,
+        "height": 93.09375
+      }
+    ]
+  },
+  "mobile": {
+    "viewport": 390,
+    "width": 390,
+    "brokenImages": [],
+    "doors": [
+      {
+        "label": "Open Golden hoard",
+        "x": 95,
+        "y": 609.96875,
+        "width": 63.453125,
+        "height": 56.171875
+      },
+      {
+        "label": "Open Serpent relic",
+        "x": 163.25,
+        "y": 609.96875,
+        "width": 63.46875,
+        "height": 56.171875
+      },
+      {
+        "label": "Open Hidden key",
+        "x": 231.515625,
+        "y": 609.96875,
+        "width": 63.46875,
+        "height": 56.171875
+      }
+    ]
+  },
+  "errors": []
+}

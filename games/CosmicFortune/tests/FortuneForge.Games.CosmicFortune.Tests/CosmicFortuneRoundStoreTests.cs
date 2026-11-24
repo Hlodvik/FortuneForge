@@ -43,7 +43,7 @@ public sealed class CosmicFortuneRoundStoreTests
         var result = await restored.SpinAsync(Account, operation, false, default);
         var round = Assert.IsType<CosmicFortunePreparedRound>(result.Round);
         Assert.Equal(23, round.Outcome.Audit.EffectiveGame.Paylines.Count);
-        Assert.Equal(0.856m, round.Outcome.Audit.EffectiveGame.Math.PayoutMultiplier);
+        Assert.Equal(1m, round.Outcome.Audit.EffectiveGame.Math.PayoutMultiplier);
         Assert.Equal(0, round.Outcome.CollectorPoints);
         Assert.DoesNotContain(round.Outcome.Payout.Paylines, line => line.PaylineId == 901);
         Assert.NotEmpty(round.Outcome.Payout.Paylines);
@@ -59,8 +59,8 @@ public sealed class CosmicFortuneRoundStoreTests
         Assert.Equal(0, result.Features.SealCollections.Single(track => track.SealId == "rows").Count);
         Assert.Equal(2, result.Features.SealCollections.Single(track => track.SealId == "sync").Count);
         Assert.Equal(13, result.Features.FreeSpinsRemaining);
-        Assert.Equal(5, result.Features.FreeSpinWagerPoints);
-        Assert.Equal("sync-rows", result.Features.FreeSpinFeatureMode);
+        Assert.Equal(10, result.Features.FreeSpinWagerPoints);
+        Assert.Null(result.Features.FreeSpinFeatureMode);
         Assert.Equal(250, result.ChargedWagerCents);
         Assert.Equal(round.Progress.SettledPayout.TotalPoints * 25, wallet.Last!.PayoutCents);
         Assert.Equal(round.Outcome.SpinId.ToString("N"), wallet.Last.OperationId);
@@ -93,7 +93,7 @@ public sealed class CosmicFortuneRoundStoreTests
         var first = await service.SpinAsync(Account, new("cosmic-fortune-legacy-award", 10, true), true, default);
         Assert.Equal(14, first.Features!.FreeSpinsRemaining);
         Assert.Equal(5, first.Features.FreeSpinWagerPoints);
-        Assert.Equal("sync-rows", first.Features.FreeSpinFeatureMode);
+        Assert.Equal("rows", first.Features.FreeSpinFeatureMode);
         Assert.Equal(1, wallet.LegacyRemaining);
         Assert.True(wallet.Last!.SpendLegacyFreeGame);
         Assert.Equal(0, first.ChargedWagerCents);
@@ -105,7 +105,7 @@ public sealed class CosmicFortuneRoundStoreTests
         Assert.Equal(0, wallet.LegacyRemaining);
         Assert.Equal(13, lastLegacy.Features!.FreeSpinsRemaining);
         Assert.Equal(5, lastLegacy.Round!.Outcome.WagerPoints);
-        Assert.Equal("sync-rows", lastLegacy.Round.Outcome.Audit.FeatureMode);
+        Assert.Equal("rows", lastLegacy.Round.Outcome.Audit.FeatureMode);
         Assert.All(lastLegacy.Round.Outcome.Reels, reel => Assert.Equal(6, reel.Count));
 
         time.Advance();

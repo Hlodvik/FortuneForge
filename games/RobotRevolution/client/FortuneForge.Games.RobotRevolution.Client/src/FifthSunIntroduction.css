@@ -44,7 +44,7 @@
   box-shadow: 0 0.3rem 1rem #0008;
 }
 .fifth-sun-intro { --intro-gold: #e9c779; --intro-muted: #b6aa90; color: #e8dcc0; background: #0f0e0b; }
-.win-help[data-slot-dialog-theme='sunstone-eclipse'] .fifth-sun-intro :is(h2, h3) { font-family: 'Fifth Sun Display', Georgia, serif; }
+.win-help[data-slot-dialog-theme='sunstone-eclipse'] .fifth-sun-intro :is(h2, h3) { font-family: 'Sunstone Eclipse Display', Georgia, serif; }
 .fifth-sun-intro button { font: inherit; cursor: pointer; }
 .fifth-sun-intro button:focus-visible, .fifth-sun-intro summary:focus-visible { outline: 3px solid #f7db99; outline-offset: 4px; }
 .fifth-sun-intro__hero { display: grid; grid-template-columns: 0.85fr 1.15fr; align-items: center; gap: 1rem; min-height: 18rem; padding: 2.2rem 3.5rem 1.5rem; border-bottom: 1px solid #8f703b50; background: radial-gradient(ellipse at 24% 42%, #a76d252a, transparent 48%), linear-gradient(120deg, #17130d, #0f0e0b 70%); }
@@ -52,7 +52,7 @@
 .fifth-sun-intro__hero-art img { display: block; width: min(100%, 16rem); height: auto; filter: drop-shadow(0 0 1.5rem #cf862d38); }
 .fifth-sun-intro__kicker { display: block; color: #c0a36d; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.19em; font-weight: 600; }
 .win-help[data-slot-dialog-theme='sunstone-eclipse'] .fifth-sun-intro__hero-copy h2 { max-width: none; margin: 0.45rem 0 0.85rem; font-size: clamp(3.4rem, 8vw, 6.1rem); font-weight: 700; line-height: 0.95; letter-spacing: -0.035em; text-transform: uppercase; color: #f2d18a; text-shadow: 0 3px #402b12; }
-.fifth-sun-intro__hero-copy > p { margin: 0; font: 500 clamp(1.05rem, 2.3vw, 1.5rem)/1.4 'Fifth Sun Display', Georgia, serif; color: #e5dccb; }
+.fifth-sun-intro__hero-copy > p { margin: 0; font: 500 clamp(1.05rem, 2.3vw, 1.5rem)/1.4 'Sunstone Eclipse Display', Georgia, serif; color: #e5dccb; }
 .fifth-sun-intro__hero-rule { display: block; margin-top: 1rem; color: var(--intro-muted); font-size: 0.75rem; }
 .fifth-sun-intro__example { padding: 1.7rem 2rem; background: linear-gradient(180deg, #17150f66, transparent); }
 .fifth-sun-intro__example-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
@@ -82,20 +82,20 @@
 .fifth-sun-intro__feature-art { position: relative; min-height: 5rem; display: flex; align-items: center; gap: 0.3rem; }
 .fifth-sun-intro__feature-art > img { width: 4.8rem; height: 4.8rem; object-fit: contain; }
 .fifth-sun-intro__feature-art--pair > img { width: 3.8rem; height: 3.8rem; }
-.fifth-sun-intro__feature-art > span { position: absolute; top: 0.6rem; right: 0; color: #8e7445; font: 500 1.5rem 'Fifth Sun Display', Georgia, serif; }
+.fifth-sun-intro__feature-art > span { position: absolute; top: 0.6rem; right: 0; color: #8e7445; font: 500 1.5rem 'Sunstone Eclipse Display', Georgia, serif; }
 .fifth-sun-intro__feature h3 { margin: 0.5rem 0; font-size: 1.35rem; color: #e9cf94; }
 .fifth-sun-intro__feature p { margin: 0.55rem 0; font-size: 0.75rem; line-height: 1.6; color: #c4bca9; }
 .fifth-sun-intro__feature strong { color: #f0d99f; }
 .fifth-sun-intro__tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.3rem; margin: 0.85rem 0 0; }
 .fifth-sun-intro__tiers > div { padding: 0.45rem 0.15rem; border-top: 1px solid #9d7d3a75; text-align: center; background: #aa8c2c09; }
 .fifth-sun-intro__tiers dt { font-size: 0.57rem; color: #aaa18c; white-space: nowrap; }
-.fifth-sun-intro__tiers dd { margin: 0.2rem 0 0; color: #e9c77d; font: 600 1.2rem 'Fifth Sun Display', Georgia, serif; }
+.fifth-sun-intro__tiers dd { margin: 0.2rem 0 0; color: #e9c77d; font: 600 1.2rem 'Sunstone Eclipse Display', Georgia, serif; }
 .fifth-sun-intro__tribute { display: flex; gap: 0.45rem; align-items: center; margin-top: 0.65rem; border-top: 1px solid #9b79462b; }
 .fifth-sun-intro__tribute img { width: 2.8rem; height: 2.8rem; object-fit: contain; }
 .fifth-sun-intro__tribute p { font-size: 0.65rem; line-height: 1.45; }
 .fifth-sun-intro__bonus-badges { display: flex; gap: 0.6rem; margin-top: 0.8rem; }
 .fifth-sun-intro__bonus-badges > span { flex: 1; display: grid; gap: 0.2rem; padding: 0.5rem 0.25rem; border: 1px solid #79623555; color: #bfb49b; font-size: 0.6rem; text-align: center; }
-.fifth-sun-intro__bonus-badges b { color: #efd58f; font: 600 1.6rem 'Fifth Sun Display', Georgia, serif; }
+.fifth-sun-intro__bonus-badges b { color: #efd58f; font: 600 1.6rem 'Sunstone Eclipse Display', Georgia, serif; }
 .fifth-sun-intro__rules { margin: 0 2rem; border-top: 1px solid #6a5838; border-bottom: 1px solid #6a5838; }
 .fifth-sun-intro__rules > summary { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 0; color: #ccb987; font-size: 0.8rem; cursor: pointer; list-style: none; }
 .fifth-sun-intro__rules > summary::-webkit-details-marker { display: none; }
@@ -112,8 +112,8 @@
 .fifth-sun-intro tbody th img { width: 2rem; height: 2rem; object-fit: contain; }
 .fifth-sun-intro td { white-space: nowrap; color: #e7cd94; }
 .fifth-sun-intro__footer { display: grid; justify-items: center; gap: 0.65rem; padding: 1.4rem 1.5rem 1.8rem; }
-.fifth-sun-intro__footer > p { margin: 0; font: 500 1rem 'Fifth Sun Display', Georgia, serif; color: #ada087; }
-.fifth-sun-intro__footer > button { display: flex; align-items: center; justify-content: center; gap: 1.8rem; min-height: 3.5rem; width: min(100%, 23rem); padding: 0.9rem 1.5rem; border: 1px solid #e3be6d; border-radius: 0.35rem; background: linear-gradient(#a2813f, #6b4b21); color: #fff1c9; font-family: 'Fifth Sun Display', Georgia, serif; font-size: 1.05rem; font-weight: 650; text-transform: uppercase; letter-spacing: 0.08em; box-shadow: inset 0 0 0 2px #34200f77, 0 0.5rem 1.1rem #0005; }
+.fifth-sun-intro__footer > p { margin: 0; font: 500 1rem 'Sunstone Eclipse Display', Georgia, serif; color: #ada087; }
+.fifth-sun-intro__footer > button { display: flex; align-items: center; justify-content: center; gap: 1.8rem; min-height: 3.5rem; width: min(100%, 23rem); padding: 0.9rem 1.5rem; border: 1px solid #e3be6d; border-radius: 0.35rem; background: linear-gradient(#a2813f, #6b4b21); color: #fff1c9; font-family: 'Sunstone Eclipse Display', Georgia, serif; font-size: 1.05rem; font-weight: 650; text-transform: uppercase; letter-spacing: 0.08em; box-shadow: inset 0 0 0 2px #34200f77, 0 0.5rem 1.1rem #0005; }
 @media (max-width: 720px) {
   .fifth-sun-intro__hero { grid-template-columns: 0.75fr 1.25fr; gap: 0.5rem; min-height: 12rem; padding: 2.8rem 1.15rem 1.2rem; }
   .win-help[data-slot-dialog-theme='sunstone-eclipse'] .fifth-sun-intro__hero-copy h2 { font-size: clamp(2.2rem, 7.7vw, 4rem); }

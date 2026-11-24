@@ -7,7 +7,7 @@ import { resolve, dirname } from 'node:path';
 const ids = new Set(['wukong-journey-to-the-west', 'rainbow-realm', 'pirates-fortune',
   'gods-of-olympus', 'reel-riches', 'high-noon-fortune', 'royal-draw', 'arcane-archives',
   'cosmic-fortune', 'gold-foundry', 'neon-nights', 'ocean-odyssey',
-  'samurai-fortune', 'candy-carnival', 'phantom-manor', 'nordic-legends', 'desert-treasures',
+  'crooked-road', 'candy-carnival', 'phantom-manor', 'nordic-legends', 'desert-treasures',
   'robot-revolution', 'dragon-hoard']);
 const [id, source, version = '1'] = process.argv.slice(2);
 assert.ok(ids.has(id), 'Choose one of the 19 assigned slot game IDs.');

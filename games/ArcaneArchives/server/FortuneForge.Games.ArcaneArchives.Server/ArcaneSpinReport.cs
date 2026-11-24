@@ -11,8 +11,6 @@ namespace FortuneForge.Games.ArcaneArchives.Server;
 public static class ArcaneSpinReport
 {
     public const string ResultCollection = "slotSpinResults";
-    private const string EvidenceKind = "slot-reels-paylines-and-features-v1";
-    private const string AuditorVersion = "slot-outcome-auditor-v1";
     private const long OutcomeSchemaVersion = 7;
 
     public static void Write(Transaction transaction, FirestoreDb database, ArcanePreparedRound round,
@@ -95,6 +93,7 @@ public static class ArcaneSpinReport
             neonDiscoSpinsBefore = 0, neonDiscoSpinsRemaining = 0, admittedMathModelId = (string?)null,
             midnightBonusEvidence = (object?)null, payoutMultiplier = 1m, piratesGemEvidence = (object?)null,
             outcomeSchemaVersion = OutcomeSchemaVersion,
+            nativeArcaneRound = round,
             engineOutcomeSha256, walletSettlementId,
             arcaneTome = new { before = round.Features.Tome, progress = features.Tome },
             arcanePotions = new { before = round.Features.Potions, after = features.Potions,
@@ -103,7 +102,7 @@ public static class ArcaneSpinReport
         using var observation = round.Observation is { } observed ? GameSecurityContext.Push(observed) : null;
         var settlement = SinglePlayerRoundRecord.Create(ArcaneFeatureEndpoints.AuditGameId, spinId, round.AccountId,
             round.WagerCents, round.PayoutCents, round.StartedAtUtc, completedAtUtc, ResultCollection, spinId,
-            evidence, EvidenceKind, settlementVerified: true, outcomeAuditorVersion: AuditorVersion);
+            evidence, ArcaneSpinEvidence.EvidenceKind, settlementVerified: true, outcomeAuditorVersion: ArcaneSpinEvidence.AuditorVersion);
         var journal = GameSecurityEventDocuments.Capture(ArcaneFeatureEndpoints.AuditGameId, spinId, 1, completedAtUtc,
             evidence, [round.AccountId], "round-settled");
 

@@ -1,0 +1,91 @@
+.frontier-howto { --howto-paper:#e9ddc0; --howto-ink:#f3e8d1; --howto-muted:#cdbb9d; --howto-brass:#a78a58; width:min(1040px,calc(100vw - 32px)); height:min(780px,calc(100dvh - 32px)); max-width:none; max-height:none; margin:auto; padding:0; overflow:hidden; border:1px solid #a99879; border-radius:4px; color:var(--howto-ink); background:#21180f; box-shadow:0 24px 90px #000d; font:17px/1.5 'Barlow Condensed',Georgia,serif; }
+.frontier-howto:not([open]) { display:none; }
+.frontier-howto[open] { display:grid; grid-template-rows:auto auto minmax(0,1fr) auto; }
+.frontier-howto::backdrop { background:#080604d9; backdrop-filter:blur(5px); }
+.frontier-howto *, .frontier-howto *::before, .frontier-howto *::after { box-sizing:border-box; }
+.frontier-howto button { font:inherit; cursor:pointer; }
+.frontier-howto button:focus-visible, .frontier-howto [tabindex]:focus-visible { outline:2px solid #fce8b1; outline-offset:3px; }
+.frontier-howto button:disabled { opacity:.35; cursor:default; }
+.frontier-howto__header { display:grid; grid-template-columns:180px minmax(0,1fr) 44px; align-items:center; gap:22px; padding:12px 22px; min-height:94px; border-bottom:1px solid #b398663d; background:linear-gradient(90deg,#1b130bd9,#24180ba6),var(--howto-town) center 42%/cover; }
+.frontier-howto__header>img { display:block; width:100%; height:70px; object-fit:contain; }
+.frontier-howto-kicker { display:block; color:#c9ad7b; font-size:13px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
+.frontier-howto__header h2 { margin:3px 0 0; color:#f4e5c3; font:400 28px/1.15 'Rye',Georgia,serif; }
+.frontier-howto__close { width:44px; height:44px; border:1px solid #b7a381; border-radius:50%; color:#f2e2bf; background:#1b120dc4; font-size:27px!important; line-height:1; }
+.frontier-howto__tabs { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; padding:0 16px; border-bottom:1px solid #9b805441; background:#17120e; }
+.frontier-howto__tabs button { min-width:0; min-height:48px; padding:9px 8px; border:0; border-bottom:3px solid transparent; border-radius:0; color:#c5b18c; background:none; font-weight:700; font-size:16px; letter-spacing:.07em; text-transform:uppercase; }
+.frontier-howto__tabs button[aria-selected=true] { border-bottom-color:#d6bd87; color:#fff0ce; background:linear-gradient(transparent,#b28d4826); }
+.frontier-howto__reading { min-height:0; min-width:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; scrollbar-color:#8e7755 #17120d; }
+.frontier-howto-page { padding:26px 30px 30px; background:radial-gradient(ellipse at top right,#b09a6811,transparent 55%),linear-gradient(115deg,#30231733,transparent); }
+.frontier-howto-page[hidden] { display:none; }
+.frontier-howto-page__heading { margin-bottom:25px; max-width:780px; }
+.frontier-howto-page h3 { margin:5px 0 11px; color:#f0e0ba; font:400 clamp(24px,3.2vw,34px)/1.2 'Rye',Georgia,serif; text-wrap:balance; }
+.frontier-howto-page p { margin:0; color:var(--howto-muted); font-size:18px; line-height:1.5; }
+.frontier-howto-page strong, .frontier-howto-page b { color:#f0dab0; }
+.frontier-howto-page h4 { margin:0 0 6px; color:#eddbb5; font-size:23px; line-height:1.2; font-weight:600; }
+.frontier-howto-scene { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); align-items:center; gap:28px; margin-bottom:32px; }
+.frontier-howto-reels-figure { margin:0; min-width:0; }
+.frontier-howto-reels { position:relative; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); width:100%; aspect-ratio:5/3; padding:7px; border:2px solid #91836d; background:#100e0b; box-shadow:0 0 0 2px #3b2a1a,0 7px 20px #0006; }
+.frontier-howto-reel { display:grid; grid-template-rows:repeat(3,minmax(0,1fr)); min-width:0; min-height:0; border-right:1px solid #9d855533; background:linear-gradient(90deg,#16140f,#2b251a,#15130e); }
+.frontier-howto-reel:last-of-type { border-right:0; }
+.frontier-howto-reel__cell { position:relative; display:flex; justify-content:center; align-items:center; min-height:0; min-width:0; border-bottom:1px solid #927b5126; }
+.frontier-howto-reel__cell img { width:90%; height:92%; object-fit:contain; min-height:0; }
+.frontier-howto-reel__cell[data-marked=true] { background:#d9bb6722; box-shadow:inset 0 0 0 1px #e8ca7f; }
+.frontier-howto-reels__line { position:absolute; inset:7px; width:calc(100% - 14px); height:calc(100% - 14px); overflow:visible; pointer-events:none; }
+.frontier-howto-reels__line polyline { fill:none; stroke:#f1d58b; stroke-width:5; opacity:.7; filter:drop-shadow(0 0 5px #f1d58b); }
+.frontier-howto-reels__line circle { fill:#ffedbe; stroke:#6b4a17; stroke-width:3; }
+.frontier-howto-reels-figure figcaption { margin-top:10px; text-align:center; color:#bda985; font-size:15px; }
+.frontier-howto-match-options { display:flex; justify-content:center; gap:9px; margin-top:12px; }
+.frontier-howto-match-options button { min-width:74px; min-height:44px; padding:7px 12px; color:#d9c39a; border:1px solid #88734e; border-radius:3px; background:#20170f; font-size:16px; }
+.frontier-howto-match-options button[aria-pressed=true] { color:#21180e; background:#d2bd94; border-color:#e7d6b5; font-weight:700; }
+.frontier-howto-notes { display:grid; gap:17px; }
+.frontier-howto-notes article { display:grid; grid-template-columns:64px minmax(0,1fr); align-items:center; gap:13px; }
+.frontier-howto-notes article>img { width:64px; height:70px; object-fit:contain; }
+.frontier-howto-notes h4 { font-size:22px; }
+.frontier-howto-notes p { font-size:17px; }
+.frontier-howto-section-heading { margin:24px 0 16px; }
+.frontier-howto-section-heading p { font-size:17px; }
+.frontier-howto-paths { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:11px; }
+.frontier-howto-paths figure { margin:0; padding:7px 7px 5px; border:1px solid #8b744b66; border-radius:3px; background:#0f0c095e; }
+.frontier-howto-paths svg { display:block; width:100%; height:auto; }
+.frontier-howto-paths circle { fill:#67573e; }
+.frontier-howto-paths polyline { fill:none; stroke:#e8ce94; stroke-width:3; stroke-linejoin:round; stroke-linecap:round; }
+.frontier-howto-paths figcaption { margin-top:1px; color:#bca780; text-align:center; font-size:14px; }
+.frontier-howto-earn { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; margin:22px 0; }
+.frontier-howto-poster-award { margin:0; padding:15px 20px; background:linear-gradient(#37291a77,#17100a88); border-bottom:1px solid #a0875966; }
+.frontier-howto-posters { display:flex; align-items:center; justify-content:center; height:150px; gap:4px; }
+.frontier-howto-posters img { width:27%; max-width:96px; height:100%; object-fit:contain; filter:drop-shadow(0 5px 5px #0007); transform:rotate(-4deg); }
+.frontier-howto-posters img:nth-child(2) { transform:rotate(5deg); }.frontier-howto-posters img:nth-child(3) { transform:rotate(-2deg); }
+.frontier-howto-posters>b { font-size:34px; font-weight:400; color:#d6bc83; }
+.frontier-howto-poster-award figcaption { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:5px 12px; margin-top:10px; font-size:17px; }
+.frontier-howto-poster-award figcaption strong { font-size:23px; }
+.frontier-howto-chip-rail { margin:24px 0 28px; padding:21px 15px; text-align:center; border-top:1px solid #816a453d; border-bottom:1px solid #816a453d; background:#120e0a66; }
+.frontier-howto-chip-rail>div { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px; margin-bottom:15px; }
+.frontier-howto-chip-rail i { display:block; width:29px; height:29px; border:2px dashed #cabb9b; border-radius:50%; background:radial-gradient(#d3c8ae 0 28%,#736047 30% 45%,#bca581 47% 62%,#58412a 65%); box-shadow:0 3px 0 #352315; }
+.frontier-howto-chip-rail figcaption { display:grid; gap:5px; font-size:17px; color:#c4b18e; }.frontier-howto-chip-rail figcaption strong { font-size:23px; }
+.frontier-howto-funding { position:relative; padding:22px 25px; border:1px solid #a58d6261; background:linear-gradient(120deg,#44331e55,transparent),#20170e; }
+.frontier-howto-stamp { display:inline-block; margin-bottom:12px; padding:3px 10px; border:1px solid #a88c5c; transform:rotate(-2deg); color:#c8a974; text-transform:uppercase; font-size:14px; font-weight:700; letter-spacing:.08em; }
+.frontier-howto-funding ol { margin:13px 0 17px; padding-left:23px; color:#d4c3a1; font-size:18px; }.frontier-howto-funding li { margin:9px 0; padding-left:5px; }.frontier-howto-funding>p { font-size:17px; }
+.frontier-howto-steps { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:28px 26px; }
+.frontier-howto-steps article { min-width:0; padding:0 0 20px; border-bottom:1px solid #91774a5e; }
+.frontier-howto-step-heading { margin-bottom:16px; }.frontier-howto-step-heading>span { display:inline-block; margin-bottom:6px; color:#bca174; font-size:14px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; }
+.frontier-howto-steps .frontier-howto-reels-figure { margin-bottom:15px; }.frontier-howto-steps .frontier-howto-hand { min-height:148px; margin-bottom:19px; }
+.frontier-howto-hand { display:flex; justify-content:center; align-items:center; gap:7px; min-width:0; padding:8px 5px 21px; }
+.frontier-howto-card { position:relative; display:block; flex:0 1 61px; width:61px; min-width:0; max-width:61px; aspect-ratio:5/7; }
+.frontier-howto-card:nth-child(1) { transform:rotate(-4deg); }.frontier-howto-card:nth-child(2) { transform:rotate(-2deg); }.frontier-howto-card:nth-child(4) { transform:rotate(2deg); }.frontier-howto-card:nth-child(5) { transform:rotate(4deg); }
+.frontier-howto-card__face { position:relative; display:grid; place-items:center; width:100%; height:100%; aspect-ratio:5/7; overflow:hidden; border:1px solid #bdb198; border-radius:4px; color:#25190f; background:linear-gradient(115deg,#fff8e6,#e9ddc1); box-shadow:0 3px 5px #0008; }
+.frontier-howto-card__center { width:67%; height:68%; object-fit:contain; }
+.frontier-howto-card__index { position:absolute; width:23%; height:29%; object-fit:contain; }.frontier-howto-card__index--top { top:4%; left:5%; }.frontier-howto-card__index--bottom { bottom:4%; right:5%; transform:rotate(180deg); }
+.frontier-howto-card__back { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+.frontier-howto-card[data-held=true] .frontier-howto-card__face { outline:2px solid #d0b57d; outline-offset:1px; }
+.frontier-howto-card__held { position:absolute; top:calc(100% + 6px); left:0; width:100%; text-align:center; color:#dfc68e; font-size:14px; line-height:1; font-weight:700; }
+.frontier-howto-rule-strip { display:grid; gap:12px; margin:25px 0 0; padding:18px 20px; border-left:2px solid #a88b55; background:#0e0b085e; }.frontier-howto-rule-strip p { font-size:17px; }
+.frontier-howto-award-hands { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; }
+.frontier-howto-award-hands article { min-width:0; padding:13px 15px 8px; border:1px solid #927d5661; border-radius:3px; background:#16100977; }.frontier-howto-award-hands article>div:first-child { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }.frontier-howto-award-hands h4 { font-size:22px; }.frontier-howto-award-hands strong { color:#edcc8d; font-size:28px; font-weight:600; }
+.frontier-howto-hand--compact { gap:5px; padding:10px 4px; }.frontier-howto-card--compact { flex-basis:39px; max-width:39px; width:39px; }
+.frontier-howto-paytable { width:100%; border-collapse:collapse; font-size:18px; }.frontier-howto-paytable th,.frontier-howto-paytable td { padding:9px 12px; border-bottom:1px solid #8b744a44; text-align:right; }.frontier-howto-paytable thead th { color:#bda57b; font-size:15px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }.frontier-howto-paytable th:first-child { text-align:left; }.frontier-howto-paytable tbody th { font-weight:500; }.frontier-howto-paytable tbody th>img { display:inline-block; width:43px; height:43px; object-fit:contain; vertical-align:middle; margin-right:13px; }.frontier-howto-paytable td { color:#eed5a7; font-variant-numeric:tabular-nums; }
+.frontier-howto__footer { display:flex; align-items:center; justify-content:space-between; gap:15px; padding:12px 22px; border-top:1px solid #9b805049; background:#17120e; }
+.frontier-howto__footer button { min-height:44px; min-width:116px; padding:8px 16px; color:#ede0c1; background:#322417; border:1px solid #9f8860; border-radius:3px; font-size:16px; font-weight:600; }.frontier-howto__footer button:last-child { color:#24190f; background:#d3bf99; border-color:#ead8b1; }.frontier-howto__footer output { color:#bca47c; font-size:15px; font-variant-numeric:tabular-nums; }
+@media(max-width:760px) { .frontier-howto { width:calc(100vw - 24px); height:calc(100dvh - 24px); }.frontier-howto__header { grid-template-columns:140px minmax(0,1fr) 44px; gap:15px; padding:10px 17px; min-height:84px; }.frontier-howto__header>img { height:60px; }.frontier-howto__header h2 { font-size:23px; }.frontier-howto-kicker { font-size:12px; letter-spacing:.1em; }.frontier-howto-page { padding:22px; }.frontier-howto-scene { grid-template-columns:minmax(0,1fr); gap:24px; }.frontier-howto-scene>div:first-child { width:min(480px,100%); justify-self:center; }.frontier-howto-notes { grid-template-columns:repeat(3,minmax(0,1fr)); gap:15px; }.frontier-howto-notes article { display:flex; flex-direction:column; align-items:flex-start; gap:8px; }.frontier-howto-notes article>img { width:58px; height:58px; align-self:center; }.frontier-howto-notes h4 { font-size:20px; }.frontier-howto-notes p { font-size:16px; }.frontier-howto-paths { grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }.frontier-howto-steps { gap:25px 20px; }.frontier-howto-card { flex-basis:49px; max-width:49px; }.frontier-howto-steps .frontier-howto-hand { min-height:125px; }.frontier-howto-steps p { font-size:17px; }.frontier-howto-card--compact { flex-basis:35px; max-width:35px; }.frontier-howto-paytable { font-size:17px; }.frontier-howto-paytable th,.frontier-howto-paytable td { padding:8px; }.frontier-howto-paytable tbody th>img { margin-right:8px; } }
+@media(max-width:520px) { .frontier-howto { width:calc(100vw - 16px); height:calc(100dvh - 16px); font-size:16px; }.frontier-howto__header { grid-template-columns:103px minmax(0,1fr) 44px; gap:10px; padding:9px 12px; min-height:76px; }.frontier-howto__header>img { height:54px; }.frontier-howto__header h2 { font-size:20px; }.frontier-howto__header .frontier-howto-kicker { font-size:10px; letter-spacing:.05em; line-height:1.25; }.frontier-howto__tabs { padding-inline:5px; }.frontier-howto__tabs button { min-height:46px; padding:8px 3px; font-size:14px; letter-spacing:.03em; }.frontier-howto-page { padding:20px 15px 25px; }.frontier-howto-page h3 { font-size:25px; }.frontier-howto-page p { font-size:17px; }.frontier-howto-page__heading { margin-bottom:21px; }.frontier-howto-scene { margin-bottom:25px; }.frontier-howto-notes { grid-template-columns:minmax(0,1fr); gap:16px; }.frontier-howto-notes article { display:grid; grid-template-columns:56px minmax(0,1fr); align-items:center; gap:13px; }.frontier-howto-notes article>img { width:56px; height:62px; }.frontier-howto-notes h4 { font-size:21px; }.frontier-howto-notes p { font-size:16px; }.frontier-howto-paths { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }.frontier-howto-earn { gap:12px; }.frontier-howto-poster-award { padding:10px 8px; }.frontier-howto-posters { height:95px; gap:1px; }.frontier-howto-posters img { width:29%; }.frontier-howto-posters>b { font-size:23px; }.frontier-howto-poster-award figcaption { justify-content:center; text-align:center; font-size:14px; }.frontier-howto-poster-award figcaption strong { display:block; width:100%; font-size:19px; }.frontier-howto-chip-rail { padding:17px 10px; }.frontier-howto-chip-rail>div { gap:6px; }.frontier-howto-chip-rail i { width:24px; height:24px; }.frontier-howto-chip-rail figcaption strong { font-size:21px; }.frontier-howto-funding { padding:19px 16px; }.frontier-howto-funding ol { font-size:17px; padding-left:20px; }.frontier-howto-steps { grid-template-columns:minmax(0,1fr); gap:25px; }.frontier-howto-steps .frontier-howto-hand { min-height:127px; }.frontier-howto-card { flex-basis:47px; max-width:47px; }.frontier-howto-rule-strip { padding:15px; }.frontier-howto-rule-strip p { font-size:16px; }.frontier-howto-award-hands { grid-template-columns:minmax(0,1fr); }.frontier-howto-award-hands h4 { font-size:22px; }.frontier-howto-card--compact { flex-basis:37px; max-width:37px; }.frontier-howto-paytable { font-size:16px; }.frontier-howto-paytable thead th { font-size:13px; letter-spacing:0; }.frontier-howto-paytable th,.frontier-howto-paytable td { padding:7px 4px; }.frontier-howto-paytable tbody th>img { width:33px; height:36px; margin-right:6px; }.frontier-howto-paytable tbody th>span { display:inline-block; max-width:86px; vertical-align:middle; font-size:15px; line-height:1.2; }.frontier-howto__footer { padding:10px 12px; gap:8px; }.frontier-howto__footer button { min-width:0; padding:8px 12px; font-size:15px; }.frontier-howto__footer output { font-size:14px; } }
+@media(max-height:500px) { .frontier-howto { height:calc(100dvh - 12px); }.frontier-howto__header { min-height:62px; padding-block:5px; }.frontier-howto__header>img { height:48px; }.frontier-howto__tabs button { min-height:44px; }.frontier-howto__footer { padding-block:7px; } }
+@media(prefers-reduced-motion:reduce) { .frontier-howto *, .frontier-howto *::before, .frontier-howto *::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; }.frontier-howto::backdrop { backdrop-filter:none; } }

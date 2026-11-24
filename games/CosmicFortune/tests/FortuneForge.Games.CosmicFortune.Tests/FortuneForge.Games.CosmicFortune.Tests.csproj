@@ -12,5 +12,6 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <ProjectReference Include="../../server/FortuneForge.Games.CosmicFortune.Server/FortuneForge.Games.CosmicFortune.Server.csproj" />
+    <Compile Include="../FortuneForge.Games.CosmicFortune.LocalHarness/LocalTestWallet.cs" Link="Support/LocalTestWallet.cs" />
   </ItemGroup>
 </Project>

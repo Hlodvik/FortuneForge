@@ -10,7 +10,7 @@ public sealed class RobotRevolutionPaidSlotOutcomes(IGameRandomSource random)
     {
         PaidSlotOutcomeProtocol.ValidateRequest(request, RobotRevolutionEngine.GameId);
         if ((!request.IsFreeSpin && request.FreeSpinFeatureMode is not null) || request.MathModelId is not null)
-            throw new ArgumentException("The admission uses unsupported Fifth Sun rules.", nameof(request));
+            throw new ArgumentException("The admission uses unsupported Sunstone Eclipse rules.", nameof(request));
 
         return PaidSlotOutcomeResponse.Create(request, PaidSlotOutcomeProtocol.ClassicSlotKind,
             engine.Spin(request.WagerPoints, request.PlayerId, request.SpecialBoostApplied,

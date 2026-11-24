@@ -28,7 +28,7 @@ function fifthSunFixture(free = false) {
   }
 }
 
-test('Fifth Sun renders exact paid and six-row free-spin feature values', () => {
+test('Sunstone Eclipse renders exact paid and six-row free-spin feature values', () => {
   for (const free of [false, true]) {
     const feature = fifthSunFixture(free)
     assert.equal(decodeSunwheelFeature(feature), feature)
@@ -36,7 +36,7 @@ test('Fifth Sun renders exact paid and six-row free-spin feature values', () => 
   }
 })
 
-test('Fifth Sun rejects mixed historical identities, geometry and financial evidence', () => {
+test('Sunstone Eclipse rejects mixed historical identities, geometry and financial evidence', () => {
   const changes = [
     feature => { feature.contractVersion = 1 },
     feature => { feature.kind = 'sunstone-eclipse' },
@@ -56,7 +56,7 @@ test('Fifth Sun rejects mixed historical identities, geometry and financial evid
   }
 })
 
-test('Fifth Sun guide geometry shares the exact validated paths', () => {
+test('Sunstone Eclipse guide geometry shares the exact validated paths', () => {
   for (const free of [false, true]) {
     const feature = fifthSunFixture(free)
     for (const ring of feature.rings)

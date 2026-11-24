@@ -6,18 +6,45 @@ namespace FortuneForge.Games.CosmicFortune;
 public sealed class CosmicFortuneEngine
 {
     public const string GameId = "cosmic-fortune-v1";
-    public const string EngineVersion = "cosmic-fortune-engine-v1";
+    public const string LegacyEngineVersion = "cosmic-fortune-engine-v1";
+    public const string PreviousEngineVersion = "pharaohs-ascent-engine-v1";
+    public const string PreviousTombEngineVersion = "pharaohs-ascent-sealed-tomb-v2";
+    public static string EngineVersion => PharaohsAscentMathV3.Current.EngineVersion;
     public static SlotProfile Profile { get; } = new(GameId, 3, 6, 24, 7,
         UsesCollections: true, UsesEnergy: true, UsesDirectValueTokens: false,
-        CollectionFeatureMode: "sync-rows", PayoutMultiplier: 0.856m);
-    private static readonly FrozenSlotDefinitions Definitions = ClassicSlotDefinitionFactory.Create(Profile);
+        PayoutMultiplier: PharaohsAscentMathV3.Current.PayoutMultiplier);
+    private static readonly SlotProfile HistoricalProfile = Profile with { PayoutMultiplier = 0.856m };
+    private static readonly SlotProfile LegacyProfile = HistoricalProfile with { CollectionFeatureMode = "sync-rows" };
+    private static readonly FrozenSlotDefinitions HistoricalDefinitions = ClassicSlotDefinitionFactory.Create(HistoricalProfile);
+    private static readonly FrozenSlotDefinitions Definitions = PharaohsAscentMathV3.CreateDefinitions(Profile);
     private readonly ClassicSlotEngine engine;
 
-    public CosmicFortuneEngine(IGameRandomSource random) =>
-        engine = new(Definitions, Profile, random, EngineVersion, new ClassicSlotEngineOptions
+    public CosmicFortuneEngine(IGameRandomSource random) : this(random, EngineVersion) { }
+
+    public CosmicFortuneEngine(IGameRandomSource random, string engineVersion)
+    {
+        if (!SupportsEngineVersion(engineVersion))
+            throw new ArgumentException("The Pharaoh's Ascent engine version is not supported.", nameof(engineVersion));
+        engine = new(engineVersion == EngineVersion ? Definitions : HistoricalDefinitions,
+            ProfileForVersion(engineVersion), random, engineVersion, new ClassicSlotEngineOptions
         {
             AllowFreeSpinCarryWager = true,
+            PatternCountFromRoll = engineVersion != LegacyEngineVersion ? PharaohsAscentScarabs.CountFromRoll : null,
+            FeaturePayoutCalculator = engineVersion != LegacyEngineVersion ? PharaohsAscentScarabs.Calculate : null,
         });
+    }
+
+    public static bool SupportsEngineVersion(string? version) => version == EngineVersion ||
+        version is PreviousTombEngineVersion or PreviousEngineVersion or LegacyEngineVersion;
+
+    public static bool UsesSealedTombFunding(string? version) => version == EngineVersion || version == PreviousTombEngineVersion;
+
+    public static SlotProfile ProfileForVersion(string version) => version == EngineVersion ? Profile : version switch
+    {
+        PreviousTombEngineVersion or PreviousEngineVersion => HistoricalProfile,
+        LegacyEngineVersion => LegacyProfile,
+        _ => throw new ArgumentException("The Pharaoh's Ascent engine version is not supported.", nameof(version)),
+    };
 
     public static decimal WagerPointValueInCents => Definitions.Game.Wagering.PointValueInCents;
     public static long MinimumWagerPoints => Definitions.Game.Wagering.MinimumWagerPoints;

@@ -1,0 +1,3402 @@
+{
+  "localOnly": true,
+  "testFundsOnly": true,
+  "projectId": "demo-pharaoh-paid-9773fb8629e448c6b9303ba3cd0d3d69",
+  "engineVersion": "pharaohs-ascent-sealed-tomb-v2",
+  "naturalPaidSpins": 115,
+  "earnedSpins": 6,
+  "chargedCents": 34500,
+  "reelPayoutCents": 21250,
+  "expeditionPayoutCents": 15300,
+  "expeditionPrizesRand": [
+    48,
+    105
+  ],
+  "finalWalletCents": 1002050,
+  "wallet": {
+    "testFundsOnly": true,
+    "accountId": "pharaoh-ascent-local-paid-test",
+    "initialBalanceCents": 1000000,
+    "balanceCents": 1002050,
+    "settlements": [
+      {
+        "key": "wallet-round-3eea0a77c6080c6502bced49f5e6d6be818ea9ba95dcda1a7765d58676fba133",
+        "request": {
+          "operationId": "27e8b6d72f464f4b89b49b7e0b335116",
+          "outcomeSha256": "f3bd21d8da57d877e1679955e6a80e939a4ac3fcb1b87ba0d84f0437ff85b950",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-3eea0a77c6080c6502bced49f5e6d6be818ea9ba95dcda1a7765d58676fba133",
+          "wagerTransactionId": "27e8b6d72f464f4b89b49b7e0b335116-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 1000000,
+          "balanceAfterWagerCents": 999700,
+          "balanceAfterCents": 999700,
+          "settledAtUtc": "2026-11-23T00:45:49.1964722+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-d6b6bfb7c2d2bac14c730f9c0f53b19a0504b36071088ed29941d8905a837dd1",
+        "request": {
+          "operationId": "d19fa7d237fb45c28d60f216b5026f36",
+          "outcomeSha256": "dc77d0cfea5411b1c94966bbc22bb0ec04a49ae60f94d791dc61f4f70b554b06",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-d6b6bfb7c2d2bac14c730f9c0f53b19a0504b36071088ed29941d8905a837dd1",
+          "wagerTransactionId": "d19fa7d237fb45c28d60f216b5026f36-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 999700,
+          "balanceAfterWagerCents": 999400,
+          "balanceAfterCents": 999400,
+          "settledAtUtc": "2026-11-23T00:45:49.8953819+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-cfab7984517b9759491699c87c04a72839f8ff10c7834a6682c0d2bfefb6ac17",
+        "request": {
+          "operationId": "361ff1152cb94fdbb8b4e0d22465a615",
+          "outcomeSha256": "8a076e221d7551390e862b5e33cffc8a694a66ceeff567be1f5de9f7c04fc29a",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-cfab7984517b9759491699c87c04a72839f8ff10c7834a6682c0d2bfefb6ac17",
+          "wagerTransactionId": "361ff1152cb94fdbb8b4e0d22465a615-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 999400,
+          "balanceAfterWagerCents": 999100,
+          "balanceAfterCents": 999100,
+          "settledAtUtc": "2026-11-23T00:45:50.6846815+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-63ead773ae7a7214d5fad027795cb85dc78e25f59c26430f8764e50e86aac13f",
+        "request": {
+          "operationId": "48b29650a38a49b9a99d6506e2e3fa96",
+          "outcomeSha256": "3c34c12dd77d91c8de956b76685cd61bd8a2eebc4fc40eaa24c47ccc3c78b49f",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-63ead773ae7a7214d5fad027795cb85dc78e25f59c26430f8764e50e86aac13f",
+          "wagerTransactionId": "48b29650a38a49b9a99d6506e2e3fa96-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 999100,
+          "balanceAfterWagerCents": 998800,
+          "balanceAfterCents": 998800,
+          "settledAtUtc": "2026-11-23T00:45:51.4359549+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-eba2c2dbe7e8cfd6c552bc787baac59c51513ea3611e294a19c35577181a75b9",
+        "request": {
+          "operationId": "e4e7488342e042c286676065fc5fdeef",
+          "outcomeSha256": "e4e6c997f38ada243411764ab3302415f623bea961699f98b1e4417f29075770",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-eba2c2dbe7e8cfd6c552bc787baac59c51513ea3611e294a19c35577181a75b9",
+          "wagerTransactionId": "e4e7488342e042c286676065fc5fdeef-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 998800,
+          "balanceAfterWagerCents": 998500,
+          "balanceAfterCents": 998500,
+          "settledAtUtc": "2026-11-23T00:45:52.1561773+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-ab9ab8450af39416b4e5515b444fb91c1321fb0f73983071f1f28460cebd875d",
+        "request": {
+          "operationId": "46ec9d165b1743719ab59e3eb6282f95",
+          "outcomeSha256": "7da77a8fc2790057b5f14752ef4e28f7417095ebbc41f7d48461b026204e74c6",
+          "wagerCents": 300,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-ab9ab8450af39416b4e5515b444fb91c1321fb0f73983071f1f28460cebd875d",
+          "wagerTransactionId": "46ec9d165b1743719ab59e3eb6282f95-wager",
+          "payoutTransactionId": "46ec9d165b1743719ab59e3eb6282f95-payout",
+          "balanceBeforeCents": 998500,
+          "balanceAfterWagerCents": 998200,
+          "balanceAfterCents": 998450,
+          "settledAtUtc": "2026-11-23T00:45:52.9508434+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-667eb9f1aab8591d319489bf0641392e152d39e381ae73f8bc3a14430e904ed2",
+        "request": {
+          "operationId": "ab869de3a80145278396b9a5415244ea",
+          "outcomeSha256": "575cfdda24f5f517533847117e4e2f263136586ab5158f2f09fa9c0e7ed81456",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-667eb9f1aab8591d319489bf0641392e152d39e381ae73f8bc3a14430e904ed2",
+          "wagerTransactionId": "ab869de3a80145278396b9a5415244ea-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 998450,
+          "balanceAfterWagerCents": 998150,
+          "balanceAfterCents": 998150,
+          "settledAtUtc": "2026-11-23T00:45:53.6873126+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-bcfe5146a4127e0fe02c64634e79dae754d88479a680bd6396485d1974acfc16",
+        "request": {
+          "operationId": "e7febc6431714985b6c1730ad10f6850",
+          "outcomeSha256": "edab46a7fdbbfa18e7263698d26d51ac9b4b9ff85787d0d0158b18762a077b04",
+          "wagerCents": 300,
+          "payoutCents": 525,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-bcfe5146a4127e0fe02c64634e79dae754d88479a680bd6396485d1974acfc16",
+          "wagerTransactionId": "e7febc6431714985b6c1730ad10f6850-wager",
+          "payoutTransactionId": "e7febc6431714985b6c1730ad10f6850-payout",
+          "balanceBeforeCents": 998150,
+          "balanceAfterWagerCents": 997850,
+          "balanceAfterCents": 998375,
+          "settledAtUtc": "2026-11-23T00:45:54.4112339+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-e5ec0acb848cd1c310b5483350e0e81e84504b86367907ad289ace8d3d69c155",
+        "request": {
+          "operationId": "d36428a074be4f90b995fb5f5c3508f7",
+          "outcomeSha256": "6741f6e204d0be400fd82bc3d0ead9f61c126fa21fb3e76bfe3c8789fd968c35",
+          "wagerCents": 300,
+          "payoutCents": 500,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-e5ec0acb848cd1c310b5483350e0e81e84504b86367907ad289ace8d3d69c155",
+          "wagerTransactionId": "d36428a074be4f90b995fb5f5c3508f7-wager",
+          "payoutTransactionId": "d36428a074be4f90b995fb5f5c3508f7-payout",
+          "balanceBeforeCents": 998375,
+          "balanceAfterWagerCents": 998075,
+          "balanceAfterCents": 998575,
+          "settledAtUtc": "2026-11-23T00:45:55.1085754+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-4b08517698e628103e7aafb1d029ad25d87895bfe61ce5336ef97f80c1bc35a4",
+        "request": {
+          "operationId": "4bb4928dfe714bcfb0f51535d2524d76",
+          "outcomeSha256": "159ab73ce787f0e0f9056744377d1cd88b086a522be2366a5426b47091ed6f03",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-4b08517698e628103e7aafb1d029ad25d87895bfe61ce5336ef97f80c1bc35a4",
+          "wagerTransactionId": "4bb4928dfe714bcfb0f51535d2524d76-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 998575,
+          "balanceAfterWagerCents": 998275,
+          "balanceAfterCents": 998275,
+          "settledAtUtc": "2026-11-23T00:45:55.8105894+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-877f8a5fcbee039c8815cb04c6e65f346f518f4b8eb859be7a6b0b29a4ede13c",
+        "request": {
+          "operationId": "ef66c13ee04c4ca6a868e6d232a10172",
+          "outcomeSha256": "7c3e7247db15b9a7364b3b3035a6b0688b26fe8c10ef1652ee252343efdae3a8",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-877f8a5fcbee039c8815cb04c6e65f346f518f4b8eb859be7a6b0b29a4ede13c",
+          "wagerTransactionId": "ef66c13ee04c4ca6a868e6d232a10172-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 998275,
+          "balanceAfterWagerCents": 997975,
+          "balanceAfterCents": 997975,
+          "settledAtUtc": "2026-11-23T00:45:56.5385386+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-6a790245cf28852c67fd59773b5424096eb5dc1977b1fbd602ec3a68fea23565",
+        "request": {
+          "operationId": "5ed7d02a113e437c869f32c040d14e89",
+          "outcomeSha256": "6953cc601a771e5e3e91d57542c9e43f761f322ec490546381f83a7223895e42",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-6a790245cf28852c67fd59773b5424096eb5dc1977b1fbd602ec3a68fea23565",
+          "wagerTransactionId": "5ed7d02a113e437c869f32c040d14e89-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 997975,
+          "balanceAfterWagerCents": 997675,
+          "balanceAfterCents": 997675,
+          "settledAtUtc": "2026-11-23T00:45:57.2347662+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-0753a5d1bacecb0a9bcd5a55e8480fe0bbe92c606f7278a0048f9763b8460842",
+        "request": {
+          "operationId": "1a8957e2bd8b45b4b37ca0e86f6e54bf",
+          "outcomeSha256": "066b98f5a816548e6475bb7e0cadef30713423c2f19bbb7073ba7cde2bd90000",
+          "wagerCents": 300,
+          "payoutCents": 1050,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-0753a5d1bacecb0a9bcd5a55e8480fe0bbe92c606f7278a0048f9763b8460842",
+          "wagerTransactionId": "1a8957e2bd8b45b4b37ca0e86f6e54bf-wager",
+          "payoutTransactionId": "1a8957e2bd8b45b4b37ca0e86f6e54bf-payout",
+          "balanceBeforeCents": 997675,
+          "balanceAfterWagerCents": 997375,
+          "balanceAfterCents": 998425,
+          "settledAtUtc": "2026-11-23T00:45:57.9369145+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-946a09d2af27d40c532f023e4d7afa64e8f4c16c9a99baa4525bd910f4a4917e",
+        "request": {
+          "operationId": "8e31164324214f91a9ab58fab36333f5",
+          "outcomeSha256": "a6e2f504d4e3d11dd128e3227a15daf19ed7e4cbcc7730d2706de28df61743ac",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-946a09d2af27d40c532f023e4d7afa64e8f4c16c9a99baa4525bd910f4a4917e",
+          "wagerTransactionId": "8e31164324214f91a9ab58fab36333f5-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 998425,
+          "balanceAfterWagerCents": 998125,
+          "balanceAfterCents": 998125,
+          "settledAtUtc": "2026-11-23T00:45:58.6502606+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-4142219b05657c6d7ea3250beeacc94d3ba6ab40ad75761524bb45c309dfa674",
+        "request": {
+          "operationId": "552ee137b66d456d9d9034a26f7ce72a",
+          "outcomeSha256": "5c0739cdf8d1c3e97c57ca430a7c4dbb657cec605067c474faa76371f6cd8d92",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-4142219b05657c6d7ea3250beeacc94d3ba6ab40ad75761524bb45c309dfa674",
+          "wagerTransactionId": "552ee137b66d456d9d9034a26f7ce72a-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 998125,
+          "balanceAfterWagerCents": 997825,
+          "balanceAfterCents": 997825,
+          "settledAtUtc": "2026-11-23T00:45:59.3769849+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-1f9d66943aa2ab49f4600b193cfcd8d3ca859c0082918ee8b6f13a81419912d4",
+        "request": {
+          "operationId": "046e58aeb71e49789a91593341465fe0",
+          "outcomeSha256": "f8137081c99548d47cbbc060c6c08e0e873984df1fec9c04d307ca973e9bd469",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-1f9d66943aa2ab49f4600b193cfcd8d3ca859c0082918ee8b6f13a81419912d4",
+          "wagerTransactionId": "046e58aeb71e49789a91593341465fe0-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 997825,
+          "balanceAfterWagerCents": 997525,
+          "balanceAfterCents": 997525,
+          "settledAtUtc": "2026-11-23T00:46:00.1081011+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-2e17e7d8648698be15812fdb53ff8a7498a4c345983ca6ff2965c3cc0900cdec",
+        "request": {
+          "operationId": "69c138d552e94213b528b644f2f6a797",
+          "outcomeSha256": "36c7dbd459b003c800bbcb885bd88c277cae24260d5677311a904d19cfbc5dae",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-2e17e7d8648698be15812fdb53ff8a7498a4c345983ca6ff2965c3cc0900cdec",
+          "wagerTransactionId": "69c138d552e94213b528b644f2f6a797-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 997525,
+          "balanceAfterWagerCents": 997225,
+          "balanceAfterCents": 997225,
+          "settledAtUtc": "2026-11-23T00:46:00.8571347+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-aa6a1ad48cfb7275ddbe27a607b3a7a0be4612abb5aa8a2ab49d53c49fdb2ba4",
+        "request": {
+          "operationId": "ece54387b4eb43d0b804be36ebcd5db2",
+          "outcomeSha256": "833d44fc5a76dda8d75b5955b878eb4ee06f4f3e78ad1ae0ab73f303288faa11",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-aa6a1ad48cfb7275ddbe27a607b3a7a0be4612abb5aa8a2ab49d53c49fdb2ba4",
+          "wagerTransactionId": "ece54387b4eb43d0b804be36ebcd5db2-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 997225,
+          "balanceAfterWagerCents": 996925,
+          "balanceAfterCents": 996925,
+          "settledAtUtc": "2026-11-23T00:46:01.6613132+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-2534d7251962051c93a44cea478d91ea2294df71a658f5566f8aac520381d23b",
+        "request": {
+          "operationId": "b52a02ba7cf3478db0ec8672a4d3a520",
+          "outcomeSha256": "263160dbd80173ecb476a40eb7f184e63b713b19945de82aceedf7f193196357",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-2534d7251962051c93a44cea478d91ea2294df71a658f5566f8aac520381d23b",
+          "wagerTransactionId": "b52a02ba7cf3478db0ec8672a4d3a520-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 996925,
+          "balanceAfterWagerCents": 996625,
+          "balanceAfterCents": 996625,
+          "settledAtUtc": "2026-11-23T00:46:02.3754613+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-13a1fc2de0cb867bb15a10c49607a25fb4609ee4305152ca74cff60a5bbbc463",
+        "request": {
+          "operationId": "4894139f978c4c34b2fc39aef266e2e9",
+          "outcomeSha256": "a0fc298bba9abd42b0370fdc49666d60029537d6bdcc779d4295951eda49acf9",
+          "wagerCents": 300,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-13a1fc2de0cb867bb15a10c49607a25fb4609ee4305152ca74cff60a5bbbc463",
+          "wagerTransactionId": "4894139f978c4c34b2fc39aef266e2e9-wager",
+          "payoutTransactionId": "4894139f978c4c34b2fc39aef266e2e9-payout",
+          "balanceBeforeCents": 996625,
+          "balanceAfterWagerCents": 996325,
+          "balanceAfterCents": 996575,
+          "settledAtUtc": "2026-11-23T00:46:03.2362498+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-e8da3dda6a67e67255ac31e489f6363d1be1fbc448eda67989feaaabdb4702a6",
+        "request": {
+          "operationId": "0e7e5b1dbdcb434e90cf07105e8a60a7",
+          "outcomeSha256": "7dfb43523a2bfbc42e9db7eb75f77c9270690a9f20d166de887c8032133d5482",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-e8da3dda6a67e67255ac31e489f6363d1be1fbc448eda67989feaaabdb4702a6",
+          "wagerTransactionId": "0e7e5b1dbdcb434e90cf07105e8a60a7-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 996575,
+          "balanceAfterWagerCents": 996275,
+          "balanceAfterCents": 996275,
+          "settledAtUtc": "2026-11-23T00:46:03.9713825+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-5f3ba7cccfecf437150b1052a6f65d2237c4f04dbadf27d5fceac16150518d69",
+        "request": {
+          "operationId": "14e89dac1b8a43d39f4113aad46da10f",
+          "outcomeSha256": "6a60b197ca2217c7c54f467e8a3ab1507acb96af2efbac04d02bcc5647821a55",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-5f3ba7cccfecf437150b1052a6f65d2237c4f04dbadf27d5fceac16150518d69",
+          "wagerTransactionId": "14e89dac1b8a43d39f4113aad46da10f-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 996275,
+          "balanceAfterWagerCents": 995975,
+          "balanceAfterCents": 995975,
+          "settledAtUtc": "2026-11-23T00:46:04.7389772+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-2ddbf3e0341ceea35bea56ee059023bcb2a9977604b6bb71171c7ab61b12801f",
+        "request": {
+          "operationId": "dbf61dc45d9a4ab1b29446dfdaf2c460",
+          "outcomeSha256": "0e60713bee0873f27a3cdd72349214a2aba3f802bf7aa4ce61199617277a7830",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-2ddbf3e0341ceea35bea56ee059023bcb2a9977604b6bb71171c7ab61b12801f",
+          "wagerTransactionId": "dbf61dc45d9a4ab1b29446dfdaf2c460-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 995975,
+          "balanceAfterWagerCents": 995675,
+          "balanceAfterCents": 995675,
+          "settledAtUtc": "2026-11-23T00:46:05.4854912+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-ec5f9aec289db8e44dc44c0e2da92266bb7a356367fac65c20193c4b5f6557fe",
+        "request": {
+          "operationId": "93255033860e45b98e6ae85a72838871",
+          "outcomeSha256": "0d296829399642ce2aff4482bccf6407546b217a996889758e2596b625749c27",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-ec5f9aec289db8e44dc44c0e2da92266bb7a356367fac65c20193c4b5f6557fe",
+          "wagerTransactionId": "93255033860e45b98e6ae85a72838871-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 995675,
+          "balanceAfterWagerCents": 995375,
+          "balanceAfterCents": 995375,
+          "settledAtUtc": "2026-11-23T00:46:06.2002488+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-4859c8595625906a7f1152167f924df2dc6ae2c6e07c7fc9b58ecb73ef145d3a",
+        "request": {
+          "operationId": "0f7fde53ce284d9185ce3a995f8db7ff",
+          "outcomeSha256": "f2a11ab903149d2fa5bd98b8989b27a09360aa2c55c40c01df6e2439317aa321",
+          "wagerCents": 300,
+          "payoutCents": 750,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-4859c8595625906a7f1152167f924df2dc6ae2c6e07c7fc9b58ecb73ef145d3a",
+          "wagerTransactionId": "0f7fde53ce284d9185ce3a995f8db7ff-wager",
+          "payoutTransactionId": "0f7fde53ce284d9185ce3a995f8db7ff-payout",
+          "balanceBeforeCents": 995375,
+          "balanceAfterWagerCents": 995075,
+          "balanceAfterCents": 995825,
+          "settledAtUtc": "2026-11-23T00:46:06.9783589+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-a7bd4e3678d11302d11f390856fde4c6aadc011fa384450067ea7c4d7ca05998",
+        "request": {
+          "operationId": "1d86ed8fa9604648be534b5974829e37",
+          "outcomeSha256": "f9cc6ea8fe7ab284984402ff3fafa1329e757bb6d673f9655286a8a7a84bd999",
+          "wagerCents": 300,
+          "payoutCents": 525,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-a7bd4e3678d11302d11f390856fde4c6aadc011fa384450067ea7c4d7ca05998",
+          "wagerTransactionId": "1d86ed8fa9604648be534b5974829e37-wager",
+          "payoutTransactionId": "1d86ed8fa9604648be534b5974829e37-payout",
+          "balanceBeforeCents": 995825,
+          "balanceAfterWagerCents": 995525,
+          "balanceAfterCents": 996050,
+          "settledAtUtc": "2026-11-23T00:46:07.7245449+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-c83c44bc4998b771bb092ea153448ff61090be9c0608b95dbda8dcc2d874aa7b",
+        "request": {
+          "operationId": "97ea65d8259b4ed0b0d6a27a06f14449",
+          "outcomeSha256": "8cd3326eaaae000fc9eb4cb04cfd5e8c313fdaa8394a6e849c8d8c267a175b5d",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-c83c44bc4998b771bb092ea153448ff61090be9c0608b95dbda8dcc2d874aa7b",
+          "wagerTransactionId": "97ea65d8259b4ed0b0d6a27a06f14449-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 996050,
+          "balanceAfterWagerCents": 995750,
+          "balanceAfterCents": 995750,
+          "settledAtUtc": "2026-11-23T00:46:08.4620671+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-b42be038b40f956ae80f19576881574fd0c86b2204d23e5e65edaf6bc71e0169",
+        "request": {
+          "operationId": "0d77d658daf84e0587cd973083b50a4b",
+          "outcomeSha256": "1c4dcaec3f3c2d0c75a34ee89e9eb27571d7355adde3da7e8f4c32ccdb10477e",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-b42be038b40f956ae80f19576881574fd0c86b2204d23e5e65edaf6bc71e0169",
+          "wagerTransactionId": "0d77d658daf84e0587cd973083b50a4b-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 995750,
+          "balanceAfterWagerCents": 995450,
+          "balanceAfterCents": 995450,
+          "settledAtUtc": "2026-11-23T00:46:09.1621875+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-ba1c32e7a4d390d59d4c61f04b4effc4f2c222c38b6031279ed20a7bd3f0ffb3",
+        "request": {
+          "operationId": "bde6f41cabbc447396ca96cfe5fdd596",
+          "outcomeSha256": "b21a32f0ab85e20cda3335df84ce84526462732cbb4b1409546fb81147309e5a",
+          "wagerCents": 300,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-ba1c32e7a4d390d59d4c61f04b4effc4f2c222c38b6031279ed20a7bd3f0ffb3",
+          "wagerTransactionId": "bde6f41cabbc447396ca96cfe5fdd596-wager",
+          "payoutTransactionId": "bde6f41cabbc447396ca96cfe5fdd596-payout",
+          "balanceBeforeCents": 995450,
+          "balanceAfterWagerCents": 995150,
+          "balanceAfterCents": 995400,
+          "settledAtUtc": "2026-11-23T00:46:09.8983319+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-dd039bc7ab0474734e06a4e2cc596d687f2df74d011e8c21d2353ed51f8b7d39",
+        "request": {
+          "operationId": "333c431f53bc4e46a83b30937a4dd6c8",
+          "outcomeSha256": "c93ff58b4cf77dcf9716e1b89178a392b8285dee08ff120087599a2b349cd6c4",
+          "wagerCents": 300,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-dd039bc7ab0474734e06a4e2cc596d687f2df74d011e8c21d2353ed51f8b7d39",
+          "wagerTransactionId": "333c431f53bc4e46a83b30937a4dd6c8-wager",
+          "payoutTransactionId": "333c431f53bc4e46a83b30937a4dd6c8-payout",
+          "balanceBeforeCents": 995400,
+          "balanceAfterWagerCents": 995100,
+          "balanceAfterCents": 995350,
+          "settledAtUtc": "2026-11-23T00:46:10.6450459+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-66551a838414b9efd93015c9bdee094f47e46e2043633028033f8d517861cf6e",
+        "request": {
+          "operationId": "b62c18bd835640039cef05d450d93929",
+          "outcomeSha256": "e36d17c37411ac77b4d5f9064f099629d78091d85b5cb52da59c8d873e5a0dad",
+          "wagerCents": 300,
+          "payoutCents": 1050,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-66551a838414b9efd93015c9bdee094f47e46e2043633028033f8d517861cf6e",
+          "wagerTransactionId": "b62c18bd835640039cef05d450d93929-wager",
+          "payoutTransactionId": "b62c18bd835640039cef05d450d93929-payout",
+          "balanceBeforeCents": 995350,
+          "balanceAfterWagerCents": 995050,
+          "balanceAfterCents": 996100,
+          "settledAtUtc": "2026-11-23T00:46:11.4807472+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-dd64a3f3e1018d94ab2d8131ce6c3f1efe78f613e17330a3c3e2c501194bf7e5",
+        "request": {
+          "operationId": "9e694ec3f0a54796a23c2894c0c38fb2",
+          "outcomeSha256": "29dec4c8564cd9e681eea324f3e76e945b28e658d9d0a845b0a43db50bd7abcc",
+          "wagerCents": 300,
+          "payoutCents": 1275,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-dd64a3f3e1018d94ab2d8131ce6c3f1efe78f613e17330a3c3e2c501194bf7e5",
+          "wagerTransactionId": "9e694ec3f0a54796a23c2894c0c38fb2-wager",
+          "payoutTransactionId": "9e694ec3f0a54796a23c2894c0c38fb2-payout",
+          "balanceBeforeCents": 996100,
+          "balanceAfterWagerCents": 995800,
+          "balanceAfterCents": 997075,
+          "settledAtUtc": "2026-11-23T00:46:12.2295297+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-fbd1a454ed852c0bb597ddb5ef087b4cfe62b2b5b21fad7b1489fc5a15d4497c",
+        "request": {
+          "operationId": "b0fb2764c62b4e948d30183042c3ee2e",
+          "outcomeSha256": "710887c9e1af7ae351fa5992875c0a0d08c71048033344ab710358f008c539b6",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-fbd1a454ed852c0bb597ddb5ef087b4cfe62b2b5b21fad7b1489fc5a15d4497c",
+          "wagerTransactionId": "b0fb2764c62b4e948d30183042c3ee2e-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 997075,
+          "balanceAfterWagerCents": 996775,
+          "balanceAfterCents": 996775,
+          "settledAtUtc": "2026-11-23T00:46:12.9692977+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-e33944d067ae7e808f121b96649177f39d0abcdf23cc62d51abc673bd9b1fe3e",
+        "request": {
+          "operationId": "1beaaa57b9dd4dd8af8360ad5e78e4e8",
+          "outcomeSha256": "304bbd3a70378358a563ceae4e40a1736ff9bf33441472e43eb30fa1aa6a4ab0",
+          "wagerCents": 300,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-e33944d067ae7e808f121b96649177f39d0abcdf23cc62d51abc673bd9b1fe3e",
+          "wagerTransactionId": "1beaaa57b9dd4dd8af8360ad5e78e4e8-wager",
+          "payoutTransactionId": "1beaaa57b9dd4dd8af8360ad5e78e4e8-payout",
+          "balanceBeforeCents": 996775,
+          "balanceAfterWagerCents": 996475,
+          "balanceAfterCents": 996725,
+          "settledAtUtc": "2026-11-23T00:46:13.6668814+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-e9d6376193bd54c6b7d2557cec43d994e560f8045b87c5e67c6493ba3659c77c",
+        "request": {
+          "operationId": "8ef47de74f504879a50297ab3d4ac1c8",
+          "outcomeSha256": "c60dd9019f53b67dcc4e768bacce8a206b699f8e1e343545bba5198704ef8968",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-e9d6376193bd54c6b7d2557cec43d994e560f8045b87c5e67c6493ba3659c77c",
+          "wagerTransactionId": "8ef47de74f504879a50297ab3d4ac1c8-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 996725,
+          "balanceAfterWagerCents": 996425,
+          "balanceAfterCents": 996425,
+          "settledAtUtc": "2026-11-23T00:46:14.4065381+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-3e299c8bde1f53878a748818b08ab01492425bc14aa95957cf36464ac48c5cf3",
+        "request": {
+          "operationId": "98757b18abd24f7388a27f4c7ca81fe8",
+          "outcomeSha256": "ddfad0693ca5560cdfcf225a635beab41cbd35a7de9278cc6463974e863ffcbe",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-3e299c8bde1f53878a748818b08ab01492425bc14aa95957cf36464ac48c5cf3",
+          "wagerTransactionId": "98757b18abd24f7388a27f4c7ca81fe8-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 996425,
+          "balanceAfterWagerCents": 996125,
+          "balanceAfterCents": 996125,
+          "settledAtUtc": "2026-11-23T00:46:15.0764964+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-2da86340248041b08314e8d0dbb5917e9d14998ca408026ed1583c683249ba49",
+        "request": {
+          "operationId": "1b7a3b3f79394f9fb03dd7c309167ffb",
+          "outcomeSha256": "84af4b04817b1e2aa89d05b548c1b46567d3450a63e65033d2b89d12d325e4cf",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-2da86340248041b08314e8d0dbb5917e9d14998ca408026ed1583c683249ba49",
+          "wagerTransactionId": "1b7a3b3f79394f9fb03dd7c309167ffb-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 996125,
+          "balanceAfterWagerCents": 995825,
+          "balanceAfterCents": 995825,
+          "settledAtUtc": "2026-11-23T00:46:15.7671777+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-1d8163cabfe92086bbbc4631bc6965bfcd5eb0447ad5419f7083630071c0fd21",
+        "request": {
+          "operationId": "8324e0eb7dd34c9bae5c340cee25a8ab",
+          "outcomeSha256": "f5146e35088422222b9ddc238db795758f9cc817bfc57234be62d67393cbd98a",
+          "wagerCents": 300,
+          "payoutCents": 750,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-1d8163cabfe92086bbbc4631bc6965bfcd5eb0447ad5419f7083630071c0fd21",
+          "wagerTransactionId": "8324e0eb7dd34c9bae5c340cee25a8ab-wager",
+          "payoutTransactionId": "8324e0eb7dd34c9bae5c340cee25a8ab-payout",
+          "balanceBeforeCents": 995825,
+          "balanceAfterWagerCents": 995525,
+          "balanceAfterCents": 996275,
+          "settledAtUtc": "2026-11-23T00:46:16.5165721+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-a7216e217b8085109cacee67cccc6bd6650debedd7925c457764cf4721f16803",
+        "request": {
+          "operationId": "43c0b1386caa4ef881e6db6fcac4b7f5",
+          "outcomeSha256": "25a5373199c1b9ffab58ca83ad820416cd72b4354e1f7438d719b402fa31cd45",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-a7216e217b8085109cacee67cccc6bd6650debedd7925c457764cf4721f16803",
+          "wagerTransactionId": "43c0b1386caa4ef881e6db6fcac4b7f5-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 996275,
+          "balanceAfterWagerCents": 995975,
+          "balanceAfterCents": 995975,
+          "settledAtUtc": "2026-11-23T00:46:17.316415+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-5601c992004f625931d4e5b7fb510c53a1ae918b668e1fd104e217d45a2b192d",
+        "request": {
+          "operationId": "96c93308d4d64a9e9869235bd5f5ff24",
+          "outcomeSha256": "10e8caefe778e8b663e008e017525ba378bedac975167a2a3c8d1a359eff1eaa",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-5601c992004f625931d4e5b7fb510c53a1ae918b668e1fd104e217d45a2b192d",
+          "wagerTransactionId": "96c93308d4d64a9e9869235bd5f5ff24-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 995975,
+          "balanceAfterWagerCents": 995675,
+          "balanceAfterCents": 995675,
+          "settledAtUtc": "2026-11-23T00:46:18.1971278+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-48b8e652a3d0731c6350be13b164526eaf9d523a0967ecac57e2076915643890",
+        "request": {
+          "operationId": "37955060ce764284ac3c63a7df7e9f62",
+          "outcomeSha256": "7a50a526917dfa97e6b73f22be80a039f582e2af3f90a1175bf5964d095900af",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-48b8e652a3d0731c6350be13b164526eaf9d523a0967ecac57e2076915643890",
+          "wagerTransactionId": "37955060ce764284ac3c63a7df7e9f62-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 995675,
+          "balanceAfterWagerCents": 995375,
+          "balanceAfterCents": 995375,
+          "settledAtUtc": "2026-11-23T00:46:18.8966214+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-085af4b6711b7ddffda7f5d7c20134ae5556d96c024872a02ccb5b82e253487d",
+        "request": {
+          "operationId": "6789973a05414f419f5954536d42b7db",
+          "outcomeSha256": "c8a39377be248e142a99fc376e12d758c4dce821c96a9768c1be24db4886b3cf",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-085af4b6711b7ddffda7f5d7c20134ae5556d96c024872a02ccb5b82e253487d",
+          "wagerTransactionId": "6789973a05414f419f5954536d42b7db-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 995375,
+          "balanceAfterWagerCents": 995075,
+          "balanceAfterCents": 995075,
+          "settledAtUtc": "2026-11-23T00:46:19.5744599+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-e2f3df3e22d195ed592d94327be95157e030fea28dbc5ceb130374e1019d4d87",
+        "request": {
+          "operationId": "3a9a3b8da4724cc788024c3812ed8a18",
+          "outcomeSha256": "a710b46de75983a57e4bf0a91ff657e37ceb2246ec869322fb6331871110683b",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-e2f3df3e22d195ed592d94327be95157e030fea28dbc5ceb130374e1019d4d87",
+          "wagerTransactionId": "3a9a3b8da4724cc788024c3812ed8a18-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 995075,
+          "balanceAfterWagerCents": 994775,
+          "balanceAfterCents": 994775,
+          "settledAtUtc": "2026-11-23T00:46:20.2462451+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-ecedb2132b6b132b5556cc1dd436bc69c99ae828c6df3ae01d493065c2a6158d",
+        "request": {
+          "operationId": "c5853461f537409ab8b0f0a1de6702bb",
+          "outcomeSha256": "ffcb54005add17b4f19f7c3d023857e024b9ba3e49e1e164db126405f3e5d929",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-ecedb2132b6b132b5556cc1dd436bc69c99ae828c6df3ae01d493065c2a6158d",
+          "wagerTransactionId": "c5853461f537409ab8b0f0a1de6702bb-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 994775,
+          "balanceAfterWagerCents": 994475,
+          "balanceAfterCents": 994475,
+          "settledAtUtc": "2026-11-23T00:46:20.9286071+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-8bfef6eb26b37f64874e968d12c6611c9485f67eb6a12a557b3c23185bc457ad",
+        "request": {
+          "operationId": "73815a1090494936bf38d66a7bbc2840",
+          "outcomeSha256": "93b8d5dc55e8dcfe2d23eddd53bcf00143b2a01436b392b592022d6b3f454c3e",
+          "wagerCents": 300,
+          "payoutCents": 775,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-8bfef6eb26b37f64874e968d12c6611c9485f67eb6a12a557b3c23185bc457ad",
+          "wagerTransactionId": "73815a1090494936bf38d66a7bbc2840-wager",
+          "payoutTransactionId": "73815a1090494936bf38d66a7bbc2840-payout",
+          "balanceBeforeCents": 994475,
+          "balanceAfterWagerCents": 994175,
+          "balanceAfterCents": 994950,
+          "settledAtUtc": "2026-11-23T00:46:21.6274543+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-d86e637933adf59ec1322513a0968f84d051a8845dff9acc89a82cb9945071fd",
+        "request": {
+          "operationId": "4012e145cd8146049ac17715e81318cc",
+          "outcomeSha256": "32ce29eb803063748ce03a8d5f7bfff26378863a7a46d812d059516dcc1b1035",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-d86e637933adf59ec1322513a0968f84d051a8845dff9acc89a82cb9945071fd",
+          "wagerTransactionId": "4012e145cd8146049ac17715e81318cc-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 994950,
+          "balanceAfterWagerCents": 994650,
+          "balanceAfterCents": 994650,
+          "settledAtUtc": "2026-11-23T00:46:22.4359372+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-2795f9f94d1fe723b1aaba7438feef20c7d7d22a02a43ad1005132c28813b21e",
+        "request": {
+          "operationId": "59d4e0f2a0d74499a30750892ecd0853",
+          "outcomeSha256": "f62a14f36648319a61fd81060633e78a1811a130e51567ae1a1bfb09f3440210",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-2795f9f94d1fe723b1aaba7438feef20c7d7d22a02a43ad1005132c28813b21e",
+          "wagerTransactionId": "59d4e0f2a0d74499a30750892ecd0853-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 994650,
+          "balanceAfterWagerCents": 994350,
+          "balanceAfterCents": 994350,
+          "settledAtUtc": "2026-11-23T00:46:23.2038436+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-7392a2ab200629d0f525432298d2c9c319d70891d1d31aa8a07060dd85f4916c",
+        "request": {
+          "operationId": "fa40d87cf3c2422eb3d70388bd05d08c",
+          "outcomeSha256": "ab4b04634d6d1acc661871efc64fce64237dba0792552695e650b9da3ecd1e81",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-7392a2ab200629d0f525432298d2c9c319d70891d1d31aa8a07060dd85f4916c",
+          "wagerTransactionId": "fa40d87cf3c2422eb3d70388bd05d08c-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 994350,
+          "balanceAfterWagerCents": 994050,
+          "balanceAfterCents": 994050,
+          "settledAtUtc": "2026-11-23T00:46:23.9541176+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-b64c276c794e7b0fb8afb0d1bae24a5df42d35e4069b334a1edf32de0eb7f9f5",
+        "request": {
+          "operationId": "06c244319cfb453f9fe90e567e8dfa67",
+          "outcomeSha256": "84a81a0cfb24e8f9eac6344ae0e77ed85bff9a6f1a3d5c25743df92f147466ec",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-b64c276c794e7b0fb8afb0d1bae24a5df42d35e4069b334a1edf32de0eb7f9f5",
+          "wagerTransactionId": "06c244319cfb453f9fe90e567e8dfa67-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 994050,
+          "balanceAfterWagerCents": 993750,
+          "balanceAfterCents": 993750,
+          "settledAtUtc": "2026-11-23T00:46:24.6540131+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-12c01a186bf42f21dc0580d05767e64e62b1923a451644f02685bd4f461a0d7c",
+        "request": {
+          "operationId": "eb6335170d644f19b1def980d0213c76",
+          "outcomeSha256": "aa6fa5afd6d6a362cb308d6559de23b9fff0d2b28cdac0dd33228a3c4f0010ca",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-12c01a186bf42f21dc0580d05767e64e62b1923a451644f02685bd4f461a0d7c",
+          "wagerTransactionId": "eb6335170d644f19b1def980d0213c76-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 993750,
+          "balanceAfterWagerCents": 993450,
+          "balanceAfterCents": 993450,
+          "settledAtUtc": "2026-11-23T00:46:25.4013943+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-2adba615188786c176fbc50a8580cf80703bf679ca5ef65e331670626dcd53de",
+        "request": {
+          "operationId": "d793d566276d44cf93a990ed37d0f838",
+          "outcomeSha256": "887a739cbb9acfa8681f44fff96392911211e68d76f90c930e9ea30d6a712299",
+          "wagerCents": 300,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-2adba615188786c176fbc50a8580cf80703bf679ca5ef65e331670626dcd53de",
+          "wagerTransactionId": "d793d566276d44cf93a990ed37d0f838-wager",
+          "payoutTransactionId": "d793d566276d44cf93a990ed37d0f838-payout",
+          "balanceBeforeCents": 993450,
+          "balanceAfterWagerCents": 993150,
+          "balanceAfterCents": 993400,
+          "settledAtUtc": "2026-11-23T00:46:26.1961111+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-0b3799468c925ecda919d574cb72c7e79f6e4ef21a37cd3754e1ae6d25e11867",
+        "request": {
+          "operationId": "1f929cb546bd4b5fa87ba28cebcec2de",
+          "outcomeSha256": "f5617df8bff97005d4a2594fd1d7d4f6fdd31b194713e27cae3dbfa2dd8e6be9",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-0b3799468c925ecda919d574cb72c7e79f6e4ef21a37cd3754e1ae6d25e11867",
+          "wagerTransactionId": "1f929cb546bd4b5fa87ba28cebcec2de-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 993400,
+          "balanceAfterWagerCents": 993100,
+          "balanceAfterCents": 993100,
+          "settledAtUtc": "2026-11-23T00:46:26.9059602+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-d592d6f7caa551820a88b95699f5bebcaf2c7b0a24953596a17f8c96374d5d0e",
+        "request": {
+          "operationId": "c64fc933c7664354bd0927c39dafc911",
+          "outcomeSha256": "afbbef58ea109afa77b7484111195c9672a108615b4a698f477fdb91f5459d62",
+          "wagerCents": 300,
+          "payoutCents": 525,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-d592d6f7caa551820a88b95699f5bebcaf2c7b0a24953596a17f8c96374d5d0e",
+          "wagerTransactionId": "c64fc933c7664354bd0927c39dafc911-wager",
+          "payoutTransactionId": "c64fc933c7664354bd0927c39dafc911-payout",
+          "balanceBeforeCents": 993100,
+          "balanceAfterWagerCents": 992800,
+          "balanceAfterCents": 993325,
+          "settledAtUtc": "2026-11-23T00:46:27.5864759+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-4fbd6e730711b4d0d701a47955350c8dd9a120219ad689e889bb57041088bd30",
+        "request": {
+          "operationId": "c88afeb0b9c24cfdacdf24f9a0dd3219",
+          "outcomeSha256": "666b6131a881dc0b48360db67e9e0c67a81bb86065189074c0dcbf79b8aeca9e",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-4fbd6e730711b4d0d701a47955350c8dd9a120219ad689e889bb57041088bd30",
+          "wagerTransactionId": "c88afeb0b9c24cfdacdf24f9a0dd3219-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 993325,
+          "balanceAfterWagerCents": 993025,
+          "balanceAfterCents": 993025,
+          "settledAtUtc": "2026-11-23T00:46:28.2805481+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-fbc0633822c14974c7ef0417bdfcf08357cf1efdd96f7ac1fd124930f44f67d6",
+        "request": {
+          "operationId": "740ede24970d4aad8a9d7e35874171a1",
+          "outcomeSha256": "ddca5bb648154daf691fb953cdcfeb919467e05851c1582e297147bab5595c6d",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-fbc0633822c14974c7ef0417bdfcf08357cf1efdd96f7ac1fd124930f44f67d6",
+          "wagerTransactionId": "740ede24970d4aad8a9d7e35874171a1-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 993025,
+          "balanceAfterWagerCents": 992725,
+          "balanceAfterCents": 992725,
+          "settledAtUtc": "2026-11-23T00:46:28.9424388+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-a9ee452d17700172792b823e484068d5dff958c37656d876a4470a14504c4145",
+        "request": {
+          "operationId": "0efaf9535bd04540ad41011043aaac8b",
+          "outcomeSha256": "4417a64a6de1043770356dfd35e40fd667db75f764376e9ffbd317f0f3eaf38a",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-a9ee452d17700172792b823e484068d5dff958c37656d876a4470a14504c4145",
+          "wagerTransactionId": "0efaf9535bd04540ad41011043aaac8b-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 992725,
+          "balanceAfterWagerCents": 992425,
+          "balanceAfterCents": 992425,
+          "settledAtUtc": "2026-11-23T00:46:29.65899+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-f6becef39b53a8e7e4c3282be82cb2b9d881b85bfb350315ad5d2cff2db69e19",
+        "request": {
+          "operationId": "810dc75be0314008a88f6f376b1b6a7c",
+          "outcomeSha256": "e258751489b8799f4e0350b5dd61dc149263eb2b243a1c55fca36e15184ba93c",
+          "wagerCents": 300,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-f6becef39b53a8e7e4c3282be82cb2b9d881b85bfb350315ad5d2cff2db69e19",
+          "wagerTransactionId": "810dc75be0314008a88f6f376b1b6a7c-wager",
+          "payoutTransactionId": "810dc75be0314008a88f6f376b1b6a7c-payout",
+          "balanceBeforeCents": 992425,
+          "balanceAfterWagerCents": 992125,
+          "balanceAfterCents": 992375,
+          "settledAtUtc": "2026-11-23T00:46:30.3251909+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-d084f9bb03f122ff29cd6731729076597bd30bbc2db494e159172a711c9f7f42",
+        "request": {
+          "operationId": "43795bae88954c69b6a2dd4bfab0ac7a",
+          "outcomeSha256": "afc645c002585eee91165140720886d80f511d09e7ca76f8ef3b16311fb8f2ba",
+          "wagerCents": 300,
+          "payoutCents": 2050,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-d084f9bb03f122ff29cd6731729076597bd30bbc2db494e159172a711c9f7f42",
+          "wagerTransactionId": "43795bae88954c69b6a2dd4bfab0ac7a-wager",
+          "payoutTransactionId": "43795bae88954c69b6a2dd4bfab0ac7a-payout",
+          "balanceBeforeCents": 992375,
+          "balanceAfterWagerCents": 992075,
+          "balanceAfterCents": 994125,
+          "settledAtUtc": "2026-11-23T00:46:31.0626011+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-7c2d3eaca28e545b15d280128db63c3df32bc3f90431bfd82e88b563b4a6e7df",
+        "request": {
+          "operationId": "8376e0b2885848b4bb766a07ec2b0a58",
+          "outcomeSha256": "365e128f873a7f697c82739788ccfab23a3b13599c5279b90743ea4c87e6eb55",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-7c2d3eaca28e545b15d280128db63c3df32bc3f90431bfd82e88b563b4a6e7df",
+          "wagerTransactionId": "8376e0b2885848b4bb766a07ec2b0a58-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 994125,
+          "balanceAfterWagerCents": 993825,
+          "balanceAfterCents": 993825,
+          "settledAtUtc": "2026-11-23T00:46:31.8069529+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-126b497c731d39cc05a01d74b04c2e033e6acabc03315e95d08b2e1363b79732",
+        "request": {
+          "operationId": "bd70cda14235485d9f9e44fa8417284e",
+          "outcomeSha256": "09aba75137a4aae2987fb1a621ba8a755bfe52100de694d59065cfd106ab741f",
+          "wagerCents": 300,
+          "payoutCents": 525,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-126b497c731d39cc05a01d74b04c2e033e6acabc03315e95d08b2e1363b79732",
+          "wagerTransactionId": "bd70cda14235485d9f9e44fa8417284e-wager",
+          "payoutTransactionId": "bd70cda14235485d9f9e44fa8417284e-payout",
+          "balanceBeforeCents": 993825,
+          "balanceAfterWagerCents": 993525,
+          "balanceAfterCents": 994050,
+          "settledAtUtc": "2026-11-23T00:46:32.5121254+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-466e50953d620e58b6733a0c5249c3f441ff65eb5ebd96e35b7471c1b6b6acfd",
+        "request": {
+          "operationId": "47f69ab6b1d34ec684f4789d3922d48d",
+          "outcomeSha256": "748a50b579d0e37e0f5128a7950d6238e73f658dd33693fdc8859cabb8da0c04",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-466e50953d620e58b6733a0c5249c3f441ff65eb5ebd96e35b7471c1b6b6acfd",
+          "wagerTransactionId": "47f69ab6b1d34ec684f4789d3922d48d-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 994050,
+          "balanceAfterWagerCents": 993750,
+          "balanceAfterCents": 993750,
+          "settledAtUtc": "2026-11-23T00:46:33.2070778+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-9973c6ad4d18bd255eaa32d8a4f355053cdc0b95cfc24c7be0dbd1ffc5ef4258",
+        "request": {
+          "operationId": "004d3a1d20f243ab82804d989a18dc65",
+          "outcomeSha256": "5c59378434f1f24f4c4cd900280c5303f324a43f7bf19d0fd2b69b1cc6d11ca4",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-9973c6ad4d18bd255eaa32d8a4f355053cdc0b95cfc24c7be0dbd1ffc5ef4258",
+          "wagerTransactionId": "004d3a1d20f243ab82804d989a18dc65-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 993750,
+          "balanceAfterWagerCents": 993450,
+          "balanceAfterCents": 993450,
+          "settledAtUtc": "2026-11-23T00:46:33.9742581+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-77ce70c1f4eec6dee524ade46a6e0285924d0fc41a41a0af7aa3c58e42cc731a",
+        "request": {
+          "operationId": "a4cb77045c284bfa9d812fd3a00fd570",
+          "outcomeSha256": "8e6d62f1981100fc363d1d81860cc9764bb63aabab3dda34ad16ac03dc8dd4d5",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-77ce70c1f4eec6dee524ade46a6e0285924d0fc41a41a0af7aa3c58e42cc731a",
+          "wagerTransactionId": "a4cb77045c284bfa9d812fd3a00fd570-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 993450,
+          "balanceAfterWagerCents": 993150,
+          "balanceAfterCents": 993150,
+          "settledAtUtc": "2026-11-23T00:46:34.802408+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-5f1930ae3877e93e6925d7a571590808962c8e3f7dbd80fcd7cf81fb47c741c1",
+        "request": {
+          "operationId": "f7458bc8320a47b3b155e197bb5d27e0",
+          "outcomeSha256": "48f65e31608e4dc595a71dcc4d3cc73cd5fd92cee9da2b9151b62c1d6482ca73",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-5f1930ae3877e93e6925d7a571590808962c8e3f7dbd80fcd7cf81fb47c741c1",
+          "wagerTransactionId": "f7458bc8320a47b3b155e197bb5d27e0-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 993150,
+          "balanceAfterWagerCents": 992850,
+          "balanceAfterCents": 992850,
+          "settledAtUtc": "2026-11-23T00:46:35.9878777+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-6a9f496713cd73893134fa76afeaf7b5be5bde1e760a90d794de1780da311726",
+        "request": {
+          "operationId": "28981b37c4034a9688db9404831a845d",
+          "outcomeSha256": "4a7abdc1ff600b07018bec91d9d04ec7cd8e94cbe4e75d626b9ed2bb45c27136",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-6a9f496713cd73893134fa76afeaf7b5be5bde1e760a90d794de1780da311726",
+          "wagerTransactionId": "28981b37c4034a9688db9404831a845d-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 992850,
+          "balanceAfterWagerCents": 992550,
+          "balanceAfterCents": 992550,
+          "settledAtUtc": "2026-11-23T00:46:36.7125214+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-f442f65495eec8e1f2bc012d5504fb275ab7e7bd73fc55439ba97569d0dda3fa",
+        "request": {
+          "operationId": "4db885b632a84934935bd504468f2bd7",
+          "outcomeSha256": "f14b2012b1341aec375746afd8c593cef2f99ed08ed36b187c6884b9a969059d",
+          "wagerCents": 300,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-f442f65495eec8e1f2bc012d5504fb275ab7e7bd73fc55439ba97569d0dda3fa",
+          "wagerTransactionId": "4db885b632a84934935bd504468f2bd7-wager",
+          "payoutTransactionId": "4db885b632a84934935bd504468f2bd7-payout",
+          "balanceBeforeCents": 992550,
+          "balanceAfterWagerCents": 992250,
+          "balanceAfterCents": 992500,
+          "settledAtUtc": "2026-11-23T00:46:37.6361053+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-a9e14fcdc71b45099b2b6560b3bcd77cf591c608227ccf0a272293158d5001a1",
+        "request": {
+          "operationId": "b2afd70717354e74b7ffa58b27de43f8",
+          "outcomeSha256": "1af17c34a309e1ae83ad2ec80a7a2c56140e58020aa19601874d46e20bbfcba2",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-a9e14fcdc71b45099b2b6560b3bcd77cf591c608227ccf0a272293158d5001a1",
+          "wagerTransactionId": "b2afd70717354e74b7ffa58b27de43f8-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 992500,
+          "balanceAfterWagerCents": 992200,
+          "balanceAfterCents": 992200,
+          "settledAtUtc": "2026-11-23T00:46:38.3667135+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-36569450d84d609156794c85d9f517b7ee0716ae624943a828e0c3364d27fe08",
+        "request": {
+          "operationId": "7e51204d64bc4df4bcb92d5f5e73f7a0",
+          "outcomeSha256": "e0d6ba7045b7499be3635cfd4ff390c95748ce036a16bc04a396d7494a15674c",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-36569450d84d609156794c85d9f517b7ee0716ae624943a828e0c3364d27fe08",
+          "wagerTransactionId": "7e51204d64bc4df4bcb92d5f5e73f7a0-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 992200,
+          "balanceAfterWagerCents": 991900,
+          "balanceAfterCents": 991900,
+          "settledAtUtc": "2026-11-23T00:46:39.0574066+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-1799fbfe371469d67ac5fe60f3cac1b38490cf5501804a8c97346d9aea20061d",
+        "request": {
+          "operationId": "da3b7df2f1b941c1820736a7f5fca77a",
+          "outcomeSha256": "cb72ba61aaa38cdd713484f7105414b58a864aa4812373b6b0dc62c14cfcb74f",
+          "wagerCents": 300,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-1799fbfe371469d67ac5fe60f3cac1b38490cf5501804a8c97346d9aea20061d",
+          "wagerTransactionId": "da3b7df2f1b941c1820736a7f5fca77a-wager",
+          "payoutTransactionId": "da3b7df2f1b941c1820736a7f5fca77a-payout",
+          "balanceBeforeCents": 991900,
+          "balanceAfterWagerCents": 991600,
+          "balanceAfterCents": 991850,
+          "settledAtUtc": "2026-11-23T00:46:39.7096445+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-d32132ac23a53d2eddb1098f77b16013db7022c8739cf609a5484640f59306f0",
+        "request": {
+          "operationId": "41cd61e22b8540f7afab27c060ff25cd",
+          "outcomeSha256": "49e29d37870ebfa84205320a51064dee74692eeb0c718578e761fd46ea8232d5",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-d32132ac23a53d2eddb1098f77b16013db7022c8739cf609a5484640f59306f0",
+          "wagerTransactionId": "41cd61e22b8540f7afab27c060ff25cd-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 991850,
+          "balanceAfterWagerCents": 991550,
+          "balanceAfterCents": 991550,
+          "settledAtUtc": "2026-11-23T00:46:40.3600275+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-6f84e99c27603d148920ae2e0d4f4ff2d404ca0d4f594350e825ec66892fe00b",
+        "request": {
+          "operationId": "30a5cc01a5bb4875b36aa2210a94ea2f",
+          "outcomeSha256": "f8b01d9fa77d53a11b91a82abc9bdb3dd0ec3bb231390abe4df2af0175c0eb87",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-6f84e99c27603d148920ae2e0d4f4ff2d404ca0d4f594350e825ec66892fe00b",
+          "wagerTransactionId": "30a5cc01a5bb4875b36aa2210a94ea2f-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 991550,
+          "balanceAfterWagerCents": 991250,
+          "balanceAfterCents": 991250,
+          "settledAtUtc": "2026-11-23T00:46:41.0695951+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-8e13bc1f3464a3e8b99bec3045d45dce05f43edbba8a362009a385c49af8e3c4",
+        "request": {
+          "operationId": "a90c0160b90f4a5a8c90b9b40abfd7b1",
+          "outcomeSha256": "5e334f0b4dcf4ed15dd6d8160bfe59ff4e850a112adc78edbc5ed7bbb316510e",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-8e13bc1f3464a3e8b99bec3045d45dce05f43edbba8a362009a385c49af8e3c4",
+          "wagerTransactionId": "a90c0160b90f4a5a8c90b9b40abfd7b1-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 991250,
+          "balanceAfterWagerCents": 990950,
+          "balanceAfterCents": 990950,
+          "settledAtUtc": "2026-11-23T00:46:41.738838+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-a7931f948955f8cd9f83e6d18ebe5b265c05f1145679c3c2537dc2c5dc79a734",
+        "request": {
+          "operationId": "6353e4389eb748268b7f32646ee9dd8f",
+          "outcomeSha256": "53cd22af86c471ab673bc8ee25115dc46487fb55391565deefec57299961d043",
+          "wagerCents": 300,
+          "payoutCents": 775,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-a7931f948955f8cd9f83e6d18ebe5b265c05f1145679c3c2537dc2c5dc79a734",
+          "wagerTransactionId": "6353e4389eb748268b7f32646ee9dd8f-wager",
+          "payoutTransactionId": "6353e4389eb748268b7f32646ee9dd8f-payout",
+          "balanceBeforeCents": 990950,
+          "balanceAfterWagerCents": 990650,
+          "balanceAfterCents": 991425,
+          "settledAtUtc": "2026-11-23T00:46:42.4880717+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-f1be712d2d863905b504cda207d1455eabf3452d6557372d9f53c6ea8c5dea4f",
+        "request": {
+          "operationId": "d73f701371754b8293a92b4ab1e22e3d",
+          "outcomeSha256": "f0bca40983197154ee2443c22674d74001d805a05134b73dd679a3b68dbd57cd",
+          "wagerCents": 300,
+          "payoutCents": 750,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-f1be712d2d863905b504cda207d1455eabf3452d6557372d9f53c6ea8c5dea4f",
+          "wagerTransactionId": "d73f701371754b8293a92b4ab1e22e3d-wager",
+          "payoutTransactionId": "d73f701371754b8293a92b4ab1e22e3d-payout",
+          "balanceBeforeCents": 991425,
+          "balanceAfterWagerCents": 991125,
+          "balanceAfterCents": 991875,
+          "settledAtUtc": "2026-11-23T00:46:43.2005888+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-ac4ce6c6fef7faab9d2e789f6b38caea947f192fd1c8984a8197553040640139",
+        "request": {
+          "operationId": "a92fd2a2e42047b584024a27c00c3efc",
+          "outcomeSha256": "ae8ffa267e39e12430f875aea3c8cbe65056b9106b47dc3611ebe5b2c1425fbf",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-ac4ce6c6fef7faab9d2e789f6b38caea947f192fd1c8984a8197553040640139",
+          "wagerTransactionId": "a92fd2a2e42047b584024a27c00c3efc-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 991875,
+          "balanceAfterWagerCents": 991575,
+          "balanceAfterCents": 991575,
+          "settledAtUtc": "2026-11-23T00:46:43.9424796+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-4c36246dcac3890b99965f699b23c2797d812b92cee6a4974a62ef6f082668d6",
+        "request": {
+          "operationId": "f98e11629be143339d6287f24a9ac165",
+          "outcomeSha256": "25b2ea44e841178c305fd27453009aec9338a13ddc2cbd55da9e74d05865bca8",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-4c36246dcac3890b99965f699b23c2797d812b92cee6a4974a62ef6f082668d6",
+          "wagerTransactionId": "f98e11629be143339d6287f24a9ac165-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 991575,
+          "balanceAfterWagerCents": 991275,
+          "balanceAfterCents": 991275,
+          "settledAtUtc": "2026-11-23T00:46:44.951428+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-e16b857658d9ba6c9ee4d8bc1faf4a4443d1dbd9e9fba74dd0aa45a1d65a30cd",
+        "request": {
+          "operationId": "f2597fc50f2c456e945c10b0a01637b0",
+          "outcomeSha256": "d4b03bf484ce0b5250df60c983e89db5c83dc76a2a96b7b601c7a8cd4a89938e",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-e16b857658d9ba6c9ee4d8bc1faf4a4443d1dbd9e9fba74dd0aa45a1d65a30cd",
+          "wagerTransactionId": "f2597fc50f2c456e945c10b0a01637b0-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 991275,
+          "balanceAfterWagerCents": 990975,
+          "balanceAfterCents": 990975,
+          "settledAtUtc": "2026-11-23T00:46:45.6646361+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-1a2032ecd993d8481edb6a6620c9ae751ceabc8d56a494d2550993e7c58e6c7b",
+        "request": {
+          "operationId": "303cabbd2276441cb45cbbd0c18582f4",
+          "outcomeSha256": "9420b363b7a9d2380717ba0f210b433f9220db9aa696ed7d797168b3872f8f8b",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-1a2032ecd993d8481edb6a6620c9ae751ceabc8d56a494d2550993e7c58e6c7b",
+          "wagerTransactionId": "303cabbd2276441cb45cbbd0c18582f4-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 990975,
+          "balanceAfterWagerCents": 990675,
+          "balanceAfterCents": 990675,
+          "settledAtUtc": "2026-11-23T00:46:46.4210844+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-e072135639e0de2d095373acc6a77bb88bdb3b089573ff1d522bd286243cab69",
+        "request": {
+          "operationId": "3ec4ea208c024635ab24aa00d22e677c",
+          "outcomeSha256": "7be399e27f0639ad18a1e587a61fc08eb590abedb079615c1508f9cb71143901",
+          "wagerCents": 300,
+          "payoutCents": 525,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-e072135639e0de2d095373acc6a77bb88bdb3b089573ff1d522bd286243cab69",
+          "wagerTransactionId": "3ec4ea208c024635ab24aa00d22e677c-wager",
+          "payoutTransactionId": "3ec4ea208c024635ab24aa00d22e677c-payout",
+          "balanceBeforeCents": 990675,
+          "balanceAfterWagerCents": 990375,
+          "balanceAfterCents": 990900,
+          "settledAtUtc": "2026-11-23T00:46:47.2164405+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-a50e28c2a4bbfc855b90aa6134a0edd2c928749d92f9b1009268a664360ab9f8",
+        "request": {
+          "operationId": "594d927a97f3443e9d4213b2d7f5a02c",
+          "outcomeSha256": "9fb1f77fafc3b7cb08a256963d11c38e67bfec09cca3d06a80f88fa47e802806",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-a50e28c2a4bbfc855b90aa6134a0edd2c928749d92f9b1009268a664360ab9f8",
+          "wagerTransactionId": "594d927a97f3443e9d4213b2d7f5a02c-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 990900,
+          "balanceAfterWagerCents": 990600,
+          "balanceAfterCents": 990600,
+          "settledAtUtc": "2026-11-23T00:46:47.9886079+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-ae6a935b94e1eb09cbbe4a8fc11a44c53156986e986fd3c9c98c4a25846ed8e9",
+        "request": {
+          "operationId": "be1ba8a066b944ba8b555375ee5bf802",
+          "outcomeSha256": "150929f60a1d93a934e914741e37035d0edc39c570c7e1ecea7cedc81ded82fa",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-ae6a935b94e1eb09cbbe4a8fc11a44c53156986e986fd3c9c98c4a25846ed8e9",
+          "wagerTransactionId": "be1ba8a066b944ba8b555375ee5bf802-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 990600,
+          "balanceAfterWagerCents": 990300,
+          "balanceAfterCents": 990300,
+          "settledAtUtc": "2026-11-23T00:46:48.7831712+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-cc17ff8ec2e67b4a5c90d347e7bf46bf4a91f3699c9a9b919ea7f906f9f2005b",
+        "request": {
+          "operationId": "3867b3ce51404f8c9e71c630e7a8b321",
+          "outcomeSha256": "805bcb2ff7e2f0fd84effe032f7d752eaa218fcca1567d86356c8fdf61fad0c4",
+          "wagerCents": 300,
+          "payoutCents": 500,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-cc17ff8ec2e67b4a5c90d347e7bf46bf4a91f3699c9a9b919ea7f906f9f2005b",
+          "wagerTransactionId": "3867b3ce51404f8c9e71c630e7a8b321-wager",
+          "payoutTransactionId": "3867b3ce51404f8c9e71c630e7a8b321-payout",
+          "balanceBeforeCents": 990300,
+          "balanceAfterWagerCents": 990000,
+          "balanceAfterCents": 990500,
+          "settledAtUtc": "2026-11-23T00:46:49.5395296+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-ebf649ed2f51bd0623fd5c000fa96fb45108af05cdcc7af6e0e74a950f46d3b9",
+        "request": {
+          "operationId": "2a5fc4629c4d4575bbd494b895af9802",
+          "outcomeSha256": "30c076b5971902506038375fb17e29a5dc300f1a16f366c73e9e7a17880bebe9",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-ebf649ed2f51bd0623fd5c000fa96fb45108af05cdcc7af6e0e74a950f46d3b9",
+          "wagerTransactionId": "2a5fc4629c4d4575bbd494b895af9802-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 990500,
+          "balanceAfterWagerCents": 990200,
+          "balanceAfterCents": 990200,
+          "settledAtUtc": "2026-11-23T00:46:50.2824999+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-b99ee8ab7d5356d8fc933d1c97d21805dc8f6e22edfbe5852e2ec60d399e66db",
+        "request": {
+          "operationId": "640285b30f314d028f753cb06c956abe",
+          "outcomeSha256": "f7aebfcd95103bc9db2f7b5a2b851840df6aa6f0cddc6478efdc9097705c520b",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-b99ee8ab7d5356d8fc933d1c97d21805dc8f6e22edfbe5852e2ec60d399e66db",
+          "wagerTransactionId": "640285b30f314d028f753cb06c956abe-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 990200,
+          "balanceAfterWagerCents": 989900,
+          "balanceAfterCents": 989900,
+          "settledAtUtc": "2026-11-23T00:46:50.9918006+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-cc5a922d2f3f752b4d0fadbc1773222fda25fd9c598a0850e3e1b673acfdc55c",
+        "request": {
+          "operationId": "1bdaf9abc4594d00a6fc0ee84e0f1df7",
+          "outcomeSha256": "0831490dc84ffa5db7a4b41f8edfd8fda306139d2684314bf20137f363a50de0",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-cc5a922d2f3f752b4d0fadbc1773222fda25fd9c598a0850e3e1b673acfdc55c",
+          "wagerTransactionId": "1bdaf9abc4594d00a6fc0ee84e0f1df7-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 989900,
+          "balanceAfterWagerCents": 989600,
+          "balanceAfterCents": 989600,
+          "settledAtUtc": "2026-11-23T00:46:51.7045597+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-e8b045227e8a442f6460332c5e76fc2e71534203a62e52c0710d63904347b58b",
+        "request": {
+          "operationId": "6b85dce011e04844b20b94c13fd4d37b",
+          "outcomeSha256": "c63c62ceb13c4d012dbd2049fa1a860b7efc21630dee229495c8981269681f04",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-e8b045227e8a442f6460332c5e76fc2e71534203a62e52c0710d63904347b58b",
+          "wagerTransactionId": "6b85dce011e04844b20b94c13fd4d37b-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 989600,
+          "balanceAfterWagerCents": 989300,
+          "balanceAfterCents": 989300,
+          "settledAtUtc": "2026-11-23T00:46:52.4440925+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-78221b123798d6dc4af2181a7d1a4b379c8b8ee5f22aa7af1d1920bb4a810e18",
+        "request": {
+          "operationId": "59c05781c82f4eff8158336327755c3b",
+          "outcomeSha256": "3e6dfa030fb4504aca612e90ac6604ec7e8051f5ab562b7cab7450d06ba1d61c",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-78221b123798d6dc4af2181a7d1a4b379c8b8ee5f22aa7af1d1920bb4a810e18",
+          "wagerTransactionId": "59c05781c82f4eff8158336327755c3b-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 989300,
+          "balanceAfterWagerCents": 989000,
+          "balanceAfterCents": 989000,
+          "settledAtUtc": "2026-11-23T00:46:53.1502622+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-eebf6749fc1b416ff7b355dc86f398370f5300be9cd73012faa1465b49f2feb5",
+        "request": {
+          "operationId": "d89bb584a8ec4d32acf213f0d9acfd14",
+          "outcomeSha256": "924ebf683b255ba7669cf37832cddf78971c87db18951b34d9e582dd44a4c4dd",
+          "wagerCents": 300,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-eebf6749fc1b416ff7b355dc86f398370f5300be9cd73012faa1465b49f2feb5",
+          "wagerTransactionId": "d89bb584a8ec4d32acf213f0d9acfd14-wager",
+          "payoutTransactionId": "d89bb584a8ec4d32acf213f0d9acfd14-payout",
+          "balanceBeforeCents": 989000,
+          "balanceAfterWagerCents": 988700,
+          "balanceAfterCents": 988950,
+          "settledAtUtc": "2026-11-23T00:46:53.8588108+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-7888d76df334d9bc22d4528f43d3ffcbb33d8b7feced7628bfbc7987ef2bcfff",
+        "request": {
+          "operationId": "d0caf24bef5d411c9fde43b70fe07317",
+          "outcomeSha256": "af20da8d6ab4049564cac6b07730d1dcf7aa83feaed9eaf380d277cf6b702231",
+          "wagerCents": 300,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-7888d76df334d9bc22d4528f43d3ffcbb33d8b7feced7628bfbc7987ef2bcfff",
+          "wagerTransactionId": "d0caf24bef5d411c9fde43b70fe07317-wager",
+          "payoutTransactionId": "d0caf24bef5d411c9fde43b70fe07317-payout",
+          "balanceBeforeCents": 988950,
+          "balanceAfterWagerCents": 988650,
+          "balanceAfterCents": 988900,
+          "settledAtUtc": "2026-11-23T00:46:54.6868551+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-55bbd89c381ebbd71d5661044883186624d62e570b17912b935b6da38476b969",
+        "request": {
+          "operationId": "92b3c508300d433bbdff6f43cbfbdeba",
+          "outcomeSha256": "7569bbbe33e615590acf8b2a1d8f86f55cb24b23fef3f93b5c1d4ad276eab949",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-55bbd89c381ebbd71d5661044883186624d62e570b17912b935b6da38476b969",
+          "wagerTransactionId": "92b3c508300d433bbdff6f43cbfbdeba-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 988900,
+          "balanceAfterWagerCents": 988600,
+          "balanceAfterCents": 988600,
+          "settledAtUtc": "2026-11-23T00:46:55.8459417+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-07739e9e0802c5359dd1c592b2bcbb9faeb6a9bb3a8df84ce89cbc75721bfc5e",
+        "request": {
+          "operationId": "d9d58655a45343d9a33f80e063388910",
+          "outcomeSha256": "48d05f494c503e2680059c13d488d6ff3a102819fb98f243f64e87b6255d34e3",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-07739e9e0802c5359dd1c592b2bcbb9faeb6a9bb3a8df84ce89cbc75721bfc5e",
+          "wagerTransactionId": "d9d58655a45343d9a33f80e063388910-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 988600,
+          "balanceAfterWagerCents": 988300,
+          "balanceAfterCents": 988300,
+          "settledAtUtc": "2026-11-23T00:46:57.0373037+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-5c86eafa85787dbe11be0608b77f7c2d5a3583577433714d9b652c5086ed66dc",
+        "request": {
+          "operationId": "6a835bd30f0c4c789bd9f9076f350ff3",
+          "outcomeSha256": "7036959519e0f501de6791175a379d461676267a75e559fc8e0f40bde5b20ccb",
+          "wagerCents": 300,
+          "payoutCents": 1550,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-5c86eafa85787dbe11be0608b77f7c2d5a3583577433714d9b652c5086ed66dc",
+          "wagerTransactionId": "6a835bd30f0c4c789bd9f9076f350ff3-wager",
+          "payoutTransactionId": "6a835bd30f0c4c789bd9f9076f350ff3-payout",
+          "balanceBeforeCents": 988300,
+          "balanceAfterWagerCents": 988000,
+          "balanceAfterCents": 989550,
+          "settledAtUtc": "2026-11-23T00:46:57.9174004+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-e95aff2e6ca71ad19d8cfc53957fcb6f9e1c2abb8fb825822ec3c3ff8e299131",
+        "request": {
+          "operationId": "ce033a04be334d8e9d82b4ed17ecb6cc",
+          "outcomeSha256": "c488d12ced470836f236262baf56c7e95cb7a5a7a4200867a70b1744426e8821",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-e95aff2e6ca71ad19d8cfc53957fcb6f9e1c2abb8fb825822ec3c3ff8e299131",
+          "wagerTransactionId": "ce033a04be334d8e9d82b4ed17ecb6cc-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 989550,
+          "balanceAfterWagerCents": 989250,
+          "balanceAfterCents": 989250,
+          "settledAtUtc": "2026-11-23T00:46:58.7695557+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-e9ed931c081d305734ed9093cb15240d39230e710b6cfa18a1d3ad5bbd26676f",
+        "request": {
+          "operationId": "29acf5b490d34d38a01b88933238f4ca",
+          "outcomeSha256": "e5e59abeeacf1e43051ac7ad9fe8a49a0f18266a9c0250b1ab99631bab96635b",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-e9ed931c081d305734ed9093cb15240d39230e710b6cfa18a1d3ad5bbd26676f",
+          "wagerTransactionId": "29acf5b490d34d38a01b88933238f4ca-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 989250,
+          "balanceAfterWagerCents": 988950,
+          "balanceAfterCents": 988950,
+          "settledAtUtc": "2026-11-23T00:46:59.5275994+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-b5015b3e887ca4d8ec49b216588844c062cd0b65b7150aa5df5740489cc82c41",
+        "request": {
+          "operationId": "6f73d0eb78154659827d991e2cba90e2",
+          "outcomeSha256": "5a812b206a90d20fe3702108bbe14f6ebe0e5999621d5e47ef477abd3bd91fdd",
+          "wagerCents": 300,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-b5015b3e887ca4d8ec49b216588844c062cd0b65b7150aa5df5740489cc82c41",
+          "wagerTransactionId": "6f73d0eb78154659827d991e2cba90e2-wager",
+          "payoutTransactionId": "6f73d0eb78154659827d991e2cba90e2-payout",
+          "balanceBeforeCents": 988950,
+          "balanceAfterWagerCents": 988650,
+          "balanceAfterCents": 988900,
+          "settledAtUtc": "2026-11-23T00:47:00.6060902+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-4106aa766ce43756cc7e8ca505a488983c3b9617543e29cabb56a467ea16155a",
+        "request": {
+          "operationId": "7850ed2a0a49489c9f50b03ecb301d1e",
+          "outcomeSha256": "aaf6684eea9ce4fe43b8c24d433fc9be8d32e164ecefa3ae3beec95183e2ba7f",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-4106aa766ce43756cc7e8ca505a488983c3b9617543e29cabb56a467ea16155a",
+          "wagerTransactionId": "7850ed2a0a49489c9f50b03ecb301d1e-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 988900,
+          "balanceAfterWagerCents": 988600,
+          "balanceAfterCents": 988600,
+          "settledAtUtc": "2026-11-23T00:47:01.4919044+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-d9f3b35830c5812470cb13a143501ce3b59c63946c5507330bd20b72897ef301",
+        "request": {
+          "operationId": "51fe796ab0814e8f95fa1994b1f9c22b",
+          "outcomeSha256": "5056c54d628135b2b451d5b6da3e87747c9d0cbb32958fa7fd6df1e682f5034a",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-d9f3b35830c5812470cb13a143501ce3b59c63946c5507330bd20b72897ef301",
+          "wagerTransactionId": "51fe796ab0814e8f95fa1994b1f9c22b-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 988600,
+          "balanceAfterWagerCents": 988300,
+          "balanceAfterCents": 988300,
+          "settledAtUtc": "2026-11-23T00:47:02.1762631+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-883bab684b4123cacc7c05cbf9254553dc3b95c5eebece9b83cee328cec96e9b",
+        "request": {
+          "operationId": "1fb3a504fc174fb48bf31fdfae5ee2a8",
+          "outcomeSha256": "ff8ffb4373eb659f7ff014646354e9c5e0e495ee0f9ba76b51ba35325c092540",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-883bab684b4123cacc7c05cbf9254553dc3b95c5eebece9b83cee328cec96e9b",
+          "wagerTransactionId": "1fb3a504fc174fb48bf31fdfae5ee2a8-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 988300,
+          "balanceAfterWagerCents": 988000,
+          "balanceAfterCents": 988000,
+          "settledAtUtc": "2026-11-23T00:47:02.8374209+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-4eb7171403b8e19b3e78041df2a2c09180bfc43ab0cde47e9792d2bbcb2541e8",
+        "request": {
+          "operationId": "49eac866aad84a2bba0f09a9de5822ef",
+          "outcomeSha256": "0c4ae0fd8734c6d8d6dd3db63bc9c1f6eda9695b4ee88b017ff365e165253f50",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-4eb7171403b8e19b3e78041df2a2c09180bfc43ab0cde47e9792d2bbcb2541e8",
+          "wagerTransactionId": "49eac866aad84a2bba0f09a9de5822ef-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 988000,
+          "balanceAfterWagerCents": 987700,
+          "balanceAfterCents": 987700,
+          "settledAtUtc": "2026-11-23T00:47:03.4876407+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-fd2b87271a497b55304786376a2cb2f99d3182e77f09be6943d9a0151a27041c",
+        "request": {
+          "operationId": "3a8f58f51da648ad8d777006362bceb8",
+          "outcomeSha256": "f57cca6b537137d887edab82a9fd491859d79346743ca0c486de044ab223cc00",
+          "wagerCents": 300,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-fd2b87271a497b55304786376a2cb2f99d3182e77f09be6943d9a0151a27041c",
+          "wagerTransactionId": "3a8f58f51da648ad8d777006362bceb8-wager",
+          "payoutTransactionId": "3a8f58f51da648ad8d777006362bceb8-payout",
+          "balanceBeforeCents": 987700,
+          "balanceAfterWagerCents": 987400,
+          "balanceAfterCents": 987650,
+          "settledAtUtc": "2026-11-23T00:47:04.2494389+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-edc0da19d65e8fb15ef3cad40fd108cb3c898edabbc856213cbc9810fc497638",
+        "request": {
+          "operationId": "3b537be6a498482c8d34de9f9b1484bc",
+          "outcomeSha256": "efdfc0c1e3a405de5139055c25f8af84fdab10face9f3eca5af009d0cea3ef4c",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-edc0da19d65e8fb15ef3cad40fd108cb3c898edabbc856213cbc9810fc497638",
+          "wagerTransactionId": "3b537be6a498482c8d34de9f9b1484bc-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 987650,
+          "balanceAfterWagerCents": 987350,
+          "balanceAfterCents": 987350,
+          "settledAtUtc": "2026-11-23T00:47:04.9690864+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-00c5c175ee8c9ac03bb9fb14bc7ebce13464ee9392c29f42215ad6676a3481c4",
+        "request": {
+          "operationId": "2d2e10719bfd40dbb66561742a0240f7",
+          "outcomeSha256": "e31c06bb818c707285094835e473880cb7e9ffce60a4e277852b99b45bf295ed",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-00c5c175ee8c9ac03bb9fb14bc7ebce13464ee9392c29f42215ad6676a3481c4",
+          "wagerTransactionId": "2d2e10719bfd40dbb66561742a0240f7-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 987350,
+          "balanceAfterWagerCents": 987050,
+          "balanceAfterCents": 987050,
+          "settledAtUtc": "2026-11-23T00:47:05.7365202+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-3c5083f1d0e60e21f4dc9feb2cd89a31814d961c1e26a1a5f89efb88460251f4",
+        "request": {
+          "operationId": "23ab9858f28646318683fb79052b0df0",
+          "outcomeSha256": "97ff818d1730fd078cc345a6f166277aa4d7c2c42f01cbe5cf3830f39d1ebfd9",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-3c5083f1d0e60e21f4dc9feb2cd89a31814d961c1e26a1a5f89efb88460251f4",
+          "wagerTransactionId": "23ab9858f28646318683fb79052b0df0-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 987050,
+          "balanceAfterWagerCents": 986750,
+          "balanceAfterCents": 986750,
+          "settledAtUtc": "2026-11-23T00:47:06.5209669+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-6b8eea62a7e30f0456ef8e468468b2e19544f61ec0fc0ddab159afec8852cd11",
+        "request": {
+          "operationId": "6f7affeab06f4090a25ad73ccd619685",
+          "outcomeSha256": "114e0f1ee7acac4bc21c3f32115cea71886d55ec49f6715d1a80e24a4c6fea68",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-6b8eea62a7e30f0456ef8e468468b2e19544f61ec0fc0ddab159afec8852cd11",
+          "wagerTransactionId": "6f7affeab06f4090a25ad73ccd619685-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 986750,
+          "balanceAfterWagerCents": 986450,
+          "balanceAfterCents": 986450,
+          "settledAtUtc": "2026-11-23T00:47:07.4071478+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-485390cccda6f99423efbc7bfb613b0f8aa7c32e3d1228c6103e4bf1cdf783a1",
+        "request": {
+          "operationId": "e5fd67198f574a949661f3e4a64570dd",
+          "outcomeSha256": "04b14bc95d2f5115b77eebdf0fcc86c3e96d2452dd351244137f64ae714dce72",
+          "wagerCents": 300,
+          "payoutCents": 775,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-485390cccda6f99423efbc7bfb613b0f8aa7c32e3d1228c6103e4bf1cdf783a1",
+          "wagerTransactionId": "e5fd67198f574a949661f3e4a64570dd-wager",
+          "payoutTransactionId": "e5fd67198f574a949661f3e4a64570dd-payout",
+          "balanceBeforeCents": 986450,
+          "balanceAfterWagerCents": 986150,
+          "balanceAfterCents": 986925,
+          "settledAtUtc": "2026-11-23T00:47:08.145661+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-db8a82aeb703ae25caf5e0bbfcbc2a773daec9f3d98084c33be3267ba6b0bfab",
+        "request": {
+          "operationId": "5fa1a5f625224418a7a98ad6ae9ddfd0",
+          "outcomeSha256": "ec7f975b60ae7f947e4866b486de40e9dbfc792e556095115dbe3c540910015d",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-db8a82aeb703ae25caf5e0bbfcbc2a773daec9f3d98084c33be3267ba6b0bfab",
+          "wagerTransactionId": "5fa1a5f625224418a7a98ad6ae9ddfd0-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 986925,
+          "balanceAfterWagerCents": 986625,
+          "balanceAfterCents": 986625,
+          "settledAtUtc": "2026-11-23T00:47:08.8193774+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-8ed034cba2f6ba02fcbc6e7cb7b9c417a7eee17f0dd7359a93418c4f5c79d4f6",
+        "request": {
+          "operationId": "d4328d1017e641b3a5f0be3cbb0cabc5",
+          "outcomeSha256": "8558f0656b476113b1a61459136015e5c0ca73c3f0a01689af9e808b1b6cd1df",
+          "wagerCents": 300,
+          "payoutCents": 500,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-8ed034cba2f6ba02fcbc6e7cb7b9c417a7eee17f0dd7359a93418c4f5c79d4f6",
+          "wagerTransactionId": "d4328d1017e641b3a5f0be3cbb0cabc5-wager",
+          "payoutTransactionId": "d4328d1017e641b3a5f0be3cbb0cabc5-payout",
+          "balanceBeforeCents": 986625,
+          "balanceAfterWagerCents": 986325,
+          "balanceAfterCents": 986825,
+          "settledAtUtc": "2026-11-23T00:47:09.7195033+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-93dcba467edad2cd5f3e49bb100ee6acdeddf4cc92be7c0628db61ad3f8b6626",
+        "request": {
+          "operationId": "db8c9f49cb4c4833902865b6e12233fd",
+          "outcomeSha256": "34ca5612062f82cb289493e5e32fe71f3a46ee4d88fa51fef23e06f8c5e8c05b",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-93dcba467edad2cd5f3e49bb100ee6acdeddf4cc92be7c0628db61ad3f8b6626",
+          "wagerTransactionId": "db8c9f49cb4c4833902865b6e12233fd-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 986825,
+          "balanceAfterWagerCents": 986525,
+          "balanceAfterCents": 986525,
+          "settledAtUtc": "2026-11-23T00:47:10.4250604+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-1c2f4bab8f56e651b0a78d51c2bf8f9c457ed20f2bc8e312a76c2a16c86f3482",
+        "request": {
+          "operationId": "23fd062b6918410daec36b6625063363",
+          "outcomeSha256": "960703f00a506f4b3ebfb3e56272ff210642c62826d7fde46509dac782ddb5cd",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-1c2f4bab8f56e651b0a78d51c2bf8f9c457ed20f2bc8e312a76c2a16c86f3482",
+          "wagerTransactionId": "23fd062b6918410daec36b6625063363-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 986525,
+          "balanceAfterWagerCents": 986225,
+          "balanceAfterCents": 986225,
+          "settledAtUtc": "2026-11-23T00:47:11.1801125+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-1b9003979f5a5d838703d7f0fba63608a1f7382798eec8796708b364c47751da",
+        "request": {
+          "operationId": "fb50e2fdf1d24e829b1b0976946bf3ac",
+          "outcomeSha256": "5223aeff3628749414f92c95abeffdc6257e0ff52dd90d05084cd0547080147d",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-1b9003979f5a5d838703d7f0fba63608a1f7382798eec8796708b364c47751da",
+          "wagerTransactionId": "fb50e2fdf1d24e829b1b0976946bf3ac-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 986225,
+          "balanceAfterWagerCents": 985925,
+          "balanceAfterCents": 985925,
+          "settledAtUtc": "2026-11-23T00:47:11.8744825+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-a5cf9fb34e9d8d7e356da4fccf112c5760f69d073bdc1c74beff0880fab9e2d3",
+        "request": {
+          "operationId": "c4dc62c0ea0544b2be8868c9462c9e53",
+          "outcomeSha256": "0364346cdfab5f1dda31016d84b274278dba3569c8c482d3345b934899defaac",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-a5cf9fb34e9d8d7e356da4fccf112c5760f69d073bdc1c74beff0880fab9e2d3",
+          "wagerTransactionId": "c4dc62c0ea0544b2be8868c9462c9e53-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 985925,
+          "balanceAfterWagerCents": 985625,
+          "balanceAfterCents": 985625,
+          "settledAtUtc": "2026-11-23T00:47:12.5337768+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-4c5db2272cc3720ab24bc899857bf358ed62f5212cbf475d2f9a60ad31bad572",
+        "request": {
+          "operationId": "bf43895b15104c19a8efe82cf5b247c2",
+          "outcomeSha256": "8f533dfd57c416b85d76e367bf401a917ccba116226b4b589b675ef0d5029f53",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-4c5db2272cc3720ab24bc899857bf358ed62f5212cbf475d2f9a60ad31bad572",
+          "wagerTransactionId": "bf43895b15104c19a8efe82cf5b247c2-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 985625,
+          "balanceAfterWagerCents": 985325,
+          "balanceAfterCents": 985325,
+          "settledAtUtc": "2026-11-23T00:47:13.2343345+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-dc0ad5f93cfa6ffc9104dd81bf313ff79dc8accf38e0d03c603aa595fe84eaeb",
+        "request": {
+          "operationId": "9aebafd2b88f416a9969f43d5731a7a5",
+          "outcomeSha256": "66948a618f841e8c9c9ed9605594198cbe5ddec5c707293652f0180ac935d5e2",
+          "wagerCents": 0,
+          "payoutCents": 250,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-dc0ad5f93cfa6ffc9104dd81bf313ff79dc8accf38e0d03c603aa595fe84eaeb",
+          "wagerTransactionId": null,
+          "payoutTransactionId": "9aebafd2b88f416a9969f43d5731a7a5-payout",
+          "balanceBeforeCents": 985325,
+          "balanceAfterWagerCents": 985325,
+          "balanceAfterCents": 985575,
+          "settledAtUtc": "2026-11-23T00:47:13.9088591+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-408d0376b37d001caca7193c5f843c52e9cb9b9ceeef02ed154a7d28d56526c1",
+        "request": {
+          "operationId": "95445b64f5e7467b8e41c8793cc7b6e6",
+          "outcomeSha256": "a4b65805efc7f24e13d95001ec1537665144ce1ecae72e61c54dc3d23ccc3fe5",
+          "wagerCents": 0,
+          "payoutCents": 775,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-408d0376b37d001caca7193c5f843c52e9cb9b9ceeef02ed154a7d28d56526c1",
+          "wagerTransactionId": null,
+          "payoutTransactionId": "95445b64f5e7467b8e41c8793cc7b6e6-payout",
+          "balanceBeforeCents": 985575,
+          "balanceAfterWagerCents": 985575,
+          "balanceAfterCents": 986350,
+          "settledAtUtc": "2026-11-23T00:47:14.5548612+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-d4b409d512a5b718541538ae7e224ec44d9a0d89f85e50aa2a12108c64d85231",
+        "request": {
+          "operationId": "9d7ae2f3d2684af98322ec79a8fe1680",
+          "outcomeSha256": "b7b0316ec973448f68318ffa69ec221f8a0c00afaf6807f846f6f3c1e8198f46",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-d4b409d512a5b718541538ae7e224ec44d9a0d89f85e50aa2a12108c64d85231",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 986350,
+          "balanceAfterWagerCents": 986350,
+          "balanceAfterCents": 986350,
+          "settledAtUtc": "2026-11-23T00:47:15.1927472+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-436123765c8ce28e60ae4eee6d1c815c1b63884b5a3e875fb061052bf7cdebee",
+        "request": {
+          "operationId": "b09b94230afd49408077aac74c736c5f",
+          "outcomeSha256": "a85703cf2fc9af81943acf3f64831fb3e8355d9d2998b888ad2b906429fb6e2c",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-436123765c8ce28e60ae4eee6d1c815c1b63884b5a3e875fb061052bf7cdebee",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 986350,
+          "balanceAfterWagerCents": 986350,
+          "balanceAfterCents": 986350,
+          "settledAtUtc": "2026-11-23T00:47:15.8379248+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-7a9ff63ff6b2031462e9c950bc7f070743da4fc127d6c1a49966fb506ee67541",
+        "request": {
+          "operationId": "11a1312518b04bca9adce5ae53a2a1af",
+          "outcomeSha256": "08d57d75a3d4929e95087ed63b89cfa2e53f46c68cef6844daea732eeaf7429b",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-7a9ff63ff6b2031462e9c950bc7f070743da4fc127d6c1a49966fb506ee67541",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 986350,
+          "balanceAfterWagerCents": 986350,
+          "balanceAfterCents": 986350,
+          "settledAtUtc": "2026-11-23T00:47:16.4966506+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-7ab0654b2b56f737d3b5829ce9f3dc94916eb1a68bbb38d74f210e2e719eaeb7",
+        "request": {
+          "operationId": "f249f3b2f7934990b81a361f4fa1a9a8",
+          "outcomeSha256": "9dc325e0f6b42922ef67dd3b3e63be484992e1b75fc4741cb0addef734c43c67",
+          "wagerCents": 0,
+          "payoutCents": 775,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-7ab0654b2b56f737d3b5829ce9f3dc94916eb1a68bbb38d74f210e2e719eaeb7",
+          "wagerTransactionId": null,
+          "payoutTransactionId": "f249f3b2f7934990b81a361f4fa1a9a8-payout",
+          "balanceBeforeCents": 986350,
+          "balanceAfterWagerCents": 986350,
+          "balanceAfterCents": 987125,
+          "settledAtUtc": "2026-11-23T00:47:17.1692551+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-4343975a1454d1df6329748c2950041e11b5f20507713ab299101e3d24e30405",
+        "request": {
+          "operationId": "c79ad74a2df24ab18cb3a785429bfc44",
+          "outcomeSha256": "7968ed18c753b4eb75cd34b0f2bd62309586ea75cf696ae807273db6ee667517",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-4343975a1454d1df6329748c2950041e11b5f20507713ab299101e3d24e30405",
+          "wagerTransactionId": "c79ad74a2df24ab18cb3a785429bfc44-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 987125,
+          "balanceAfterWagerCents": 986825,
+          "balanceAfterCents": 986825,
+          "settledAtUtc": "2026-11-23T00:47:17.7949999+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-13fc42c885625631bd4e8334e351ef097752de0524f636859b630c9cd4b0b3de",
+        "request": {
+          "operationId": "5e91bc94bbfb4614b94e3f2e25f65fee",
+          "outcomeSha256": "c7f17dd6e806471f732e5291b796e6cce756033b0680e428755edbd4eed48a99",
+          "wagerCents": 300,
+          "payoutCents": 525,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-13fc42c885625631bd4e8334e351ef097752de0524f636859b630c9cd4b0b3de",
+          "wagerTransactionId": "5e91bc94bbfb4614b94e3f2e25f65fee-wager",
+          "payoutTransactionId": "5e91bc94bbfb4614b94e3f2e25f65fee-payout",
+          "balanceBeforeCents": 986825,
+          "balanceAfterWagerCents": 986525,
+          "balanceAfterCents": 987050,
+          "settledAtUtc": "2026-11-23T00:47:18.4194226+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-29c22a22c262ef5d9528aa66a62ce45134909e6748b763743dd63ef6982ee726",
+        "request": {
+          "operationId": "f41460329a9b43d081512cbbeaf99c89",
+          "outcomeSha256": "c0dfc6988e6af91adcd7722c6ac47d0b2bfbf13a80c4dd018bba4bf3c4f48579",
+          "wagerCents": 300,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-29c22a22c262ef5d9528aa66a62ce45134909e6748b763743dd63ef6982ee726",
+          "wagerTransactionId": "f41460329a9b43d081512cbbeaf99c89-wager",
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 987050,
+          "balanceAfterWagerCents": 986750,
+          "balanceAfterCents": 986750,
+          "settledAtUtc": "2026-11-23T00:47:19.0676099+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-d64dd3450a4d66fffe8efd1cd9988eeb548c4de00e546c345a19b4e2cda6a7e9",
+        "request": {
+          "operationId": "c05f994170df4394b73bebdce912509d",
+          "outcomeSha256": "062c1180756927ebfa2a02a04c8fafde81d982f1808683e1e2e110c351b80b2d",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-d64dd3450a4d66fffe8efd1cd9988eeb548c4de00e546c345a19b4e2cda6a7e9",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 986750,
+          "balanceAfterWagerCents": 986750,
+          "balanceAfterCents": 986750,
+          "settledAtUtc": "2026-11-23T00:47:24.6532224+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-fead83b07454748f5c74ae4f4929fc0c668c7f7f4054e204462d53bcdece1ad0",
+        "request": {
+          "operationId": "ade78f3af02140e3a2895de9d1d17bee",
+          "outcomeSha256": "7c63853b320b1379a3d040d050149dbe6a6593b4d8495eca85ff51456b3f1a30",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-fead83b07454748f5c74ae4f4929fc0c668c7f7f4054e204462d53bcdece1ad0",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 986750,
+          "balanceAfterWagerCents": 986750,
+          "balanceAfterCents": 986750,
+          "settledAtUtc": "2026-11-23T00:47:25.9778639+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-c9617e0e183cc132cc14c29cbd5c136b5be0ddaaeada9fb5e0f5880b7660f78a",
+        "request": {
+          "operationId": "a3d7ac2a7ab2435fa5384f80b094babe",
+          "outcomeSha256": "f4ebf7ed44a4bdd897cfb4347c8102a8b65e3062d8faf9516a1cc9d2b40b2b26",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-c9617e0e183cc132cc14c29cbd5c136b5be0ddaaeada9fb5e0f5880b7660f78a",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 986750,
+          "balanceAfterWagerCents": 986750,
+          "balanceAfterCents": 986750,
+          "settledAtUtc": "2026-11-23T00:47:27.1311052+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-f2e19b2bc5951402f2fa80da227eba7533579d4b45d59317758ce3b5328be3ba",
+        "request": {
+          "operationId": "d885c1b659b2463180b93b565902cd4e",
+          "outcomeSha256": "d661e8722277bda593b3fbb91f1745ff5b59422e23034b9b0c5a499eb6e10e17",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-f2e19b2bc5951402f2fa80da227eba7533579d4b45d59317758ce3b5328be3ba",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 986750,
+          "balanceAfterWagerCents": 986750,
+          "balanceAfterCents": 986750,
+          "settledAtUtc": "2026-11-23T00:47:28.105906+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-fd69450c2ace0fbf4aae908f9f9992b5277be2a23953ecc88cf769227cbb9b65",
+        "request": {
+          "operationId": "2ab0f0f5995f4eeda27d16b58a4e6b38",
+          "outcomeSha256": "be97c2053528e09492132aac706abfa03a4eea78a1d305e1b13f699e193248ba",
+          "wagerCents": 0,
+          "payoutCents": 4800,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-fd69450c2ace0fbf4aae908f9f9992b5277be2a23953ecc88cf769227cbb9b65",
+          "wagerTransactionId": null,
+          "payoutTransactionId": "2ab0f0f5995f4eeda27d16b58a4e6b38-payout",
+          "balanceBeforeCents": 986750,
+          "balanceAfterWagerCents": 986750,
+          "balanceAfterCents": 991550,
+          "settledAtUtc": "2026-11-23T00:47:34.0894528+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-be5a7be04966c4b57e802c57316135128890006fd8e654e58bddec570fb4abd3",
+        "request": {
+          "operationId": "24c6675b9a4f47b397e28445967a972e",
+          "outcomeSha256": "3b6e6ad9765d1b24984a0b9583eadcab5c31b7b9420634d32a3bc5e9e7465c4f",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-be5a7be04966c4b57e802c57316135128890006fd8e654e58bddec570fb4abd3",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 991550,
+          "balanceAfterWagerCents": 991550,
+          "balanceAfterCents": 991550,
+          "settledAtUtc": "2026-11-23T00:47:36.9198415+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-4bf6bb70c268512a0bce24cde5d97e304579d7c0ee48856b5de82776f09c36d7",
+        "request": {
+          "operationId": "1a06d52e1fbb4200857eb374bc6a0493",
+          "outcomeSha256": "d6f29b154c7de13bfcc5f08b23dd28b57da10ba3fc117b2e7a4c515cc58a6caa",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-4bf6bb70c268512a0bce24cde5d97e304579d7c0ee48856b5de82776f09c36d7",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 991550,
+          "balanceAfterWagerCents": 991550,
+          "balanceAfterCents": 991550,
+          "settledAtUtc": "2026-11-23T00:47:38.2287866+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-9ff922bf4e25752423e656d561abf6d522c2f5e6b127b60a6551fc49eb114372",
+        "request": {
+          "operationId": "6104c32fe50d4cd59dc6ff4e31a6045c",
+          "outcomeSha256": "b0c63faf3c1fe88bb880f699d27ad757dbf4eb5f8d0c5f8ad1646d5b7583275c",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-9ff922bf4e25752423e656d561abf6d522c2f5e6b127b60a6551fc49eb114372",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 991550,
+          "balanceAfterWagerCents": 991550,
+          "balanceAfterCents": 991550,
+          "settledAtUtc": "2026-11-23T00:47:39.5082645+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-61dee3d264dcf5f08197a596f3b903a310f37e0b6a867aa3dbcf2516c8c469b2",
+        "request": {
+          "operationId": "9e421905860b4594b5ad627d68b9b6f6",
+          "outcomeSha256": "0b12b79a1b9812d9ebdfedc8464d7f31bf04f7399d3325c767d907bc22b49ed0",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-61dee3d264dcf5f08197a596f3b903a310f37e0b6a867aa3dbcf2516c8c469b2",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 991550,
+          "balanceAfterWagerCents": 991550,
+          "balanceAfterCents": 991550,
+          "settledAtUtc": "2026-11-23T00:47:40.6566215+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-ae2cd541be86556fb4cff2c88ab241e63a741b1a0154e1cce3b17649e3168806",
+        "request": {
+          "operationId": "db71968687b941ca84f5d31b78aaf9fb",
+          "outcomeSha256": "86e4bddf97afcdb30f6f4fd11c7bcb5f142f111727c0171083c3d2e493f0c6a0",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-ae2cd541be86556fb4cff2c88ab241e63a741b1a0154e1cce3b17649e3168806",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 991550,
+          "balanceAfterWagerCents": 991550,
+          "balanceAfterCents": 991550,
+          "settledAtUtc": "2026-11-23T00:47:42.3182196+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-099db616397a1b90eb9fb22bbbfedac70673f481908d9b5188b1213f021674b5",
+        "request": {
+          "operationId": "964ecab1d9e74cb89f6d1bddf896ff38",
+          "outcomeSha256": "07049795d0c6583636bb500b38fdd99cae4200048884301a3aa4283e259125b1",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-099db616397a1b90eb9fb22bbbfedac70673f481908d9b5188b1213f021674b5",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 991550,
+          "balanceAfterWagerCents": 991550,
+          "balanceAfterCents": 991550,
+          "settledAtUtc": "2026-11-23T00:47:48.4814084+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-b7deac184eae0791bfa7c40ce117bf5d3d8a56bfa3884872e8172350440e5274",
+        "request": {
+          "operationId": "916e181566294dc1bc886544bb25f579",
+          "outcomeSha256": "cb33c334481204261074729fe2a1a488135b54b38772628eaf8ce1fe756e6552",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-b7deac184eae0791bfa7c40ce117bf5d3d8a56bfa3884872e8172350440e5274",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 991550,
+          "balanceAfterWagerCents": 991550,
+          "balanceAfterCents": 991550,
+          "settledAtUtc": "2026-11-23T00:47:49.6962856+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-06f08348e2680e00ec62f51eabed44b0410d6d0dd70526bf8df00cc60e19baa6",
+        "request": {
+          "operationId": "432b738ec896477bbe4d040c95cc837b",
+          "outcomeSha256": "a5f4f5596edf0cef503e86671c58347abdf554c0842f39aa9a934d8ab042d783",
+          "wagerCents": 0,
+          "payoutCents": 10500,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-06f08348e2680e00ec62f51eabed44b0410d6d0dd70526bf8df00cc60e19baa6",
+          "wagerTransactionId": null,
+          "payoutTransactionId": "432b738ec896477bbe4d040c95cc837b-payout",
+          "balanceBeforeCents": 991550,
+          "balanceAfterWagerCents": 991550,
+          "balanceAfterCents": 1002050,
+          "settledAtUtc": "2026-11-23T00:47:50.9661761+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      },
+      {
+        "key": "wallet-round-6b05faef329d08e5368cdcaf64644b7b6588459c3d1f5015c63cd52d2cce9b1b",
+        "request": {
+          "operationId": "ba3ec2ec18d444faad2b06d89ee92ce7",
+          "outcomeSha256": "1736fbd81fa7f6c77d452a9f36e0faedc3472e2e5f2bc3401e622d7e0afc0992",
+          "wagerCents": 0,
+          "payoutCents": 0,
+          "spendLegacyFreeGame": false,
+          "expectedLegacyFreeGamesRemaining": 0
+        },
+        "receipt": {
+          "settlementId": "wallet-round-6b05faef329d08e5368cdcaf64644b7b6588459c3d1f5015c63cd52d2cce9b1b",
+          "wagerTransactionId": null,
+          "payoutTransactionId": null,
+          "balanceBeforeCents": 1002050,
+          "balanceAfterWagerCents": 1002050,
+          "balanceAfterCents": 1002050,
+          "settledAtUtc": "2026-11-23T00:47:52.0822001+00:00",
+          "wasAlreadySettled": false,
+          "insufficientFunds": false,
+          "insufficientLegacyFreeGames": false,
+          "legacyFreeGameTransactionId": null,
+          "legacyFreeGamesRemaining": 0
+        }
+      }
+    ]
+  },
+  "retainedTicketCount": 1,
+  "mobileHorizontalOverflow": false,
+  "browserErrors": []
+}

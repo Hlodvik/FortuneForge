@@ -4,7 +4,7 @@ using FortuneForge.Games.Slots.Runtime;
 
 namespace FortuneForge.Games.RobotRevolution.Server;
 
-/// <summary>Maps Fifth Sun's settled slot outcome to the established public response.</summary>
+/// <summary>Maps Sunstone Eclipse's settled slot outcome to the established public response.</summary>
 public sealed record RobotRevolutionSpinResponse(
     Guid SpinId, string GameId, string ReelSetId, string SymbolSetId, string PaytableId,
     long WagerPoints, decimal PointValueInCents, IReadOnlyList<int> ReelStops,
@@ -42,7 +42,7 @@ public sealed record RobotRevolutionSpinResponse(
     public static RobotRevolutionSpinResponse From(RobotRevolutionRoundResult result)
     {
         if (result.Round is not { } round || result.Features is not { } features)
-            throw new InvalidOperationException("The Fifth Sun round has no settled spin response.");
+            throw new InvalidOperationException("The Sunstone Eclipse round has no settled spin response.");
 
         return Capture(round) with
         {

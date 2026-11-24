@@ -38,9 +38,7 @@ public sealed partial class AccountService
         DateTime startedAtUtc,
         TimeSpan cooldown,
         CancellationToken cancellationToken,
-        Func<SlotSpinAdmission, CancellationToken, Task<SpinResult>>? resolveOutcome = null,
-        string? operationId = null,
-        bool allowNewPrepared = true)
+        Func<SlotSpinAdmission, CancellationToken, Task<SpinResult>>? resolveOutcome = null)
     {
         return accountStore.BeginSlotSpinAsync(
             userId,
@@ -53,9 +51,7 @@ public sealed partial class AccountService
             startedAtUtc,
             cooldown,
             cancellationToken,
-            resolveOutcome,
-            operationId,
-            allowNewPrepared);
+            resolveOutcome);
     }
 
     internal Task<LegacySlotRecoveryResult> ReconcileExpiredLegacySlotAsync(

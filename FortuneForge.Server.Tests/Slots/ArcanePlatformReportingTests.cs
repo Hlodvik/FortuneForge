@@ -45,15 +45,14 @@ public sealed class ArcanePlatformReportingTests(MidnightVaultPaidEmulatorFixtur
         Assert.Contains(SlotEvidenceReplayAudit.Inspect(report.Round.Audit.Summary, tampered.ToJsonString()),
             finding => finding.Code == "slot-settlement-mismatch");
 
-        var expected = StandaloneSlotPackageRegistry.MapOutcome(round.Outcome, potion) with
-        {
-            SlotsCreditsBalance = 99m,
-            ArcaneTome = ArcaneTome.ToView(features.Tome!.State),
-            ArcanePotions = ArcanePotionView.FromState(features.Potions!),
-            ArcaneIngredientsAwarded = features.Tome.IngredientsAwarded
-        };
-        Assert.True(JsonNode.DeepEquals(JsonSerializer.SerializeToNode(expected, RoundAuditCapture.Json),
-            JsonSerializer.SerializeToNode(ArcaneSpinResponse.From(round, features, 99m), RoundAuditCapture.Json)));
+        var response = ArcaneSpinResponse.From(round, features, 99m);
+        Assert.Equal(round.Outcome.SpinId, response.SpinId);
+        Assert.Equal(round.Outcome.Payout, response.Payout);
+        Assert.Equal(99m, response.SlotsCreditsBalance);
+        Assert.True(ArcaneWandCollector.SameCollection(
+            ArcaneWandCollector.Calculate(round.Outcome.Reels, round.Outcome.WagerPoints, potion), response.ArcaneWandCollection));
+        Assert.True(JsonNode.DeepEquals(JsonSerializer.SerializeToNode(ArcaneTome.ToView(features.Tome!.State), RoundAuditCapture.Json),
+            JsonSerializer.SerializeToNode(response.ArcaneTome, RoundAuditCapture.Json)));
     }
 
     [Fact]

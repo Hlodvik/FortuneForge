@@ -2,7 +2,10 @@
 // Edited: 2026-11-18T18:00:18-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T14:52:25-06:00 | Computer: Vinnabok
 // Edited: 2026-11-18T16:30:40-06:00 | Computer: Vinnabok
-import type { SlotPaidModeState, SlotPotionState, SlotTomeState } from '@fortuneforge/slot-game-runtime/experience'
+import type { SlotPaidModeState } from '@fortuneforge/slot-game-runtime/experience'
+import type { SlotPotionState, SlotTomeState, ArcaneWandCollection } from '@fortuneforge/games-arcane-archives/features'
+export { arcaneWandPaylineId } from '@fortuneforge/games-arcane-archives/features'
+export type { ArcaneWandCollection } from '@fortuneforge/games-arcane-archives/features'
 import type { SlotSymbolId as SharedSlotSymbolId } from '@fortuneforge/slot-client-core'
 import type { GodsTumbleResult } from '@fortuneforge/games-gods-of-olympus/tumble'
 export type { GodsTumbleAward, GodsTumbleStep, GodsTumbleResult } from '@fortuneforge/games-gods-of-olympus/tumble'
@@ -53,14 +56,6 @@ export type LightningCollection = {
   totalPoints: number
 }
 
-export const arcaneWandPaylineId = 903
-
-export type ArcaneWandCollection = {
-  wand: GridPosition
-  cells: (GridPosition & { symbolId: SlotSymbolId; multiplier: number; amountPoints: number; potionBonusPoints?: number })[]
-  totalPoints: number
-}
-
 export type SymbolMatch = {
   paylineId: number
   symbolId: SlotSymbolId
@@ -90,6 +85,9 @@ export type SlotSealCollection = {
 
 export type SpinResult = {
   paidMode?: SlotPaidModeState | null
+  /** Opaque persistent state validated by the game-owned feature panel. */
+  gameFeatureState?: unknown | null
+  featureActionRequired?: boolean
   /** Optional, versioned result contract owned and validated by the selected game. */
   spinFeature?: unknown
   olympusTumble?: GodsTumbleResult

@@ -33,6 +33,7 @@ export function SpinButton({
       className={`spin-button${isActive ? ' spin-button--active' : ''}${isActive && isStopRequested ? ' spin-button--stopping' : ''}${variant === 'default' ? '' : ` spin-button--${variant}`}${iconSrc ? ' spin-button--custom-icon' : ''}`}
       type="button"
       data-slot-keyboard-controls="cabinet"
+      onMouseDown={(event) => { if (event.button === 0) event.preventDefault() }}
       onClick={handleClick}
       disabled={(disabled || isRunning) && !isActive}
       aria-label={isActive ? 'Stop the spin' : 'Spin the reels'}

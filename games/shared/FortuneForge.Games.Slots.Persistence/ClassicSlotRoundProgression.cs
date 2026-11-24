@@ -22,13 +22,18 @@ public static class ClassicSlotRoundProgression
             with { Energy = 0 };
 
     public static ClassicSlotActiveRoundProgress AdvanceEnergyAndCollections(ClassicSlotRoundState before, ClassicSlotSpinOutcome outcome,
-        SlotProfile profile, int boostCost, long minimumWagerPoints, bool spendsLegacy)
+        SlotProfile profile, int boostCost, long minimumWagerPoints, bool spendsLegacy) =>
+        AdvanceEnergyAndCollections(before, outcome, profile, boostCost, minimumWagerPoints, spendsLegacy, null, null, false);
+
+    public static ClassicSlotActiveRoundProgress AdvanceEnergyAndCollections(ClassicSlotRoundState before, ClassicSlotSpinOutcome outcome,
+        SlotProfile profile, int boostCost, long minimumWagerPoints, bool spendsLegacy,
+        ClassicSlotEnergySettlement? energySettlement, long? energyCompletionWagerPoints = null, bool roundFundedWagerDown = false)
     {
-        var energy = ClassicSlotEnergy.Settle(before.Energy, outcome.EnergyAwarded, outcome.Payout);
+        var energy = energySettlement ?? ClassicSlotEnergy.Settle(before.Energy, outcome.EnergyAwarded, outcome.Payout);
         var current = ClassicSlotCollections.TrackIds.Select(mode => new SlotCollectionState(mode,
             checked((int)before.SealCounts.GetValueOrDefault(mode)), before.SealWagerPoints.GetValueOrDefault(mode))).ToArray();
         var collections = ClassicSlotCollections.Advance(profile, current, outcome.CollectionsAwarded,
-            outcome.WagerPoints, energy.MultiplierApplied);
+            outcome.WagerPoints, energy.MultiplierApplied, energyCompletionWagerPoints, roundFundedWagerDown);
         var awardedMode = AwardedMode(outcome, profile, collections.FeatureMode);
         var awardedWager = collections.FreeSpinWagerPoints > 0
             ? Math.Max(minimumWagerPoints, collections.FreeSpinWagerPoints)

@@ -29,7 +29,7 @@ internal static class FifthSunDemoEndpoints
             request.FreeSpinFeatureMode is not null || request.EnergyBalance != 0 || request.SealCollections is { Count: > 0 } ||
             request.MidnightBonusState is not null || request.CrucibleWageredCents != 0 || request.OlympusTumbleShowcase is not null ||
             request.NeonDiscoSpinsRemaining != 0 || request.NeonDiscoMultiplier is not null || request.NeonDiscoWagerPoints is not null)
-            return Results.BadRequest(new { error = "The Fifth Sun demo accepts current paid rounds and Eclipse state only." });
+            return Results.BadRequest(new { error = "The Sunstone Eclipse demo accepts current paid rounds and Eclipse state only." });
         try
         {
             return Results.Json(FifthSunDemo.Spin(request.WagerPoints, request.PaidMode));

@@ -1,0 +1,87 @@
+{
+  "freeSpinsRemaining": 0,
+  "freeSpinWagerPoints": null,
+  "freeSpinFeatureMode": null,
+  "specialPointsBalance": 5,
+  "energyBalance": 69,
+  "sealCollections": [
+    {
+      "sealId": "sync",
+      "count": 2,
+      "averageWagerPoints": 12,
+      "requiredCount": 24
+    },
+    {
+      "sealId": "rows",
+      "count": 2,
+      "averageWagerPoints": 12,
+      "requiredCount": 24
+    },
+    {
+      "sealId": "paw",
+      "count": 22,
+      "averageWagerPoints": 12,
+      "requiredCount": 24
+    },
+    {
+      "sealId": "rand",
+      "count": 2,
+      "averageWagerPoints": 12,
+      "requiredCount": 24
+    }
+  ],
+  "pendingOperation": null,
+  "slotsCreditsBalance": 10044.75,
+  "gameFeatureState": {
+    "collections": [
+      {
+        "sealId": "sync",
+        "count": 2,
+        "averageWagerPoints": 12,
+        "requiredCount": 24
+      },
+      {
+        "sealId": "rows",
+        "count": 2,
+        "averageWagerPoints": 12,
+        "requiredCount": 24
+      },
+      {
+        "sealId": "paw",
+        "count": 22,
+        "averageWagerPoints": 12,
+        "requiredCount": 24
+      },
+      {
+        "sealId": "rand",
+        "count": 2,
+        "averageWagerPoints": 12,
+        "requiredCount": 24
+      }
+    ],
+    "freeSpinsRemaining": 0,
+    "freeSpinFeatureMode": null,
+    "freeSpinWagerPoints": null,
+    "energyBalance": 69,
+    "tomb": {
+      "contractVersion": 1,
+      "revision": 245,
+      "funding": {
+        "sigils": 0,
+        "requiredSigils": 6,
+        "averageWagerPoints": 0
+      },
+      "tickets": [
+        {
+          "id": "tomb-29fcc6becfce4248b25b5ced9ac89086",
+          "fundedWagerPoints": 12
+        }
+      ],
+      "activeRun": null,
+      "lastRun": null,
+      "pendingAction": null
+    },
+    "kind": "pharaoh-ascent"
+  },
+  "featureActionRequired": false
+}

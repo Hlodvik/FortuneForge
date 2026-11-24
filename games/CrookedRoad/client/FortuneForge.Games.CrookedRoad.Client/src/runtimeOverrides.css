@@ -1,0 +1,308 @@
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] {
+  --special-round-accent: #e4c16e;
+  --special-round-deep: #174c35;
+  --special-round-ink: #061c14;
+  --slot-title-height: clamp(4rem, 10dvh, 6rem);
+  --slot-topbar-background: linear-gradient(90deg, rgb(5 24 18 / 96%), rgb(20 65 43 / 92%), rgb(5 24 18 / 96%));
+  --slot-topbar-border-color: rgb(219 181 93 / 58%);
+  --slot-topbar-shadow-color: rgb(0 12 9 / 52%);
+  --slot-topbar-accent-color: rgb(139 183 101 / 18%);
+  color: #fff4d7;
+  display: block;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-padding-bottom: 6rem;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__main {
+  display: block;
+  min-height: 0;
+  padding: .65rem 1rem 1rem;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__layout {
+  display: block;
+  width: min(100%, 48rem);
+  margin-inline: auto;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto;
+  width: 100%;
+  max-width: none;
+  gap: .7rem;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__title-art {
+  grid-column: 1;
+  grid-row: 1;
+  height: clamp(3.4rem, 7dvh, 4.5rem);
+  width: auto;
+  justify-self: center;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__cabinet-spotlight { grid-column: 1; grid-row: 2; width: 100%; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road { grid-column: 1; grid-row: 4; min-width: 0; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__local-controls { grid-column: 1; grid-row: 5; margin: 0; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__local-controls:empty { display: none; }
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__playbar {
+  position: relative;
+  grid-column: 1;
+  grid-row: 3;
+  inset: auto;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 0;
+  margin: .1rem 0 .35rem;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .sidecar-spin-controls {
+  --sidecar-control-small: 2.9rem;
+  --sidecar-control-spin: 5.25rem;
+  --sidecar-bet-placement: above;
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  gap: .5rem .85rem;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .sidecar-spin-controls__spin { grid-column: 3; grid-row: 1; margin: 0; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .sidecar-spin-controls__bet-readout { grid-column: 1 / -1; grid-row: 2; margin: -.25rem 0 0; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .sidecar-spin-controls[aria-label='Spin controls'] { grid-template-columns: auto; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .sidecar-spin-controls[aria-label='Spin controls'] .sidecar-spin-controls__spin { grid-column: 1; }
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .sidecar-spin-controls :is(.sidecar-spin-controls__small, .spin-button--sidecar-loop) {
+  border-color: #dac07c;
+  background: radial-gradient(ellipse at 30% 15%, #a6d49a40, transparent 50%), linear-gradient(#245d40, #082e20);
+  box-shadow: inset 0 0 0 2px #f5db961c, inset 0 .15rem .7rem #c8e6a622, 0 .25rem .7rem #001d15a8;
+  color: #fff0b9;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__keyboard-help { margin: .4rem .6rem .75rem; min-height: 2rem; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] > .slots-page__utility-buttons {
+  position: fixed;
+  z-index: 20;
+  left: max(.75rem, env(safe-area-inset-left));
+  bottom: max(.75rem, env(safe-area-inset-bottom));
+}
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] :is(.slots-page__help-button, .slots-page__settings-button) {
+  min-height: 44px;
+  min-width: 44px;
+  border-color: #c5ad6b;
+  background: linear-gradient(150deg, #2b5a3e, #0b2a1f);
+  box-shadow: inset 0 0 0 2px #e4c98622, 0 .2rem .6rem #00160c80;
+  color: #f0d99b;
+}
+
+@media (min-width: 1100px) {
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__main { padding: .8rem 1.5rem .5rem; }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__layout {
+    width: min(100%, 85rem, calc((100dvh - 19.375rem) * 1.55 + 30.5rem));
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__stage {
+    grid-template-columns: minmax(0, 1fr) minmax(25rem, 28.75rem);
+    grid-template-rows: auto auto auto;
+    align-items: start;
+    column-gap: 1.75rem;
+    row-gap: .6rem;
+  }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    max-height: calc(100dvh - 8.25rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #9eae68 #102b20;
+  }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__playbar { margin-top: .5rem; }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__local-controls { position: absolute; right: 0; bottom: 0; }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__keyboard-help {
+    position: fixed;
+    z-index: 20;
+    bottom: .75rem;
+    left: 50%;
+    width: max-content;
+    max-width: calc(100% - 22rem);
+    margin: 0;
+    transform: translateX(-50%);
+  }
+}
+
+@media (min-width: 1100px) and (min-height: 900px) {
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__stage::after {
+    position: absolute;
+    right: 10.375rem;
+    bottom: 0;
+    width: 8rem;
+    height: 9.375rem;
+    background: url('./assets/art/irish/character/finbar-the-wayward-v1.webp') center / contain no-repeat;
+    filter: drop-shadow(0 .35rem .6rem #00190eaa);
+    content: '';
+    pointer-events: none;
+  }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar']:has(.crooked-road[data-bonus-active]) .slots-page__stage::after { display: none; }
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar']:has(.crooked-road__bonus--well) { --slot-page-backdrop: url('./assets/art/irish/backgrounds/crooked-road-wishing-well-v1.webp') !important; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar']:has(.crooked-road__bonus--fort) { --slot-page-backdrop: url('./assets/art/irish/backgrounds/crooked-road-fairy-fort-v1.webp') !important; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar']:has(.crooked-road__bonus--hill) { --slot-page-backdrop: url('./assets/art/irish/backgrounds/crooked-road-hollow-hill-v1.webp') !important; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__special-game-dimmer {
+  background: linear-gradient(#021b1512, #021b1533);
+  backdrop-filter: none;
+}
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__special-game-tally { background: linear-gradient(#214b35, #0b2e20); border-color: #d8be77; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar']:has(.crooked-road[data-bonus-active]) :is(.slots-page__special-game-tally, .slots-page__footer:not(.slots-page__footer--error)) { display: none; }
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar']:has(.crooked-road[data-feature-kind='fort'], .crooked-road[data-feature-kind='hill']):not(:has(.crooked-road[data-travelling])) .slots-page__layout { width: min(100%, 65rem); }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar']:has(.crooked-road[data-feature-kind='fort'], .crooked-road[data-feature-kind='hill']):not(:has(.crooked-road[data-travelling])) .slots-page__stage { grid-template-columns: minmax(0, 1fr); }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar']:has(.crooked-road[data-feature-kind='fort'], .crooked-road[data-feature-kind='hill']):not(:has(.crooked-road[data-travelling])) .slots-page__cabinet-spotlight { display: none; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar']:has(.crooked-road[data-feature-kind='fort'], .crooked-road[data-feature-kind='hill']):not(:has(.crooked-road[data-travelling])) .crooked-road {
+  grid-column: 1;
+  grid-row: 2;
+  max-height: none;
+  overflow: visible;
+  background: linear-gradient(130deg, #102d23ed, #061912c9);
+  border-color: #d6b96fbb;
+  box-shadow: inset 0 0 0 4px #c4ac6120, 0 1rem 3rem #00150fb3;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road:is([data-feature-kind='fort'], [data-feature-kind='hill']) .crooked-road__bonus {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  margin: 0;
+  padding: .4rem 1rem .65rem;
+}
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road:is([data-feature-kind='fort'], [data-feature-kind='hill']) .crooked-road__bonus-heading h3 { display: none; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road:is([data-feature-kind='fort'], [data-feature-kind='hill']) .crooked-road__fort-play { grid-template-columns: auto 11rem; max-width: 42rem; justify-content: center; margin: .6rem auto; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road:is([data-feature-kind='fort'], [data-feature-kind='hill']) .crooked-road__coin-grid { width: min(35dvh, 21rem); }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road[data-feature-kind='hill'] .crooked-road__doors { max-width: 42rem; margin: .6rem auto; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road[data-feature-kind='hill'] .crooked-road__doors img { max-height: 24dvh; }
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road[data-feature-kind='well'] .crooked-road__bonus { padding: .8rem; margin-top: .4rem; }
+
+@media (max-width: 600px) {
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__main { padding: .35rem .75rem 5rem; }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__stage { gap: .65rem; }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__title-art { height: 3.1rem; }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .sidecar-spin-controls { --sidecar-control-spin: 4.7rem; }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road { padding: .7rem; }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road__bonus { padding: .65rem .2rem !important; }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road:is([data-feature-kind='fort'], [data-feature-kind='hill']) .crooked-road__fort-play { grid-template-columns: minmax(0, 1.3fr) minmax(0, .8fr); gap: .5rem; }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road[data-feature-kind='fort'] .crooked-road__coin-grid { width: 100%; }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road__bonus-heading { gap: .3rem; }
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .crooked-road__bonus-total strong { font-size: 1.15rem; }
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar']::before {
+  background:
+    radial-gradient(ellipse at 50% 30%, transparent 24%, rgb(2 15 12 / 42%) 100%),
+    linear-gradient(180deg, rgb(2 14 16 / 20%), rgb(3 18 12 / 46%));
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__title-art {
+  max-width: 85%;
+  filter: drop-shadow(0 0.35rem 0.5rem rgb(0 10 6 / 78%));
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slot-game-frame {
+  border: clamp(0.2rem, 0.5vw, 0.42rem) solid #746b43;
+  border-radius: 0.7rem;
+  background: #092a1d;
+  box-shadow:
+    inset 0 0 0 1px #f2d58c,
+    0 0 0 1px #c7a354,
+    0 0.8rem 1.7rem rgb(0 9 6 / 55%);
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slot-game-frame::after {
+  display: block;
+  z-index: 0;
+  inset: -0.85rem;
+  height: auto;
+  border: 1.2rem solid transparent;
+  border-image: url('./assets/art/irish/cabinet/crooked-road-reel-surround-v1.webp') 185 240 / 1.2rem stretch;
+  border-radius: 0;
+  background: none;
+  filter: none;
+  content: '';
+  pointer-events: none;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slot-game-frame[data-cabinet-chrome='simple'] .slot-game-frame__visuals {
+  padding: clamp(0.35rem, 0.8vw, 0.65rem);
+  background:
+    radial-gradient(ellipse at 50% 0, rgb(67 114 66 / 18%), transparent 65%),
+    linear-gradient(180deg, #103b29, #062015);
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slot-machine__reels {
+  border: 1px solid rgb(216 175 85 / 72%);
+  border-radius: 0.3rem;
+  background: #07261a;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slot-game-frame[data-cabinet-chrome='simple'] .slot-reel {
+  border-right-color: rgb(211 171 85 / 52%);
+  background: linear-gradient(90deg, rgb(0 12 8 / 30%), transparent 25% 75%, rgb(0 12 8 / 28%));
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slot-symbol {
+  border-bottom: 1px solid rgb(211 171 85 / 24%);
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__spin-controls .spin-button {
+  border-color: #e6c579;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 16%, rgb(212 255 165 / 32%), transparent 36%),
+    radial-gradient(circle at 50% 70%, #168441, #07532e 50%, #032c1b 76%);
+  box-shadow:
+    inset 0 0 0 2px #6d531d,
+    inset 0 0 0 4px rgb(246 220 147 / 52%),
+    0 0.35rem 0.7rem rgb(0 12 7 / 64%);
+  color: #fff1bf;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__spin-controls .spin-button:hover:not(:disabled),
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__spin-controls .spin-button:focus-visible {
+  filter: brightness(1.15);
+  outline-color: #fff0ba;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__wager-display,
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__spin-controls .slots-page__auto-spin,
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__wager-nudge {
+  border-color: #c9a35c;
+  background: linear-gradient(160deg, #174a32, #061f15);
+  color: #fff1ca;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__wager-display > span {
+  color: #e3c586;
+}
+
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__collection-tooltip,
+.slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__collection-award-dialog {
+  border-color: #c9a35c;
+  background: linear-gradient(160deg, #173d2d, #061d15);
+  color: #fff1ca;
+}
+
+@media (max-width: 560px) {
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] {
+    --slot-title-height: clamp(3.4rem, 15vw, 4.5rem);
+  }
+
+  .slots-page[data-slot-theme='crooked-road-cabinet-v1'][data-slot-controls='sidecar'] .slot-game-frame::after {
+    inset: -0.45rem;
+    border-width: 0.7rem;
+    border-image-width: 0.7rem;
+  }
+}

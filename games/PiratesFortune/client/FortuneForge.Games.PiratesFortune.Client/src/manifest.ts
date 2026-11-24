@@ -8,6 +8,8 @@ import { PIRATES_FORTUNE_CABINET_THEME } from './cabinetTheme'
 import { PIRATES_FORTUNE_CATALOG } from './catalog'
 import { PIRATES_FORTUNE_SYMBOLS } from './symbols'
 import { TreasureGemFlyover } from './TreasureGemFlyover'
+import { TreasureCoveIntroduction } from './TreasureCoveIntroduction'
+import { TREASURE_COVE_TITLE } from './identity'
 
 const PIRATES_FORTUNE_FEATURES: SlotFeatureSet = {
   collections: {
@@ -93,7 +95,17 @@ export const PIRATES_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide
       ['FREE', '7', 'ACE', 'POWER'],
     ],
   }),
-  presentation: { CollectionFlyover: TreasureGemFlyover },
+  presentation: {
+    CollectionFlyover: TreasureGemFlyover,
+    paymentAlerts: false,
+    symbolValueGuide: { mode: 'modal' },
+    winHelp: {
+      Content: TreasureCoveIntroduction,
+      title: `How to win · ${TREASURE_COVE_TITLE}`,
+      eyebrow: 'A captain’s guide',
+      theme: 'treasure-cove',
+    },
+  },
 }, {
   preserveCollectionGuideEntries: true,
   preserveCollectionHelpSections: true,

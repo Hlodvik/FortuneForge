@@ -5,6 +5,7 @@ import { verifyMidnightStandalone } from './verify-midnight-standalone.mjs'
 import { verifyNeonStandalone } from './verify-neon-standalone.mjs'
 import { verifyGoldFoundryStandalone } from './verify-gold-foundry-standalone.mjs'
 import { verifySlotPackageBoundaries } from './verify-slot-package-boundaries.mjs'
+import { verifySlotClientEntries } from './verify-slot-client-entries.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (path) => readFileSync(resolve(root, path), 'utf8')
@@ -72,5 +73,6 @@ for (const error of verifyNeonStandalone(root).errors) fail(error)
 for (const error of verifyMidnightStandalone(root).errors) fail(error)
 for (const error of verifyGoldFoundryStandalone(root).errors) fail(error)
 for (const error of verifySlotPackageBoundaries(root).errors) fail(error)
+for (const error of verifySlotClientEntries(root).errors) fail(error)
 if (process.exitCode) process.exit(process.exitCode)
 console.log(`Verified ${sourceProjectPaths.size} server game projects and ${clientGameDependencies.length} client game workspaces are owned by this repository.`)

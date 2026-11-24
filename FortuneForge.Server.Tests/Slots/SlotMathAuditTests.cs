@@ -209,7 +209,6 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
         SlotSpecialRoundProfiles.GodsOfOlympusGameId,
         SlotSpecialRoundProfiles.PiratesFortuneGameId,
         SlotSpecialRoundProfiles.RoyalDrawGameId,
-        SlotSpecialRoundProfiles.SamuraiFortuneGameId,
         SlotSpecialRoundProfiles.RobotRevolutionGameId,
         SlotSpecialRoundProfiles.PhantomManorGameId,
         SlotSpecialRoundProfiles.OceanOdysseyGameId,
@@ -219,7 +218,6 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
         SlotSpecialRoundProfiles.NeonNightsGameId,
         SlotSpecialRoundProfiles.NordicLegendsGameId,
         SlotSpecialRoundProfiles.ReelRichesGameId,
-        SlotSpecialRoundProfiles.ArcaneArchivesGameId,
         GoldFoundrySlotDefinitions.GameId
     ];
 }

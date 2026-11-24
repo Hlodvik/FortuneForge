@@ -67,9 +67,7 @@ public interface IAccountStore
         DateTime startedAtUtc,
         TimeSpan cooldown,
         CancellationToken cancellationToken,
-        Func<SlotSpinAdmission, CancellationToken, Task<SpinResult>>? resolveOutcome = null,
-        string? operationId = null,
-        bool allowNewPrepared = true);
+        Func<SlotSpinAdmission, CancellationToken, Task<SpinResult>>? resolveOutcome = null);
 
     Task<LegacySlotRecoveryResult> ReconcileExpiredLegacySlotAsync(
         string userId, string gameId, DateTime nowUtc, CancellationToken cancellationToken);

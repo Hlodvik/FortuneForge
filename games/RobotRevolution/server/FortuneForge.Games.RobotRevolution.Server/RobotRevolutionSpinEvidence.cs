@@ -16,7 +16,7 @@ public static partial class RobotRevolutionSpinEvidence
     public static bool IsNative(JsonElement data) => data.TryGetProperty("robotRevolutionDraws", out _) ||
         data.TryGetProperty("robotRevolutionProgress", out _) || data.TryGetProperty("engineOutcomeSha256", out _);
 
-    /// <summary>Replays Fifth Sun's recorded draws and verifies the game and signed wallet progression.</summary>
+    /// <summary>Replays Sunstone Eclipse's recorded draws and verifies the game and signed wallet progression.</summary>
     public static IReadOnlyList<RoundAuditFinding> InspectNative(RoundAuditSummary summary, JsonElement data)
     {
         try
@@ -68,7 +68,7 @@ public static partial class RobotRevolutionSpinEvidence
             KeyNotFoundException or FormatException or OverflowException or NullReferenceException or GameWalletUnavailableException)
         {
             return [new("slot-robot-revolution-native-proof-mismatch", "error",
-                "Fifth Sun's reels, Sunwheel guardian alignment, bonus source, or signed wallet evidence do not match the paid outcome.")];
+                "Sunstone Eclipse's reels, Sunwheel guardian alignment, bonus source, or signed wallet evidence do not match the paid outcome.")];
         }
     }
 
@@ -77,5 +77,5 @@ public static partial class RobotRevolutionSpinEvidence
 
     private static long Microseconds(DateTime value) => value.Ticks / TimeSpan.TicksPerMicrosecond;
 
-    private static InvalidOperationException InvalidEvidence() => new("The archived Fifth Sun round cannot be replayed.");
+    private static InvalidOperationException InvalidEvidence() => new("The archived Sunstone Eclipse round cannot be replayed.");
 }

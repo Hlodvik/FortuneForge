@@ -1,0 +1,666 @@
+{
+  "projectId": "demo-pharaoh-paid-9773fb8629e448c6b9303ba3cd0d3d69",
+  "account": "pharaoh-ascent-local-paid-test",
+  "beforeBalance": 10038.5,
+  "paidSpins": 79,
+  "earnedSpins": 27,
+  "wagerCents": 23700,
+  "payoutCents": 24325,
+  "rounds": [
+    {
+      "spinId": "e1f5595c-402a-4d5b-a8ea-b825c83d44f2",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "6c019f16-54ac-4f76-a58e-719c6ada83f8",
+      "chargedWagerCents": 300,
+      "payoutCents": 250,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "f8c89a0e-2c62-4137-a144-78ddd82711b2",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "421d9259-e3cd-48dd-a379-04982e833528",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "a57ce12f-4e94-428a-8914-76c25a57c440",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "8dfc18a6-123b-4dc5-9e06-25af5433060f",
+      "chargedWagerCents": 300,
+      "payoutCents": 250,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "d3353658-202f-49f3-b7e1-0e6830e07653",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "b1665cc5-6d25-4961-9505-920c616360e5",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "2995db79-4ab7-496e-9c21-ec3d0cb41b1a",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "e3bfdba7-f865-4472-a880-ffda00106ec7",
+      "chargedWagerCents": 300,
+      "payoutCents": 2075,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "896277ff-c6e5-4e87-a353-3e4df059cc3c",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "1c532c31-d909-41d1-beb5-92bdd10fe7d0",
+      "chargedWagerCents": 300,
+      "payoutCents": 250,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "57b8367d-ae8c-4717-92a1-4022bdeeeba5",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "cc53af08-c672-47bd-9321-6074a33b00ed",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "d008de3e-5a4c-4bee-9bdd-788e58287bda",
+      "chargedWagerCents": 300,
+      "payoutCents": 250,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "ef5b397e-aa73-4a44-963a-fd63cae3b592",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "8bd3070b-33c4-4010-a524-2cfc2828fc6e",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "a8c47698-4169-423f-b46c-08992ca9d764",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "3a35141d-741d-4fbf-a0fc-ada80a08f52c",
+      "chargedWagerCents": 300,
+      "payoutCents": 250,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "b7c534dc-768a-4e92-80c2-4fe21d8d1b5f",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "43d03647-8f8c-4c2a-82e2-731ea008f666",
+      "chargedWagerCents": 300,
+      "payoutCents": 1300,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "3c59c05a-b775-4ce5-8f2d-1d23a5255ec4",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "c2af585d-37af-452a-bfc9-e39962e2b271",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "fc0dd704-d6fc-484a-9591-b62e219d87b8",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "3a87e2d2-f982-4653-a25d-4e67258bd6a8",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "b380582d-aac2-4fc6-b4c9-8ded128cc632",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "6f150c31-1169-43b7-bc8a-161a84b6cc51",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "3a7cdd17-967d-437e-80a4-1679fbf7b384",
+      "chargedWagerCents": 300,
+      "payoutCents": 500,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "2f938d46-911b-4935-8b8e-ca8bdfb9829b",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "45224618-0001-4fc5-a41a-c43c567a69f7",
+      "chargedWagerCents": 300,
+      "payoutCents": 250,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "1dccf233-c105-45d3-9e4e-9014731ae806",
+      "chargedWagerCents": 300,
+      "payoutCents": 250,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "39991749-f135-4945-afe8-b58fcac6069e",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "4cb381c2-a5b3-45c7-a6c9-af41c1fb541d",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "928faa50-3f65-4afe-aa8a-3d8d5f7086c6",
+      "chargedWagerCents": 300,
+      "payoutCents": 775,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "ceaf650a-6a08-4c4b-86c9-136c2b3408bb",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "e30b4b26-40c6-4bbd-9e19-87e8bd37866d",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "be611ea7-8288-40c7-8330-c4943ba7f928",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "96544925-8334-4763-bebb-e39df0138873",
+      "chargedWagerCents": 300,
+      "payoutCents": 250,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "a1227e29-6b6a-4189-85b7-4d136657364d",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "8ae49334-d6e9-4653-81e8-8a5ec9bd9975",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "7726384c-f70b-4bbc-8a2c-e8ed0cb93d09",
+      "chargedWagerCents": 300,
+      "payoutCents": 500,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "768ac11a-5e35-4e37-ac11-5747895a4fea",
+      "chargedWagerCents": 300,
+      "payoutCents": 250,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "008a18a3-803c-4385-ae84-423d583cc797",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "c8fda019-5a73-464a-95cc-7dfc7e679cf8",
+      "chargedWagerCents": 300,
+      "payoutCents": 775,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "53ff2486-4283-4a20-91a9-949872e4131a",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "b26c28e5-b263-452f-9485-ee7ef6662db0",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "6d08b2ac-5cc6-4e42-a5b9-254417a65377",
+      "chargedWagerCents": 300,
+      "payoutCents": 525,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "e6dc0193-64b2-47d4-b10c-c16550fb2fca",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "0c7253b3-220f-46e0-9346-5ce914b0f84b",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "3b5b4730-c20e-4cad-9ff2-6733b9797ebb",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "8dad0780-2b48-4a75-9b0d-8c35b9fffc65",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "8fd9b250-4b2a-4efe-ba9b-4c8b18e788ca",
+      "chargedWagerCents": 0,
+      "payoutCents": 1025,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "2c524765-e69d-4f58-87e2-bcb31e26e10c",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "e41ce6d4-112c-4d61-bdf1-398091b1c2ff",
+      "chargedWagerCents": 0,
+      "payoutCents": 250,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "c0f1dd3c-ffdb-4386-ab2a-0474037dbc7e",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "d9e4279e-1cd1-4a76-b4bf-7eab633d2341",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "b09acabe-000e-46bc-94d4-14f8db570100",
+      "chargedWagerCents": 300,
+      "payoutCents": 1275,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "b007bbf7-9673-49e9-bd77-b30eb28bc01e",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "66ef4b67-5eb4-467b-82d1-5e3ad674fee4",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "c111c671-7a38-45d8-bdbc-d8c31bc8b373",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "3d811133-00a6-4d52-a429-85d438efc126",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "b1b8105b-1ff6-4312-a6f7-99b912065e78",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "c66f0f24-3ac4-4bc4-8bef-e3d99fbf0e80",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "e975c78e-86be-4a10-9707-830b5a76428d",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "98372b8a-0df6-4361-9772-db9082d23ede",
+      "chargedWagerCents": 0,
+      "payoutCents": 250,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "f32cf689-3d48-46b9-a40a-9d23977cb25b",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "0e21426c-fe7d-418a-bbe2-899b9f2e7cee",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "4322b61b-3baa-46a9-9d9a-68a110363df1",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "2e5f680c-c59a-436b-bc35-02630ee9cef2",
+      "chargedWagerCents": 0,
+      "payoutCents": 250,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "bd864774-5ef2-4aa5-a956-6fb043b687de",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "5c39bbeb-b4f2-4478-a1c5-8400fbfeb7a1",
+      "chargedWagerCents": 0,
+      "payoutCents": 500,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "f6d7607b-a6e8-4b3e-8976-e6f9d1233296",
+      "chargedWagerCents": 300,
+      "payoutCents": 525,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "3a4fb1df-f52d-4562-bf4f-eb8d6002a90c",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "ad2ee2c0-0100-49ec-b92c-60b057f315ac",
+      "chargedWagerCents": 300,
+      "payoutCents": 250,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "2c0a7b55-e9cb-4492-a445-60efbe2b1dde",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "e0c24209-4aa4-4758-9527-739d43eeefbc",
+      "chargedWagerCents": 300,
+      "payoutCents": 2050,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "02573f39-bc29-4516-966f-9ee3221c36dd",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "b019adb1-51b0-475a-8116-9028d827edf1",
+      "chargedWagerCents": 300,
+      "payoutCents": 250,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "22c66a61-2211-4c74-b194-93a2ed503480",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "bac36445-0f96-428b-9e88-6482e3c403d6",
+      "chargedWagerCents": 300,
+      "payoutCents": 250,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "0c68fa97-7bbd-4af2-8e36-23417aad82e9",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "4e968dbc-a2a1-48c3-8f5b-14c8cbf6a5a2",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "087f95b2-1776-4746-8e38-6bf97cb3b8fa",
+      "chargedWagerCents": 300,
+      "payoutCents": 250,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "84fd8460-7608-4b2a-a0cd-b7ce85c12ac6",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "584aaa28-9e3b-4c8e-8186-d82018ddbf9d",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "cf93567c-c119-4d4a-838e-4b14b25f9327",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "e41d9a01-2a79-462a-8d3f-2e14a6c46b33",
+      "chargedWagerCents": 0,
+      "payoutCents": 525,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "68711fbc-8a2c-4dde-9d30-ad51289e8984",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "526587f7-e20a-453e-bdbf-95567320b91d",
+      "chargedWagerCents": 0,
+      "payoutCents": 250,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "05e85c81-dbb7-4434-b8ee-8e022182d0f4",
+      "chargedWagerCents": 0,
+      "payoutCents": 250,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "3a047200-e1bc-41f0-be1f-6fd8f432442e",
+      "chargedWagerCents": 0,
+      "payoutCents": 775,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "5a712ab6-6732-4f45-b633-ef4f30f971f0",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "a7679186-eb03-4c27-bfee-b3830b50e495",
+      "chargedWagerCents": 300,
+      "payoutCents": 2575,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "8981e12f-81e9-44a3-a33b-2c80d3348df5",
+      "chargedWagerCents": 0,
+      "payoutCents": 1575,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "5c5c0085-2a13-4e05-829a-b7c797aed0d7",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "6793e968-6c8b-4482-b505-5fd566b0ddce",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "e3093dd9-ce1f-4fc7-8344-2f22c936001c",
+      "chargedWagerCents": 0,
+      "payoutCents": 250,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "1a7fc2b6-de77-4d70-bc35-d436e822d3b8",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "60a7a524-7e2c-4c06-9df2-98d43aec9841",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "1cb41f3b-50b6-46b2-920e-781810e42559",
+      "chargedWagerCents": 0,
+      "payoutCents": 0,
+      "isFreeSpin": true
+    },
+    {
+      "spinId": "715acf70-a4f1-423e-bde8-9e6e47ff5490",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "36fc5b04-130a-463a-8f2a-41b8586edb62",
+      "chargedWagerCents": 300,
+      "payoutCents": 2300,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "8acaa446-354a-423f-a411-19d8ab4f265e",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "e547b918-73df-4731-9a3d-843864511c36",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "f4635b45-d156-40a3-97f1-bcde4cb9cb81",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    },
+    {
+      "spinId": "29fcc6be-cfce-4248-b25b-5ced9ac89086",
+      "chargedWagerCents": 300,
+      "payoutCents": 0,
+      "isFreeSpin": false
+    }
+  ],
+  "afterBalance": 10044.75,
+  "finalTomb": {
+    "contractVersion": 1,
+    "revision": 245,
+    "funding": {
+      "sigils": 0,
+      "requiredSigils": 6,
+      "averageWagerPoints": 0
+    },
+    "tickets": [
+      {
+        "id": "tomb-29fcc6becfce4248b25b5ced9ac89086",
+        "fundedWagerPoints": 12
+      }
+    ],
+    "activeRun": null,
+    "lastRun": null,
+    "pendingAction": null
+  }
+}

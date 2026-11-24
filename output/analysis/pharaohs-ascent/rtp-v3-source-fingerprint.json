@@ -1,0 +1,200 @@
+{
+  "generatedAtLocal": "2026-11-22T20:26:19.1557445-06:00",
+  "computer": "Vinnabok",
+  "engineVersion": "pharaohs-ascent-sealed-tomb-v3",
+  "files": [
+    {
+      "file": "games/CosmicFortune/math-v3.json",
+      "sha256": "7c418614f0f5d218b678b8d22afef0540c4f200f73faeff5fd73eeced897ac4b"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/CosmicFortunePaidEndpoints.cs",
+      "sha256": "60ce3d8444bdd0f17b5253834f8ca6e9480ad213b1cd6209ea5ab1d7fc8726b9"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/CosmicFortunePaidSlotOutcomes.cs",
+      "sha256": "a11f1a5058a2559f54b0dcd93b1f08f07d5ad251bed3e7d7cc508f9a1e0d6056"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/CosmicFortuneRoundModels.cs",
+      "sha256": "97cdecb73143342bff967a7821b710d935b37e70846cfb38ec273acc8fde5089"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/CosmicFortuneRoundPolicy.cs",
+      "sha256": "b69550a4d0f41cc4a7b715ccee144a9ca38d6e20bf13f90042dbcefb5f53c120"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/CosmicFortuneRoundService.cs",
+      "sha256": "ea1a83975088ae63c175e5c3d75a258041fa9918ccbcc3d887b7ddfb555b7715"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/CosmicFortuneRoundStateCodec.cs",
+      "sha256": "b2723fd7e7f4122785549c202697d0cae82a7d275a1e8c8776875da2248ec609"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/CosmicFortuneRoundStore.cs",
+      "sha256": "8986bae21a630aa0df48e4cb47703947c3a889415f96bf8170876e2260e6c76d"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/CosmicFortuneSpinDraws.cs",
+      "sha256": "8f2f239ac95c7d1b503d95e84b387e41ef0b3d0af22cbd39ecfc93e313d7abc3"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/CosmicFortuneSpinEvidence.cs",
+      "sha256": "a6ee5edd9ebcecaeb240dd36d0807b54e6dc7f7ebb8303709a84fd10a77cc69d"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/CosmicFortuneSpinReport.cs",
+      "sha256": "216590b4772b0356d8774a80473a21e94e2829e2b2326752d9abb5f2c9b7f950"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/CosmicFortuneSpinResponse.cs",
+      "sha256": "5c49144b5797329a002128cbfe6b069e8a1950a753fc6565fe149b052c572b8d"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/PharaohsAscentFeature.cs",
+      "sha256": "baf9800ad36cf99b30e7ddf9eebab7c392d1a9030f694f1fdf2a7e7bcbb46125"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/Program.cs",
+      "sha256": "a25a75a0805e8466399c7a9ce50ae879bef46f422ab5bd9b83f21076f7c5da85"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/SealedTombEvidence.cs",
+      "sha256": "9d43a94d90bffd805744b7301e3378cbaa5f79c7c5f1878e6306320072b7d765"
+    },
+    {
+      "file": "games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/SealedTombRoundPolicy.cs",
+      "sha256": "fb81e7e613008199bb790956fb1251fab48def4425b70042904620859986204a"
+    },
+    {
+      "file": "games/CosmicFortune/server/GameWorkerModule.cs",
+      "sha256": "ac7ef1ffd64728b3a90ef87ef3a4c43c3fe308c544f875af49791d65475b4a06"
+    },
+    {
+      "file": "games/CosmicFortune/src/FortuneForge.Games.CosmicFortune/CosmicFortuneEngine.cs",
+      "sha256": "0d54120be7758b04aa9bbe0687efdd09417384b12a0907d13cb837a16d255ef7"
+    },
+    {
+      "file": "games/CosmicFortune/src/FortuneForge.Games.CosmicFortune/PharaohsAscentFreeSpins.cs",
+      "sha256": "35a4db13ef5d16c80a7e53c5730a8b440afc57f36f563e6b566b559631efae2a"
+    },
+    {
+      "file": "games/CosmicFortune/src/FortuneForge.Games.CosmicFortune/PharaohsAscentMathV3.cs",
+      "sha256": "de69b4cff320b5d26ba68b4d48e0bba40fc5f091e56f2d25d2aac4954dd15054"
+    },
+    {
+      "file": "games/CosmicFortune/src/FortuneForge.Games.CosmicFortune/PharaohsAscentPity.cs",
+      "sha256": "b92463b35a428a78d5d1ddd9947b398eadfc47e4d232594b91a223b850f67517"
+    },
+    {
+      "file": "games/CosmicFortune/src/FortuneForge.Games.CosmicFortune/PharaohsAscentScarabs.cs",
+      "sha256": "89413b440ba339746840b4e3fbd53d64a5058d08b3d8eabb588ad3761b0032b9"
+    },
+    {
+      "file": "games/CosmicFortune/src/FortuneForge.Games.CosmicFortune/PharaohsAscentSunfire.cs",
+      "sha256": "fabcdf313188007a60adb9c76b63ace0100f76033928f681481dfd7e40bbfc9b"
+    },
+    {
+      "file": "games/CosmicFortune/src/FortuneForge.Games.CosmicFortune/PharaohsAscentWagering.cs",
+      "sha256": "2fd5c1a0ba47c171ffb6f63bddcffd49c5bde02e74e9255c8e586ac9fa32a178"
+    },
+    {
+      "file": "games/CosmicFortune/src/FortuneForge.Games.CosmicFortune/SealedTombRules.cs",
+      "sha256": "42f80930626ac16e1126e4efb8fa642f11131c438f9d5f66bf1b8b2583fc86e3"
+    },
+    {
+      "file": "games/CosmicFortune/src/FortuneForge.Games.CosmicFortune/SealedTombState.cs",
+      "sha256": "6b8d299b15281a00210ba81a4c291c4bc5f60ef8d9e312ecbfb1d429bb154092"
+    },
+    {
+      "file": "games/CosmicFortune/wagering.json",
+      "sha256": "8a2aec034241f5085b5f04483c85b67ecc016242a990ddcf41d001fe1e093db3"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Contracts/PaidSlotOutcome.cs",
+      "sha256": "dda7cc1320cb411b24e783d2f88c260e8215ce59db8757c0601fc936e1a4b04b"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Contracts/SlotContracts.cs",
+      "sha256": "35354fcf5ebefedc92593e02432384f5c87d00bd1a1958b36cc8f6165269d463"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Contracts/SlotDefinitions.cs",
+      "sha256": "ed096ac9e7d8fd73c60465d4778f1c8c226dafcb34382bb38c9d831340e23238"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Contracts/SlotSpinGuard.cs",
+      "sha256": "b78f59470889d43298178dd46556992bb2228ba022c9f93f2cdd94cdf6ec4da1"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Contracts/SlotSpinResultFields.cs",
+      "sha256": "06d82667691ede2e3c964f6b50605178f8aff83fa8530a76e91dfc6fc0d52f36"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Persistence/ClassicSlotPaidRoundStore.cs",
+      "sha256": "132c4cb8cd799790372f37d7514b895873084a3ce9a87bdec566e9b45e12b9c8"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Persistence/ClassicSlotReportWriter.cs",
+      "sha256": "c27136559be5c1425fdbe68cd1e1f8cb86bc2740fac2e7be3e0173856e967be9"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Persistence/ClassicSlotRoundProgression.cs",
+      "sha256": "de224284b37f201bbec6e9f0a0bfc89676eba62f2895e118b281e26c3a079c44"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Persistence/ClassicSlotRoundStateCodec.cs",
+      "sha256": "c454ed2064e30cbb7c2d847a516f4440ca1f78f7736fe34f6ab5dc42147171a7"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotDefinitionFactory.cs",
+      "sha256": "5fd9306653be3b77f37b2c6c42c09bf167f3476d624079ac5c520282add286a4"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEnergy.cs",
+      "sha256": "b1bcbd4ab31c44a63332394a30b37a636099332bfc0dda30a05069f69ba3de7a"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.cs",
+      "sha256": "ed0f53bab4a2c96899eee4608c989363216ab5906a79edd56300fada2cd978f0"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.Features.cs",
+      "sha256": "0f6480cc14a3c7d21bb6848a94b7ab0a9fbe680911552a936ed6130eb3ba4a7b"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.Math.cs",
+      "sha256": "22b45f317ca0af2c297d73d58667894e4a953e5904abfc6debfc173274bfc957"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotModels.cs",
+      "sha256": "384f0a0d9e663928d53c256bd5191ab59d8625abe1b2091c75b51dc1ca80de74"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotPracticeCollections.cs",
+      "sha256": "3a332b84142b659891ea6c44328c9f1bdb6f904f8010eb166d361bac602b12b0"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotReplayEvidence.cs",
+      "sha256": "58cbf51951cc18040fb1236d7df28c20ac45c15b31eb3a1d0cc640dca2aaf1d9"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Runtime/CryptographicSlotRandom.cs",
+      "sha256": "29577cd422bb20bd436c763a8e7397a6249c5940a85202e0c75845d407e03c8f"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Runtime/ExactStraightThreePaylines.cs",
+      "sha256": "3ab89f1658a36059e2861395ace956325409e3a040da85ada5332033afa1586b"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Runtime/FrozenSlotDefinitions.cs",
+      "sha256": "f160054b9b037a178810a8b435118925897f0896646b7b558f9673767e6ab3be"
+    },
+    {
+      "file": "games/shared/FortuneForge.Games.Slots.Runtime/SlotProfile.cs",
+      "sha256": "8ddcb43c4a85d8b7299af8b1ec35c4b53fae7d40f1dea3e5c12f4357c7146b97"
+    }
+  ],
+  "compiledMathDllSha256": "74e2d3c7ff7c89f97a7c319bddddef0f5b86f3bd1a46157eeccb77a5cfc9f3b2"
+}

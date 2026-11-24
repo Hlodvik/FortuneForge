@@ -30,9 +30,10 @@ internal sealed class FirestoreWalletRoundSettlementStore(FirestoreDb database) 
         if (PostedLegIdentity(ledger) is not { } identity) return [];
         var id = GameWalletSettlementIdentity.CreateId(identity.GameId, identity.UserId, identity.OperationId);
         var completion = GameWalletSettlementIdentity.CreateCompletionId(identity.GameId, identity.UserId, identity.OperationId);
+        var transactionIds = GameWalletTransactionIds.Create(identity.OperationId, id, GameWalletTransactionIdLayout.StandardSettlement);
         return [database.Collection("walletRoundSettlements").Document(id),
             database.Collection("walletRoundSettlements").Document(completion),
-            Transaction(database, id + "-wager"), Transaction(database, id + "-payout")];
+            Transaction(database, transactionIds.WagerId), Transaction(database, transactionIds.PayoutId)];
     }
 
     // Read-only history uses the same receipt arithmetic and ledger contracts as exact wallet retries.
@@ -55,8 +56,9 @@ internal sealed class FirestoreWalletRoundSettlementStore(FirestoreDb database) 
             Validate(settlement, settledAt, null);
             if (settlement.SpendLegacyFreeGame || settlement.ExpectedLegacyFreeGamesRemaining is not null ||
                 stored.ContainsField("legacyFreeGamesBefore")) return false;
-            var wager = Read("balanceTransactions", id + "-wager");
-            var payout = Read("balanceTransactions", id + "-payout");
+            var transactionIds = GameWalletTransactionIds.Create(identity.OperationId, id, GameWalletTransactionIdLayout.StandardSettlement);
+            var wager = Read("balanceTransactions", transactionIds.WagerId);
+            var payout = Read("balanceTransactions", transactionIds.PayoutId);
             var receipt = ReadReceipt(stored, settlement, false, wager.Id, payout.Id, null);
             if (IsDeclined(receipt) || receipt.SettlementId != (phase == GameWalletSettlementPhase.CompleteReservation ? completionId : id))
                 return false;
@@ -136,18 +138,19 @@ internal sealed class FirestoreWalletRoundSettlementStore(FirestoreDb database) 
             ? GameWalletSettlementIdentity.CreateCompletionId(settlement.GameId, settlement.UserId, settlement.OperationId) : null;
         var settlementId = completing ? completionId! : baseId;
         var isLegacySlot = ledgerLayout?.SlotSpinId is not null;
-        var ledgerPrefix = ledgerLayout?.SlotSpinId?.ToString("N") ?? baseId;
+        var transactionIds = GameWalletTransactionIds.Create(settlement.OperationId, baseId,
+            isLegacySlot ? GameWalletTransactionIdLayout.LegacyOperation : GameWalletTransactionIdLayout.StandardSettlement);
         var balance = Balance(database, settlement.UserId, SlotsCreditsCurrencyId);
         var receipts = database.Collection("walletRoundSettlements");
         var receiptDocument = receipts.Document(settlementId);
         var linkedDocument = completing ? receipts.Document(baseId) : reserving ? receipts.Document(completionId!) : null;
         var wager = Transaction(database, ledgerLayout?.EntryId is { } entryId
-            ? $"arcade-competition-{entryId}-entry" : $"{ledgerPrefix}-wager");
-        var payout = Transaction(database, $"{ledgerPrefix}-payout");
+            ? $"arcade-competition-{entryId}-entry" : transactionIds.WagerId);
+        var payout = Transaction(database, transactionIds.PayoutId);
         var readLegacyBalance = settlement.SpendLegacyFreeGame || settlement.IncludeLegacyFreeGameBalance ||
             settlement.ExpectedLegacyFreeGamesRemaining is not null;
         var legacy = readLegacyBalance || completing
-            ? LegacyFreeGameWallet.Create(database, settlement, ledgerPrefix) : null;
+            ? LegacyFreeGameWallet.Create(database, settlement, transactionIds) : null;
         List<DocumentReference> reads = [balance, receiptDocument, wager, payout];
         if (linkedDocument is not null) reads.Add(linkedDocument);
         if (legacy is not null) reads.Add(legacy.Ledger);
@@ -356,11 +359,11 @@ internal sealed class FirestoreWalletRoundSettlementStore(FirestoreDb database) 
 
     private sealed record LegacyFreeGameWallet(DocumentReference Balance, DocumentReference Ledger, string CurrencyId)
     {
-        internal static LegacyFreeGameWallet Create(FirestoreDb database, WalletRoundSettlement settlement, string ledgerPrefix)
+        internal static LegacyFreeGameWallet Create(FirestoreDb database, WalletRoundSettlement settlement, GameWalletTransactionIds transactionIds)
         {
             var currency = LegacyFreeGameCurrencyId(settlement.GameId);
             return new(FirestoreWalletDocuments.Balance(database, settlement.UserId, currency),
-                Transaction(database, $"{ledgerPrefix}-free-game-use"), currency);
+                Transaction(database, transactionIds.LegacyFreeGameUseId), currency);
         }
 
         internal long ReadBalance(DocumentSnapshot snapshot, string userId) => ReadLegacyFreeGames(snapshot, userId, CurrencyId);

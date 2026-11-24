@@ -41,7 +41,6 @@ const slotDemoPaths = [
   '/slots/gold-foundry/demo',
   '/slots/neon-nights/demo',
   '/slots/ocean-odyssey/demo',
-  '/slots/samurai-fortune/demo',
   '/slots/candy-carnival/demo',
   '/slots/phantom-manor/demo',
   '/slots/nordic-legends/demo',
@@ -548,7 +547,7 @@ test('themed cabinets show their title and trace paid symbols with their own pal
   const themedGames = [
     'candy-carnival', 'high-noon-fortune', 'robot-revolution', 'nordic-legends',
     'cosmic-fortune', 'desert-treasures', 'ocean-odyssey', 'phantom-manor', 'royal-draw',
-    'samurai-fortune', 'reel-riches',
+    'reel-riches',
   ]
   const tracer = page.locator('.midnight-winning-paylines[data-palette="cabinet"]')
   const paidLine = tracer.locator('g[data-payline-id="1"]')
@@ -592,15 +591,6 @@ test('service failure state', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Open settings' })).toBeInViewport({ ratio: 0.99 })
 
   await expect(page.locator('.slots-page')).toHaveScreenshot('demo-service-error.png')
-})
-
-test('narrow mobile cabinet remains playable', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
-  await mockDemoApi(page)
-  await openStableSlot(page, '/slots/samurai-fortune/demo')
-
-  await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeInViewport()
-  await expect(page.locator('.slots-page')).toHaveScreenshot('narrow-mobile-samurai.png')
 })
 
 test('every slot cabinet fits a desktop viewport without document scrolling', async ({ page }) => {

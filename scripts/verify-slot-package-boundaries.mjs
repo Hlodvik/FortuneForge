@@ -34,7 +34,7 @@ export function verifySlotPackageBoundaries(root = repositoryRoot) {
 
   for (const game of inventory.games ?? []) {
     const gameRoot = resolve(root, 'games', game.folder)
-    const sourceName = sourcePackageName(game.folder)
+    const sourceName = game.backendPackage ?? sourcePackageName(game.folder)
     const backendRoot = resolve(gameRoot, 'src', sourceName)
     const backendProject = resolve(backendRoot, `${sourceName}.csproj`)
     const clientRoot = game.clientRoot
@@ -116,6 +116,7 @@ if (process.argv[1] && realpathSync(resolve(process.argv[1])) === realpathSync(f
     report.errors.forEach(error => console.error(error))
     process.exitCode = 1
   } else {
-    console.log(`Verified ${report.games} standalone slot backend/client boundaries (${report.packagedClients} packaged clients; ${report.hostRoutes} embedded host bridge).`)
+    console.log(`Verified package/import boundaries for ${report.games} slots (${report.packagedClients} packaged clients; ${report.hostRoutes} embedded host bridge).`)
+    console.log('This check does not verify game-owned screens, controllers, API calls, or standalone gameplay ownership.')
   }
 }

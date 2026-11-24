@@ -19,7 +19,7 @@ export type SlotCelebrationEffect =
   | 'cosmic-streak'
   | 'foundry-sparks'
   | 'ocean-swell'
-  | 'samurai-blossom'
+  | 'crooked-road-clover'
   | 'candy-sprinkles'
   | 'phantom-mist'
   | 'nordic-aurora'

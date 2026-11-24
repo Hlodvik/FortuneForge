@@ -1,0 +1,9 @@
+{
+  "localOnly": true,
+  "productionEngine": true,
+  "testFundsOnly": true,
+  "gameId": "cosmic-fortune-v1",
+  "engineVersion": "pharaohs-ascent-sealed-tomb-v2",
+  "projectId": "demo-pharaoh-paid-9773fb8629e448c6b9303ba3cd0d3d69",
+  "account": "pharaoh-ascent-local-paid-test"
+}

@@ -45,5 +45,5 @@ public sealed class ArcaneRoundConflictException(string message, ArcaneRoundRequ
 public sealed class ArcaneRoundStartPausedException()
     : InvalidOperationException("Starting new prepared Arcane Archives spins is paused.");
 
-public sealed class ArcaneLegacyPreparedRoundException()
-    : InvalidOperationException("This Arcane Archives spin was prepared by the legacy gateway.");
+public sealed class ArcaneObsoleteRoundException()
+    : InvalidOperationException("This saved Arcane Archives round uses an obsolete local format. Use a new isolated local account.");

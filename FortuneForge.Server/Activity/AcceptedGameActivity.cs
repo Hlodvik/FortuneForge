@@ -23,7 +23,8 @@ internal static class AcceptedGameActivityReader
         ["cosmic-fortune-v1"] = "cosmic-fortune", ["gold-foundry-v1"] = "gold-foundry",
         ["neon-nights-v1"] = "neon-nights", ["empty-slots-v1"] = "empty-slots-game",
         ["jungle-jackpot-v1"] = "jungle-jackpot",
-        ["ocean-odyssey-v1"] = "ocean-odyssey", ["samurai-fortune-v1"] = "samurai-fortune",
+        ["ocean-odyssey-v1"] = "ocean-odyssey", ["crooked-road-v1"] = "crooked-road",
+        ["samurai-fortune-v1"] = "samurai-fortune", // Historical settlement classification only.
         ["candy-carnival-v1"] = "candy-carnival", ["phantom-manor-v1"] = "phantom-manor",
         ["nordic-legends-v1"] = "nordic-legends", ["desert-treasures-v1"] = "desert-treasures",
         ["robot-revolution-v1"] = "robot-revolution", ["dragon-hoard-v1"] = "dragon-hoard",

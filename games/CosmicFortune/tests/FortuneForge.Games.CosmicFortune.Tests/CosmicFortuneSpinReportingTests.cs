@@ -44,22 +44,23 @@ public sealed class CosmicFortuneSpinReportingTests
         Assert.Equal(1.5m, response.PayoutMultiplier);
         Assert.Equal(0, response.EnergyBalance);
         Assert.Equal(7, response.FreeSpinsRemaining);
-        Assert.Equal("sync-rows", response.FreeSpinFeatureMode);
+        Assert.Equal("sync", response.FreeSpinFeatureMode);
         Assert.Equal(2, response.FreeSpinWagerPoints);
         Assert.Equal(0, response.FreeSpinsAwarded);
         Assert.Equal(7, report.Result["sealFreeSpinsAwarded"]);
-        Assert.Equal("sync-rows", report.Result["sealFreeSpinFeatureMode"]);
+        Assert.Equal("sync", report.Result["sealFreeSpinFeatureMode"]);
         Assert.Equal(0, response.MonkeyPawCount);
         Assert.Equal(0, response.MoneyGrabPoints);
         Assert.DoesNotContain(response.Payout.Paylines, line => line.PaylineId == 901);
-        Assert.Equal(5, response.BananaBonusPoints);
-        Assert.Equal(8, Assert.Single(response.Payout.Paylines, line => line.PaylineId == 801).AmountPoints);
+        Assert.Equal(16, response.BananaBonusPoints);
+        Assert.Equal(24, Assert.Single(response.Payout.Paylines, line => line.PaylineId == 801).AmountPoints);
+        Assert.Equal(24, response.SpinFeature!.ScarabTrailPoints);
         Assert.Equal(round.Outcome.Payout.Paylines.Sum(line => line.Matches.Sum(match => Multiply(match.AmountPoints))),
             response.Payout.TotalPoints);
         Assert.Equal(response.Payout.TotalPoints * 25, round.PayoutCents);
         Assert.Equal((double)(round.PayoutCents / 100m), report.Result["wonSlotsCredits"]);
         Assert.Equal("cosmic-fortune-v1", report.Result["gameId"]);
-        Assert.False(JsonSerializer.SerializeToElement(response, RoundAuditCapture.Json).TryGetProperty("chargedWagerCents", out _));
+        Assert.Equal(50, JsonSerializer.SerializeToElement(response, RoundAuditCapture.Json).GetProperty("chargedWagerCents").GetInt64());
 
         var spin = round.Outcome.SpinId.ToString("N");
         AssertWitness(report, $"{spin}-energy-award", "energy:cosmic-fortune-v1", 1, 100);
@@ -74,7 +75,7 @@ public sealed class CosmicFortuneSpinReportingTests
         var data = proof.RootElement.GetProperty("data");
         var audit = data.GetProperty("engineAudit");
         Assert.Equal(23, audit.GetProperty("baseGame").GetProperty("layout").GetProperty("paylineCount").GetInt32());
-        Assert.Equal(0.856m, audit.GetProperty("featureProfile").GetProperty("payoutMultiplier").GetDecimal());
+        Assert.Equal(1m, audit.GetProperty("featureProfile").GetProperty("payoutMultiplier").GetDecimal());
         Assert.False(audit.GetProperty("featureProfile").GetProperty("usesDirectValueTokens").GetBoolean());
         Assert.Empty(CosmicFortuneSpinEvidence.InspectNative(summary, data));
 
@@ -82,7 +83,7 @@ public sealed class CosmicFortuneSpinReportingTests
         changed["cosmicFortuneProgress"]!["collectionFreeSpinWagerPoints"] = 4;
         AssertMismatch(summary, changed);
         changed["cosmicFortuneProgress"]!["collectionFreeSpinWagerPoints"] = 2;
-        changed["cosmicFortuneDraws"] = Convert.ToBase64String(round.Engine.Draws.Append((byte)0).ToArray());
+        changed["cosmicFortuneDraws"] = Convert.ToBase64String(round.Engine!.Draws.Append((byte)0).ToArray());
         AssertMismatch(summary, changed);
     }
 

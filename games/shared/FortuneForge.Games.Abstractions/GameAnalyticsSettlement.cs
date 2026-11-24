@@ -33,7 +33,7 @@ public static class GameAnalyticsOutbox
         "andar-bahar", "hi-lo", "baccarat", "casino-war", "video-poker", "roulette", "craps", "keno", "sic-bo", "liars-dice", "2048", "drop-merge",
         "wukong-journey-to-the-west", "rainbow-realm", "pirates-fortune", "gods-of-olympus", "reel-riches", "high-noon-fortune",
         "royal-draw", "arcane-archives", "cosmic-fortune", "gold-foundry", "neon-nights", "jungle-jackpot", "empty-slots-game", "ocean-odyssey",
-        "samurai-fortune", "candy-carnival", "phantom-manor", "nordic-legends", "desert-treasures", "robot-revolution", "dragon-hoard",
+        "crooked-road", "samurai-fortune", "candy-carnival", "phantom-manor", "nordic-legends", "desert-treasures", "robot-revolution", "dragon-hoard",
     };
 
     public static GameAnalyticsOutboxDocument? Create(GameAnalyticsSettlement value)

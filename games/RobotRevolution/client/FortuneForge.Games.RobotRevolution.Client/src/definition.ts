@@ -1,13 +1,13 @@
 import type { SlotCabinetTheme } from '@fortuneforge/slot-client-core'
 import { FIFTH_SUN_SYMBOL_IMAGES as artwork } from './symbols'
 
-export const FIFTH_SUN_TITLE = 'Fifth Sun'
+export const FIFTH_SUN_TITLE = 'Sunstone Eclipse'
 export const FIFTH_SUN_GAME_ID = 'robot-revolution-v1'
 export const FIFTH_SUN_DESCRIPTION = 'Turn the ancient sunwheel, align three guardians, and reveal the hidden Eclipse.'
 
 export const FIFTH_SUN_CABINET: SlotCabinetTheme = {
   id: 'robot-revolution-cabinet-v1', chrome: 'simple',
-  accessibleName: 'Fifth Sun temple slot machine', eyebrow: 'Fortune Forge presents',
+  accessibleName: 'Sunstone Eclipse temple slot machine', eyebrow: 'Fortune Forge presents',
   title: FIFTH_SUN_TITLE, subtitle: 'Awaken the hidden sun', celebrationEffect: 'sunstone-corona',
   emblemImage: artwork.SUNSTONE, accentImage: artwork.ECLIPSE,
   backdropImage: artwork.REELBED, visualsBackdropImage: artwork.REELBED, pageBackdropImage: artwork.BACKDROP,

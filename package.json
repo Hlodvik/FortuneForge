@@ -84,6 +84,8 @@
     "verify:slot-math": "dotnet run --project ./tools/FortuneForge.SlotMath/FortuneForge.SlotMath.csproj --configuration Release -- 250000",
     "analyze:slots": "dotnet run --project ./tools/FortuneForge.SlotMath/FortuneForge.SlotMath.csproj --configuration Release -- 250000",
     "deploy:game": "node ./scripts/deploy-game.mjs",
+    "preflight": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1 -PreflightOnly",
+    "preflight:api": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1 -Target api -PreflightOnly",
     "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1",
     "deploy:test-free": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1 -TestFree -TestWaiverReason \"Owner explicitly requested the test-free deployment route.\"",
     "deploy:api": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1 -Target api",

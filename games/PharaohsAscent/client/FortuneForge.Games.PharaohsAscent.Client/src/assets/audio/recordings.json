@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "provenance": "User-supplied REAPER music exports and Splice percussion/oud recordings. Original files remain outside the repository. Playback copies use Vorbis quality 5 without gain adjustment or trimming; any pitch processing is recorded per track. The percussion music export is a full arrangement, not an isolated stem.",
+  "tracks": [
+    {
+      "file": "pharaoh-reworked.ogg",
+      "usage": "Music before four confirmed spins",
+      "sourceFile": "pharoah_reworked_4x.wav",
+      "sourceSha256": "cc0542af18a80099bd080316aabf77173ce4d58f8fed4c2010bbed34ed86787e",
+      "sha256": "1d7066a2f36a28166f80d4492c09f84805f0a6ccb64eff2453f98610a3727299",
+      "durationSeconds": 111.35528344671202,
+      "decodedDurationSeconds": 111.35528344671202,
+      "sampleRate": 44100,
+      "channels": 2,
+      "bytes": 1956490,
+      "encoding": {
+        "codec": "vorbis",
+        "quality": 5
+      },
+      "decodeVerified": true
+    },
+    {
+      "file": "pharaoh-reworked-percussion.ogg",
+      "usage": "Full music arrangement after four confirmed spins",
+      "sourceFile": "pharoah_reworked_4x_percussion.wav",
+      "sourceSha256": "838cbf4abab67901352606183c3ad5c5a64f0e06c4854caa581b060e7663275d",
+      "sha256": "5aeb0e07797599088051b9e7810a03e3480fddbe84fdd27f36f2353e0c1d4680",
+      "durationSeconds": 111.35528344671202,
+      "decodedDurationSeconds": 111.35528344671202,
+      "sampleRate": 44100,
+      "channels": 2,
+      "bytes": 2068252,
+      "encoding": {
+        "codec": "vorbis",
+        "quality": 5
+      },
+      "decodeVerified": true
+    },
+    {
+      "file": "pharaoh-riq-hit.ogg",
+      "usage": "Spin and instruction buttons",
+      "sourceFile": "WCP_Riq_Hit_24.wav",
+      "sourceSha256": "c57ed54d23571886f0a371c3ee3b1966fbf4a5cbeb7b8b6248e9dce392f72247",
+      "sha256": "2dbe1f26c7b97c4ee794732fe8880e72b9660ab2503192e58fc32a208248e149",
+      "durationSeconds": 0.4,
+      "decodedDurationSeconds": 0.39709750566893426,
+      "sampleRate": 44100,
+      "channels": 2,
+      "bytes": 11061,
+      "encoding": {
+        "codec": "vorbis",
+        "quality": 5
+      },
+      "decodeVerified": true
+    },
+    {
+      "file": "pharaoh-snake-rattle.ogg",
+      "usage": "Normal and guardian spinning reels",
+      "sourceFile": "GIO_MEET_bells_shake_snake_rattle.wav",
+      "sourceSha256": "0f23a7fd46549df7a39a1a26f09430ef59fe688e405a984a50a333fb5214412a",
+      "sha256": "7a1f1b26f3a1f2fb16e9a4052ee042f101aa4c8f78c764dfe3aa6fc692726ab4",
+      "durationSeconds": 3.828843537414966,
+      "decodedDurationSeconds": 3.828843537414966,
+      "sampleRate": 44100,
+      "channels": 2,
+      "bytes": 75096,
+      "encoding": {
+        "codec": "vorbis",
+        "quality": 5
+      },
+      "decodeVerified": true
+    },
+    {
+      "file": "pharaoh-bell-win.ogg",
+      "usage": "Reel wins",
+      "sourceFile": "GIO_MEET_bells_hit_high_pitch_lo.wav",
+      "sourceSha256": "9dbb96a0de3683beae4fedc0bf75e804d2e864e98232e667623027832c7e5f34",
+      "sha256": "0a2f928db32f53fda41a3d3cb1111c5ab07cd775dbe95df21ebdaded8692d97f",
+      "durationSeconds": 3.5431519274376417,
+      "decodedDurationSeconds": 3.5431519274376417,
+      "sampleRate": 44100,
+      "channels": 2,
+      "bytes": 48813,
+      "encoding": {
+        "codec": "vorbis",
+        "quality": 5
+      },
+      "decodeVerified": true
+    },
+    {
+      "file": "pharaoh-oud-big-win-g.ogg",
+      "usage": "Reel or tomb wins of at least 8 times their server-confirmed funded wager",
+      "sourceFile": "SC_LSE_oud_phrase_down_alt_F.wav",
+      "sourceSha256": "81c2e61ffd63049a233e7c321a19d4afd0995bdbf119b69cdd241859b19c4b21",
+      "sha256": "e4df9321f7f4374c8de59b95e2a1c2ad693f1f94185137629845f317ba7fa31e",
+      "durationSeconds": 2.835668934240363,
+      "decodedDurationSeconds": 2.835668934240363,
+      "sampleRate": 44100,
+      "channels": 1,
+      "bytes": 32696,
+      "encoding": {
+        "codec": "vorbis",
+        "quality": 5
+      },
+      "processing": {
+        "pitchSemitones": 2,
+        "sourceKey": "F",
+        "playbackTonic": "G",
+        "preserveTempo": true,
+        "filter": "rubberband=pitch=1.122462048309373"
+      },
+      "decodeVerified": true
+    }
+  ]
+}

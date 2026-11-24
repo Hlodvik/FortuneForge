@@ -1,0 +1,73 @@
+{
+  "gameId": "pharaohs-ascent-v1",
+  "payoutMultiplier": 1,
+  "pointValueInCents": 25,
+  "paylinePatternIds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23
+  ],
+  "scatterRequiredSymbols": 3,
+  "scatterAwardedSpins": 6,
+  "collectionTarget": 24,
+  "collectionAwardedSpins": 7,
+  "usesCollections": true,
+  "usesEnergy": true,
+  "usesDirectValueTokens": false,
+  "scatterFeatureMode": null,
+  "collectionFeatureMode": "sync-rows",
+  "paylinePayouts": {
+    "2": {
+      "three": 1,
+      "five": 2
+    },
+    "7": {
+      "three": 3,
+      "five": 11
+    },
+    "ACE": {
+      "three": 5,
+      "five": 18
+    },
+    "5": {
+      "three": 2,
+      "five": 6
+    },
+    "4": {
+      "three": 1,
+      "five": 3
+    },
+    "POWER": {
+      "three": 1,
+      "five": 5
+    },
+    "3": {
+      "three": 1,
+      "five": 2
+    },
+    "6": {
+      "three": 2,
+      "five": 8
+    }
+  }
+}

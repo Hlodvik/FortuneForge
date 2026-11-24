@@ -1,4 +1,4 @@
-import wageringDocument from '../../../wagering.json?raw'
+import wageringDocument from './assets/contracts/wagering.json?raw'
 
 export type PharaohWagering = Readonly<{
   pointValueInCents: number

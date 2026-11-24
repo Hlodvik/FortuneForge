@@ -30,7 +30,6 @@ export function PharaohAscentView({ controller: c, paymentAlerts }: { controller
   const settled = c.hasCompletedSpin && !c.isSpinning
   const winningCells = useMemo(() => c.winningPaylines.flatMap(line => line.matches.flatMap(match => match.match.positions)), [c.winningPaylines])
   const highlighted = settled && activePath?.resultKey === c.resultKey ? activePath.positions : winningCells
-  const openHelp = () => { c.onNavigate(); c.setIsHelpOpen(true) }
   const closeHelp = () => c.setIsHelpOpen(false)
   const status = c.spinAvailability === 'checking' ? 'Opening your saved expedition…'
     : c.spinAvailability === 'unavailable' ? 'Reconnect to continue your saved game.'
@@ -93,7 +92,7 @@ export function PharaohAscentView({ controller: c, paymentAlerts }: { controller
     </main>
     <footer className="pharaoh-game__footer">
       <div className="pharaoh-game__utilities" role="group" aria-label="Game options">
-        <button type="button" aria-label="How to win" aria-haspopup="dialog" aria-expanded={c.isHelpOpen} onClick={openHelp}>How to win</button>
+        <button type="button" aria-label="How to win" aria-haspopup="dialog" aria-expanded={c.isHelpOpen} onClick={c.openHelp}>How to win</button>
         <button type="button" aria-label="Open settings" aria-haspopup="dialog" aria-expanded={c.isSettingsOpen} onClick={() => { c.onNavigate(); c.setIsSettingsOpen(true) }}>Sound</button>
       </div>
       <div className="pharaoh-game__keyboard"><span><kbd>Space</kbd> Spin / stop</span><span><kbd>←</kbd><kbd>→</kbd> Wager</span>

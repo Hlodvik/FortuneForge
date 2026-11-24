@@ -23,7 +23,7 @@ type GaplessLoop = {
   phaseStartedAt?: number
 }
 
-type LoopSync = { anchorCueId: SlotSoundCueId; intervalSeconds: number }
+type LoopSync = { anchorCueId: SlotSoundCueId; intervalSeconds: number; replace?: boolean }
 
 type PendingGaplessLoop = {
   anchorCueId?: SlotSoundCueId
@@ -223,7 +223,7 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
       const anchorCue = soundSet.cues[sync.anchorCueId]
       if (sync.anchorCueId === cueId || !Number.isFinite(sync.intervalSeconds) || sync.intervalSeconds <= 0 ||
           !cue.gaplessLoop || !isCueAllowed(anchorCue) || !anchorCue.gaplessLoop ||
-          typeof window.AudioContext !== 'function' || loopsRef.current.has(sync.anchorCueId)) return
+          !sync.replace && (typeof window.AudioContext !== 'function' || loopsRef.current.has(sync.anchorCueId))) return
     } else if (soundSet.events.themeSuite && (cueId === soundSet.events.ambience || cueId === soundSet.events.specialAmbience)) {
       const musicIds = [soundSet.events.ambience, soundSet.events.specialAmbience]
       musicIds.forEach((otherId) => {
@@ -236,8 +236,15 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
       const audio = existingAudio ?? new Audio(cue.source)
       audio.loop = cue.loop ?? true
       audio.volume = cue.baseVolume * preferencesRef.current.volume / 100
+      const previous = sync?.replace ? loopsRef.current.get(sync.anchorCueId) : undefined
+      if (existingAudio === undefined && previous) audio.currentTime = previous.currentTime
       if (existingAudio === undefined) loopsRef.current.set(cueId, audio)
-      void audio.play().catch(() => {
+      void audio.play().then(() => {
+        if (previous && loopsRef.current.get(cueId) === audio && isCueAllowed(cue)) {
+          audio.currentTime = previous.currentTime
+          stopLoop(sync!.anchorCueId)
+        }
+      }).catch(() => {
         if (loopsRef.current.get(cueId) === audio && audio.paused) {
           loopsRef.current.delete(cueId)
         }
@@ -249,7 +256,7 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
       return
     }
 
-    if (cue.gaplessLoop && typeof window.AudioContext === 'function') {
+    if (cue.gaplessLoop && typeof window.AudioContext === 'function' && !loopsRef.current.has(sync?.anchorCueId ?? '')) {
       try {
         const context = getAudioContext()
         void context.resume().catch(() => { /* A later user gesture retries. */ })
@@ -261,7 +268,7 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
         const fail = () => {
           if (pendingGaplessLoopsRef.current.get(cueId) !== request) return
           stopGaplessLoop(cueId)
-          if (sync === undefined && isCueAllowed(cue)) startMediaLoop()
+          if ((sync === undefined || sync.replace && !gaplessLoopsRef.current.has(sync.anchorCueId)) && isCueAllowed(cue)) startMediaLoop()
         }
         const startDecoded = (buffer: AudioBuffer) => {
           if (pendingGaplessLoopsRef.current.get(cueId) !== request) return
@@ -271,7 +278,7 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
           }
 
           const anchor = sync === undefined ? undefined : gaplessLoopsRef.current.get(sync.anchorCueId)
-          if (sync !== undefined && anchor === undefined) {
+          if (sync !== undefined && anchor === undefined && (!sync.replace || pendingGaplessLoopsRef.current.has(sync.anchorCueId))) {
             request.startWhenAnchorReady = () => startDecoded(buffer)
             return
           }
@@ -310,8 +317,21 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
             if (sync === undefined) source.start(startedAt)
             else source.start(startedAt, offset)
             gaplessLoopsRef.current.set(cueId, { source, gain, fadeGain, startedAt, context,
-              anchorCueId: sync?.anchorCueId, phaseStartedAt })
+              anchorCueId: sync?.replace ? undefined : sync?.anchorCueId, phaseStartedAt })
             pendingGaplessLoopsRef.current.delete(cueId)
+            if (sync?.replace && anchor) {
+              // The new arrangement keeps the old clock, but lives independently after the handoff.
+              const end = startedAt + Math.max(0, fadeInMs) / 1000
+              const envelope = (anchor.fadeGain ?? anchor.gain).gain
+              envelope.cancelScheduledValues(startedAt)
+              envelope.setValueAtTime(envelope.value, startedAt)
+              envelope.linearRampToValueAtTime(0, end)
+              anchor.source.stop(end)
+              anchor.source.onended = () => {
+                anchor.source.disconnect(); anchor.fadeGain?.disconnect(); anchor.gain.disconnect()
+                if (gaplessLoopsRef.current.get(sync.anchorCueId) === anchor) gaplessLoopsRef.current.delete(sync.anchorCueId)
+              }
+            }
           } catch {
             fail()
             return
@@ -329,7 +349,7 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
       }
     }
 
-    if (sync === undefined) startMediaLoop()
+    if (sync === undefined || sync.replace) startMediaLoop()
   }, [getAudioContext, getDecodedLoop, isCueAllowed, soundSet, stopGaplessLoop, stopLoop])
 
   const startLoop = useCallback((cueId: SlotSoundCueId, fadeInMs = 0) => {
@@ -339,6 +359,11 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
   const startSyncedLoop = useCallback((cueId: SlotSoundCueId, anchorCueId: SlotSoundCueId,
     intervalSeconds: number, fadeInMs = 0) => {
     startPlaybackLoop(cueId, fadeInMs, { anchorCueId, intervalSeconds })
+  }, [startPlaybackLoop])
+
+  const replaceLoop = useCallback((cueId: SlotSoundCueId, previousCueId: SlotSoundCueId, fadeMs = 250) => {
+    startPlaybackLoop(cueId, Number.isFinite(fadeMs) ? Math.max(0, fadeMs) : 0,
+      { anchorCueId: previousCueId, intervalSeconds: .01, replace: true })
   }, [startPlaybackLoop])
 
   const getLoopPlaybackSeconds = useCallback((cueId: SlotSoundCueId): number | null => {
@@ -384,6 +409,7 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
     playCue,
     playSequence,
     preloadLoop,
+    replaceLoop,
     setVolume,
     startLoop,
     startSyncedLoop,

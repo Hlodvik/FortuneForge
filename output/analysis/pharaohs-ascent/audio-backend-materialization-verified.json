@@ -1,0 +1,7 @@
+{
+  "command": "verify-materialized",
+  "packages": 44,
+  "manifestSha256": "d2361211ed3c2f632eb4a733b3ed506bd7878616b460b895c2c8307197e99dc5",
+  "compositionSha256": "d2361211ed3c2f632eb4a733b3ed506bd7878616b460b895c2c8307197e99dc5",
+  "directory": "C:\\Users\\Lctiv\\source\\repos\\main\\artifacts\\shared-backend-upload\\game-packages"
+}

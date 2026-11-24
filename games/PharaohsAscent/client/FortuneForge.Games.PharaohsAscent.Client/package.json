@@ -13,12 +13,12 @@
     "./styles.css": "./dist/styles.css"
   },
   "scripts": {
-    "check": "tsc -p tsconfig.json --noEmit",
-    "build": "tsc -p tsconfig.build.json && node scripts/copy-static.mjs",
-    "test": "node scripts/run-tests.mjs",
-    "test:paid-browser": "node scripts/run-tests.mjs --browser",
-    "verify:standalone": "node scripts/verify-standalone.mjs",
-    "review:local": "node scripts/serve-local-review.mjs"
+    "check": "node scripts/sync-contracts.mjs --check && tsc -p tsconfig.json --noEmit",
+    "build": "node scripts/sync-contracts.mjs && tsc -p tsconfig.build.json && node scripts/copy-static.mjs",
+    "test": "node scripts/sync-contracts.mjs --check && node scripts/run-tests.mjs",
+    "test:paid-browser": "node scripts/sync-contracts.mjs --check && node scripts/run-tests.mjs --browser",
+    "verify:standalone": "node scripts/sync-contracts.mjs --check && node scripts/verify-standalone.mjs",
+    "review:local": "node scripts/sync-contracts.mjs --check && node scripts/serve-local-review.mjs"
   },
   "dependencies": {
     "@fortuneforge/client-presentation": "0.1.0",

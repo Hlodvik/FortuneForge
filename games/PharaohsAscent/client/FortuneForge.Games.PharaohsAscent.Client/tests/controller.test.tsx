@@ -6,7 +6,7 @@ import type { PharaohAscentGameProps } from '../src/types'
 import { jsonReply, slotState, spinResult, tombRun, tombState } from './fixtures'
 
 const audio = vi.hoisted(() => ({ preferences: { mode: 'muted', volume: 0 }, playCue: vi.fn(), playSequence: vi.fn(),
-  startLoop: vi.fn(), stopLoop: vi.fn(), stopResultCues: vi.fn(), toggleMuted: vi.fn() }))
+  startLoop: vi.fn(), preloadLoop: vi.fn(), replaceLoop: vi.fn(), stopLoop: vi.fn(), stopResultCues: vi.fn(), toggleMuted: vi.fn() }))
 vi.mock('@fortuneforge/slot-client-core', async importActual => {
   const actual = await importActual<typeof import('@fortuneforge/slot-client-core')>()
   return { ...actual, useSlotAudio: () => audio, usePrefersReducedMotion: () => true,
@@ -101,6 +101,33 @@ describe('standalone Pharaoh controller', () => {
     expect(fetch).toHaveBeenCalledTimes(1)
     expect(controller.spinDisabled).toBe(true)
     expect(controller.isAutoSpinning).toBe(false)
+  })
+
+  it('counts confirmed spins toward percussion and uses the riq for spin and instructions', async () => {
+    let revision = 0
+    props = { ...props, authenticatedFetch: vi.fn(async (path: RequestInfo | URL) => {
+      if (String(path).includes('/state?')) return jsonReply(slotState(revision))
+      if (revision === 2) { revision++; throw new TypeError('Lost reply') }
+      const result = { ...spinResult(++revision), spinId: `music-spin-${revision}` }
+      return jsonReply(result)
+    }) }
+    await render()
+    await act(async () => controller.openHelp())
+    expect(audio.playCue).toHaveBeenCalledWith('instruction-button')
+    await act(async () => controller.setIsHelpOpen(false))
+    for (let spin = 0; spin < 4; spin++) await act(async () => controller.handleSpinButtonClick())
+    expect(audio.playCue).toHaveBeenCalledWith('lever-pull')
+    expect(audio.replaceLoop).not.toHaveBeenCalled()
+    await act(async () => controller.handleSpinButtonClick())
+    expect(audio.replaceLoop).toHaveBeenCalledWith('percussion-ambience', 'ambience', 350)
+    await act(async () => controller.reload())
+    await act(async () => controller.handleSpinButtonClick())
+    expect(audio.replaceLoop).toHaveBeenCalledTimes(3)
+    props = { ...props, account: user() }
+    await render()
+    audio.replaceLoop.mockClear()
+    await act(async () => controller.handleSpinButtonClick())
+    expect(audio.replaceLoop).not.toHaveBeenCalled()
   })
 
   it('discards a late settled spin after the authenticated account changes', async () => {

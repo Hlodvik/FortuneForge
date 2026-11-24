@@ -1,4 +1,4 @@
-import mathDocument from '../../../math-v3.json?raw'
+import mathDocument from './assets/contracts/math-v3.json?raw'
 import { formatCalibratedMultiplier } from '@fortuneforge/slot-game-runtime/engine-guide'
 
 export type PharaohMath = Readonly<{

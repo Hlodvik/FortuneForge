@@ -4,8 +4,9 @@ import { cancelSpinAnimation, finishSpinAnimation, getSlotKeyboardAction, reques
   type PaylinePayout, type ReelMotionState, type SpinAnimation } from '@fortuneforge/slot-client-core'
 import { createPharaohApi, PharaohRequestError } from './api'
 import { PHARAOHS_ASCENT_EXPERIENCE_SET as experience } from './manifest'
-import { PHARAOHS_ASCENT_SOUNDS as sounds } from './sounds'
+import { getPharaohResultCues, getPharaohTombResultCues, PHARAOHS_ASCENT_SOUNDS as sounds } from './sounds'
 import { PHARAOH_WAGERING } from './wagering'
+import { usePharaohMusic } from './usePharaohMusic'
 import type { PharaohFeature } from './pharaoh'
 import { isTombAction, type TombAction } from './tomb'
 import type { PharaohAscentGameProps, PharaohSlotState, PharaohSpinResult } from './types'
@@ -20,6 +21,7 @@ const defaultWagerIndex = rules.wagerOptions.indexOf(PHARAOH_WAGERING.defaultWag
 export function usePharaohAscent({ account, authenticatedFetch, onSpinStateChange }: PharaohAscentGameProps) {
   const api = useMemo(() => createPharaohApi(authenticatedFetch, account?.userId), [authenticatedFetch, account?.userId])
   const audio = useSlotAudio(sounds)
+  const { begin: beginMusic, confirmSpin } = usePharaohMusic(account?.userId, audio)
   const reducedMotion = usePrefersReducedMotion()
   const [state, setState] = useState<PharaohSlotState | null>(null)
   const [balance, setBalance] = useState(account?.balances.slotsCredits ?? 0)
@@ -82,12 +84,11 @@ export function usePharaohAscent({ account, authenticatedFetch, onSpinStateChang
     setLastWin(amount(result.payout.totalPoints))
     setLastFeature(result.spinFeature)
     setHasCompletedSpin(true)
+    confirmSpin(result.spinId)
     setResultKey(key => key + 1)
-    const resultKind = result.freeSpinsAwarded > 0 ? 'bonus' : result.payout.totalPoints >= result.wagerPoints * 5 ? 'five'
-      : result.payout.totalPoints > 0 ? 'single-three' : 'no-win'
-    playSequence(sounds.events.results[resultKind] ?? [])
+    playSequence(getPharaohResultCues(result.payout.totalPoints, result.wagerPoints, result.freeSpinsAwarded))
     if (result.featureActionRequired) setIsAutoSpinning(false)
-  }, [playSequence, restore, setIsAutoSpinning])
+  }, [confirmSpin, playSequence, restore, setIsAutoSpinning])
 
   useEffect(() => {
     mounted.current = true
@@ -116,8 +117,6 @@ export function usePharaohAscent({ account, authenticatedFetch, onSpinStateChang
     setFeatureError(null)
     setPendingGameAction(null)
     setAvailability('checking')
-    stopLoop('ambience')
-    stopLoop('special-ambience')
     stopLoop('reel-spin')
     stopLoop('special-reel-spin')
     if (animation.current) { cancelSpinAnimation(animation.current); animation.current = null }
@@ -174,8 +173,7 @@ export function usePharaohAscent({ account, authenticatedFetch, onSpinStateChang
     setWinningPaylines([])
     setHasCompletedSpin(false)
     stopResultCues()
-    stopLoop(useFreeSpin ? 'ambience' : 'special-ambience')
-    startLoop(useFreeSpin ? 'special-ambience' : 'ambience')
+    beginMusic()
     playCue('lever-pull')
     const requestEpoch = epoch.current
     const current = () => mounted.current && epoch.current === requestEpoch && currentApi.current === api
@@ -244,8 +242,9 @@ export function usePharaohAscent({ account, authenticatedFetch, onSpinStateChang
         restore(next)
         if (!previous.gameFeatureState.tomb.activeRun && next.gameFeatureState.tomb.activeRun) playCue('bonus-entry')
         if (next.gameFeatureState.tomb.lastRun && next.gameFeatureState.tomb.lastRun.id !== previous.gameFeatureState.tomb.lastRun?.id) {
-          setLastWin(amount(next.gameFeatureState.tomb.lastRun.payoutPoints))
-          playCue('bonus-complete')
+          const prize = next.gameFeatureState.tomb.lastRun
+          setLastWin(amount(prize.payoutPoints))
+          playSequence(getPharaohTombResultCues(prize.payoutPoints, prize.fundedWagerPoints))
         }
       }
     } catch (error) {
@@ -285,7 +284,7 @@ export function usePharaohAscent({ account, authenticatedFetch, onSpinStateChang
     if (!action) return
     event.preventDefault()
     if (action === 'toggle-mute') audio.toggleMuted()
-    else if (action === 'open-help') { setIsAutoSpinning(false); setIsHelpOpen(true) }
+    else if (action === 'open-help') openHelp()
     else if (action === 'spin-or-stop') handleSpinButtonClick()
     else if (!controlsDisabled) selectWager(wagerIndex + (action === 'increase-wager' ? 1 : -1))
   }
@@ -304,13 +303,14 @@ export function usePharaohAscent({ account, authenticatedFetch, onSpinStateChang
     ? state.freeSpinWagerPoints : rules.wagerOptions[wagerIndex]!)
   const onNavigate = () => { setIsAutoSpinning(false); if (animation.current) requestQuickStop(animation.current) }
   const reload = () => setReloadKey(key => key + 1)
+  function openHelp() { onNavigate(); playCue('instruction-button'); setIsHelpOpen(true) }
   return { account, state, balance, displayedReels, reelMotion, reelStripStyle, visibleRows, isSpinning, isAutoSpinning,
     setIsAutoSpinning, isStopRequested, handleSpinButtonClick, wagerIndex, selectWager,
     wagerOptions: rules.wagerOptions, wagerPoints, activeWager: amount(wagerPoints),
     isWagerLocked: Boolean(pending || state?.freeSpinsRemaining || isFeatureActionRequired), controlsDisabled, spinDisabled,
     spinAvailability, spinError, isGameFeatureUpdating, gameFeatureError, pendingGameAction, performGameFeatureAction,
     lastFeature, winningPaylines, resultKey, spinKey: resultKey, hasCompletedSpin, lastWin, isFeatureActionRequired,
-    isHelpOpen, setIsHelpOpen, isSettingsOpen, setIsSettingsOpen, isReloadPromptOpen, setIsReloadPromptOpen,
+    isHelpOpen, setIsHelpOpen, openHelp, isSettingsOpen, setIsSettingsOpen, isReloadPromptOpen, setIsReloadPromptOpen,
     audio, reducedMotion, onNavigate, reload, retryConnection: reload }
 }
 export type PharaohAscentController = ReturnType<typeof usePharaohAscent>

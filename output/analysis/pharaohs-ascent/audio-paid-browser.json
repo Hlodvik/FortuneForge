@@ -1,0 +1,49 @@
+{
+  "testFundsOnly": true,
+  "productionEngine": true,
+  "settled": [
+    {
+      "spinId": "ed3af764-6114-4566-9482-9048ca9e88ce",
+      "wagerPoints": 12,
+      "chargedWagerCents": 300
+    },
+    {
+      "spinId": "89625be2-6712-4d3b-983a-70db070e8b84",
+      "wagerPoints": 12,
+      "chargedWagerCents": 300
+    },
+    {
+      "spinId": "9ce4aa68-db50-49cc-806b-6b40c874a5a9",
+      "wagerPoints": 12,
+      "chargedWagerCents": 300
+    },
+    {
+      "spinId": "b63d53bf-6af0-4ea5-a5d3-bb5c5bcea238",
+      "wagerPoints": 12,
+      "chargedWagerCents": 300
+    }
+  ],
+  "audio": [
+    {
+      "type": "start",
+      "source": "http://127.0.0.1:5176/src/assets/audio/pharaoh-reworked.ogg",
+      "when": 0.28,
+      "offset": 0,
+      "now": 0.28
+    },
+    {
+      "type": "start",
+      "source": "http://127.0.0.1:5176/src/assets/audio/pharaoh-reworked-percussion.ogg",
+      "when": 2.13,
+      "offset": 1.85,
+      "now": 2.112
+    },
+    {
+      "type": "stop",
+      "source": "http://127.0.0.1:5176/src/assets/audio/pharaoh-reworked.ogg",
+      "when": 2.48,
+      "now": 2.112
+    }
+  ],
+  "browserErrors": []
+}

@@ -1,0 +1,10 @@
+{
+  "id": "pharaohs-ascent",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.PharaohsAscent.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "packaged-game"
+  }
+}

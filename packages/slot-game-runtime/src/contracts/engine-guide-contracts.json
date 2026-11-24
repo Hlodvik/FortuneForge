@@ -358,8 +358,8 @@
       }
     },
     {
-      "gameId": "cosmic-fortune-v1",
-      "payoutMultiplier": 0.856,
+      "gameId": "pharaohs-ascent-v1",
+      "payoutMultiplier": 1,
       "pointValueInCents": 25,
       "paylinePatternIds": [
         1,
@@ -394,7 +394,41 @@
       "usesEnergy": true,
       "usesDirectValueTokens": false,
       "scatterFeatureMode": null,
-      "collectionFeatureMode": "sync-rows"
+      "collectionFeatureMode": "sync-rows",
+      "paylinePayouts": {
+        "2": {
+          "three": 1,
+          "five": 2
+        },
+        "7": {
+          "three": 3,
+          "five": 11
+        },
+        "ACE": {
+          "three": 5,
+          "five": 18
+        },
+        "5": {
+          "three": 2,
+          "five": 6
+        },
+        "4": {
+          "three": 1,
+          "five": 3
+        },
+        "POWER": {
+          "three": 1,
+          "five": 5
+        },
+        "3": {
+          "three": 1,
+          "five": 2
+        },
+        "6": {
+          "three": 2,
+          "five": 8
+        }
+      }
     },
     {
       "gameId": "gold-foundry-v1",

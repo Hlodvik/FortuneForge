@@ -325,12 +325,12 @@ their saved wager and mode, and the game imports its seal and energy progress.
 Resolve unsettled host admissions before switching. Pause new starts with
 `RoyalDraw:AllowNewPaidRounds` while keeping recovery available.
 
-Cosmic Fortune and Ocean Odyssey use release IDs `cosmic-fortune` and
-`ocean-odyssey` and runtime IDs `cosmic-fortune-v1` and `ocean-odyssey-v1`.
-Their gateway switches are `Slots:CosmicFortuneWorkerRoundsEnabled` and
+Pharaoh’s Ascent and Ocean Odyssey use release IDs `pharaohs-ascent` and
+`ocean-odyssey` and runtime IDs `pharaohs-ascent-v1` and `ocean-odyssey-v1`.
+Their gateway switches are `Slots:PharaohsAscentWorkerRoundsEnabled` and
 `Slots:OceanOdysseyWorkerRoundsEnabled`. The workers use `LegacySlotLedger`,
 `AllowLegacyFreeGames`, and `AllowAccountBalanceRead`. Pause new paid starts
-with `CosmicFortune:AllowNewPaidRounds` or `OceanOdyssey:AllowNewPaidRounds`.
+with `PharaohsAscent:AllowNewPaidRounds` or `OceanOdyssey:AllowNewPaidRounds`.
 
 Before enabling a classic-slot worker, allow host admissions to finish. The
 gateway can close an expired classic admission when the saved guard, account,

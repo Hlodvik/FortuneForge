@@ -5,7 +5,7 @@ using FortuneForge.Server.Slots.Reels;
 using FortuneForge.Games.Slots.Runtime;
 using ArcaneEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
 using CandyEngine = FortuneForge.Games.CandyCarnival.CandyCarnivalEngine;
-using CosmicEngine = FortuneForge.Games.CosmicFortune.CosmicFortuneEngine;
+using PharaohEngine = FortuneForge.Games.PharaohsAscent.PharaohsAscentEngine;
 using DesertEngine = FortuneForge.Games.DesertTreasures.DesertTreasuresEngine;
 using OlympusEngine = FortuneForge.Games.GodsOfOlympus.GodsOfOlympusEngine;
 using FrontierEngine = FortuneForge.Games.FrontierFortune.FrontierFortuneEngine;
@@ -55,7 +55,7 @@ public static class SlotSpecialRoundProfiles
 {
     public const string WukongGameId = WukongEngine.GameId;
     public const string RainbowRealmGameId = RainbowEngine.GameId;
-    public const string CosmicFortuneGameId = CosmicEngine.GameId;
+    public const string PharaohsAscentGameId = PharaohEngine.GameId;
     public const string HighNoonFortuneGameId = FrontierEngine.GameId;
     public const string GodsOfOlympusGameId = OlympusEngine.GameId;
     public const string PiratesFortuneGameId = PiratesEngine.GameId;
@@ -79,7 +79,7 @@ public static class SlotSpecialRoundProfiles
         {
             [WukongGameId] = FromPackage(WukongEngine.Profile),
             [RainbowRealmGameId] = FromPackage(RainbowEngine.Profile),
-            [CosmicFortuneGameId] = FromPackage(CosmicEngine.Profile),
+            [PharaohsAscentGameId] = FromPackage(PharaohEngine.Profile),
             [GodsOfOlympusGameId] = FromPackage(OlympusEngine.Profile),
             [PiratesFortuneGameId] = FromPackage(PiratesEngine.Profile),
             [RoyalDrawGameId] = FromPackage(RoyalEngine.Profile),

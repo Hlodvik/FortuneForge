@@ -7,30 +7,26 @@ import { canonicalSlotPath, findSlotRouteMetadata } from './routeMetadata'
 import { findSlotRoute } from './routeRegistry'
 
 describe('Pharaoh’s Ascent catalogue replacement', () => {
-  it('replaces the public identity while retaining the existing account and package key', () => {
-    const game = SLOT_GAME_CATALOG.find(entry => entry.id === 'cosmic-fortune')
+  it('owns a fresh public, package and account identity', () => {
+    const game = SLOT_GAME_CATALOG.find(entry => entry.id === 'pharaohs-ascent')
     expect(game).toMatchObject({
       title: 'Pharaoh’s Ascent',
       shortTitle: 'Pharaoh’s Ascent',
       playHref: '/slots/pharaohs-ascent',
       demoHref: null,
-      serverGameIds: ['cosmic-fortune-v1'],
+      serverGameIds: ['pharaohs-ascent-v1'],
     })
     expect(game?.image).toContain('pharaohs-ascent-title-v1.webp')
     expect(game?.description).toMatch(/pyramid/)
-    expect(SLOT_GAME_CATALOG.filter(entry => entry.id === 'cosmic-fortune')).toHaveLength(1)
-    expect(SLOT_GAME_CATALOG.some(entry => entry.title === 'Cosmic Fortune')).toBe(false)
-    const loader = readFileSync(new URL('./manifestLoaders/cosmic-fortune.ts', import.meta.url), 'utf8')
-    expect(loader).toContain("import('@fortuneforge/games-cosmic-fortune/manifest')")
+    expect(SLOT_GAME_CATALOG.filter(entry => entry.id === 'pharaohs-ascent')).toHaveLength(1)
+    expect(SLOT_GAME_CATALOG.filter(entry => entry.title === 'Pharaoh’s Ascent')).toHaveLength(1)
+    const loader = readFileSync(new URL('./manifestLoaders/pharaohs-ascent.ts', import.meta.url), 'utf8')
+    expect(loader).toContain("import('@fortuneforge/games-pharaohs-ascent/manifest')")
   })
 
-  it('sends both historical bookmarks to the authenticated paid route', () => {
-    for (const legacy of ['/slots/cosmic-fortune', '/slots/cosmic-fortune/demo']) {
-      expect(canonicalSlotPath(legacy)).toBe('/slots/pharaohs-ascent')
-      expect(findSlotRoute(legacy)).toBeNull()
-    }
+  it('exposes only its authenticated paid route', () => {
     expect(findSlotRouteMetadata('/slots/pharaohs-ascent')).toMatchObject({
-      id: 'cosmic-fortune', demoPath: null, serverGameIds: ['cosmic-fortune-v1'],
+      id: 'pharaohs-ascent', demoPath: null, serverGameIds: ['pharaohs-ascent-v1'],
     })
     expect(findSlotRoute('/slots/pharaohs-ascent/demo')).toBeNull()
     expect(findSlotRouteMetadata('/slots/pharaohs-ascent/demo')).toBeNull()
@@ -41,11 +37,8 @@ describe('Pharaoh’s Ascent catalogue replacement', () => {
     const art = getCataloguePresentationArt('/slots/pharaohs-ascent')
     expect(art?.src).toContain('pharaohs-ascent-title-v1.webp')
     expect(art).toMatchObject({ width: 768, height: 384 })
-    for (const legacy of ['/slots/cosmic-fortune', '/slots/cosmic-fortune/demo']) {
-      expect(getCataloguePresentationArt(legacy)).toBe(art)
-    }
     expect(resolveGameLoadingEntry('/slots/pharaohs-ascent')).toMatchObject({
-      id: 'cosmic-fortune', title: 'Pharaoh’s Ascent', routes: ['/slots/pharaohs-ascent'], image: art?.src,
+      id: 'pharaohs-ascent', title: 'Pharaoh’s Ascent', routes: ['/slots/pharaohs-ascent'], image: art?.src,
     })
     expect(resolveGameLoadingEntry('/slots/pharaohs-ascent/demo')).toBeUndefined()
     expect(getCataloguePresentationArt('/slots/pharaohs-ascent/demo')).toBeUndefined()

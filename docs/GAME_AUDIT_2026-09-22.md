@@ -47,7 +47,7 @@ This was a functional and product audit, not certification. Slot simulations are
 ## Historical cross-game release findings
 
 - **P0 — Expand slot math validation to all 20 catalog entries.** The deploy script currently analyzes only the two explicit JSON definitions. It passed while 12 cloned server profiles were outside the same configured safeguards and three profiles did not exist.
-- **P0 — Keep Pirates' Fortune, Cosmic Fortune, and Jungle Jackpot away from wallet-credit settlement until their over-100% samples are corrected and independently verified.** Their 100,000-spin samples returned 124.229%, 105.133%, and 103.898% respectively.
+- **P0 — Keep Pirates' Fortune, Pharaoh’s Ascent, and Jungle Jackpot away from wallet-credit settlement until their over-100% samples are corrected and independently verified.** Their 100,000-spin samples returned 124.229%, 105.133%, and 103.898% respectively.
 - **P1 — Add one catalog-to-server-to-client contract test for every game.** It must verify route, status endpoint, playable profile, symbol/config version, payline count, and a valid primary result. This would have caught all three missing profiles and Rainbow Realm before deployment.
 - **P1 — Treat contract/math errors as their own states.** The slot shell converts every spin exception into “Demo unavailable,” hiding Rainbow Realm's symbol-set mismatch as an outage.
 - **P1 — Add a compliance/product-safety shell before any real-value casino release.** Rules, RTP/house edge, volatility where applicable, wager limits, session time, net position, reality checks, and responsible-play access are not consistently available. Fast stop/autospin also require jurisdiction-specific review.
@@ -76,7 +76,7 @@ Math samples used 250,000 paid spins for Wukong and Rainbow (the deploy-time con
 | 6 | High Noon Fortune | Production spin worked | **81.462%** | 96.77% | **P1.** Retune; the sampled return and ruin rate make the game feel punishing. Add theme-specific duel/wanted mechanics and publish the model. |
 | 7 | Royal Draw | Production spin worked | **95.581%** | 36.60% | **P1.** The profile misses its configured target band. Decide the intended RTP, encode it explicitly, and validate it in CI. |
 | 8 | Arcane Archives | Spin disabled; status endpoint returns game-not-found | — | — | **P1.** Register a server profile or remove the tile; validate symbols, lines, and feature rules end to end. |
-| 9 | Cosmic Fortune | Production spin worked | **105.133%** | 12.98% | **P0 settlement gate.** Retune below 100%, verify bonus contribution, and independently certify before wallet play. |
+| 9 | Pharaoh’s Ascent | Production spin worked | **105.133%** | 12.98% | **P0 settlement gate.** Retune below 100%, verify bonus contribution, and independently certify before wallet play. |
 | 11 | Neon Nights | Production spin worked, including an isolated retest | 89.387% | 66.62% | **Pass.** Add a distinctive feature loop and improve rapid route-transition resilience testing. |
 | 12 | Jungle Jackpot | Production spin worked, including an isolated retest | **103.898%** | 17.16% | **P0 settlement gate.** Retune, validate jackpot contribution/return separately, and block wallet settlement until certified. |
 | 13 | Ocean Odyssey | Production spin worked | **84.060%** | 87.75% | **P1.** Retune the profile and reduce the extreme bust rate; add a theme-specific progression/bonus loop. |

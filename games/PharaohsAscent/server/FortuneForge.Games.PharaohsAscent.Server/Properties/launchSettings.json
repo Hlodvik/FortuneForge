@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "FortuneForge.Games.PharaohsAscent.Server": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:57355;http://localhost:57366"
+    }
+  }
+}

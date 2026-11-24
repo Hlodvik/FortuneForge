@@ -204,7 +204,7 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
 
     private static readonly string[] FeaturedGameIds =
     [
-        SlotSpecialRoundProfiles.CosmicFortuneGameId,
+        SlotSpecialRoundProfiles.PharaohsAscentGameId,
         SlotSpecialRoundProfiles.HighNoonFortuneGameId,
         SlotSpecialRoundProfiles.GodsOfOlympusGameId,
         SlotSpecialRoundProfiles.PiratesFortuneGameId,

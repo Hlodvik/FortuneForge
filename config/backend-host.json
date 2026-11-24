@@ -28,10 +28,10 @@
     "GameWallet:Games:casino-war:AllowAccountBalanceRead": "true",
     "GameWallet:Games:casino-war:LegacySlotLedger": "false",
     "GameWorkers:casino-war:ForwardPublicRoutes": "true",
-    "GameWallet:Games:cosmic-fortune-v1:LegacySlotLedger": "true",
-    "GameWallet:Games:cosmic-fortune-v1:AllowLegacyFreeGames": "true",
-    "GameWallet:Games:cosmic-fortune-v1:AllowAccountBalanceRead": "true",
-    "Slots:CosmicFortuneWorkerRoundsEnabled": "true",
+    "GameWallet:Games:pharaohs-ascent-v1:LegacySlotLedger": "true",
+    "GameWallet:Games:pharaohs-ascent-v1:AllowLegacyFreeGames": "true",
+    "GameWallet:Games:pharaohs-ascent-v1:AllowAccountBalanceRead": "true",
+    "Slots:PharaohsAscentWorkerRoundsEnabled": "true",
     "GameWallet:Games:craps:AllowAccountBalanceRead": "true",
     "GameWallet:Games:craps:LegacySlotLedger": "false",
     "GameWorkers:craps:ForwardPublicRoutes": "true",
@@ -192,8 +192,8 @@
     "casino-war": {
       "CasinoWar:AllowNewPaidRounds": "true"
     },
-    "cosmic-fortune-v1": {
-      "CosmicFortune:AllowNewPaidRounds": "true"
+    "pharaohs-ascent-v1": {
+      "PharaohsAscent:AllowNewPaidRounds": "true"
     },
     "craps": {
       "Features:CrapsEnabled": "true"

@@ -43,7 +43,7 @@ const REEL_RICHES_SLOT_GAME = requireGame('reel-riches')
 const HIGH_NOON_FORTUNE_SLOT_GAME = requireGame('high-noon-fortune')
 const ROYAL_DRAW_SLOT_GAME = requireGame('royal-draw')
 const ARCANE_ARCHIVES_SLOT_GAME = requireGame('arcane-archives')
-const COSMIC_FORTUNE_SLOT_GAME = requireGame('cosmic-fortune')
+const PHARAOHS_ASCENT_SLOT_GAME = requireGame('pharaohs-ascent')
 const GOLD_FOUNDRY_SLOT_GAME = requireGame('gold-foundry')
 const CROOKED_ROAD_SLOT_GAME = requireGame('crooked-road')
 const ROBOT_REVOLUTION_SLOT_GAME = requireGame('robot-revolution')
@@ -56,7 +56,7 @@ const NEON_NIGHTS_SLOT_GAME = requireGame('neon-nights')
 const NORDIC_LEGENDS_SLOT_GAME = requireGame('nordic-legends')
 const SECOND_WAVE_SLOT_GAMES = SECOND_WAVE_SLOT_GAME_IDS.map(requireGame)
 const REEL_SYMBOL_CATALOG_GAME_IDS = [
-  'cosmic-fortune',
+  'pharaohs-ascent',
   'gold-foundry',
   'rainbow-realm',
   'reel-riches',
@@ -153,7 +153,7 @@ describe('slot game manifests', () => {
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/arcane-archives/demo')
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/pharaohs-ascent')
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).not.toHaveProperty('/slots/pharaohs-ascent/demo')
-    expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).not.toHaveProperty('/slots/cosmic-fortune/demo')
+    expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).not.toHaveProperty('/slots/pharaohs-ascent/demo')
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/gold-foundry/demo')
   })
 
@@ -243,7 +243,7 @@ describe('slot game manifests', () => {
 
   it('registers Pharaoh’s Ascent with its guardian offerings', () => {
     const newGames = [
-      [COSMIC_FORTUNE_SLOT_GAME, null, 'divine-offering'],
+      [PHARAOHS_ASCENT_SLOT_GAME, null, 'divine-offering'],
     ] as const
 
     expect(SLOT_GAME_MANIFESTS).toHaveLength(19)
@@ -534,7 +534,7 @@ describe('slot game manifests', () => {
 
   it('gives four shared featured games named special rounds with matching server schemas and sound sets', () => {
     const featured = [
-      [COSMIC_FORTUNE_SLOT_GAME, 'pharaoh-ascent', 'pharaohs-ascent-audio-v1', 24, 3, 6, true],
+      [PHARAOHS_ASCENT_SLOT_GAME, 'pharaoh-ascent', 'pharaohs-ascent-audio-v1', 24, 3, 6, true],
       [GODS_OF_OLYMPUS_SLOT_GAME, 'olympus-trial', 'gods-of-olympus-audio-v1', 28, 4, 6, true],
       [PIRATES_FORTUNE_SLOT_GAME, 'pirates-broadside', 'pirates-fortune-audio-v9', 25, 3, 7, true],
       [ROYAL_DRAW_SLOT_GAME, 'royal-high-stakes', 'royal-draw-audio-v1', 24, 3, 6, true],
@@ -621,7 +621,7 @@ describe('slot game manifests', () => {
 
   it('varies earn paths while limiting energy and direct multiplier tokens', () => {
     const featured = [
-      COSMIC_FORTUNE_SLOT_GAME, GODS_OF_OLYMPUS_SLOT_GAME,
+      PHARAOHS_ASCENT_SLOT_GAME, GODS_OF_OLYMPUS_SLOT_GAME,
       PIRATES_FORTUNE_SLOT_GAME, ROYAL_DRAW_SLOT_GAME,
       ROBOT_REVOLUTION_SLOT_GAME, PHANTOM_MANOR_SLOT_GAME, OCEAN_ODYSSEY_SLOT_GAME,
       DRAGON_HOARD_SLOT_GAME, CANDY_CARNIVAL_SLOT_GAME,

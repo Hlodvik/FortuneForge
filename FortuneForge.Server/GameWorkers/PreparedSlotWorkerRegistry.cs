@@ -18,8 +18,8 @@ using FortuneForge.Games.ReelRiches;
 using FortuneForge.Games.ReelRiches.Server;
 using FortuneForge.Games.RoyalDraw;
 using FortuneForge.Games.RoyalDraw.Server;
-using FortuneForge.Games.CosmicFortune;
-using FortuneForge.Games.CosmicFortune.Server;
+using FortuneForge.Games.PharaohsAscent;
+using FortuneForge.Games.PharaohsAscent.Server;
 using FortuneForge.Games.OceanOdyssey;
 using FortuneForge.Games.OceanOdyssey.Server;
 using FortuneForge.Games.CrookedRoad;
@@ -74,8 +74,8 @@ internal static class PreparedSlotWorkerRegistry
             FrontierPaidRouteContract.StatePath, FrontierRoundStore.OwnerField),
         [RoyalDrawEngine.GameId] = new("Slots:RoyalDrawWorkerRoundsEnabled", RoyalDrawPaidRouteContract.SpinPath,
             RoyalDrawPaidRouteContract.StatePath, RoyalDrawRoundStateCodec.OwnerField),
-        [CosmicFortuneEngine.GameId] = new("Slots:CosmicFortuneWorkerRoundsEnabled", CosmicFortunePaidRouteContract.SpinPath,
-            CosmicFortunePaidRouteContract.StatePath, CosmicFortuneRoundStateCodec.OwnerField),
+        [PharaohsAscentEngine.GameId] = new("Slots:PharaohsAscentWorkerRoundsEnabled", PharaohsAscentPaidRouteContract.SpinPath,
+            PharaohsAscentPaidRouteContract.StatePath, PharaohsAscentRoundStateCodec.OwnerField),
         [OceanOdysseyEngine.GameId] = new("Slots:OceanOdysseyWorkerRoundsEnabled", OceanOdysseyPaidRouteContract.SpinPath,
             OceanOdysseyPaidRouteContract.StatePath, OceanOdysseyRoundStateCodec.OwnerField),
         [CrookedRoadRules.GameId] = new("Slots:CrookedRoadWorkerRoundsEnabled", CrookedRoadPaidRouteContract.SpinPath,

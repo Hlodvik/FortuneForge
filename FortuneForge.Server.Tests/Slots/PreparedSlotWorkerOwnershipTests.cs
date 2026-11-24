@@ -10,8 +10,8 @@ using FortuneForge.Games.ReelRiches;
 using FortuneForge.Games.ReelRiches.Server;
 using FortuneForge.Games.RoyalDraw;
 using FortuneForge.Games.RoyalDraw.Server;
-using FortuneForge.Games.CosmicFortune;
-using FortuneForge.Games.CosmicFortune.Server;
+using FortuneForge.Games.PharaohsAscent;
+using FortuneForge.Games.PharaohsAscent.Server;
 using FortuneForge.Games.OceanOdyssey;
 using FortuneForge.Games.OceanOdyssey.Server;
 using FortuneForge.Games.CrookedRoad;
@@ -46,7 +46,7 @@ public sealed class PreparedSlotWorkerOwnershipTests(MidnightVaultPaidEmulatorFi
     [InlineData(ReelRichesEngine.GameId, ReelRichesEngine.GameId, ReelRichesRoundStateCodec.OwnerField)]
     [InlineData(FrontierFortuneEngine.GameId, FrontierFortuneEngine.GameId, FrontierRoundStore.OwnerField)]
     [InlineData(RoyalDrawEngine.GameId, RoyalDrawEngine.GameId, RoyalDrawRoundStateCodec.OwnerField)]
-    [InlineData(CosmicFortuneEngine.GameId, CosmicFortuneEngine.GameId, CosmicFortuneRoundStateCodec.OwnerField)]
+    [InlineData(PharaohsAscentEngine.GameId, PharaohsAscentEngine.GameId, PharaohsAscentRoundStateCodec.OwnerField)]
     [InlineData(OceanOdysseyEngine.GameId, OceanOdysseyEngine.GameId, OceanOdysseyRoundStateCodec.OwnerField)]
     [InlineData(CrookedRoadRules.GameId, CrookedRoadRules.GameId, CrookedRoadRoundStateCodec.OwnerField)]
     [InlineData(CandyCarnivalEngine.GameId, CandyCarnivalEngine.GameId, CandyCarnivalRoundStateCodec.OwnerField)]

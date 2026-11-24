@@ -50,7 +50,7 @@ export const LOADING_PRESENTATIONS_B: readonly GameLoadingEntry[] = [
     image: arcaneArchives, background: '#120a28', accent: '#c084fc',
   },
   {
-    id: 'cosmic-fortune', title: 'Pharaoh’s Ascent',
+    id: 'pharaohs-ascent', title: 'Pharaoh’s Ascent',
     routes: ['/slots/pharaohs-ascent'],
     image: pharaohsAscent, background: '#111a20', accent: '#e8c780',
   },

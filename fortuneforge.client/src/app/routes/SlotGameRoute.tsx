@@ -12,7 +12,7 @@ export const standaloneSlotHosts: Readonly<Partial<Record<SlotRouteDefinition['i
   'high-noon-fortune': lazy(() => import('./FrontierFortuneHost').then(module => ({ default: module.FrontierFortuneHost }))),
   'crooked-road': lazy(() => import('./CrookedRoadHost').then(module => ({ default: module.CrookedRoadHost }))),
   'arcane-archives': lazy(() => import('./ArcaneArchivesHost').then(module => ({ default: module.ArcaneArchivesHost }))),
-  'cosmic-fortune': lazy(() => import('./PharaohsAscentHost').then(module => ({ default: module.PharaohsAscentHost }))),
+  'pharaohs-ascent': lazy(() => import('./PharaohsAscentHost').then(module => ({ default: module.PharaohsAscentHost }))),
 }
 
 type SlotGameRouteProps = {

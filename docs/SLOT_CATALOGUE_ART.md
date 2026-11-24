@@ -52,7 +52,7 @@ loading-screen follow-on was dispatched to all three chats; see `docs/GAME_LOADI
 | high-noon-fortune | High Noon Fortune | A | Queued |
 | royal-draw | Royal Draw | A | Queued |
 | arcane-archives | Arcane Archives | B | Queued |
-| cosmic-fortune | Cosmic Fortune | B | Queued |
+| pharaohs-ascent | Pharaoh’s Ascent | B | Queued |
 | neon-nights | Neon Nights | B | Queued |
 | jungle-jackpot | Jungle Jackpot | B | Queued |
 | ocean-odyssey | Ocean Odyssey | B | Queued |

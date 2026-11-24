@@ -18,7 +18,7 @@ Wukong and Pirates Fortune supply bespoke base reel sets and feature branches to
 | High Noon Fortune | `SpinService` | Configured profile and math |
 | Royal Draw | `SpinService` | Configured profile and math |
 | Arcane Archives | `SpinService` | Configured profile and math |
-| Cosmic Fortune | `SpinService` | Configured profile and math |
+| Pharaoh’s Ascent | `SpinService` | Configured profile and math |
 | Gold Foundry | `SpinService` | Authored reel strips, paytable, reel collector, and crucible settlement |
 | Neon Nights | `SpinService` | Configured profile and math |
 | Jungle Jackpot | `SpinService` | Configured profile and math |

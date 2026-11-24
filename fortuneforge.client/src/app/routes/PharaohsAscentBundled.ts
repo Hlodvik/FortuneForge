@@ -1,1 +1,1 @@
-export { PharaohAscentGame as default } from '@fortuneforge/games-cosmic-fortune'
+export { PharaohAscentGame as default } from '@fortuneforge/games-pharaohs-ascent'

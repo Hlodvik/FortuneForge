@@ -37,7 +37,7 @@ const slotDemoPaths = [
   '/slots/high-noon-fortune/demo',
   '/slots/royal-draw/demo',
   '/slots/arcane-archives/demo',
-  '/slots/cosmic-fortune/demo',
+  '/slots/pharaohs-ascent/demo',
   '/slots/gold-foundry/demo',
   '/slots/neon-nights/demo',
   '/slots/ocean-odyssey/demo',
@@ -546,7 +546,7 @@ test('themed cabinets show their title and trace paid symbols with their own pal
   await mockDemoApi(page, { kind: 'win' })
   const themedGames = [
     'candy-carnival', 'high-noon-fortune', 'robot-revolution', 'nordic-legends',
-    'cosmic-fortune', 'desert-treasures', 'ocean-odyssey', 'phantom-manor', 'royal-draw',
+    'pharaohs-ascent', 'desert-treasures', 'ocean-odyssey', 'phantom-manor', 'royal-draw',
     'reel-riches',
   ]
   const tracer = page.locator('.midnight-winning-paylines[data-palette="cabinet"]')

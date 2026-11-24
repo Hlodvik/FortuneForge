@@ -20,8 +20,8 @@ using FortuneForge.Games.ReelRiches;
 using FortuneForge.Games.ReelRiches.Server;
 using FortuneForge.Games.RoyalDraw;
 using FortuneForge.Games.RoyalDraw.Server;
-using FortuneForge.Games.CosmicFortune;
-using FortuneForge.Games.CosmicFortune.Server;
+using FortuneForge.Games.PharaohsAscent;
+using FortuneForge.Games.PharaohsAscent.Server;
 using FortuneForge.Games.OceanOdyssey;
 using FortuneForge.Games.OceanOdyssey.Server;
 using FortuneForge.Games.CrookedRoad.Server;
@@ -134,9 +134,9 @@ internal static class SlotEvidenceReplayAudit
             if (!demo && result.GameId == RoyalDrawEngine.GameId && summary.GameId == RoyalDrawPaidRouteContract.AuditGameId &&
                 RoyalDrawSpinEvidence.IsNative(data))
                 return RoyalDrawSpinEvidence.InspectNative(summary, data);
-            if (!demo && result.GameId == CosmicFortuneEngine.GameId && summary.GameId == CosmicFortunePaidRouteContract.AuditGameId &&
-                CosmicFortuneSpinEvidence.IsNative(data))
-                return CosmicFortuneSpinEvidence.InspectNative(summary, data);
+            if (!demo && result.GameId == PharaohsAscentEngine.GameId && summary.GameId == PharaohsAscentPaidRouteContract.AuditGameId &&
+                PharaohsAscentSpinEvidence.IsNative(data))
+                return PharaohsAscentSpinEvidence.InspectNative(summary, data);
             if (!demo && result.GameId == OceanOdysseyEngine.GameId && summary.GameId == OceanOdysseyPaidRouteContract.AuditGameId &&
                 OceanOdysseySpinEvidence.IsNative(data))
                 return OceanOdysseySpinEvidence.InspectNative(summary, data);

@@ -14,7 +14,7 @@ public static class AcceptedGameParticipationDocuments
         "three-card-poker", "house-holdem", "keno", "sic-bo", "roulette", "craps", "liars-dice",
         "asteroids", "flappy", "2048", "drop-merge", "snake", "horse-flight",
         "wukong-journey-to-the-west", "rainbow-realm", "pirates-fortune", "gods-of-olympus",
-        "reel-riches", "high-noon-fortune", "royal-draw", "arcane-archives", "cosmic-fortune",
+        "reel-riches", "high-noon-fortune", "royal-draw", "arcane-archives", "pharaohs-ascent",
         "gold-foundry", "neon-nights", "jungle-jackpot", "empty-slots-game", "ocean-odyssey", "crooked-road", "samurai-fortune",
         "candy-carnival", "phantom-manor", "nordic-legends", "desert-treasures", "robot-revolution",
         "dragon-hoard",

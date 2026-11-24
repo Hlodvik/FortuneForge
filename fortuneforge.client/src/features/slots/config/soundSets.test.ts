@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { describe, expect, it, vi } from 'vitest'
 import { ARCANE_ARCHIVES_SOUNDS } from '@fortuneforge/games-arcane-archives/sounds'
 import { CANDY_CARNIVAL_SOUNDS } from '@fortuneforge/games-candy-carnival/sounds'
-import { COSMIC_FORTUNE_SOUNDS } from '@fortuneforge/games-cosmic-fortune/sounds'
+import { PHARAOHS_ASCENT_SOUNDS } from '@fortuneforge/games-pharaohs-ascent/sounds'
 import { DESERT_TREASURES_SOUNDS } from '@fortuneforge/games-desert-treasures/sounds'
 import { GODS_OF_OLYMPUS_SOUNDS } from '@fortuneforge/games-gods-of-olympus/sounds'
 import { GOLD_FOUNDRY_SOUNDS } from '@fortuneforge/games-gold-foundry/manifest'
@@ -47,9 +47,9 @@ const pirateSpecialCueIds = Object.values(PIRATES_FORTUNE_SOUNDS.events.specialR
 
 describe('Pharaoh’s Ascent sound set', () => {
   it('retains its original Egyptian suite under the stable game key', () => {
-    expect(COSMIC_FORTUNE_SOUNDS.id).toBe('pharaohs-ascent-audio-v1')
-    expect(createThemedSlotAudio('cosmic-fortune', COSMIC_FORTUNE_SOUNDS)).toBe(COSMIC_FORTUNE_SOUNDS)
-    expect(definedCues(COSMIC_FORTUNE_SOUNDS).every(cue => cue.source.includes('/pharaoh-'))).toBe(true)
+    expect(PHARAOHS_ASCENT_SOUNDS.id).toBe('pharaohs-ascent-audio-v1')
+    expect(createThemedSlotAudio('pharaohs-ascent', PHARAOHS_ASCENT_SOUNDS)).toBe(PHARAOHS_ASCENT_SOUNDS)
+    expect(definedCues(PHARAOHS_ASCENT_SOUNDS).every(cue => cue.source.includes('/pharaoh-'))).toBe(true)
   })
 })
 
@@ -144,7 +144,7 @@ describe('catalogue audio provenance and allocation', () => {
     'reel-riches': REEL_RICHES_SOUNDS,
     'royal-draw': ROYAL_DRAW_SOUNDS,
     'arcane-archives': ARCANE_ARCHIVES_SOUNDS,
-    'cosmic-fortune': COSMIC_FORTUNE_SOUNDS,
+    'pharaohs-ascent': PHARAOHS_ASCENT_SOUNDS,
     'gold-foundry': GOLD_FOUNDRY_SOUNDS,
     'ocean-odyssey': OCEAN_ODYSSEY_SOUNDS,
     'crooked-road': CROOKED_ROAD_SOUNDS,

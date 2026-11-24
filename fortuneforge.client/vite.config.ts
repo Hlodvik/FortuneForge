@@ -55,7 +55,7 @@ export default defineConfig({
             { name: 'high-noon-fortune', test: /[/\\]games[/\\]HighNoonFortune[/\\]client[/\\]/, priority: 10 },
             { name: 'royal-draw', test: /[/\\]games[/\\]RoyalDraw[/\\]client[/\\]/, priority: 10 },
             { name: 'arcane-archives', test: /[/\\]games[/\\]ArcaneArchives[/\\]client[/\\]/, priority: 10 },
-            { name: 'cosmic-fortune', test: /[/\\]games[/\\]CosmicFortune[/\\]client[/\\]/, priority: 10 },
+            { name: 'pharaohs-ascent', test: /[/\\]games[/\\]PharaohsAscent[/\\]client[/\\]/, priority: 10 },
             { name: 'ocean-odyssey', test: /[/\\]games[/\\]OceanOdyssey[/\\]client[/\\]/, priority: 10 },
             { name: 'crooked-road', test: /[/\\]games[/\\]CrookedRoad[/\\]client[/\\]/, priority: 10 },
             { name: 'candy-carnival', test: /[/\\]games[/\\]CandyCarnival[/\\]client[/\\]/, priority: 10 },

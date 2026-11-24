@@ -14,7 +14,7 @@ namespace FortuneForge.Server.Tests.Slots;
 public sealed class SlotSpecialRoundProfilesTests
 {
     [Theory]
-    [InlineData(SlotSpecialRoundProfiles.CosmicFortuneGameId, 3, 6, 24, 7)]
+    [InlineData(SlotSpecialRoundProfiles.PharaohsAscentGameId, 3, 6, 24, 7)]
     [InlineData(SlotSpecialRoundProfiles.HighNoonFortuneGameId, 3, 5, 20, 8)]
     [InlineData(SlotSpecialRoundProfiles.GodsOfOlympusGameId, 4, 6, 28, 6)]
     [InlineData(SlotSpecialRoundProfiles.PiratesFortuneGameId, 3, 7, 25, 10)]
@@ -52,7 +52,7 @@ public sealed class SlotSpecialRoundProfilesTests
     {
         var profiles = new[]
         {
-            SlotSpecialRoundProfiles.CosmicFortuneGameId,
+            SlotSpecialRoundProfiles.PharaohsAscentGameId,
             SlotSpecialRoundProfiles.HighNoonFortuneGameId,
             SlotSpecialRoundProfiles.GodsOfOlympusGameId,
             SlotSpecialRoundProfiles.PiratesFortuneGameId,
@@ -130,7 +130,7 @@ public sealed class SlotSpecialRoundProfilesTests
     [InlineData("rand", "SEAL_RAND")]
     public void PharaohAscent_CollectionCompletionUsesItsOwnGuardianMode(string guardian, string symbol)
     {
-        Assert.True(SlotSpecialRoundProfiles.TryGet(SlotSpecialRoundProfiles.CosmicFortuneGameId, out var profile));
+        Assert.True(SlotSpecialRoundProfiles.TryGet(SlotSpecialRoundProfiles.PharaohsAscentGameId, out var profile));
         Assert.Null(profile.CollectionFeatureMode);
 
         var result = SlotSpecialRoundProfiles.SettleDemo(

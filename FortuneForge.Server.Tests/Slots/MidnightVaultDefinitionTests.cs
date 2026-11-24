@@ -292,7 +292,7 @@ public sealed class MidnightVaultDefinitionTests
         Assert.Equal(before, JsonSerializer.Serialize(provider.GetGame(active.Id)));
         Assert.Throws<ArgumentException>(() => MidnightVaultSlotDefinitions.CreateGameForPaytable(active, "midnight-vault-paytable-v4"));
         Assert.Throws<ArgumentException>(() => MidnightVaultSlotDefinitions.CreateGameForPaytable(
-            provider.GetGame(SlotSpecialRoundProfiles.CosmicFortuneGameId)!, MidnightVaultSlotDefinitions.LegacyPaytableId));
+            provider.GetGame(SlotSpecialRoundProfiles.PharaohsAscentGameId)!, MidnightVaultSlotDefinitions.LegacyPaytableId));
     }
 
     [Fact]

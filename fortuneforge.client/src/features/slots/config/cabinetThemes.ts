@@ -16,7 +16,6 @@ export type SlotCelebrationEffect =
   | 'frontier-dust'
   | 'royal-card-fan'
   | 'arcane-orbit'
-  | 'cosmic-streak'
   | 'foundry-sparks'
   | 'ocean-swell'
   | 'crooked-road-clover'

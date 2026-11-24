@@ -46,9 +46,8 @@ export const SLOT_ROUTE_METADATA = [
     playPath: '/slots/arcane-archives', demoPath: '/slots/arcane-archives/demo', serverGameIds: ['arcane-archives-v1'], shellBackdrop: 'theme',
   },
   {
-    id: 'cosmic-fortune', title: 'Pharaoh’s Ascent', shortTitle: 'Pharaoh’s Ascent',
-    playPath: '/slots/pharaohs-ascent', demoPath: null, serverGameIds: ['cosmic-fortune-v1'], shellBackdrop: 'theme',
-    legacyPaths: { '/slots/cosmic-fortune': '/slots/pharaohs-ascent', '/slots/cosmic-fortune/demo': '/slots/pharaohs-ascent' },
+    id: 'pharaohs-ascent', title: 'Pharaoh’s Ascent', shortTitle: 'Pharaoh’s Ascent',
+    playPath: '/slots/pharaohs-ascent', demoPath: null, serverGameIds: ['pharaohs-ascent-v1'], shellBackdrop: 'theme',
   },
   {
     id: 'gold-foundry', title: 'Gold Foundry', shortTitle: 'Gold Foundry',

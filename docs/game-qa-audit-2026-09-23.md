@@ -52,7 +52,7 @@ All twenty slot routes loaded and completed a demo spin. The shared shell is fun
 6. **High Noon Fortune — pass.** Clarify showdown readiness and stakes before the spin, then make the showdown sequence faster, larger, and visually separate from ordinary wins.
 7. **Royal Draw — pass.** Lean into its card-game identity with clearer hand-like collection feedback and a stronger explanation of why a special outcome paid.
 8. **Arcane Archives — pass after repair.** Telegraph rune/shelf progress on the cabinet and make the feature's current objective readable without opening help.
-9. **Cosmic Fortune — pass.** Use orbital motion, persistent meter feedback, and stronger depth/audio changes to distinguish the bonus from an ordinary reskinned spin.
+9. **Pharaoh’s Ascent — pass.** Use orbital motion, persistent meter feedback, and stronger depth/audio changes to distinguish the bonus from an ordinary reskinned spin.
 11. **Neon Nights — pass.** Tighten animation-to-audio synchronization and make the nightclub feature state more legible under the high-saturation palette.
 12. **Jungle Jackpot — pass.** Improve foreground/background separation and use creature/environment motion to create anticipation without obscuring symbols.
 13. **Ocean Odyssey — pass.** Increase low-value symbol differentiation and preserve payline readability against the detailed blue background.

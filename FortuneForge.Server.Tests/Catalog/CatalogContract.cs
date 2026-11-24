@@ -38,7 +38,7 @@ internal static class CatalogContract
         ("high-noon-fortune", "/slots/high-noon-fortune"),
         ("royal-draw", "/slots/royal-draw"),
         ("arcane-archives", "/slots/arcane-archives"),
-        ("cosmic-fortune", "/slots/pharaohs-ascent"),
+        ("pharaohs-ascent", "/slots/pharaohs-ascent"),
         ("gold-foundry", "/slots/gold-foundry"),
         ("neon-nights", "/slots/neon-nights"),
         ("empty-slots-game", "/slots/jade-dragon"),

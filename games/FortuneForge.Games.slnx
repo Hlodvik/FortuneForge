@@ -58,8 +58,8 @@
     <Project Path="ArcaneArchives/server/FortuneForge.Games.ArcaneArchives.Server/FortuneForge.Games.ArcaneArchives.Server.csproj" />
     <Project Path="ArcaneArchives/tests/FortuneForge.Games.ArcaneArchives.Tests/FortuneForge.Games.ArcaneArchives.Tests.csproj" />
   </Folder>
-  <Folder Name="/games/CosmicFortune/">
-    <Project Path="CosmicFortune/src/FortuneForge.Games.CosmicFortune/FortuneForge.Games.CosmicFortune.csproj" />
+  <Folder Name="/games/PharaohsAscent/">
+    <Project Path="PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/FortuneForge.Games.PharaohsAscent.csproj" />
   </Folder>
   <Folder Name="/games/OceanOdyssey/">
     <Project Path="OceanOdyssey/src/FortuneForge.Games.OceanOdyssey/FortuneForge.Games.OceanOdyssey.csproj" />

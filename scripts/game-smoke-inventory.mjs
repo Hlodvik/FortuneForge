@@ -7,7 +7,7 @@ export const slotSmokeInventory = [
   ['frontier-fortune', 'high-noon-fortune-v1'],
   ['royal-draw', 'royal-draw-v1'],
   ['arcane-archives', 'arcane-archives-v1'],
-  ['pharaohs-ascent', 'cosmic-fortune-v1'],
+  ['pharaohs-ascent', 'pharaohs-ascent-v1'],
   ['gold-foundry', 'gold-foundry-v1'],
   ['neon-nights', 'neon-nights-v1'],
   ['ocean-odyssey', 'ocean-odyssey-v1'],

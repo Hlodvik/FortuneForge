@@ -9,7 +9,7 @@ using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Reels;
 using ArcaneEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
 using CandyEngine = FortuneForge.Games.CandyCarnival.CandyCarnivalEngine;
-using CosmicEngine = FortuneForge.Games.CosmicFortune.CosmicFortuneEngine;
+using PharaohEngine = FortuneForge.Games.PharaohsAscent.PharaohsAscentEngine;
 using DesertEngine = FortuneForge.Games.DesertTreasures.DesertTreasuresEngine;
 using OlympusEngine = FortuneForge.Games.GodsOfOlympus.GodsOfOlympusEngine;
 using FrontierEngine = FortuneForge.Games.FrontierFortune.Server.FrontierOutlawDefinitions;
@@ -66,8 +66,8 @@ public sealed class StandaloneSlotPackageRegistry
                 RoyalEngine.CreateReelSet, RoyalEngine.CreatePaytable),
             [ArcaneEngine.GameId] = new(ArcaneEngine.CreateGame, ArcaneEngine.CreateSymbolSet,
                 ArcaneEngine.CreateReelSet, ArcaneEngine.CreatePaytable, SupportsClassicSpin: false),
-            [CosmicEngine.GameId] = new(CosmicEngine.CreateGame, CosmicEngine.CreateSymbolSet,
-                CosmicEngine.CreateReelSet, CosmicEngine.CreatePaytable),
+            [PharaohEngine.GameId] = new(PharaohEngine.CreateGame, PharaohEngine.CreateSymbolSet,
+                PharaohEngine.CreateReelSet, PharaohEngine.CreatePaytable),
             [OceanEngine.GameId] = new(OceanEngine.CreateGame, OceanEngine.CreateSymbolSet,
                 OceanEngine.CreateReelSet, OceanEngine.CreatePaytable),
             [CandyEngine.GameId] = new(CandyEngine.CreateGame, CandyEngine.CreateSymbolSet,
@@ -96,7 +96,7 @@ public sealed class StandaloneSlotPackageRegistry
             [OlympusEngine.GameId] = olympusEngine.Spin,
             [ReelRichesEngine.GameId] = new ReelRichesEngine(random).Spin,
             [RoyalEngine.GameId] = new RoyalEngine(random).Spin,
-            [CosmicEngine.GameId] = new CosmicEngine(random).Spin,
+            [PharaohEngine.GameId] = new PharaohEngine(random).Spin,
             [OceanEngine.GameId] = new OceanEngine(random).Spin,
             [CandyEngine.GameId] = new CandyEngine(random).Spin,
             [PhantomEngine.GameId] = new PhantomEngine(random).Spin,

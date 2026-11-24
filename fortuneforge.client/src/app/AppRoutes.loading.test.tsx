@@ -93,13 +93,13 @@ describe('game route loading integration', () => {
 
   it('resolves a slot loading presentation before the lazy slot wrapper has loaded', async () => {
     const definition: SlotRouteDefinition = {
-      id: 'cosmic-fortune', title: 'Pharaoh’s Ascent', shortTitle: 'Pharaoh’s Ascent',
+      id: 'pharaohs-ascent', title: 'Pharaoh’s Ascent', shortTitle: 'Pharaoh’s Ascent',
       playPath: '/slots/pharaohs-ascent', demoPath: null,
-      serverGameIds: ['cosmic-fortune-v1'], shellBackdrop: 'theme', load: vi.fn(),
+      serverGameIds: ['pharaohs-ascent-v1'], shellBackdrop: 'theme', load: vi.fn(),
     }
     await renderRoute('/slots/pharaohs-ascent', definition)
     expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
-    expect(host.querySelector('[data-game-loading]')?.getAttribute('data-game-loading')).toBe('cosmic-fortune')
+    expect(host.querySelector('[data-game-loading]')?.getAttribute('data-game-loading')).toBe('pharaohs-ascent')
     expect(host.querySelector('[role="status"]')?.textContent).toBe('Loading Pharaoh’s Ascent…')
     expect(definition.load).not.toHaveBeenCalled()
     await act(async () => { chunks.finishSlot({ SlotGameRoute: () => <main>Slot wrapper ready</main> }) })

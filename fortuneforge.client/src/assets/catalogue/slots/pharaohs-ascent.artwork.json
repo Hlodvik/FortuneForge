@@ -1,0 +1,15 @@
+{
+  "id": "pharaohs-ascent",
+  "title": "Pharaoh’s Ascent",
+  "file": "pharaohs-ascent-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 106614,
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a205ae-2f9a-7751-8f06-0f285893bf36/exec-d0a02baa-3936-4ddb-b925-f1ce4ca7f772.png",
+  "referencePaths": [
+    "games/PharaohsAscent/client/FortuneForge.Games.PharaohsAscent.Client/src/catalog.ts",
+    "games/PharaohsAscent/client/FortuneForge.Games.PharaohsAscent.Client/src/cabinetTheme.ts"
+  ],
+  "status": "runtime-catalogue-export"
+}

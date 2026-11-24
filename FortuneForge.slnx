@@ -65,10 +65,10 @@
     <Project Path="games/ArcaneArchives/server/FortuneForge.Games.ArcaneArchives.Server/FortuneForge.Games.ArcaneArchives.Server.csproj" />
     <Project Path="games/ArcaneArchives/tests/FortuneForge.Games.ArcaneArchives.Tests/FortuneForge.Games.ArcaneArchives.Tests.csproj" />
   </Folder>
-  <Folder Name="/Games/CosmicFortune/">
-    <Project Path="games/CosmicFortune/src/FortuneForge.Games.CosmicFortune/FortuneForge.Games.CosmicFortune.csproj" />
-    <Project Path="games/CosmicFortune/server/FortuneForge.Games.CosmicFortune.Server/FortuneForge.Games.CosmicFortune.Server.csproj" />
-    <Project Path="games/CosmicFortune/tests/FortuneForge.Games.CosmicFortune.Tests/FortuneForge.Games.CosmicFortune.Tests.csproj" />
+  <Folder Name="/Games/PharaohsAscent/">
+    <Project Path="games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/FortuneForge.Games.PharaohsAscent.csproj" />
+    <Project Path="games/PharaohsAscent/server/FortuneForge.Games.PharaohsAscent.Server/FortuneForge.Games.PharaohsAscent.Server.csproj" />
+    <Project Path="games/PharaohsAscent/tests/FortuneForge.Games.PharaohsAscent.Tests/FortuneForge.Games.PharaohsAscent.Tests.csproj" />
   </Folder>
   <Folder Name="/Games/OceanOdyssey/">
     <Project Path="games/OceanOdyssey/src/FortuneForge.Games.OceanOdyssey/FortuneForge.Games.OceanOdyssey.csproj" />

@@ -49,8 +49,8 @@
     <ProjectReference Include="..\games\RoyalDraw\server\FortuneForge.Games.RoyalDraw.Server\FortuneForge.Games.RoyalDraw.Server.csproj" />
     <ProjectReference Include="..\games\ArcaneArchives\src\FortuneForge.Games.ArcaneArchives\FortuneForge.Games.ArcaneArchives.csproj" />
     <ProjectReference Include="..\games\ArcaneArchives\server\FortuneForge.Games.ArcaneArchives.Server\FortuneForge.Games.ArcaneArchives.Server.csproj" />
-    <ProjectReference Include="..\games\CosmicFortune\src\FortuneForge.Games.CosmicFortune\FortuneForge.Games.CosmicFortune.csproj" />
-    <ProjectReference Include="..\games\CosmicFortune\server\FortuneForge.Games.CosmicFortune.Server\FortuneForge.Games.CosmicFortune.Server.csproj" />
+    <ProjectReference Include="..\games\PharaohsAscent\src\FortuneForge.Games.PharaohsAscent\FortuneForge.Games.PharaohsAscent.csproj" />
+    <ProjectReference Include="..\games\PharaohsAscent\server\FortuneForge.Games.PharaohsAscent.Server\FortuneForge.Games.PharaohsAscent.Server.csproj" />
     <ProjectReference Include="..\games\OceanOdyssey\src\FortuneForge.Games.OceanOdyssey\FortuneForge.Games.OceanOdyssey.csproj" />
     <ProjectReference Include="..\games\OceanOdyssey\server\FortuneForge.Games.OceanOdyssey.Server\FortuneForge.Games.OceanOdyssey.Server.csproj" />
     <ProjectReference Include="..\games\CrookedRoad\src\FortuneForge.Games.CrookedRoad\FortuneForge.Games.CrookedRoad.csproj" />

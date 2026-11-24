@@ -78,9 +78,9 @@ describe('home replaces separate authenticated catalogues', () => {
 
   it('leaves a concrete slot route available without a catalogue redirect', async () => {
     const slotRoute = {
-      id: 'cosmic-fortune', title: 'Pharaoh’s Ascent', shortTitle: 'Pharaoh’s Ascent',
+      id: 'pharaohs-ascent', title: 'Pharaoh’s Ascent', shortTitle: 'Pharaoh’s Ascent',
       playPath: '/slots/pharaohs-ascent', demoPath: null,
-      serverGameIds: ['cosmic-fortune-v1'], shellBackdrop: 'theme', load: vi.fn(),
+      serverGameIds: ['pharaohs-ascent-v1'], shellBackdrop: 'theme', load: vi.fn(),
     } satisfies SlotRouteDefinition
     await renderRoute('/slots/pharaohs-ascent', slotRoute)
     expect(host.textContent).toBe('Slot game')

@@ -1217,16 +1217,16 @@
     },
     {
       "route": {
-        "id": "cosmic-fortune",
-        "title": "Cosmic Fortune",
-        "playPath": "/slots/cosmic-fortune",
-        "demoPath": "/slots/cosmic-fortune/demo",
-        "gameId": "cosmic-fortune-v1"
+        "id": "pharaohs-ascent",
+        "title": "Pharaoh’s Ascent",
+        "playPath": "/slots/pharaohs-ascent",
+        "demoPath": "/slots/pharaohs-ascent/demo",
+        "gameId": "pharaohs-ascent-v1"
       },
       "statusEndpoint": 204,
       "paylineCount": 23,
       "profile": {
-        "gameId": "cosmic-fortune-v1",
+        "gameId": "pharaohs-ascent-v1",
         "scatterRequiredSymbols": 3,
         "scatterAwardedSpins": 6,
         "collectionTarget": 24,

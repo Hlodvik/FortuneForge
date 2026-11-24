@@ -52,7 +52,7 @@ const catalogDefinitions: readonly SlotGameCatalogDefinition[] = [
     'Take a seat at the high-stakes table, complete all four suits, and let the dealer tray sweep the jackpot chips.', royalDrawTitle),
   hostCatalog('arcane-archives', 'Arcane Archives', 'Arcane Archives',
     'Match golden glyphs on five reels in an enchanted library.', arcaneArchivesTitle),
-  hostCatalog('cosmic-fortune', 'Pharaoh’s Ascent', 'Pharaoh’s Ascent',
+  hostCatalog('pharaohs-ascent', 'Pharaoh’s Ascent', 'Pharaoh’s Ascent',
     'Explore an ancient pyramid beyond the reels. Collect relics, bank treasure, and unlock the sarcophagus.', pharaohsAscentTitle),
   GOLD_FOUNDRY_CATALOG,
   NEON_NIGHTS_CATALOG,

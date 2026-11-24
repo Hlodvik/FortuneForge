@@ -20,7 +20,7 @@ internal static class AcceptedGameActivityReader
         ["pirates-fortune-v1"] = "pirates-fortune", ["gods-of-olympus-v1"] = "gods-of-olympus",
         ["reel-riches-v1"] = "reel-riches", ["high-noon-fortune-v1"] = "high-noon-fortune",
         ["royal-draw-v1"] = "royal-draw", ["arcane-archives-v1"] = "arcane-archives",
-        ["cosmic-fortune-v1"] = "cosmic-fortune", ["gold-foundry-v1"] = "gold-foundry",
+        ["pharaohs-ascent-v1"] = "pharaohs-ascent", ["gold-foundry-v1"] = "gold-foundry",
         ["neon-nights-v1"] = "neon-nights", ["empty-slots-v1"] = "empty-slots-game",
         ["jungle-jackpot-v1"] = "jungle-jackpot",
         ["ocean-odyssey-v1"] = "ocean-odyssey", ["crooked-road-v1"] = "crooked-road",

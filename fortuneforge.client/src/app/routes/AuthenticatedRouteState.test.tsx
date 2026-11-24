@@ -86,7 +86,7 @@ describe('authenticated route pending presentation', () => {
   })
 
   it('keeps public slot demo exits public while their resources load', () => {
-    window.history.replaceState(null, '', '/slots/cosmic-fortune/demo/')
+    window.history.replaceState(null, '', '/slots/pharaohs-ascent/demo/')
     act(() => root.render(<GameLoadingRouteProvider entry={entry}><PendingState /></GameLoadingRouteProvider>))
     expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
     expect(host.querySelector('a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/')

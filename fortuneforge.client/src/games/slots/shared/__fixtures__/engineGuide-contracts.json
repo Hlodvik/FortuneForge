@@ -74,8 +74,8 @@
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/PaidArcaneSpinOptions.cs": "0e5d3d9b8a62658802d9b45445f8a74a5648513ede06dddaf30e4b2404222f88",
     "games/CandyCarnival/src/FortuneForge.Games.CandyCarnival/CandyCarnivalEngine.cs": "b6dacb197947260e42b48d252e3bccf81626eaf62358d82a2278b5fd8f233e0c",
     "games/CandyCarnival/src/FortuneForge.Games.CandyCarnival/FortuneForge.Games.CandyCarnival.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
-    "games/CosmicFortune/src/FortuneForge.Games.CosmicFortune/CosmicFortuneEngine.cs": "0c7a691123a774e8f600f31ebe27fb518e6fac960f6c2901c99f7307cf1792f0",
-    "games/CosmicFortune/src/FortuneForge.Games.CosmicFortune/FortuneForge.Games.CosmicFortune.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/PharaohsAscentEngine.cs": "0c7a691123a774e8f600f31ebe27fb518e6fac960f6c2901c99f7307cf1792f0",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/FortuneForge.Games.PharaohsAscent.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/DesertTreasures/src/FortuneForge.Games.DesertTreasures/DesertTreasuresEngine.cs": "15451e661823b00a4d66229c52f4d014e8ee2e842dd561c2f202f4b5c5a43711",
     "games/DesertTreasures/src/FortuneForge.Games.DesertTreasures/FortuneForge.Games.DesertTreasures.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/GodsOfOlympus/src/FortuneForge.Games.GodsOfOlympus/FortuneForge.Games.GodsOfOlympus.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
@@ -209,7 +209,7 @@
   "sourceProjects": [
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/FortuneForge.Games.ArcaneArchives.csproj",
     "games/CandyCarnival/src/FortuneForge.Games.CandyCarnival/FortuneForge.Games.CandyCarnival.csproj",
-    "games/CosmicFortune/src/FortuneForge.Games.CosmicFortune/FortuneForge.Games.CosmicFortune.csproj",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/FortuneForge.Games.PharaohsAscent.csproj",
     "games/DesertTreasures/src/FortuneForge.Games.DesertTreasures/FortuneForge.Games.DesertTreasures.csproj",
     "games/GodsOfOlympus/src/FortuneForge.Games.GodsOfOlympus/FortuneForge.Games.GodsOfOlympus.csproj",
     "games/GoldFoundry/src/FortuneForge.Games.GoldFoundry/FortuneForge.Games.GoldFoundry.csproj",
@@ -2853,9 +2853,9 @@
       ]
     },
     {
-      "gameId": "cosmic-fortune-v1",
+      "gameId": "pharaohs-ascent-v1",
       "profile": {
-        "gameId": "cosmic-fortune-v1",
+        "gameId": "pharaohs-ascent-v1",
         "scatterRequiredSymbols": 3,
         "scatterAwardedSpins": 6,
         "collectionTarget": 24,

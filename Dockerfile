@@ -11,6 +11,7 @@ RUN dotnet restore FortuneForge.Server/FortuneForge.Server.csproj
 COPY FortuneForge.Server/ FortuneForge.Server/
 COPY FortuneForge.ServiceDefaults/ FortuneForge.ServiceDefaults/
 COPY config/backend-host.json config/backend-host.json
+COPY config/game-maintenance.json config/game-maintenance.json
 RUN dotnet publish FortuneForge.Server/FortuneForge.Server.csproj \
     --configuration Release \
     --output /app/publish \

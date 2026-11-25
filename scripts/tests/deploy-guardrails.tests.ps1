@@ -470,6 +470,16 @@ $sharedRevision.spec.containers[0].startupProbe.httpGet.path = '/healthz'
 $sharedRevision.status.conditions[0].status = 'False'
 Assert-Throws { Assert-ApiSharedBackendConfiguration -Revision $sharedRevision -Packages $sharedExpected } 'shared backend must be ready before traffic'
 $dockerSource = Get-Content -LiteralPath (Join-Path $repoRoot 'Dockerfile') -Raw
+$dockerInputAllowlist = @(Get-Content -LiteralPath (Join-Path $repoRoot '.dockerignore') | ForEach-Object { $_.Trim() })
+[xml]$hostProject = Get-Content -LiteralPath (Join-Path $repoRoot 'FortuneForge.Server/FortuneForge.Server.csproj') -Raw
+foreach ($item in $hostProject.SelectNodes('//EmbeddedResource[@Include] | //Content[@Include]')) {
+    $include = ([string]$item.Include).Replace('\', '/')
+    if (-not $include.StartsWith('../config/')) { continue }
+    $configurationPath = $include.Substring(3)
+    Assert-Equal (Test-Path -LiteralPath (Join-Path $repoRoot $configurationPath) -PathType Leaf) $true "host configuration exists: $configurationPath"
+    Assert-Equal ($dockerInputAllowlist -ccontains "!$configurationPath") $true "Docker admits host configuration: $configurationPath"
+    Assert-Equal $dockerSource.Contains("COPY $configurationPath $configurationPath") $true "Docker copies host configuration: $configurationPath"
+}
 Assert-Equal $dockerSource.Contains('COPY artifacts/shared-backend-upload/game-packages/ ./game-packages/') $true 'image copies selected frozen publish artifacts'
 Assert-Equal $dockerSource.Contains('ENV GamePackages__Required=true') $true 'image refuses absent package composition'
 Assert-Equal $deploySource.Contains("'verify-materialized', '--manifest'") $true 'reused package tree is independently verified'

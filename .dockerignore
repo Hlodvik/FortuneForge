@@ -17,6 +17,7 @@
 # Only the guarded, verified shared package materialization enters the image.
 !config/
 !config/backend-host.json
+!config/game-maintenance.json
 !artifacts/
 !artifacts/shared-backend-upload/
 !artifacts/shared-backend-upload/game-packages/

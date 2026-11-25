@@ -1220,6 +1220,7 @@ if (-not $InspectLive) {
         $localPreflight | Add-Member -NotePropertyName BaseUploadManifestSha256 -NotePropertyValue $baseUpload.ManifestSha256
     }
     if ($sharedBackend -and $Target -in @('all', 'api')) {
+        Assert-BackendHostPackageSelection -ManifestPath $sharedBackendManifestPath -PolicyPath (Join-Path $repoRoot 'config/backend-host.json')
         $selected = Invoke-JsonCommand 'node.exe' @((Join-Path $repoRoot 'scripts/shared-backend-packages.mjs'), 'verify', '--manifest', $sharedBackendManifestPath)
         $localPreflight | Add-Member -NotePropertyName SharedBackendPackages -NotePropertyValue $selected
     }

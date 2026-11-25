@@ -1857,6 +1857,221 @@
       ]
     },
     {
+      "gameId": "crooked-road",
+      "runtimeGameId": "crooked-road-v1",
+      "releaseId": "d1bd4533-397e-4c87-b3ac-8e00f31892c5",
+      "sourceSha": "bd670f53bf2029bb7f14e134d164328dba840d1f",
+      "entry": "FortuneForge.Games.PackagedGame.Server.dll",
+      "moduleType": "FortuneForge.Games.PackagedGame.Server.GameBackendPackage",
+      "files": [
+        {
+          "path": "FortuneForge.Games.Abstractions.dll",
+          "size": 134144,
+          "sha256": "451a76b5491024eed03757db2d13b157f83c8aabc5b818216576394e3ffc284f"
+        },
+        {
+          "path": "FortuneForge.Games.Abstractions.pdb",
+          "size": 32056,
+          "sha256": "44138d4cc89c537c8129669fbc7a4fbd474bf65baf305c2d3d52944948484111"
+        },
+        {
+          "path": "FortuneForge.Games.CrookedRoad.Server.dll",
+          "size": 77312,
+          "sha256": "78f49dcfa13783340e8220ed3ad4f653b321ff6f455d71f9c23d14a3c3f79f0c"
+        },
+        {
+          "path": "FortuneForge.Games.CrookedRoad.Server.pdb",
+          "size": 32524,
+          "sha256": "c6ce3766cff085393324f0b076f21da99edd6e159d69ff88b0e0bdd8d919690e"
+        },
+        {
+          "path": "FortuneForge.Games.CrookedRoad.dll",
+          "size": 88576,
+          "sha256": "4399e59c5256bab3e848a167c4e332f8d472cf0970b932976a2d3699c9eeff52"
+        },
+        {
+          "path": "FortuneForge.Games.CrookedRoad.pdb",
+          "size": 26684,
+          "sha256": "984548f9d57b02c6f68adc656df4697972b595ef12aaa9033e863ac5fc11d69f"
+        },
+        {
+          "path": "FortuneForge.Games.Hosting.dll",
+          "size": 99840,
+          "sha256": "4e735d719e74883b914df446b92e4c4c02d9775b84883ef2b82fbadbb14f2438"
+        },
+        {
+          "path": "FortuneForge.Games.Hosting.pdb",
+          "size": 39124,
+          "sha256": "a2e3f587652cccb7f783742c9c04887032cf1d3467dbe7b2189fcc16d7615cd8"
+        },
+        {
+          "path": "FortuneForge.Games.PackagedGame.Server.deps.json",
+          "size": 16232,
+          "sha256": "d3890e3ede7dbf0d630c4a9bef6a9882a3f18ea1524e25c9ea1e94b2bd6bed20"
+        },
+        {
+          "path": "FortuneForge.Games.PackagedGame.Server.dll",
+          "size": 23040,
+          "sha256": "3ffbab42eb510b6b1594f62fcda8247deda70e2844fcc214aaccb2712d25ff39"
+        },
+        {
+          "path": "FortuneForge.Games.PackagedGame.Server.pdb",
+          "size": 26728,
+          "sha256": "69314fbc496bc3dd254367362e7ce0ee2e4fa7a85c53e8e5d3922368c7d8fa4a"
+        },
+        {
+          "path": "FortuneForge.Games.PackagedGame.Server.runtimeconfig.json",
+          "size": 491,
+          "sha256": "41442586a8262bc96a1c80f82f4d9384c03bfd465d221cbf01fb3563170f9e65"
+        },
+        {
+          "path": "FortuneForge.Games.PackagedGame.Server.staticwebassets.endpoints.json",
+          "size": 53,
+          "sha256": "c1686417e8d5c31bba969f12b6f3d2b35e6609adb5ca42f212261a3a02771aac"
+        },
+        {
+          "path": "FortuneForge.Games.Slots.Contracts.dll",
+          "size": 40960,
+          "sha256": "22a03fd209334b89a78cdfe75f3351c651b404144f08cebf5b40adccb9e52048"
+        },
+        {
+          "path": "FortuneForge.Games.Slots.Contracts.pdb",
+          "size": 19000,
+          "sha256": "d8f475d3016f12112ffd521192ad98ddc3c8287128e7bbdfc9ff328529b1d77f"
+        },
+        {
+          "path": "FortuneForge.Games.Slots.Persistence.dll",
+          "size": 67072,
+          "sha256": "39549f682d6ec6c6025dbf3a2eb4e3bf8fbb2a694826896eae97775c60134f4a"
+        },
+        {
+          "path": "FortuneForge.Games.Slots.Persistence.pdb",
+          "size": 22664,
+          "sha256": "2379186af78b3710b229d7797c07d21bbf13014d59e3d5ea019a7b35d09fc782"
+        },
+        {
+          "path": "FortuneForge.Games.Slots.Runtime.dll",
+          "size": 117760,
+          "sha256": "ca1c585a467a724bdb129913b18c5db8ea4302ad78580c18e244ed7bf0c2d0e8"
+        },
+        {
+          "path": "FortuneForge.Games.Slots.Runtime.pdb",
+          "size": 31244,
+          "sha256": "e7c4e033e6951d1a8b257bbfe89f81589fb60e90261f4150426ed1c6cc009263"
+        },
+        {
+          "path": "Google.Api.CommonProtos.dll",
+          "size": 450048,
+          "sha256": "329cf0f2b66c5cbf675321f0d6b33c17d1092e5761f32d3d2c1307a110c0dbbd"
+        },
+        {
+          "path": "Google.Api.Gax.Grpc.dll",
+          "size": 204288,
+          "sha256": "895e406b21b4ce8bdff1791107116fb5f23ab3b9981e2b5bd4cb4fc747fe4972"
+        },
+        {
+          "path": "Google.Api.Gax.dll",
+          "size": 79872,
+          "sha256": "1adedac4a241a93c34a41a8939151cccf35381fc6c4d4cc890216eb191032639"
+        },
+        {
+          "path": "Google.Apis.Auth.dll",
+          "size": 246272,
+          "sha256": "a2a4f688c1e34bca248c2a589e73a20ac3c834a9615c13bcb08a317a78842609"
+        },
+        {
+          "path": "Google.Apis.Core.dll",
+          "size": 86528,
+          "sha256": "198f959ef53b86d9c6f4b3305503960995cfaaa096252dc7bbbb803c57c58bc7"
+        },
+        {
+          "path": "Google.Apis.dll",
+          "size": 84480,
+          "sha256": "7d9abc7e9b29b2414d7ddee9286a4ce997d12cb6a55badcc1eb975ed5e1d4092"
+        },
+        {
+          "path": "Google.Cloud.Firestore.V1.dll",
+          "size": 339456,
+          "sha256": "3e3f5f73daf8fa443a3c81b99454195f5b526b5b976c3dcd9399999ca8c9cea0"
+        },
+        {
+          "path": "Google.Cloud.Firestore.dll",
+          "size": 181760,
+          "sha256": "57a01883496e180314ad892814f745d807d0088a6289c2661d25e51b4da162b3"
+        },
+        {
+          "path": "Google.Cloud.Location.dll",
+          "size": 35840,
+          "sha256": "35a2c85ff192d479dfc57e4870a58616b9e641c90d1625f0842146642fc7c6a6"
+        },
+        {
+          "path": "Google.LongRunning.dll",
+          "size": 64512,
+          "sha256": "f28db50842aaebe022b837be016aca0a77bcf71b2f371a785428c1ab504b919c"
+        },
+        {
+          "path": "Google.Protobuf.dll",
+          "size": 495712,
+          "sha256": "dbd8f2ff0822d2fc0164ae255c0661ce84afc9ba328a30a4a50ba5f54ffee896"
+        },
+        {
+          "path": "Grpc.Auth.dll",
+          "size": 21600,
+          "sha256": "d9f18b65825caaec7242324cb96f03d263aa9086d1ec747d1d28242bf8f58db2"
+        },
+        {
+          "path": "Grpc.Core.Api.dll",
+          "size": 70240,
+          "sha256": "c14ac4d4c97e03cf1f05892caeb6346457ac25c8b1b7ee3e12a720fcaa1fb2e2"
+        },
+        {
+          "path": "Grpc.Net.Client.dll",
+          "size": 359520,
+          "sha256": "75fe0ec43986ef6e78cf41268728909b9819263273fb1e84146c1c6ef58e0028"
+        },
+        {
+          "path": "Grpc.Net.Common.dll",
+          "size": 22112,
+          "sha256": "c31a578aed06bd7723ec24139882bbd10e18b79a6fe190482c771113ce32bd43"
+        },
+        {
+          "path": "Microsoft.Bcl.AsyncInterfaces.dll",
+          "size": 20792,
+          "sha256": "78d9d934d2b90c0b6dc4c6bf30151649ee94fa85c8ccc47480ab9ddb427361a9"
+        },
+        {
+          "path": "Newtonsoft.Json.dll",
+          "size": 723368,
+          "sha256": "a28c251dfe36d881e9e2462e171441b8b0ec156fe3f452602c9149b1b9efe05b"
+        },
+        {
+          "path": "System.CodeDom.dll",
+          "size": 186496,
+          "sha256": "4d33e2986a84d4460853e2b98d3a1ba9f8aa2950f7fa12ff6ad2e15a4bccfd18"
+        },
+        {
+          "path": "System.Management.dll",
+          "size": 74352,
+          "sha256": "36056b240f488b7da63720585d84f93183cf7bd05da68d5340151ebdd85e4d88"
+        },
+        {
+          "path": "release.json",
+          "size": 341,
+          "sha256": "6a8165a051eec23254484b879dd6e18a86a4a213a065e51c4125c54042388183"
+        },
+        {
+          "path": "runtimes/win/lib/net7.0/System.Management.dll",
+          "size": 295600,
+          "sha256": "979fee559e30cc0fc4af6f34548a225b6f08cae0a6c61d24a3e389b3f22dc9d1"
+        },
+        {
+          "path": "web.config",
+          "size": 524,
+          "sha256": "00da0807698836c5e8d43dd1a8550392450a93b0ebe26fef250ff4eca96fc96f"
+        }
+      ]
+    },
+    {
       "gameId": "desert-treasures",
       "runtimeGameId": "desert-treasures-v1",
       "releaseId": "6ed86fa7-3f64-4371-a806-1b841af1c759",

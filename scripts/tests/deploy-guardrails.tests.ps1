@@ -393,6 +393,16 @@ $selectedComposition = [pscustomobject]@{ contractVersion = 1; packages = @([psc
 $compositionFile = Join-Path $sharedDirectory 'composition.json'
 [IO.File]::WriteAllText($compositionFile, ($selectedComposition | ConvertTo-Json -Depth 6), [Text.UTF8Encoding]::new($false))
 $compositionHash = Get-ReleaseFileHash -LiteralPath $compositionFile
+$policyFixture = Join-Path $sharedFixture 'backend-host.json'
+try {
+    [IO.File]::WriteAllText($policyFixture, '{"packages":{"hearts":{}}}')
+    Assert-BackendHostPackageSelection -ManifestPath $compositionFile -PolicyPath $policyFixture
+    [IO.File]::WriteAllText($policyFixture, '{"packages":{"hearts":{},"missing-game":{}}}')
+    Assert-Throws { Assert-BackendHostPackageSelection -ManifestPath $compositionFile -PolicyPath $policyFixture } 'host capability absent from selected packages'
+    [IO.File]::WriteAllText($policyFixture, '{"packages":{"other-game":{}}}')
+    Assert-Throws { Assert-BackendHostPackageSelection -ManifestPath $compositionFile -PolicyPath $policyFixture } 'selected runtime differs from host capability identity'
+}
+finally { Remove-Item -LiteralPath $policyFixture -Force }
 $sharedLock = $null
 try {
     $sharedLock = Enter-SharedBackendUploadLocks -Checkout $sharedFixture -Composition $selectedComposition `

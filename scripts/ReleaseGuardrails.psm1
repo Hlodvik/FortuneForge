@@ -7,6 +7,21 @@ function Assert-ReleaseSha {
     }
 }
 
+function Assert-BackendHostPackageSelection {
+    param([Parameter(Mandatory)][string]$ManifestPath, [Parameter(Mandatory)][string]$PolicyPath)
+    $selection = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+    $policy = Get-Content -LiteralPath $PolicyPath -Raw | ConvertFrom-Json
+    $selected = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($package in $selection.packages) {
+        if (-not $selected.Add([string]$package.runtimeGameId)) { throw 'Duplicate selected backend runtime identity.' }
+    }
+    $required = @($policy.packages.PSObject.Properties.Name)
+    if ($selected.Count -eq 0 -or -not $selected.SetEquals([string[]]$required)) {
+        throw 'Selected backend packages differ from the committed host capability policy. Stage and pin the missing packages before deployment.'
+    }
+}
+Export-ModuleMember -Function Assert-BackendHostPackageSelection
+
 # One read-only Git boundary makes source/command-plan tests independent of
 # disposable repositories. Callers inspect ExitCode; no mutation is supported.
 function Invoke-ReleaseGit {

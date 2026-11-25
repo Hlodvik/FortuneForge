@@ -7,6 +7,21 @@ namespace FortuneForge.Server.Tests.GameWorkers;
 
 public sealed class GamePackageCompositionTests : IDisposable
 {
+    [Fact]
+    public void Committed_backend_selection_covers_exactly_the_host_capability_policy()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "FortuneForge.slnx"))) root = root.Parent;
+        Assert.NotNull(root);
+        using var selection = JsonDocument.Parse(File.ReadAllText(Path.Combine(root.FullName, "config/backend-packages.lock.json")));
+        using var policy = JsonDocument.Parse(File.ReadAllText(Path.Combine(root.FullName, "config/backend-host.json")));
+        var actual = selection.RootElement.GetProperty("packages").EnumerateArray()
+            .Select(package => package.GetProperty("runtimeGameId").GetString()!).Order(StringComparer.Ordinal).ToArray();
+        var required = policy.RootElement.GetProperty("packages").EnumerateObject()
+            .Select(package => package.Name).Order(StringComparer.Ordinal).ToArray();
+        Assert.Equal(required, actual);
+    }
+
     private readonly string directory = Path.Combine(Path.GetTempPath(), "ff-package-integrity-" + Guid.NewGuid().ToString("N"));
 
     [Fact]

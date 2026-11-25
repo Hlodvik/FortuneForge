@@ -8,7 +8,10 @@ import { createServer, request as forward } from 'node:http'
 const root = fileURLToPath(new URL('../../', import.meta.url))
 const project = fileURLToPath(new URL('./', import.meta.url))
 const bundle = resolve(root, 'artifacts/client-verification/review-bundle')
-const ports = { pirates: 5302, olympus: 5303, jade: 5304 }
+const availablePorts = { pirates: 5302, olympus: 5303, jade: 5304, sunstone: 5305 }
+const selected = process.argv.slice(2).length ? process.argv.slice(2) : ['pirates', 'olympus', 'jade']
+assert.ok(selected.every(game => Object.hasOwn(availablePorts, game)))
+const ports = Object.fromEntries(selected.map(game => [game, availablePorts[game]]))
 for (const port of Object.values(ports)) {
   const health = await fetch(`http://127.0.0.1:${port}/__fixture/health`).then(reply => reply.json())
   assert.ok(health.localOnly && health.productionEngine && health.testFundsOnly)
@@ -19,8 +22,9 @@ const jade = resolve(root, 'games/JadeDragon/client/jade-dragon/dist')
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.mp3': 'audio/mpeg', '.ogg':'audio/ogg', '.wav':'audio/wav', '.woff': 'font/woff', '.woff2': 'font/woff2' }
 const server = createServer((incoming, outgoing) => {
   const url = new URL(incoming.url, 'http://127.0.0.1:5180')
-  const proxy = /^\/fixture\/(pirates|olympus|jade)(\/.*)$/.exec(url.pathname)
+  const proxy = /^\/fixture\/(pirates|olympus|jade|sunstone)(\/.*)$/.exec(url.pathname)
   if (proxy) {
+    if (!Object.hasOwn(ports, proxy[1])) { outgoing.statusCode = 404; outgoing.end(); return }
     const destination = forward({ hostname: '127.0.0.1', port: ports[proxy[1]], path: proxy[2] + url.search,
       method: incoming.method, headers: { ...incoming.headers, host: `127.0.0.1:${ports[proxy[1]]}` } }, response => {
       outgoing.writeHead(response.statusCode, response.headers); response.pipe(outgoing)

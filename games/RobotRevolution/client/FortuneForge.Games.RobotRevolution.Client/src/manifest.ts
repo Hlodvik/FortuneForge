@@ -1,7 +1,7 @@
 import './styles.css'
 import { defineSlotGame } from '@fortuneforge/slot-game-runtime/manifest'
 import { createSlotRulesSet } from '@fortuneforge/slot-game-runtime/experience'
-import { getSlotEngineGuideContract } from '@fortuneforge/slot-game-runtime/engine-guide'
+import { guide } from './guide'
 import { FIFTH_SUN_CABINET, FIFTH_SUN_GAME_ID, FIFTH_SUN_TITLE } from './definition'
 import { FIFTH_SUN_CATALOG } from './catalog'
 import { FIFTH_SUN_SYMBOL_SET } from './symbols'
@@ -9,10 +9,9 @@ import { SUNSTONE_ECLIPSE_SOUNDS } from './sounds'
 import { SunwheelPanel } from './SunwheelPanel'
 import { SunstoneIntroduction } from './SunstoneIntroduction'
 
-const guide = getSlotEngineGuideContract(FIFTH_SUN_GAME_ID)
 export const FIFTH_SUN_SLOT_GAME = defineSlotGame({
   id: 'robot-revolution',
-  routes: { play: '/slots/sunstone-eclipse', demo: '/slots/sunstone-eclipse/demo' },
+  routes: { play: '/slots/sunstone-eclipse', demo: null },
   catalog: FIFTH_SUN_CATALOG,
   experience: {
     id: 'fifth-sun-experience-v3', cabinet: FIFTH_SUN_CABINET,

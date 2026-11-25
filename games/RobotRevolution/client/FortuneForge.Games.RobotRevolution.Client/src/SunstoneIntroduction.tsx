@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { getSlotSymbolDefinition } from '@fortuneforge/slot-client-core'
 import type { SlotWinHelpContentProps } from '@fortuneforge/slot-game-runtime/experience'
-import { formatCalibratedMultiplier, getSlotEngineGuideContract } from '@fortuneforge/slot-game-runtime/engine-guide'
+import { formatCalibratedMultiplier, guide } from './guide'
 import { FIFTH_SUN_GAME_ID, FIFTH_SUN_TITLE } from './definition'
 import { FIFTH_SUN_PAYING_SYMBOLS, FIFTH_SUN_SYMBOL_SET } from './symbols'
 import { getSunwheelPath, SUNWHEEL_GUARDIANS, SUNWHEEL_PAYOUT_TIERS } from './sunwheel'
@@ -62,7 +62,7 @@ function GuardianIllustration() {
 }
 
 export function SunstoneIntroduction({ onClose }: SlotWinHelpContentProps) {
-  const { paylinePatternIds, paylinePayouts } = getSlotEngineGuideContract(FIFTH_SUN_GAME_ID)
+  const { paylinePatternIds, paylinePayouts } = guide
   const paying = new Set<string>(FIFTH_SUN_PAYING_SYMBOLS)
   const paylineGuide = (FIFTH_SUN_SYMBOL_SET.guideEntries ?? []).filter(entry => paying.has(entry.symbol))
   const eclipseArtworks = [symbol('SOLAR_ECLIPSE'), symbol('LUNAR_ECLIPSE')]

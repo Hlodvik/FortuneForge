@@ -8,6 +8,7 @@ import { GameMaintenanceState } from '../../features/catalog/GameMaintenanceStat
 
 // The platform selects a package host. Each package implements its own game.
 export const standaloneSlotHosts: Readonly<Partial<Record<SlotRouteDefinition['id'], ComponentType<PackagedSlotHostProps>>>> = {
+  'robot-revolution': lazy(() => import('./SunstoneEclipseHost').then(module => ({ default: module.SunstoneEclipseHost }))),
   'pirates-fortune': lazy(() => import('./PiratesFortuneHost').then(module => ({ default: module.PiratesFortuneHost }))),
   'gods-of-olympus': lazy(() => import('./GodsOfOlympusHost').then(module => ({ default: module.GodsOfOlympusHost }))),
   'neon-nights': lazy(() => import('./NeonNightsHost').then(module => ({ default: module.NeonNightsHost }))),

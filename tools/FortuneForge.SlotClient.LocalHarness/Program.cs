@@ -3,6 +3,7 @@ using FortuneForge.Games.Abstractions.Wallet;
 using FortuneForge.Games.PiratesFortune.Server;
 using FortuneForge.Games.GodsOfOlympus.Server;
 using FortuneForge.Games.JadeDragon.Server;
+using FortuneForge.Games.RobotRevolution.Server;
 using FortuneForge.Games.Slots;
 using FortuneForge.Games.Slots.Runtime;
 using FortuneForge.SlotClient.LocalHarness;
@@ -12,6 +13,7 @@ using Google.Cloud.Firestore;
 var selected = Environment.GetEnvironmentVariable("SLOT_REVIEW_GAME") ?? throw new InvalidOperationException("Select a slot review game.");
 var (gameId, prefix, statePath, port) = selected switch
 {
+    "sunstone" => ("robot-revolution-v1", "RobotRevolution", RobotRevolutionPaidRouteContract.StatePath, 5305),
     "pirates" => ("pirates-fortune-v1", "PiratesFortune", PiratesPaidRouteContract.StatePath, 5302),
     "olympus" => ("gods-of-olympus-v1", "GodsOfOlympus", OlympusPaidRouteContract.StatePath, 5303),
     "jade" => ("empty-slots-v1", "JadeDragon", JadePaidRouteContract.StatePath, 5304),
@@ -33,6 +35,7 @@ builder.Services.AddSingleton<IGameWalletClient>(wallet);
 builder.Services.AddSingleton<IGameWalletAccountReader>(wallet);
 switch (selected)
 {
+    case "sunstone": builder.Services.AddSingleton<RobotRevolutionRoundStore>(); builder.Services.AddSingleton<RobotRevolutionRoundService>(); break;
     case "pirates": builder.Services.AddSingleton<PiratesRoundStore>(); builder.Services.AddSingleton<PiratesRoundService>(); break;
     case "olympus": builder.Services.AddSingleton<OlympusRoundStore>(); builder.Services.AddSingleton<OlympusRoundService>(); break;
     case "jade": builder.Services.AddSingleton<JadeRoundStore>(); builder.Services.AddSingleton<JadeRoundService>(); break;
@@ -54,6 +57,7 @@ app.Use(async (context, next) =>
 app.UseRouting();
 switch (selected)
 {
+    case "sunstone": app.MapRobotRevolutionPaidRounds(_ => account); break;
     case "pirates": app.MapPiratesPaidRounds(_ => account); break;
     case "olympus": app.MapOlympusPaidRounds(_ => account); break;
     case "jade": app.MapJadePaidRounds(_ => account); app.MapGet("/api/slots/jade-dragon/presentation", () => Results.Ok(JadeDragonPresentation.Create())); break;

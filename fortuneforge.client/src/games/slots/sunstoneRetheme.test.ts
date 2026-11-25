@@ -9,7 +9,7 @@ describe('Sunstone Eclipse catalogue identity', () => {
       title: 'Sunstone Eclipse',
       shortTitle: 'Sunstone Eclipse',
       playHref: '/slots/sunstone-eclipse',
-      demoHref: '/slots/sunstone-eclipse/demo',
+      demoHref: null,
       serverGameIds: ['robot-revolution-v1'],
     })
     expect(game?.image).toContain('sunstone-eclipse-title-v1.webp')
@@ -18,9 +18,10 @@ describe('Sunstone Eclipse catalogue identity', () => {
     expect(SLOT_GAME_CATALOG).toHaveLength(20)
   })
 
-  it('keeps paid and demo bookmarks separate when resolving the old game address', () => {
+  it('retains the paid bookmark without converting a retired demo bookmark into paid play', () => {
     expect(canonicalSlotPath('/slots/robot-revolution')).toBe('/slots/sunstone-eclipse')
-    expect(canonicalSlotPath('/slots/robot-revolution/demo')).toBe('/slots/sunstone-eclipse/demo')
+    expect(canonicalSlotPath('/slots/robot-revolution/demo')).toBe('/slots/robot-revolution/demo')
+    expect(findSlotRouteMetadata('/slots/sunstone-eclipse/demo')).toBeNull()
     expect(findSlotRouteMetadata('/slots/sunstone-eclipse')?.serverGameIds).toEqual(['robot-revolution-v1'])
   })
 

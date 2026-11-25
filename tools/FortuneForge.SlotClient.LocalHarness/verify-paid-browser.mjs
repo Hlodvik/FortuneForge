@@ -7,7 +7,9 @@ mkdirSync(output, { recursive: true })
 const browser = await chromium.launch({ headless: true })
 const reports = []
 try {
-  for (const game of ['pirates', 'olympus', 'jade']) {
+  const games = process.argv.slice(2).length ? process.argv.slice(2) : ['pirates', 'olympus', 'jade']
+  if (games.some(game => !['pirates', 'olympus', 'jade', 'sunstone'].includes(game))) throw Error('Unknown isolated test game.')
+  for (const game of games) {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' })
     const errors = []
     page.on('pageerror', issue => errors.push(issue.message))

@@ -1,0 +1,10 @@
+@import './styles.css';
+.sunstone-game{min-height:100dvh;background:#101916 var(--sunstone-backdrop) center/cover fixed;color:#f5e7c7;padding-bottom:2rem}
+.sunstone-game .sunstone-game__column{display:grid;grid-template-rows:repeat(var(--slot-symbol-rows),minmax(0,1fr));height:100%;min-height:0}
+.sunstone-game__sr-title{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%)}
+.sunstone-game .sunstone-game__status{max-width:60rem;margin:1rem auto;text-align:center;min-height:3rem;font:500 1rem/1.5 system-ui}
+.sunstone-game .sunstone-game__utilities{max-width:60rem;display:flex;gap:1rem;align-items:center;justify-content:center;margin:1rem auto;flex-wrap:wrap;font:600 .9rem/1.5 system-ui}
+.sunstone-game .sunstone-game__utilities button,.sunstone-game .sunstone-game__status button{padding:.7rem 1rem;border:1px solid #bd9555;border-radius:.3rem;background:#211b14;color:#f1ce8b;font:inherit;cursor:pointer}
+.sunstone-game .slots-page__stage{position:relative}
+.sunstone-game .slot-reel{min-width:0;min-height:0}
+@media(max-width:959px){.sunstone-game .slots-page__stage{grid-template-rows:auto minmax(16rem,45dvh) auto auto!important}.sunstone-game .slots-page__cabinet-spotlight{min-height:16rem}.sunstone-game .sunwheel{min-height:18rem}.sunstone-game .sunstone-game__status{padding-inline:1rem}}

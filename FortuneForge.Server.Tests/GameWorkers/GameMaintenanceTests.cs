@@ -29,6 +29,7 @@ public sealed class GameMaintenanceTests
     [Theory]
     [InlineData("pirates-fortune-v1")]
     [InlineData("empty-slots-v1")]
+    [InlineData("robot-revolution-v1")]
     public void Active_games_keep_their_existing_admission_policy(string id)
     {
         Assert.False(GameMaintenance.Contains(id));

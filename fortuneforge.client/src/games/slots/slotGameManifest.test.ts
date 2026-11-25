@@ -339,7 +339,7 @@ describe('slot game manifests', () => {
 
     for (const game of SECOND_WAVE_SLOT_GAMES) {
       expect(game.routes.play).toBe(game.id === 'robot-revolution' ? '/slots/sunstone-eclipse' : `/slots/${game.id}`)
-      expect(game.routes.demo).toBe(game.id === 'crooked-road' ? null : game.id === 'robot-revolution' ? '/slots/sunstone-eclipse/demo' : `/slots/${game.id}/demo`)
+      expect(game.routes.demo).toBe(['crooked-road', 'robot-revolution'].includes(game.id) ? null : `/slots/${game.id}/demo`)
       expect(game.experience.cabinet.backdropImage).toMatch(/\.webp$/)
       if (game.id === 'neon-nights' || game.id === 'crooked-road') continue
       if (game.id === 'robot-revolution') {

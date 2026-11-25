@@ -1,5 +1,5 @@
 import type { SlotSymbolDefinition, SlotSymbolSet } from '@fortuneforge/slot-client-core'
-import { createClassicPaylineGuide, formatCalibratedMultiplier, getSlotEngineGuideContract } from '@fortuneforge/slot-game-runtime/engine-guide'
+import { createSunstonePaylineGuide, formatCalibratedMultiplier, guide } from './guide'
 import { FIFTH_SUN_ECLIPSE_MATH as eclipseMath } from './eclipseMath.generated.js'
 import flame from './assets/art/fifth-sun-glyphs/jade-flame-approved-v1.webp'
 import rain from './assets/art/fifth-sun-glyphs/jade-rain-approved-v1.webp'
@@ -53,14 +53,14 @@ const definitions = Object.fromEntries(Object.entries(labels).map(([id, label]) 
     { image: lunarEclipse, label: 'Lunar Eclipse Scatter' },
   ] } : {}),
 }])) satisfies Record<string, SlotSymbolDefinition>
-const nativePaylinePayouts = getSlotEngineGuideContract('robot-revolution-v1').paylinePayouts!
+const nativePaylinePayouts = guide.paylinePayouts
 
 export const FIFTH_SUN_SYMBOL_SET: SlotSymbolSet = {
   id: 'fifth-sun-symbols-v2', serverSymbolSetId: 'fifth-sun-symbols-v2', definitions,
   compatibleServerSymbolSetIds: ['fifth-sun-symbols-v1', 'classic-symbols-v3'],
   animationSymbolIds: FIFTH_SUN_PAYING_SYMBOLS,
   guideEntries: [
-    ...createClassicPaylineGuide('robot-revolution-v1', FIFTH_SUN_PAYING_SYMBOLS).map(entry => ({
+    ...createSunstonePaylineGuide(FIFTH_SUN_PAYING_SYMBOLS).map(entry => ({
       ...entry, firstLabel: entry.symbol === 'WILD' ? '3' : entry.firstLabel,
       details: [
         { label: `Eclipse · ${entry.symbol === 'WILD' ? '3' : '3–4'} matches`, text: formatCalibratedMultiplier(nativePaylinePayouts[entry.symbol].three, eclipseMath.eclipsePayoutMultiplier) },

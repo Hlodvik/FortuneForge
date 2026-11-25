@@ -65,7 +65,7 @@ export const LOADING_PRESENTATIONS_C: readonly GameLoadingEntry[] = [
   },
   {
     id: 'robot-revolution', title: 'Sunstone Eclipse',
-    routes: ['/slots/sunstone-eclipse', '/slots/sunstone-eclipse/demo'],
+    routes: ['/slots/sunstone-eclipse'],
     image: sunstoneEclipseImage, background: '#100f0a', accent: '#edc975',
   },
   {

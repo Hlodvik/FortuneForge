@@ -47,7 +47,7 @@ describe('combined game loading registry', () => {
     expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.id)).size).toBe(41)
     expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.image)).size).toBe(41)
     const routes = GAME_LOADING_PRESENTATIONS.flatMap(entry => entry.routes)
-    expect(routes).toHaveLength(57)
+    expect(routes).toHaveLength(56)
     expect(new Set(routes).size).toBe(routes.length)
   })
 

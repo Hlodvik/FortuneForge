@@ -19,7 +19,7 @@
     { "folder": "PhantomManor", "routeId": "phantom-manor", "serverGameId": "phantom-manor-v1", "clientPackage": "@fortuneforge/games-phantom-manor", "playPath": "/slots/phantom-manor", "demoPath": "/slots/phantom-manor/demo" },
     { "folder": "NordicLegends", "routeId": "nordic-legends", "serverGameId": "nordic-legends-v1", "clientPackage": "@fortuneforge/games-nordic-legends", "playPath": "/slots/nordic-legends", "demoPath": "/slots/nordic-legends/demo" },
     { "folder": "DesertTreasures", "routeId": "desert-treasures", "serverGameId": "desert-treasures-v1", "clientPackage": "@fortuneforge/games-desert-treasures", "playPath": "/slots/desert-treasures", "demoPath": "/slots/desert-treasures/demo" },
-    { "folder": "RobotRevolution", "routeId": "robot-revolution", "serverGameId": "robot-revolution-v1", "clientPackage": "@fortuneforge/games-robot-revolution", "playPath": "/slots/robot-revolution", "demoPath": "/slots/robot-revolution/demo" },
+    { "folder": "RobotRevolution", "routeId": "robot-revolution", "serverGameId": "robot-revolution-v1", "clientPackage": "@fortuneforge/games-robot-revolution", "hostEntry": "fortuneforge.client/src/app/routes/SunstoneEclipseBundled.ts", "playPath": "/slots/sunstone-eclipse", "demoPath": null },
     { "folder": "MidnightVault", "routeId": "dragon-hoard", "serverGameId": "dragon-hoard-v1", "clientPackage": "@fortuneforge/games-midnight-vault", "playPath": "/slots/dragon-hoard", "demoPath": "/slots/dragon-hoard/demo" }
   ]
 }

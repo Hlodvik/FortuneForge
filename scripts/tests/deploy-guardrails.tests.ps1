@@ -376,15 +376,23 @@ $selectedDirectory = Join-Path $sharedDirectory ('hearts/' + $selectedRelease)
 [IO.Directory]::CreateDirectory($selectedDirectory) | Out-Null
 $selectedFile = Join-Path $selectedDirectory 'Worker.dll'
 [IO.File]::WriteAllText($selectedFile, 'synthetic frozen package bytes')
-$selectedHash = (Get-FileHash -LiteralPath $selectedFile -Algorithm SHA256).Hash.ToLowerInvariant()
+$selectedHash = Get-ReleaseFileHash -LiteralPath $selectedFile
 $selectedSize = (Get-Item -LiteralPath $selectedFile).Length
+$hashProbe = Join-Path $sharedFixture 'sha256-known-vector.bin'
+try {
+    [IO.File]::WriteAllBytes($hashProbe, [byte[]]@(0, 255, 13, 10, 128))
+    Assert-Equal (Get-ReleaseFileHash -LiteralPath $hashProbe) '672098eecaca353d3dee05da38b00e81d3dede461ea74c33d9d3cea60ae9a500' 'binary file hash preserves exact bytes'
+    [IO.File]::WriteAllBytes($hashProbe, [byte[]]@())
+    Assert-Equal (Get-ReleaseFileHash -LiteralPath $hashProbe) 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' 'empty file hash is SHA256'
+}
+finally { Remove-Item -LiteralPath $hashProbe -Force }
 $selectedComposition = [pscustomobject]@{ contractVersion = 1; packages = @([pscustomobject]@{
     runtimeGameId = 'hearts'; releaseId = $selectedRelease;
     files = @([pscustomobject]@{ path = 'Worker.dll'; size = $selectedSize; sha256 = $selectedHash })
 }) }
 $compositionFile = Join-Path $sharedDirectory 'composition.json'
 [IO.File]::WriteAllText($compositionFile, ($selectedComposition | ConvertTo-Json -Depth 6), [Text.UTF8Encoding]::new($false))
-$compositionHash = (Get-FileHash -LiteralPath $compositionFile -Algorithm SHA256).Hash.ToLowerInvariant()
+$compositionHash = Get-ReleaseFileHash -LiteralPath $compositionFile
 $sharedLock = $null
 try {
     $sharedLock = Enter-SharedBackendUploadLocks -Checkout $sharedFixture -Composition $selectedComposition `

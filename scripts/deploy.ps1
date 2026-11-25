@@ -204,7 +204,7 @@ function Read-HostRuntimeConfiguration {
 function Assert-HostRuntimeConfigurationUnchanged {
     param($Configuration, [System.IO.Stream]$LockedStream)
     if ($Configuration -and ((Get-DeploymentInputHash $LockedStream) -cne $Configuration.Sha256 -or
-        (Get-FileHash -LiteralPath $Configuration.Path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $Configuration.Sha256)) {
+        (Get-ReleaseFileHash -LiteralPath $Configuration.Path) -cne $Configuration.Sha256)) {
         throw 'Host runtime configuration changed after preflight; publication is blocked.'
     }
 }
@@ -623,7 +623,7 @@ function Assert-SharedBackendUploadUnchanged {
     if (-not $Packages) { return }
     foreach ($file in $Packages.Entries) {
         if ($file.Stream.Length -ne $file.Size -or (Get-DeploymentInputHash $file.Stream) -cne $file.Sha256 -or
-            (Get-FileHash -LiteralPath $file.AbsolutePath -Algorithm SHA256).Hash.ToLowerInvariant() -cne $file.Sha256) {
+            (Get-ReleaseFileHash -LiteralPath $file.AbsolutePath) -cne $file.Sha256) {
             throw 'Selected shared backend artifact changed during the guarded release.'
         }
     }
@@ -641,7 +641,7 @@ function New-SharedBackendUploadContext {
     # Reuse is allowed only for the exact immutable selection. Stale output is
     # preserved and refused; no release silently replaces a prior artifact tree.
     $verified = Invoke-JsonCommand 'node.exe' @($script, 'verify-materialized', '--manifest', $manifest, '--output', $output)
-    if ($verified.manifestSha256 -cne (Get-FileHash -LiteralPath $manifest -Algorithm SHA256).Hash.ToLowerInvariant()) {
+    if ($verified.manifestSha256 -cne (Get-ReleaseFileHash -LiteralPath $manifest)) {
         throw 'Backend package lock changed during materialization.'
     }
     $composition = Get-Content -LiteralPath $manifest -Raw | ConvertFrom-Json -ErrorAction Stop

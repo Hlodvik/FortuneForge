@@ -36,7 +36,7 @@ try {
     }
     $selection = New-ApiUploadContext -Checkout $fixture -LockedSource $locked -RecordPath (Join-Path $fixture 'release') -Packages $null
     $context = New-ApiUploadArchive -Checkout $fixture -LockedSource $locked -RecordPath (Join-Path $fixture 'release') -Packages $null -UploadContext $selection
-    if ($context.FileCount -ne 3 -or $context.ArchiveSha256 -cne (Get-FileHash $context.ArchivePath).Hash.ToLowerInvariant()) { throw 'Archive identity differs from the approved selection.' }
+    if ($context.FileCount -ne 3 -or $context.ArchiveSha256 -cne (Get-ReleaseFileHash -LiteralPath $context.ArchivePath)) { throw 'Archive identity differs from the approved selection.' }
     $names = (& python.exe -c 'import json,sys,tarfile; print(json.dumps(tarfile.open(sys.argv[1]).getnames()))' $context.ArchivePath) | ConvertFrom-Json
     if ($LASTEXITCODE -ne 0 -or ($names -join '|') -cne (($paths | Sort-Object) -join '|')) { throw 'Archive members differ from the exact allowlist.' }
     Write-Host 'PASS: exact approved files and hashes; stray cache excluded'

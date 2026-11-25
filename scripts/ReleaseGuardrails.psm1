@@ -139,6 +139,17 @@ function Assert-HostingAdoptionRelease {
     }
 }
 
+function Get-ReleaseFileHash {
+    param([Parameter(Mandatory)][string]$LiteralPath)
+    $stream = [System.IO.File]::Open($LiteralPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return ([System.BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-', '').ToLowerInvariant()
+    }
+    finally { $sha.Dispose(); $stream.Dispose() }
+}
+Export-ModuleMember -Function Get-ReleaseFileHash
+
 function Get-ReleaseTextHash {
     param([Parameter(Mandatory)][string]$Text)
 

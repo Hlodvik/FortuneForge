@@ -35,7 +35,7 @@ internal static class CatalogContract
         ("pirates-fortune", "/slots/pirates-fortune"),
         ("gods-of-olympus", "/slots/gods-of-olympus"),
         ("reel-riches", "/slots/reel-riches"),
-        ("high-noon-fortune", "/slots/high-noon-fortune"),
+        ("high-noon-fortune", "/slots/frontier-fortune"),
         ("royal-draw", "/slots/royal-draw"),
         ("arcane-archives", "/slots/arcane-archives"),
         ("pharaohs-ascent", "/slots/pharaohs-ascent"),
@@ -48,7 +48,7 @@ internal static class CatalogContract
         ("phantom-manor", "/slots/phantom-manor"),
         ("nordic-legends", "/slots/nordic-legends"),
         ("desert-treasures", "/slots/desert-treasures"),
-        ("robot-revolution", "/slots/robot-revolution"),
+        ("robot-revolution", "/slots/sunstone-eclipse"),
         ("dragon-hoard", "/slots/dragon-hoard"),
     }.OrderBy(game => game.Id, StringComparer.Ordinal).ToArray();
 
@@ -56,7 +56,7 @@ internal static class CatalogContract
     internal static IReadOnlyList<string> UntrackedArcadeIds { get; } = ["asteroids", "flappy", "horse-flight", "snake"];
     // Retired catalogue entries remain in analytics so reports can still project
     // settlements written before a game was replaced or renamed.
-    internal static IReadOnlyList<string> HistoricalAnalyticsIds { get; } = ["jungle-jackpot"];
+    internal static IReadOnlyList<string> HistoricalAnalyticsIds { get; } = ["jungle-jackpot", "samurai-fortune"];
     internal static IReadOnlyList<string> Ids { get; } = Entries.Select(game => game.Id).ToArray();
     internal static IReadOnlyList<string> DefaultVisibleIds { get; } = Ids.Except(DefaultHiddenIds, StringComparer.Ordinal).ToArray();
     internal static IReadOnlyList<string> AnalyticsIds { get; } = Ids.Except(UntrackedArcadeIds, StringComparer.Ordinal).ToArray();

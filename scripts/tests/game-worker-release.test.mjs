@@ -4,6 +4,7 @@ import { writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { execFileSync } from 'node:child_process'
 import test from 'node:test'
 import { publishGameWorker } from '../game-worker-release.mjs'
 
@@ -203,12 +204,9 @@ test('verifies existing candidates before activating their exact pinned revision
 
 test('accepts connection registrations and paid admission names from every actual packaged backend', async t => {
   const gamesRoot = fileURLToPath(new URL('../../games/', import.meta.url))
-  async function sourceText(directory) {
-    const entries = await readdir(directory, { withFileTypes: true })
-    return (await Promise.all(entries.map(async entry => {
-      if (entry.isDirectory()) return ['bin', 'obj'].includes(entry.name) ? '' : sourceText(join(directory, entry.name))
-      return entry.name.endsWith('.cs') ? readFile(join(directory, entry.name), 'utf8') : ''
-    }))).join('\n')
+  function compileItems(project, properties = []) {
+    return JSON.parse(execFileSync('dotnet', ['msbuild', project, '-nologo', ...properties, '-getItem:Compile,ProjectReference'],
+      { encoding: 'utf8', windowsHide: true })).Items
   }
   let checked = 0
   for (const entry of await readdir(gamesRoot, { withFileTypes: true })) {
@@ -217,7 +215,13 @@ test('accepts connection registrations and paid admission names from every actua
     try { manifest = JSON.parse(await readFile(join(gamesRoot, entry.name, 'game-release.json'), 'utf8')) }
     catch (error) { if (error.code === 'ENOENT') continue; throw error }
     if (manifest.backend?.kind !== 'packaged-game') continue
-    const source = await sourceText(join(gamesRoot, entry.name, 'server'))
+    // Inspect the actual MSBuild selection, including worker.props overrides.
+    // Historical sibling projects are not part of the released worker.
+    const worker = compileItems(join(gamesRoot, 'shared/FortuneForge.Games.PackagedGame.Server/FortuneForge.Games.PackagedGame.Server.csproj'), ['-p:GamePackage=' + entry.name])
+    const server = worker.ProjectReference.find(reference => reference.FullPath.replaceAll('\\', '/').includes('/' + entry.name + '/server/'))
+    assert.ok(server, manifest.id + ' has no selected native server project')
+    const sources = [...worker.Compile, ...compileItems(server.FullPath).Compile].map(item => item.FullPath)
+    const source = (await Promise.all(sources.map(path => readFile(path, 'utf8')))).join('\n')
     const environment = Object.fromEntries([...source.matchAll(/"([A-Za-z0-9]+):AllowNewPaidRounds"/g)]
       .map(match => [match[1] + '__AllowNewPaidRounds', true]))
     const secrets = {}

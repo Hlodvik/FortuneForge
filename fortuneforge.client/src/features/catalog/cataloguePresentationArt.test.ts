@@ -60,12 +60,12 @@ describe('landing and home catalogue presentation art', () => {
       expect(art.src).toContain(`/${metadata.file}`)
       expect(art).toMatchObject({ width: 768, height: 384 })
       expect(Object.isFrozen(art)).toBe(true)
-      expect({ width: metadata.width, height: metadata.height }).toEqual({ width: 768, height: 384 })
+      expect([metadata.width, metadata.height]).toEqual(metadata.id === 'crooked-road' ? [960, 480] : [768, 384])
 
       const asset = new URL(metadata.file, directory)
       expect(statSync(asset).size).toBe(metadata.bytes)
       expect(metadata.bytes).toBeLessThan(180_000)
-      expect(webpDimensions(readFileSync(asset))).toEqual({ width: 768, height: 384 })
+      expect(webpDimensions(readFileSync(asset))).toEqual({ width: metadata.width, height: metadata.height })
       selectedSources.add(art.src)
       totalBytes += metadata.bytes
     }

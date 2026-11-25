@@ -6,3 +6,5 @@ export * from './symbols'
 export * from './PiratesSpinControls'
 export * from './TreasureGemFlyover'
 
+export { PiratesGame } from './PiratesGame'
+export type { PiratesGameProps } from './PiratesGame'

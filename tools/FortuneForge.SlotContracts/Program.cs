@@ -4,7 +4,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using System.Xml.Linq;
 using FortuneForge.Games.ArcaneArchives;
 using FortuneForge.Games.Slots;
 using FortuneForge.Server.Controllers;
@@ -49,31 +48,29 @@ if (!guideOnly)
 }
 var routeFile = "fortuneforge.client/src/games/slots/routeMetadata.ts";
 var routesSource = File.ReadAllText(Path.Combine(repository, routeFile));
-var routePattern = "id: '([^']+)', (?:gameReleaseId: '[^']+', )?title: (?:'([^']*)'|\"([^\"]*)\"),[^{}]*?playPath: '([^']+)', demoPath: '([^']+)', serverGameIds: \\['([^']+)'\\]";
+var routePattern = "id: '([^']+)', (?:gameReleaseId: '[^']+', )?title: (?:'([^']*)'|\"([^\"]*)\"),[^{}]*?playPath: '([^']+)', demoPath: (?:'([^']+)'|null), serverGameIds: \\['([^']+)'\\]";
 var routes = Regex.Matches(routesSource, routePattern).Select(match =>
     new Route(match.Groups[1].Value, match.Groups[2].Success ? match.Groups[2].Value : match.Groups[3].Value,
         match.Groups[4].Value, match.Groups[5].Value, match.Groups[6].Value)).ToArray();
 // Jade Dragon has a dedicated guide outside the shared demo registry.
 Require(routes.Length == 19 && routes.Select(route => route.Id).Distinct().Count() == 19 &&
     routes.Select(route => route.GameId).Distinct().Count() == 19, "Actual route registry must supply exactly 19 unique playable profiles.");
-Require(routes.All(route => SlotSpecialRoundProfiles.TryGet(route.GameId, out _)), "Catalogue profile missing.");
-// Slot projects declare their domain ownership through these shared contracts.
-// Follow that boundary instead of retaining a partial, hand-maintained title list.
-var sharedSlotProjects = new[]
+var nativeRoutes = routes.Where(route => !SlotSpecialRoundProfiles.TryGet(route.GameId, out _)).ToArray();
+Require(nativeRoutes.Select(route => route.GameId).Order().SequenceEqual(new[] { "crooked-road-v1", "high-noon-fortune-v1" }),
+    "Unexpected native-only guide ownership; review the full catalogue boundary.");
+Require(guideOnly, "Historical controller captures are retired; export package definition guides only.");
+routes = routes.Except(nativeRoutes).ToArray();
+// The catalogue selects each current owner, including native-only engines.
+using var inventory = JsonDocument.Parse(File.ReadAllText(Path.Combine(repository, "games/catalog/slot-packages.json")));
+var slotProjects = inventory.RootElement.GetProperty("games").EnumerateArray().Select(game =>
 {
-    "games/shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj",
-    "games/shared/FortuneForge.Games.Slots.Runtime/FortuneForge.Games.Slots.Runtime.csproj"
-}.Select(path => Path.GetFullPath(Path.Combine(repository, path))).ToHashSet(StringComparer.OrdinalIgnoreCase);
-var slotProjects = Directory.EnumerateFiles(Path.Combine(repository, "games"), "*.csproj", SearchOption.AllDirectories)
-    .Where(path => path.Replace('\\', '/').Contains("/src/", StringComparison.Ordinal) &&
-        !path.Replace('\\', '/').Contains("/obj/", StringComparison.Ordinal) &&
-        !path.Replace('\\', '/').Contains("/bin/", StringComparison.Ordinal))
-    .Where(path => XDocument.Load(path).Descendants("ProjectReference")
-        .Select(reference => (string?)reference.Attribute("Include"))
-        .OfType<string>().Any(reference => sharedSlotProjects.Contains(Path.GetFullPath(
-            Path.Combine(Path.GetDirectoryName(path)!, reference.Replace('\\', Path.DirectorySeparatorChar))))))
-    .Order(StringComparer.Ordinal).ToArray();
+    var folder = game.GetProperty("folder").GetString()!;
+    var package = game.TryGetProperty("backendPackage", out var owner) ? owner.GetString()! : "FortuneForge.Games." + folder;
+    return Path.Combine(repository, "games", folder, "src", package, package + ".csproj");
+}).Order(StringComparer.Ordinal).ToArray();
 Require(slotProjects.Length == 20, "Expected all twenty independently owned slot engine projects.");
+Require(slotProjects.Distinct(StringComparer.OrdinalIgnoreCase).Count() == 20 && slotProjects.All(File.Exists),
+    "Every catalogue slot must retain its actual selected engine project.");
 var sourceDirectories = new[]
 {
     "FortuneForge.Server/Slots",
@@ -87,6 +84,7 @@ var sourcePaths = sourceDirectories.SelectMany(directory =>
         !file.Replace('\\', '/').Contains("/obj/", StringComparison.Ordinal))
     .Select(file => Path.GetRelativePath(repository, file).Replace('\\', '/'))
     .Append(routeFile)
+    .Append("games/catalog/slot-packages.json")
     .Concat(guideOnly ? Array.Empty<string>() : new[] { "FortuneForge.Server/appsettings.json", "FortuneForge.Server/Controllers/DemoSlotsController.cs",
         "FortuneForge.Server/RoundAudit/DemoSlotRoundRecording.cs", "FortuneForge.Server/Accounts/Security/AntiAbuseRateLimiting.cs" })
     .Append("tools/FortuneForge.SlotContracts/Program.cs")
@@ -117,6 +115,7 @@ if (guideOnly)
     {
         schemaVersion = 1, kind = "slot-guide-definitions-v1", exportedUtc = DateTime.UtcNow,
         gameCount = routes.Length, games = routes.Select(route => new { route }),
+        nativePackageGuides = nativeRoutes,
         generator = "Actual in-process OptionsSlotsDefinitionProvider backed by independently owned slot packages."
     });
     Console.WriteLine($"COMPLETE: {routes.Length} guide definition contracts from {slotProjects.Length} slot projects.");

@@ -65,6 +65,10 @@ const baseSymbols = createThemedSymbolSet({
 
 export const GODS_OF_OLYMPUS_SYMBOLS = {
   ...baseSymbols,
+  guideNote: 'Saved Trials use their original line awards. Trident Wilds pay naturally on three or five symbols and substitute only on five-symbol paylines. Four-symbol wins award no special points.',
+  guideEntries: baseSymbols.guideEntries.filter(entry => entry.symbol !== 'BOLT' && entry.symbol !== 'PAW' && !entry.symbol.startsWith('RAND_'))
+    .map(entry => entry.symbol === 'ACE' ? { ...entry, firstLabel: '3' }
+      : entry.symbol === 'POWER' ? { ...entry, firstValue: '2×', secondValue: '4×' } : entry),
   definitions: {
     ...baseSymbols.definitions,
     ...Object.fromEntries(Object.entries(GODS_TUMBLE_MULTIPLIERS).map(([id, value]) => [

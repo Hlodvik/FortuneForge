@@ -27,8 +27,6 @@ using FortuneForge.Games.GodsOfOlympus;
 using FortuneForge.Games.GodsOfOlympus.Server;
 using FortuneForge.Games.ReelRiches;
 using FortuneForge.Games.ReelRiches.Server;
-using FortuneForge.Games.HighNoonFortune;
-using FortuneForge.Games.HighNoonFortune.Server;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
@@ -59,7 +57,8 @@ using Xunit;
 
 namespace FortuneForge.Server.Tests.Slots;
 
-// Package tests own individual rules; these cases exercise the migrated public boundary.
+// Classic-envelope package tests exercise the migrated public boundary. Frontier's
+// native hand/bounty protocol is covered by FrontierOwnershipTests and its package settlement suite.
 [Collection(MidnightVaultPaidEmulatorCollection.Name)]
 public sealed class CatalogueSlotBackendMigrationTests(MidnightVaultPaidEmulatorFixture emulator)
 {
@@ -72,7 +71,7 @@ public sealed class CatalogueSlotBackendMigrationTests(MidnightVaultPaidEmulator
         CandyCarnivalEngine.GameId, PhantomManorEngine.GameId,
         NordicLegendsEngine.GameId, DesertTreasuresEngine.GameId, RobotRevolutionEngine.GameId,
         WukongEngine.GameId, RainbowRealmEngine.GameId, PiratesFortuneEngine.GameId,
-        GodsOfOlympusEngine.GameId, ReelRichesEngine.GameId, HighNoonFortuneEngine.GameId
+        GodsOfOlympusEngine.GameId, ReelRichesEngine.GameId
     ];
     public static IEnumerable<object[]> Games => Ids.Select(id => new object[] { id });
     public static IEnumerable<object[]> PaidAndFree => Ids.SelectMany(id => new[] { false, true }
@@ -85,7 +84,7 @@ public sealed class CatalogueSlotBackendMigrationTests(MidnightVaultPaidEmulator
         await using var h = await Harness.CreateAsync(emulator.Database(), Spec(gameId), free ? 2 : 0);
         var path = free ? LegacyPath : PreparedPath;
         var operation = $"catalogue-{h.Spec.AuditId}-{(free ? "free" : "paid")}";
-        var command = new SpinRequest(gameId, free ? 3 : 6, free, false);
+        var command = new SpinRequest(gameId, free ? 3 : h.Spec.PaidWagerPoints, free, false);
 
         h.RolloutEnabled = false;
         Assert.False((await h.Guard.GetSnapshotAsync()).ContainsField(h.Spec.OwnerField));
@@ -124,7 +123,7 @@ public sealed class CatalogueSlotBackendMigrationTests(MidnightVaultPaidEmulator
                 tumble.ValueKind == JsonValueKind.Object);
         var spin = recovered.Data.GetProperty("spinId").GetGuid().ToString("N");
         var payoutCents = recovered.Data.GetProperty("payout").GetProperty("totalPoints").GetInt64() * 25;
-        Assert.Equal(100_000 - (free ? 0 : 150) + payoutCents, await h.CashCentsAsync());
+        Assert.Equal(100_000 - (free ? 0 : command.WagerPoints * 25) + payoutCents, await h.CashCentsAsync());
         Assert.Equal(free ? 1 : 0, await h.UnitsAsync("freeGames"));
         Assert.Equal(1, await h.CountAsync("walletRoundSettlements"));
         Assert.Equal(1, await h.CountAsync("slotSpinResults"));
@@ -207,7 +206,7 @@ public sealed class CatalogueSlotBackendMigrationTests(MidnightVaultPaidEmulator
             Assert.Equal(1, await h.CountAsync("walletRoundSettlements"));
             h.Random.ForbidDraws = false;
             await Task.Delay(600); // The worker preserves the host's existing 500 ms admission cooldown.
-            var native = await h.SpinAsync(new(gameId, 6, false, false), operation + "-after-live", PreparedPath);
+            var native = await h.SpinAsync(new(gameId, h.Spec.PaidWagerPoints, false, false), operation + "-after-live", PreparedPath);
             Assert.Equal(200, native.Status);
             Assert.Equal(2, await h.CountAsync("slotSpinResults"));
             Assert.Equal(2, await h.CountAsync("walletRoundSettlements"));
@@ -368,6 +367,7 @@ public sealed class CatalogueSlotBackendMigrationTests(MidnightVaultPaidEmulator
     {
         public string Camel => char.ToLowerInvariant(Package[0]) + Package[1..];
         public string StorageGameId => LegacyStorageGameId ?? GameId;
+        public long PaidWagerPoints => Math.Max(6, new OptionsSlotsDefinitionProvider().GetGame(GameId)!.Wagering.MinimumWagerPoints);
     }
     private static GameSpec Spec(string gameId) => gameId switch
     {
@@ -411,10 +411,6 @@ public sealed class CatalogueSlotBackendMigrationTests(MidnightVaultPaidEmulator
             ReelRichesPaidRouteContract.StatePath, ReelRichesRoundStateCodec.OwnerField,
             services => services.AddSingleton<ReelRichesRoundStore>().AddSingleton<ReelRichesRoundService>(),
             app => app.MapReelRichesPaidRounds(GameWorkerAuthentication.GetAccountId), "reel-riches"),
-        HighNoonFortuneEngine.GameId => new(gameId, "HighNoonFortune", HighNoonPaidRouteContract.AuditGameId,
-            HighNoonPaidRouteContract.StatePath, HighNoonRoundStateCodec.OwnerField,
-            services => services.AddSingleton<HighNoonRoundStore>().AddSingleton<HighNoonRoundService>(),
-            app => app.MapHighNoonPaidRounds(GameWorkerAuthentication.GetAccountId), "high-noon"),
         _ => throw new ArgumentOutOfRangeException(nameof(gameId))
     };
 

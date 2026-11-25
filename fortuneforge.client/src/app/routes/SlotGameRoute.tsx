@@ -3,9 +3,13 @@ import { useAuthenticatedAccount } from '../../features/account/useAuthenticated
 import type { SlotRouteDefinition } from '../../games/slots'
 import type { PackagedSlotHostProps } from './PackagedSlotHost'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
+import { isGameUnderMaintenance } from '../../features/catalog/gameMaintenance'
+import { GameMaintenanceState } from '../../features/catalog/GameMaintenanceState'
 
 // The platform selects a package host. Each package implements its own game.
 export const standaloneSlotHosts: Readonly<Partial<Record<SlotRouteDefinition['id'], ComponentType<PackagedSlotHostProps>>>> = {
+  'pirates-fortune': lazy(() => import('./PiratesFortuneHost').then(module => ({ default: module.PiratesFortuneHost }))),
+  'gods-of-olympus': lazy(() => import('./GodsOfOlympusHost').then(module => ({ default: module.GodsOfOlympusHost }))),
   'neon-nights': lazy(() => import('./NeonNightsHost').then(module => ({ default: module.NeonNightsHost }))),
   'dragon-hoard': lazy(() => import('./MidnightVaultHost').then(module => ({ default: module.MidnightVaultHost }))),
   'gold-foundry': lazy(() => import('./GoldFoundryHost').then(module => ({ default: module.GoldFoundryHost }))),
@@ -22,6 +26,7 @@ type SlotGameRouteProps = {
 }
 
 export function SlotGameRoute(props: SlotGameRouteProps) {
+  if (isGameUnderMaintenance(props.definition)) return <GameMaintenanceState title={props.definition.title} />
   const Host = standaloneSlotHosts[props.definition.id]
   if (!Host) {
     return <AuthenticatedRouteState error="This game is currently unavailable."

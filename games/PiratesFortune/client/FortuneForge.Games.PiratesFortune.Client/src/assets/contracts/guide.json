@@ -1,0 +1,73 @@
+{
+  "gameId": "pirates-fortune-v1",
+  "payoutMultiplier": 0.665,
+  "pointValueInCents": 25,
+  "paylinePatternIds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23
+  ],
+  "scatterRequiredSymbols": 3,
+  "scatterAwardedSpins": 7,
+  "collectionTarget": 25,
+  "collectionAwardedSpins": 10,
+  "usesCollections": true,
+  "usesEnergy": false,
+  "usesDirectValueTokens": true,
+  "scatterFeatureMode": null,
+  "collectionFeatureMode": null,
+  "paylinePayouts": {
+    "2": {
+      "three": 1,
+      "five": 4
+    },
+    "3": {
+      "three": 1,
+      "five": 2
+    },
+    "4": {
+      "three": 1,
+      "five": 7
+    },
+    "5": {
+      "three": 2,
+      "five": 6
+    },
+    "6": {
+      "three": 2,
+      "five": 8
+    },
+    "7": {
+      "three": 3,
+      "five": 11
+    },
+    "ACE": {
+      "three": 5,
+      "five": 18
+    },
+    "POWER": {
+      "three": 2,
+      "five": 4
+    }
+  }
+}

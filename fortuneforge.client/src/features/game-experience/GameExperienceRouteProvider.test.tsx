@@ -9,6 +9,7 @@ import { GameLoadingRouteProvider } from '../game-loading/GameLoadingRouteContex
 import { resolveGameLoadingEntry } from '../game-loading/gameLoadingRegistry'
 import { gameExperienceIdentity, CANONICAL_EXPERIENCE_GAME_IDS } from './gameExperienceIdentity'
 import { publishAccountSessionEvent } from '../account/services/accountSessionEvents'
+import { SLOT_ROUTE_DEFINITIONS } from '../../games/slots/routeRegistry'
 
 const api = vi.hoisted(() => ({ fetch: vi.fn<typeof fetch>() }))
 vi.mock('../account/services/accountsApi', () => ({ fetchWithAccountSession: api.fetch }))
@@ -18,7 +19,7 @@ const inventory = await import(pathToFileURL(resolve(process.cwd(), '../scripts/
 }
 const paid = [...inventory.nonSlotSmokeInventory.map(game => game.catalogPath ?? game.smokePath),
   ...inventory.slotSmokeInventory.map(([route]) => `/slots/${route}`)]
-const demo = [...inventory.slotSmokeInventory.map(([route]) => `/slots/${route}/demo`), '/demo/cards/blackjack', '/demo/cards/texas-holdem']
+const demo = [...SLOT_ROUTE_DEFINITIONS.flatMap(game => game.demoPath ? [game.demoPath] : []), '/demo/cards/blackjack', '/demo/cards/texas-holdem']
 let host: HTMLDivElement, root: Root
 function value() {
   return { schemaVersion: 1, userId: 'experience-player', generatedAtUtc: '2026-11-02T00:00:00Z', games: CANONICAL_EXPERIENCE_GAME_IDS.map(gameId => ({
@@ -39,8 +40,8 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals() })
 
 describe('player-game knowledge during universal shared loading', () => {
-  it('covers the 44-game/65-route inventory, including 19 distinct slots and hidden playable games, with one batch', async () => {
-    expect(paid).toHaveLength(44); expect(demo).toHaveLength(21)
+  it('covers the paid inventory and declared demo aliases, including hidden games, with one batch', async () => {
+    expect(paid).toHaveLength(44); expect(demo).toHaveLength(16)
     expect(new Set(paid.map(gameExperienceIdentity)).size).toBe(44)
     await act(async () => root.render(<>{[...paid, ...demo].map(path => <GameLoadingRouteProvider key={path}
       entry={resolveGameLoadingEntry(path)} pathname={path}><Probe label={path} /></GameLoadingRouteProvider>)}</>))

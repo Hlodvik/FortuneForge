@@ -43,7 +43,8 @@ public sealed class SlotRoundAuditTests
     public void HostSupportedSlots_ValidSpinReplaysWithoutFindings()
     {
         var provider = Provider();
-        Assert.Equal(20, SlotSpecialRoundProfiles.All.Count);
+        // Frontier and Crooked Road use their own native round evidence, not this host descriptor.
+        Assert.Equal(18, SlotSpecialRoundProfiles.All.Count);
         foreach (var profile in SlotSpecialRoundProfiles.All.Where(profile => !ArcaneSpinEvidence.Owns(profile.GameId)))
         {
             var (result, game, reelSet, symbolSet, paytable) = Spin(provider, profile.GameId);
@@ -71,7 +72,7 @@ public sealed class SlotRoundAuditTests
     }
 
     [Theory]
-    [InlineData(SlotSpecialRoundProfiles.HighNoonFortuneGameId)]
+    [InlineData(SlotSpecialRoundProfiles.PiratesFortuneGameId)]
     [InlineData(SlotSpecialRoundProfiles.GodsOfOlympusGameId)]
     public void NativeClassicPaidArchive_IgnoresDormantEnergyWhenItsCapturedRulesDisableTheMeter(string gameId)
     {

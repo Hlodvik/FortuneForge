@@ -22,11 +22,11 @@ export const SLOT_ROUTE_METADATA = [
   },
   {
     id: 'pirates-fortune', title: "Treasure Cove", shortTitle: "Treasure Cove",
-    playPath: '/slots/pirates-fortune', demoPath: '/slots/pirates-fortune/demo', serverGameIds: ['pirates-fortune-v1'], shellBackdrop: 'theme',
+    playPath: '/slots/pirates-fortune', demoPath: null, serverGameIds: ['pirates-fortune-v1'], shellBackdrop: 'theme',
   },
   {
     id: 'gods-of-olympus', title: 'Gods of Olympus', shortTitle: 'Gods of Olympus',
-    playPath: '/slots/gods-of-olympus', demoPath: '/slots/gods-of-olympus/demo', serverGameIds: ['gods-of-olympus-v1'], shellBackdrop: 'theme',
+    playPath: '/slots/gods-of-olympus', demoPath: null, serverGameIds: ['gods-of-olympus-v1'], shellBackdrop: 'theme',
   },
   {
     id: 'reel-riches', title: 'Reel Riches', shortTitle: 'Reel Riches',

@@ -90,6 +90,7 @@ export function CrookedRoadView({ controller: c, paymentAlerts, balanceRecoveryH
         </div>
         <div className="slots-page__playbar" aria-label="Wager and spin controls">
           <SidecarSpinControls activeWager={c.activeWager} disabled={c.spinDisabled && !c.isAutoSpinning}
+            menuClassName="crooked-road-game__bet-menu"
             freeSpinsRemaining={c.state?.freeSpinsRemaining ?? 0} isAutoSpinning={c.isAutoSpinning}
             isFreeSpinBadgePopping={false} isSpinning={c.isSpinning} isStopRequested={c.isStopRequested}
             onAutoSpinChange={c.setIsAutoSpinning} onSelectWager={c.selectWager} onSpin={c.handleSpinButtonClick}

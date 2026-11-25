@@ -1,12 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('../../features/account/services/accountsApi', () => ({
-  fetchWithAccountSession: vi.fn(),
-  getCurrentAccount: vi.fn(),
-}))
-
-import { fetchWithAccountSession, getCurrentAccount } from '../../features/account/services/accountsApi'
-import { createJadeGameApi, validateJadeOutcome, validateJadeSpinRequest } from './jadeDragonApi'
+import { createJadeGameApi, validateJadeOutcome, validateJadeSpinRequest } from '../src/api'
+const fetchWithAccountSession = vi.fn<(path: string, init?: RequestInit) => Promise<Response>>()
+const getCurrentAccount = vi.fn<() => Promise<{ userId: string; balances: { slotsCredits: number } }>>()
+const ports = { authenticatedFetch: fetchWithAccountSession, loadAccount: getCurrentAccount }
 
 const outcome = () => ({
   gameId: 'empty-slots-v1',
@@ -22,7 +19,7 @@ const outcome = () => ({
   sealCollections: [],
 })
 
-describe('Jade Dragon host contract', () => {
+describe('package-owned Jade Dragon paid contract', () => {
   it('fixes the server game ID and caps new paid wagers at R100', () => {
     expect(validateJadeSpinRequest({
       gameId: 'another-game', wagerPoints: 400, useFreeSpin: false, useSpecialBoost: false,
@@ -71,6 +68,7 @@ describe('Jade Dragon host contract', () => {
     const posts: RequestInit[] = []
     vi.mocked(getCurrentAccount).mockResolvedValue({ userId: player, balances: { slotsCredits: 99.5 } } as Awaited<ReturnType<typeof getCurrentAccount>>)
     vi.mocked(fetchWithAccountSession).mockImplementation(async (_path, init) => {
+      if (_path.endsWith('/presentation')) return Response.json({ gameId: 'empty-slots-v1', symbols: [] })
       if (init?.method === 'GET') return Response.json(outcome(), {
         headers: capability ? { 'X-FortuneForge-Prepared-Spin': '1' } : undefined,
       })
@@ -81,16 +79,16 @@ describe('Jade Dragon host contract', () => {
     vi.stubGlobal('fetch', vi.fn(async () => Response.json({ gameId: 'empty-slots-v1', symbols: [] })))
 
     try {
-      const tab = createJadeGameApi(player)
+      const tab = createJadeGameApi(player, ports)
       await tab.loadSession()
       await expect(tab.spin({ wagerPoints: 2, useFreeSpin: false, useSpecialBoost: false })).rejects.toMatchObject({ status: 503 })
       expect(new Headers(posts[0].headers).get('X-FortuneForge-Expected-Account')).toBe(player)
       expect(new Headers(posts[0].headers).get('Idempotency-Key')).toMatch(/^[A-Za-z0-9_-]{16,128}$/)
       capability = false
-      await expect(createJadeGameApi(player).loadSession()).rejects.toThrow('saved spin')
+      await expect(createJadeGameApi(player, ports).loadSession()).rejects.toThrow('saved spin')
       expect(posts).toHaveLength(1)
       capability = true
-      await expect(createJadeGameApi(player).loadSession()).resolves.toMatchObject({ balanceCents: 9950 })
+      await expect(createJadeGameApi(player, ports).loadSession()).resolves.toMatchObject({ balanceCents: 9950 })
       expect(posts).toHaveLength(2)
       expect(posts[1]).toEqual(posts[0])
     } finally {

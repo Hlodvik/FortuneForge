@@ -47,7 +47,7 @@ describe('combined game loading registry', () => {
     expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.id)).size).toBe(41)
     expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.image)).size).toBe(41)
     const routes = GAME_LOADING_PRESENTATIONS.flatMap(entry => entry.routes)
-    expect(routes).toHaveLength(62)
+    expect(routes).toHaveLength(57)
     expect(new Set(routes).size).toBe(routes.length)
   })
 
@@ -69,8 +69,8 @@ describe('combined game loading registry', () => {
         const asset = new URL(metadata.file, directory)
         expect(statSync(asset).size).toBe(metadata.bytes)
         expect(metadata.bytes).toBeLessThan(180_000)
-        expect(webpDimensions(readFileSync(asset))).toEqual({ width: 768, height: 384 })
-        expect({ width: metadata.width, height: metadata.height }).toEqual({ width: 768, height: 384 })
+        expect(webpDimensions(readFileSync(asset))).toEqual({ width: metadata.width, height: metadata.height })
+        expect([metadata.width, metadata.height]).toEqual(metadata.id === 'crooked-road' ? [960, 480] : [768, 384])
         totalBytes += metadata.bytes
       }
     }

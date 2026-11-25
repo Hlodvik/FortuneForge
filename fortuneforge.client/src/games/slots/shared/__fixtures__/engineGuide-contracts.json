@@ -1,17 +1,17 @@
 {
   "source": "Actual in-process OptionsSlotsDefinitionProvider, not client manifests",
-  "exportedUtc": "2026-11-22T12:39:39.5324256Z",
-  "assemblySha256": "6cfe112de16c887d91099011c931da08a704c4a8cbdb45bfdd14c739f5d12ad0",
+  "exportedUtc": "2026-11-25T00:23:14.3655418Z",
+  "assemblySha256": "d02e5ca128bd986e385045e45726eb8b93663381a056d5f3df5c4c2cfa8f66c7",
   "sourceHashAlgorithm": "sha256-utf8-lf-v1",
   "sourceSha256": {
-    "FortuneForge.Server/Slots/Bonuses/ArcaneLightningCollector.cs": "bb0a41d2b393e42fc52f9f95e6507bf5a907fedc0a606eb14abef724c5022b21",
+    "FortuneForge.Server/Slots/Bonuses/ArcaneLightningCollection.cs": "fcb8bcbc869c64120fa6c72258e5193b37bb21841c5b882ceaed4ab19a99741b",
     "FortuneForge.Server/Slots/Bonuses/EnergyBonus.cs": "dc4ea13d9a8823b851ca0d80773e5af45fd4aa7a3f544f7d5d7dee88263d97e2",
     "FortuneForge.Server/Slots/Bonuses/FreeGameFrequency.cs": "7b9d1722ad1ecdb691433de55f05515806cdd4c883f4bbd9b47c0984f1b83c5c",
     "FortuneForge.Server/Slots/Bonuses/OlympusTumbleDemo.cs": "f4fb5c2160adc05d2ddd602acc5dbe8681ec191a86ba668f9c9fa8de29d6c535",
     "FortuneForge.Server/Slots/Bonuses/PiratesGemBonus.cs": "35dc7f34c971cd5aaabbc542391d0707a0c0516b61a37ec482e05941cc51ef11",
     "FortuneForge.Server/Slots/Bonuses/RainbowRealmCharmHarvest.cs": "6c7dadeba3e67d7bf6e4fc8e309d0d23698ea6b8637caeea0d1da3721b13e093",
     "FortuneForge.Server/Slots/Bonuses/SealCollectionRules.cs": "ed4fc36f045dd8208a8c408c224901d76cb8c4ad9ff61a0991df7a759dae10bf",
-    "FortuneForge.Server/Slots/Bonuses/SlotSpecialRoundProfiles.cs": "e649e3620a4db4b6bed32a605f36f778473a324ef6c7488dbb5aee20e4304d2c",
+    "FortuneForge.Server/Slots/Bonuses/SlotSpecialRoundProfiles.cs": "1ef844954365a1f22e3e7b4988b4007f1a0bcbf8c3aedaca3c1873a0ae9db9ff",
     "FortuneForge.Server/Slots/Bonuses/SpecialPointBonus.cs": "ffecc22667a24d31c23f95c037a94163324262cc5f1b8810b847191d8d88234e",
     "FortuneForge.Server/Slots/Bonuses/WukongPawPrototypeModels.cs": "ff4ba0761b712aaf2a10dae54e21330f0d8de649adc4478bb7514f13433ddb79",
     "FortuneForge.Server/Slots/Bonuses/WukongPawPrototypeSession.cs": "06cf5039a95c398edd5edc06ab1d5465083b26d53a4b9f8b1bcae60d5f2bc639",
@@ -25,6 +25,7 @@
     "FortuneForge.Server/Slots/Configuration/Validation/SlotsOptionsValidator.cs": "4ed54507cde5f23972872a41aabe3888f22f023e6a83635c61907e3c723a00ab",
     "FortuneForge.Server/Slots/Evaluation/CombinationEvaluator.cs": "3e215da76179acd14cf2120cea2caa6a7c3aa1c3a9574bb5e76fc0feeaad81e0",
     "FortuneForge.Server/Slots/Evaluation/ICombinationEvaluator.cs": "18be9bb79e62ce4206643755138afb4f0557d1447c50130334b40d9789888154",
+    "FortuneForge.Server/Slots/Games/FifthSunDemoEndpoints.cs": "076db3ce980c2f9a1fa901ee6504272c31ae52a5c5722fcc5fcd474cc3a6811d",
     "FortuneForge.Server/Slots/Games/GoldFoundry/GoldFoundryAudit.cs": "4280c1b18a033d5f5822edcbd6c75d7f7ea863260445f8676e06e135f7a458f2",
     "FortuneForge.Server/Slots/Games/GoldFoundry/GoldFoundryCrucible.cs": "df190e0a5390ba9e7b53164a1203bb7894759566ad8909f40bd3c84c959d721b",
     "FortuneForge.Server/Slots/Games/GoldFoundry/GoldFoundryDemoBoundary.cs": "d5b6d32c82287a7fa564852f25960d5c76f7acf9214f82a009a71d0f1bbd0944",
@@ -38,29 +39,29 @@
     "FortuneForge.Server/Slots/Games/MidnightVault/MidnightVaultAudit.cs": "2893966e92d8648392563cc9b9a4b1fd3e299f8cacc1fb89b11ccf0be41b2e72",
     "FortuneForge.Server/Slots/Games/MidnightVault/MidnightVaultEngine.cs": "24cec3d05f88b655cce9ef4596b3ce8a88a4ff791ba0171b34f09e415a5983d6",
     "FortuneForge.Server/Slots/Games/NeonNights/NeonNightsEngine.cs": "26edfef2006c5c13295dbc1633c0d911b0b6b26c7c9c313d44428adc4b988bde",
-    "FortuneForge.Server/Slots/Games/StandaloneSlotPackageRegistry.cs": "60d81777586c83eab43a0ec21fa6f15dbc892552eb55abe66c4ce6eb8a4d40e1",
+    "FortuneForge.Server/Slots/Games/StandaloneSlotPackageRegistry.cs": "008c4dec45f81cd87516673b69ad1adf26f0732f02aaf9296d80e76cc72a12d7",
     "FortuneForge.Server/Slots/Models/SlotDefinitions.cs": "1050d5f922e3ccf31b428ec865a6686070a99f774d60856b6ede825abfe0b929",
-    "FortuneForge.Server/Slots/Models/SpinModels.cs": "6ecfe2c14dfe3aebff5955782c0d267e80e4f183f641ecb8a07e6af7f9e6ef61",
+    "FortuneForge.Server/Slots/Models/SpinModels.cs": "0c7e42e59f6ef7ac9f553ba326634c07a4793c867f906e54eee5cb00d21816ba",
     "FortuneForge.Server/Slots/Models/WukongPawPrototypeEvidence.cs": "78567bd38dae1a13af00119a70105c47af0a07f5809ed255e8ebdc3a91bcdea9",
     "FortuneForge.Server/Slots/Payouts/IPayoutCalculator.cs": "2a112a7c3acdabc20f10726b3794e23b453eab9b3e835f269852543f1b4891ec",
     "FortuneForge.Server/Slots/Payouts/PayoutCalculator.cs": "3b638e99acb6103eb90b2779d4ede5ac9f34836398e2748fc9b0ee1fda03f99c",
     "FortuneForge.Server/Slots/Reels/CryptoRandomIndexSource.cs": "d4bee589e903bfe0ec407a4d6ff6981f3ad0dc2c94dfc450928baac79b0de716",
-    "FortuneForge.Server/Slots/Reels/CryptoReelGenerator.cs": "556bf9660da9d76cd1394610b5d1cb634619b4f1872aef957e27c2f373292190",
+    "FortuneForge.Server/Slots/Reels/CryptoReelGenerator.cs": "6314a93e2b06773865cd51088995caa3d504f1bc6bd7f8dce6acdc686798ce90",
     "FortuneForge.Server/Slots/Reels/IRandomIndexSource.cs": "cb4b3756e9019f181f687701816fecb4f236a4f3a746ed011802fbe51ef0b8e4",
     "FortuneForge.Server/Slots/Reels/IReelGenerator.cs": "77cc02cc0b2e3e059155bfa51f9e59a6209c828745bdd5a8ffe63bff8d9d855a",
     "FortuneForge.Server/Slots/Reels/PiratesFortuneBaseReelSet.cs": "7c6cb3859f6abb382e8cfd1812ddf1c377e85586701e4f60699e59d86dbaea0c",
     "FortuneForge.Server/Slots/Reels/WukongBaseReelSet.cs": "2750f150f03c222bdc927c6d6e168e03dd5625d7e6f28433782dc1a193375e3f",
     "FortuneForge.Server/Slots/SlotPackageUsings.cs": "ce0df56d467212c704b4a98e783fa603583682794c0b943b8d6b89cf994c4da3",
-    "FortuneForge.Server/Slots/Spins/PaidSlotWorker.cs": "0df86561904c0becb54b4a9f53b513e3d85ac96d3e4933edcff94392115f078e",
-    "FortuneForge.Server/Slots/Spins/SpinService.Core.cs": "8f606e3787fa41a9780dcb4ea8c2aafe7320bcfb3b12b45ddf69074b837c0b6c",
-    "FortuneForge.Server/Slots/Spins/SpinService.Execution.cs": "fa9192be95c2203efb2d07f3bd2bcb67781f0e8d6319d8fb13641f7821ac09c2",
+    "FortuneForge.Server/Slots/Spins/PaidSlotWorker.cs": "360d69f26b8dbd352986d287f906de808b58bce52fffff6fb6d0cd20bfd3ecf3",
+    "FortuneForge.Server/Slots/Spins/SpinService.Core.cs": "81fa47974e47f16e90215e227e8cce35d17396488fcea9dd6714c13e4d5286b2",
+    "FortuneForge.Server/Slots/Spins/SpinService.Execution.cs": "627c89be21d26025530c5c8dce1f9cd0751c242900053673e33ae38dd462f4f5",
     "FortuneForge.Server/Slots/Spins/SpinService.Features.cs": "75ceafc629cf10128f5b2474fa91ad09c8000e0d27f2e52b448dcfa041dc51b4",
     "FortuneForge.Server/Slots/Spins/SpinService.OlympusTumbleDemo.cs": "9c3b3c865aa43097ab82046978112483f0499ceb85a674d99e3186aa2bded546",
     "FortuneForge.Server/Slots/Spins/SpinService.Payouts.cs": "66446acc7dc3b9318283e105594db487e5edb9661fe1db4fe73557f07ce02536",
     "FortuneForge.Server/Slots/Spins/SpinService.Support.cs": "139fb73b47b2cf43988e810c945f10e48acb788e9ecab811be86f7d2cc2ba707",
     "FortuneForge.Server/Slots/Spins/SpinService.WukongPawPrototype.cs": "e06d55d5dc152ef0296b25d8d98921c3df29f411d96f6217367a1bc935faf5da",
-    "fortuneforge.client/scripts/export-slot-guide-contracts.mjs": "85b35e8c4c65bcc95bdc7f6356a2f570dd53d86f601bc9dc6f0d74a0a5ee2bf2",
-    "fortuneforge.client/src/games/slots/routeMetadata.ts": "8995ee84746af51f0b72ab206e915dcbe0f6395e4cc7f67e84efe67364a8c027",
+    "fortuneforge.client/scripts/export-slot-guide-contracts.mjs": "214eb2d59005d909c0e7f9c2e98fe0722d8fde333bbae95f2c9193631dbbed12",
+    "fortuneforge.client/src/games/slots/routeMetadata.ts": "7ca48042ba8642a6af3759f39b85bbf91e9c53b300a92975411babe2bd91f558",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneArchivesEngine.cs": "0bc5db391fecbaead9d3fa8942c95d27894b4f346658f408af06d44f186e4169",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneLightningCollector.cs": "6e5eecaf1fb30a6c3de219c6302754c0cde56772c7b96e60cfc28a9e2c00a811",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneNativeReplay.cs": "b4494a88eee3cb2eb95745501048b41d1029c81ec62324348dd28dd5a44187dc",
@@ -74,8 +75,14 @@
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/PaidArcaneSpinOptions.cs": "0e5d3d9b8a62658802d9b45445f8a74a5648513ede06dddaf30e4b2404222f88",
     "games/CandyCarnival/src/FortuneForge.Games.CandyCarnival/CandyCarnivalEngine.cs": "b6dacb197947260e42b48d252e3bccf81626eaf62358d82a2278b5fd8f233e0c",
     "games/CandyCarnival/src/FortuneForge.Games.CandyCarnival/FortuneForge.Games.CandyCarnival.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
-    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/PharaohsAscentEngine.cs": "0c7a691123a774e8f600f31ebe27fb518e6fac960f6c2901c99f7307cf1792f0",
-    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/FortuneForge.Games.PharaohsAscent.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
+    "games/CrookedRoad/src/FortuneForge.Games.CrookedRoad/CrookedRoadGame.cs": "c0fa0f774a22e93484c77adc8ca58d2f99afb0593e81f4d0545f865010633c34",
+    "games/CrookedRoad/src/FortuneForge.Games.CrookedRoad/CrookedRoadMap.cs": "ef1a4565884967ad4b7c2b42964e6f1c9692a21323fb8e53fe02bb1b2c855bac",
+    "games/CrookedRoad/src/FortuneForge.Games.CrookedRoad/CrookedRoadMath.cs": "06bc32d1648b092a072b4091316cfe132001d56da3254a4eaa969c7b203714a7",
+    "games/CrookedRoad/src/FortuneForge.Games.CrookedRoad/CrookedRoadModels.cs": "7ff3131384f1911c553e4f829c1f9eaae959f4c9cdafe40175b6558894d53636",
+    "games/CrookedRoad/src/FortuneForge.Games.CrookedRoad/CrookedRoadRules.cs": "7a9ad2f1c947ed3dd84bdc7ca01b9b0654f2e8873c98c041cabba3d1118584ce",
+    "games/CrookedRoad/src/FortuneForge.Games.CrookedRoad/CrookedRoadState.cs": "66ad6133e6b233858bf5407f8117af9e9c125574a3837139b28dfefe4177d788",
+    "games/CrookedRoad/src/FortuneForge.Games.CrookedRoad/Data/crooked-road-v1.json": "4a681897c9b894d55579f56a1949a66f6578ecc3ff086f914e384bba293c9745",
+    "games/CrookedRoad/src/FortuneForge.Games.CrookedRoad/FortuneForge.Games.CrookedRoad.csproj": "04059e909a54ff85f3e8a3577ac01f048d09468ce9924c4c098f098930cf434c",
     "games/DesertTreasures/src/FortuneForge.Games.DesertTreasures/DesertTreasuresEngine.cs": "15451e661823b00a4d66229c52f4d014e8ee2e842dd561c2f202f4b5c5a43711",
     "games/DesertTreasures/src/FortuneForge.Games.DesertTreasures/FortuneForge.Games.DesertTreasures.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/GodsOfOlympus/src/FortuneForge.Games.GodsOfOlympus/FortuneForge.Games.GodsOfOlympus.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
@@ -88,8 +95,11 @@
     "games/GoldFoundry/src/FortuneForge.Games.GoldFoundry/GoldFoundryModels.cs": "7f5cd601a24b0fc3b458bec3127d3490c1fd0eda47ed501c9fbe2eb0e59c4240",
     "games/GoldFoundry/src/FortuneForge.Games.GoldFoundry/GoldFoundryOutcomeReplay.cs": "978afba33c27fcc3227f1d6369747a787e82bd038e73e0614de26b9c2e7fa9df",
     "games/GoldFoundry/src/FortuneForge.Games.GoldFoundry/GoldFoundrySlotDefinitions.cs": "6ca04b3cb8f9ef16b59a95f609124e4eeb692d92e6fc63e7a58e5b8151659bc4",
-    "games/HighNoonFortune/src/FortuneForge.Games.HighNoonFortune/FortuneForge.Games.HighNoonFortune.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
-    "games/HighNoonFortune/src/FortuneForge.Games.HighNoonFortune/HighNoonFortuneEngine.cs": "d57407a0ed4346c17c3e8f7d25b2454059207b33e52af53489a908e1d5366f77",
+    "games/HighNoonFortune/src/FortuneForge.Games.FrontierFortune/FortuneForge.Games.FrontierFortune.csproj": "f1c8eb7f60d0e3865e8f88eff3b25b5349ae3b2bdb2d313d3812a603bca30456",
+    "games/HighNoonFortune/src/FortuneForge.Games.FrontierFortune/FrontierBounties.cs": "a9a02959312287224847f91ad46957688531a1ff2f7ba85853c3062ee3a32285",
+    "games/HighNoonFortune/src/FortuneForge.Games.FrontierFortune/FrontierFortuneEngine.cs": "535ee385c4d357187c13134140de6be33729e22489a3fde536a777badb531be3",
+    "games/HighNoonFortune/src/FortuneForge.Games.FrontierFortune/FrontierRules.cs": "1b356b550f45acfff5eace175ba0433ad6dfbc5b36962a1dfb265b8b273ff3a6",
+    "games/HighNoonFortune/src/FortuneForge.Games.FrontierFortune/OutlawHand.cs": "4d49ffb1bf3a0143d278ff376e2d547d717b78d398ae520bf2fe8209c31a80d8",
     "games/JadeDragon/src/FortuneForge.Games.JadeDragon/Data/jade-dragon.json": "bdbc46b40efb81ce5b74dff3a21dea0f762591be06a6353259bde941f4c9a797",
     "games/JadeDragon/src/FortuneForge.Games.JadeDragon/Engine/Bonuses/FreeGameFrequency.cs": "390e2c4de23ddd47a8a62c81bf1f1d5074362c280fb3f0b135f95316de4afb2a",
     "games/JadeDragon/src/FortuneForge.Games.JadeDragon/Engine/Bonuses/JadeDragonRules.cs": "d8e068e182cb89088e038b491cbf71c18c9b2975cece49335efce8a98830d30e",
@@ -161,6 +171,17 @@
     "games/OceanOdyssey/src/FortuneForge.Games.OceanOdyssey/OceanOdysseyEngine.cs": "9645aa31ed719f8f54752d4b31f7f372c264f29639e78f508f225829a373b806",
     "games/PhantomManor/src/FortuneForge.Games.PhantomManor/FortuneForge.Games.PhantomManor.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/PhantomManor/src/FortuneForge.Games.PhantomManor/PhantomManorEngine.cs": "9470ae47c3f80c0be885bb076c6b29bd221112684d088ef8de97591d1c9e8567",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/FortuneForge.Games.PharaohsAscent.csproj": "b23ee1c3500233f709e220361a457c71a49905121a91caa28ba77b2fa1709e44",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/PharaohsAscentBoosts.cs": "0c269f64ed01ddbf54f315097fe959d3b9882d7fa5b422be67b3782fa2670beb",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/PharaohsAscentEngine.cs": "21139dd6449730c8b0bc7d3c34733b2100bd7e6cf281e3d86814eb6e2c769105",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/PharaohsAscentFreeSpins.cs": "9d9afadb4ef4024cd78ded8fe8c6b66dac0df23679330caee238dbe330756f9b",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/PharaohsAscentMathV3.cs": "e8d2e7b45406888c8fa14a33249f0c2fc95623244dd72c4bb9af740030c7fa67",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/PharaohsAscentPity.cs": "a005128609a58f872aedf02bfd8b8c02281a377bf040ed6a371a8f98a1c433e1",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/PharaohsAscentScarabs.cs": "64984d30f4c63d00baea293e1c0b5a77d399839b85d8e76d9af3f4874abc849b",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/PharaohsAscentSunfire.cs": "a0dbad4a9eab6ff194720893cd47176ce4b0e19269903f13efe619822124d33d",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/PharaohsAscentWagering.cs": "bc37562129f69927e44b0b0879e45022398e9f9728a224dbd98f9d8f86645791",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/SealedTombRules.cs": "03aa5140bbad2bc5849919f0ecb53e33051113a5452ae2fada85bf2ff137b95a",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/SealedTombState.cs": "fb563da2ce385c70259f6a8ee209cc126932e9e00369c3e6151330cb647b629b",
     "games/PiratesFortune/src/FortuneForge.Games.PiratesFortune/FortuneForge.Games.PiratesFortune.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/PiratesFortune/src/FortuneForge.Games.PiratesFortune/PiratesFortuneEngine.cs": "dd969a63510e9d970299dc070df31f55877506a7960b3ce56c3ab4d8107d6c45",
     "games/PiratesFortune/src/FortuneForge.Games.PiratesFortune/PiratesGemBonus.cs": "640074e5b3ab5bc76679ad9c55a20f1d5e4466a9f28cd876badbf508f6b42ca6",
@@ -169,16 +190,19 @@
     "games/RainbowRealm/src/FortuneForge.Games.RainbowRealm/RainbowRealmEngine.cs": "d55d5a53fe9ba38f189f6d192a52aa330987934bcf8139684158f7c9f3579d3b",
     "games/ReelRiches/src/FortuneForge.Games.ReelRiches/FortuneForge.Games.ReelRiches.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/ReelRiches/src/FortuneForge.Games.ReelRiches/ReelRichesEngine.cs": "0b3e02379c7927f66b0cc0be9f692dc2c96ac35268bf19862a5b6adfe6c6b3f1",
+    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FifthSunDefinitions.cs": "d49049a67dbae69594b86cb5fec275ab07e510345899afabc0e72e285f0a9f96",
+    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FifthSunTotalityDefinitions.cs": "dd656e68f947c2d238e4b949b05c42cd8f05d725b9f6d7647ce5d540be4961a8",
+    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FifthSunTotalityWheel.cs": "d1df66b9b34b19b5d865e4679e6672154ef2aaa79d44d914ce013f9603dfe035",
+    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FifthSunWheel.cs": "0f076b3e5c9d03c0c85a068fc6166a5e127c0174c2f1ee32dcd691c5b73b1fbc",
     "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FortuneForge.Games.RobotRevolution.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/RobotRevolutionEngine.cs": "d6642f9a4ac2a5825d51aa9128a20097984f153941de7319b214438a37a7f948",
     "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/SunstoneEclipse.cs": "b68529353e025b71ad8ac3d614f773622f8a9e0b873149a35c7437928c25aeb5",
     "games/RoyalDraw/src/FortuneForge.Games.RoyalDraw/FortuneForge.Games.RoyalDraw.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/RoyalDraw/src/FortuneForge.Games.RoyalDraw/RoyalDrawEngine.cs": "85f9301457abfba771c6ab30ca06af4c0e5a3f0c788c68e2b30df187b377c948",
-    "games/SamuraiFortune/src/FortuneForge.Games.SamuraiFortune/FortuneForge.Games.SamuraiFortune.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
-    "games/SamuraiFortune/src/FortuneForge.Games.SamuraiFortune/SamuraiFortuneEngine.cs": "3443479afa9b833ac2ff00fa089e7df8624f6f55b686deff981bc32c35178d69",
     "games/Wukong/src/FortuneForge.Games.Wukong/FortuneForge.Games.Wukong.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/Wukong/src/FortuneForge.Games.Wukong/WukongEngine.cs": "a68abe21b3326ac931ff9b8ed5251ccca286af72be3a60a540085203769e87a6",
     "games/Wukong/src/FortuneForge.Games.Wukong/WukongPawPrototype.cs": "39189abd7a39d2717c786c5019316c25666415108ed766f23536a06d5fe77fab",
+    "games/catalog/slot-packages.json": "33ad00c5636e72f6bb91125b332ad9cbef65f2dbbac97cac3da976b2719b1a6b",
     "games/shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj": "732a4d6e6eb15f9d18867571503cf8c6f9882d46fd36e509dc139e30b85b949e",
     "games/shared/FortuneForge.Games.Slots.Contracts/PaidSlotOutcome.cs": "dda7cc1320cb411b24e783d2f88c260e8215ce59db8757c0601fc936e1a4b04b",
     "games/shared/FortuneForge.Games.Slots.Contracts/SlotContracts.cs": "35354fcf5ebefedc92593e02432384f5c87d00bd1a1958b36cc8f6165269d463",
@@ -187,10 +211,10 @@
     "games/shared/FortuneForge.Games.Slots.Contracts/SlotSpinResultFields.cs": "06d82667691ede2e3c964f6b50605178f8aff83fa8530a76e91dfc6fc0d52f36",
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotDefinitionFactory.cs": "5fd9306653be3b77f37b2c6c42c09bf167f3476d624079ac5c520282add286a4",
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEnergy.cs": "da9dc0ccd561ffc1e80fffd4e81f10341008d9e039502474f8c60c5574c6551f",
-    "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.Features.cs": "1a90144de4eaebe547793cacb56ae2ef1aec6a3eaec20def710f4aada5fead2d",
+    "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.Features.cs": "0f6480cc14a3c7d21bb6848a94b7ab0a9fbe680911552a936ed6130eb3ba4a7b",
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.Math.cs": "22b45f317ca0af2c297d73d58667894e4a953e5904abfc6debfc173274bfc957",
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotEngine.cs": "ed0f53bab4a2c96899eee4608c989363216ab5906a79edd56300fada2cd978f0",
-    "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotModels.cs": "58d3dc83bf87145afd20e7cd66a4250d367c6160cb8b6091ae40e4d1aa9f4973",
+    "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotModels.cs": "384f0a0d9e663928d53c256bd5191ab59d8625abe1b2091c75b51dc1ca80de74",
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotPracticeCollections.cs": "3a332b84142b659891ea6c44328c9f1bdb6f904f8010eb166d361bac602b12b0",
     "games/shared/FortuneForge.Games.Slots.Runtime/ClassicSlotReplayEvidence.cs": "58cbf51951cc18040fb1236d7df28c20ac45c15b31eb3a1d0cc640dca2aaf1d9",
     "games/shared/FortuneForge.Games.Slots.Runtime/CryptographicSlotRandom.cs": "29577cd422bb20bd436c763a8e7397a6249c5940a85202e0c75845d407e03c8f",
@@ -199,33 +223,29 @@
     "games/shared/FortuneForge.Games.Slots.Runtime/FrozenSlotDefinitions.cs": "f160054b9b037a178810a8b435118925897f0896646b7b558f9673767e6ab3be",
     "games/shared/FortuneForge.Games.Slots.Runtime/SlotProfile.cs": "8ddcb43c4a85d8b7299af8b1ec35c4b53fae7d40f1dea3e5c12f4357c7146b97",
     "tools/FortuneForge.SlotContracts/FortuneForge.SlotContracts.csproj": "523e1acf37e3aa58e538d30e430959517e441d03be7cf60dfd74ec67b825c6be",
-    "tools/FortuneForge.SlotContracts/Program.cs": "6ea89c26565335378229ed0cd63cc0668012322c258b92d366e0733d281e0b60",
-    "tools/verify-slot-contracts.mjs": "09dd178f34f878750982ea5d603526740b6ddefc48ba03c37ccd5c92189f7fcd",
-    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FifthSunDefinitions.cs": "d49049a67dbae69594b86cb5fec275ab07e510345899afabc0e72e285f0a9f96",
-    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FifthSunWheel.cs": "0f076b3e5c9d03c0c85a068fc6166a5e127c0174c2f1ee32dcd691c5b73b1fbc",
-    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FifthSunTotalityDefinitions.cs": "dd656e68f947c2d238e4b949b05c42cd8f05d725b9f6d7647ce5d540be4961a8",
-    "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FifthSunTotalityWheel.cs": "d1df66b9b34b19b5d865e4679e6672154ef2aaa79d44d914ce013f9603dfe035"
+    "tools/FortuneForge.SlotContracts/Program.cs": "fc41f64a8b444028102a8531f36151449f50401e25597a695930d82f4fe5966f",
+    "tools/verify-slot-contracts.mjs": "4c6a6cf9ae059ea77d632157caf9c51e78ebd274a20d5851fa7268eb4c8650ec"
   },
   "sourceProjects": [
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/FortuneForge.Games.ArcaneArchives.csproj",
     "games/CandyCarnival/src/FortuneForge.Games.CandyCarnival/FortuneForge.Games.CandyCarnival.csproj",
-    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/FortuneForge.Games.PharaohsAscent.csproj",
+    "games/CrookedRoad/src/FortuneForge.Games.CrookedRoad/FortuneForge.Games.CrookedRoad.csproj",
     "games/DesertTreasures/src/FortuneForge.Games.DesertTreasures/FortuneForge.Games.DesertTreasures.csproj",
     "games/GodsOfOlympus/src/FortuneForge.Games.GodsOfOlympus/FortuneForge.Games.GodsOfOlympus.csproj",
     "games/GoldFoundry/src/FortuneForge.Games.GoldFoundry/FortuneForge.Games.GoldFoundry.csproj",
-    "games/HighNoonFortune/src/FortuneForge.Games.HighNoonFortune/FortuneForge.Games.HighNoonFortune.csproj",
+    "games/HighNoonFortune/src/FortuneForge.Games.FrontierFortune/FortuneForge.Games.FrontierFortune.csproj",
     "games/JadeDragon/src/FortuneForge.Games.JadeDragon/FortuneForge.Games.JadeDragon.csproj",
     "games/MidnightVault/src/FortuneForge.Games.MidnightVault/FortuneForge.Games.MidnightVault.csproj",
     "games/NeonNights/src/FortuneForge.Games.NeonNights/FortuneForge.Games.NeonNights.csproj",
     "games/NordicLegends/src/FortuneForge.Games.NordicLegends/FortuneForge.Games.NordicLegends.csproj",
     "games/OceanOdyssey/src/FortuneForge.Games.OceanOdyssey/FortuneForge.Games.OceanOdyssey.csproj",
     "games/PhantomManor/src/FortuneForge.Games.PhantomManor/FortuneForge.Games.PhantomManor.csproj",
+    "games/PharaohsAscent/src/FortuneForge.Games.PharaohsAscent/FortuneForge.Games.PharaohsAscent.csproj",
     "games/PiratesFortune/src/FortuneForge.Games.PiratesFortune/FortuneForge.Games.PiratesFortune.csproj",
     "games/RainbowRealm/src/FortuneForge.Games.RainbowRealm/FortuneForge.Games.RainbowRealm.csproj",
     "games/ReelRiches/src/FortuneForge.Games.ReelRiches/FortuneForge.Games.ReelRiches.csproj",
     "games/RobotRevolution/src/FortuneForge.Games.RobotRevolution/FortuneForge.Games.RobotRevolution.csproj",
     "games/RoyalDraw/src/FortuneForge.Games.RoyalDraw/FortuneForge.Games.RoyalDraw.csproj",
-    "games/SamuraiFortune/src/FortuneForge.Games.SamuraiFortune/FortuneForge.Games.SamuraiFortune.csproj",
     "games/Wukong/src/FortuneForge.Games.Wukong/FortuneForge.Games.Wukong.csproj"
   ],
   "games": [
@@ -1928,340 +1948,6 @@
       ]
     },
     {
-      "gameId": "high-noon-fortune-v1",
-      "profile": {
-        "gameId": "high-noon-fortune-v1",
-        "scatterRequiredSymbols": 3,
-        "scatterAwardedSpins": 5,
-        "collectionTarget": 20,
-        "collectionAwardedSpins": 8,
-        "usesCollections": false,
-        "usesEnergy": false,
-        "usesDirectValueTokens": true,
-        "scatterFeatureMode": "sync",
-        "collectionFeatureMode": null,
-        "baseReelSetId": null,
-        "targetHitRate": 0.32,
-        "paylinePatternIds": null,
-        "payoutMultiplier": 1.105
-      },
-      "layout": {
-        "reelCount": 5,
-        "visibleRows": 4,
-        "paylineCount": 23
-      },
-      "symbols": {
-        "symbolSetId": "classic-symbols-v3",
-        "wildSymbolId": "ACE",
-        "nativeWildMatchLengths": [
-          3,
-          5
-        ],
-        "wildSubstitutionMatchLengths": [
-          5
-        ]
-      },
-      "wagering": {
-        "pointValueInCents": 25,
-        "minimumWagerPoints": 2,
-        "maximumWagerPoints": 2000,
-        "wagerIncrementPoints": 2,
-        "allowedWagerPoints": []
-      },
-      "math": {
-        "reelSetId": "classic-reels-v4",
-        "paytableId": "classic-paytable-v4",
-        "payoutMultiplier": 1.105,
-        "paylinePayoutSteps": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "fiveMatchPityMissLimit": 12,
-        "targets": {
-          "rtp": 0.9,
-          "hitRate": 0.32,
-          "volatility": null
-        }
-      },
-      "specialPoints": {
-        "symbolId": "POWER",
-        "threeMatchPoints": 1,
-        "fiveMatchPoints": 2,
-        "activationCost": 8,
-        "commonSymbolIds": [
-          "2",
-          "3",
-          "4"
-        ]
-      },
-      "paylines": [
-        [
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        [
-          1,
-          1,
-          1,
-          1,
-          1
-        ],
-        [
-          2,
-          2,
-          2,
-          2,
-          2
-        ],
-        [
-          3,
-          3,
-          3,
-          3,
-          3
-        ],
-        [
-          0,
-          1,
-          2,
-          1,
-          0
-        ],
-        [
-          1,
-          2,
-          3,
-          2,
-          1
-        ],
-        [
-          3,
-          2,
-          1,
-          2,
-          3
-        ],
-        [
-          2,
-          1,
-          0,
-          1,
-          2
-        ],
-        [
-          0,
-          1,
-          1,
-          1,
-          0
-        ],
-        [
-          1,
-          2,
-          2,
-          2,
-          1
-        ],
-        [
-          2,
-          3,
-          3,
-          3,
-          2
-        ],
-        [
-          3,
-          2,
-          2,
-          2,
-          3
-        ],
-        [
-          2,
-          1,
-          1,
-          1,
-          2
-        ],
-        [
-          0,
-          0,
-          1,
-          2,
-          3
-        ],
-        [
-          3,
-          3,
-          2,
-          1,
-          0
-        ],
-        [
-          0,
-          1,
-          2,
-          3,
-          3
-        ],
-        [
-          3,
-          2,
-          1,
-          0,
-          0
-        ],
-        [
-          0,
-          1,
-          0,
-          1,
-          0
-        ],
-        [
-          1,
-          2,
-          1,
-          2,
-          1
-        ],
-        [
-          2,
-          3,
-          2,
-          3,
-          2
-        ],
-        [
-          1,
-          0,
-          1,
-          0,
-          1
-        ],
-        [
-          2,
-          1,
-          2,
-          1,
-          2
-        ],
-        [
-          3,
-          2,
-          3,
-          2,
-          3
-        ]
-      ],
-      "paytable": [
-        {
-          "symbolId": "2",
-          "matchLength": 3,
-          "multiplier": 1
-        },
-        {
-          "symbolId": "2",
-          "matchLength": 5,
-          "multiplier": 4
-        },
-        {
-          "symbolId": "3",
-          "matchLength": 3,
-          "multiplier": 1
-        },
-        {
-          "symbolId": "3",
-          "matchLength": 5,
-          "multiplier": 2
-        },
-        {
-          "symbolId": "4",
-          "matchLength": 3,
-          "multiplier": 1
-        },
-        {
-          "symbolId": "4",
-          "matchLength": 5,
-          "multiplier": 7
-        },
-        {
-          "symbolId": "5",
-          "matchLength": 3,
-          "multiplier": 2
-        },
-        {
-          "symbolId": "5",
-          "matchLength": 5,
-          "multiplier": 6
-        },
-        {
-          "symbolId": "6",
-          "matchLength": 3,
-          "multiplier": 2
-        },
-        {
-          "symbolId": "6",
-          "matchLength": 5,
-          "multiplier": 8
-        },
-        {
-          "symbolId": "7",
-          "matchLength": 3,
-          "multiplier": 3
-        },
-        {
-          "symbolId": "7",
-          "matchLength": 5,
-          "multiplier": 11
-        },
-        {
-          "symbolId": "ACE",
-          "matchLength": 3,
-          "multiplier": 5
-        },
-        {
-          "symbolId": "ACE",
-          "matchLength": 5,
-          "multiplier": 18
-        },
-        {
-          "symbolId": "POWER",
-          "matchLength": 3,
-          "multiplier": 2
-        },
-        {
-          "symbolId": "POWER",
-          "matchLength": 5,
-          "multiplier": 4
-        }
-      ]
-    },
-    {
       "gameId": "royal-draw-v1",
       "profile": {
         "gameId": "royal-draw-v1",
@@ -2864,11 +2550,11 @@
         "usesEnergy": true,
         "usesDirectValueTokens": false,
         "scatterFeatureMode": null,
-        "collectionFeatureMode": "sync-rows",
+        "collectionFeatureMode": null,
         "baseReelSetId": null,
         "targetHitRate": null,
         "paylinePatternIds": null,
-        "payoutMultiplier": 0.856
+        "payoutMultiplier": 1
       },
       "layout": {
         "reelCount": 5,
@@ -2895,8 +2581,8 @@
       },
       "math": {
         "reelSetId": "classic-reels-v4",
-        "paytableId": "classic-paytable-v4",
-        "payoutMultiplier": 0.856,
+        "paytableId": "pharaohs-ascent-paytable-v3",
+        "payoutMultiplier": 1,
         "paylinePayoutSteps": [
           0,
           0,
@@ -2924,7 +2610,7 @@
         ],
         "fiveMatchPityMissLimit": 12,
         "targets": {
-          "rtp": 0.9,
+          "rtp": 0.94,
           "hitRate": 0.3,
           "volatility": null
         }
@@ -3112,7 +2798,7 @@
         {
           "symbolId": "2",
           "matchLength": 5,
-          "multiplier": 4
+          "multiplier": 2
         },
         {
           "symbolId": "3",
@@ -3132,7 +2818,7 @@
         {
           "symbolId": "4",
           "matchLength": 5,
-          "multiplier": 7
+          "multiplier": 3
         },
         {
           "symbolId": "5",
@@ -3177,12 +2863,12 @@
         {
           "symbolId": "POWER",
           "matchLength": 3,
-          "multiplier": 2
+          "multiplier": 1
         },
         {
           "symbolId": "POWER",
           "matchLength": 5,
-          "multiplier": 4
+          "multiplier": 5
         }
       ]
     },
@@ -5588,7 +5274,6 @@
     },
     {
       "gameId": "robot-revolution-v1",
-      "engineVersion": "fifth-sun-engine-v2",
       "profile": {
         "gameId": "robot-revolution-v1",
         "scatterRequiredSymbols": 1,
@@ -5603,8 +5288,7 @@
         "baseReelSetId": "fifth-sun-reels-v2",
         "targetHitRate": 0.32,
         "paylinePatternIds": null,
-        "payoutMultiplier": 0.98,
-        "preserveEnergySymbolsWithoutMeter": false
+        "payoutMultiplier": 0.98
       },
       "layout": {
         "reelCount": 5,
@@ -5965,12 +5649,7 @@
           "matchLength": 5,
           "multiplier": 24
         }
-      ],
-      "eclipsePayoutMultiplier": 0.35,
-      "eclipseWheelScale": 1.1,
-      "totalityAwardMultiplier": 1,
-      "eclipseRounds": 5,
-      "alignmentsPerRound": 3
+      ]
     },
     {
       "gameId": "dragon-hoard-v1",

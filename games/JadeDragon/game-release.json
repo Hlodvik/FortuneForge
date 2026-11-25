@@ -3,7 +3,8 @@
   "frontend": {
     "directory": "client/jade-dragon",
     "entry": "index.html",
-    "kind": "frame"
+    "kind": "frame",
+    "apiEntry": "src/api.ts"
   },
   "backend": {
     "kind": "packaged-game"

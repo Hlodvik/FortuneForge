@@ -1,12 +1,10 @@
 import { getSlotSymbolDefinition } from '@fortuneforge/slot-client-core'
-import { createClassicPaylineGuide, formatCalibratedMultiplier, getSlotEngineGuideContract } from '@fortuneforge/slot-game-runtime/engine-guide'
+import { guide, lineGuide, formatCalibratedMultiplier } from './guide'
 import type { SlotWinHelpContentProps } from '@fortuneforge/slot-game-runtime/experience'
 import { TREASURE_COVE_TITLE } from './identity'
 import { PIRATES_FORTUNE_SYMBOLS } from './symbols'
 import './TreasureCoveIntroduction.css'
 
-const guide = getSlotEngineGuideContract('pirates-fortune-v1')
-const lineGuide = createClassicPaylineGuide(guide.gameId, ['2', '3', '4', '5', '6', '7', 'ACE', 'POWER'])
 const symbol = (id: string) => getSlotSymbolDefinition(PIRATES_FORTUNE_SYMBOLS, id)
 const pointValue = new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(guide.pointValueInCents / 100)
 const gemPowers = [

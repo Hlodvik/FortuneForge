@@ -1,26 +1,13 @@
-# Jade Dragon presentation
+# Jade Dragon paid client
 
-## Route and ownership
+The vanilla/Three.js frame owns its screen, controls, sound, animation and all game-specific API work. `src/main.js` calls the game controller in `src/bridge.js`, which reaches the package-owned contract validation, currency conversion, wager commands and saved-operation recovery in `src/api.ts`.
 
-`/slots/jade-dragon` hosts Jade Dragon with the Fortune Forge navbar and authenticated session. Game ID `empty-slots-v1`, the selected engine version, symbol IDs, persistence and settlement paths are authoritative. The independent vanilla/Three.js presentation is built from `games/JadeDragon/client/jade-dragon` into `fortuneforge.client/public/games/jade-dragon`; the generated bundle is ignored. The host client's `prebuild` builds it automatically.
+The parent frame supplies only authenticated HTTP and account access through `fortune-forge.game-transport.v1`. It never interprets a spin command, validates a cascade or decides recovery. Account tokens remain in the platform. New play requires the prepared-spin gateway; unavailable native admission is a migration/availability failure, with no host gameplay fallback.
 
-The embedded frame contains no account token, balance persistence, RNG-based outcomes or payout evaluator. It sends allowlisted requests through a same-origin parent bridge. The parent uses the existing `fetchWithAccountSession`, rejects overlapping spins and caches request IDs to prevent the same message from submitting another wager. Financial requests are sent once; ambiguous failures disable play and require reloading server state. Every frame instance uses a new request namespace.
+The server package owns paid admission, authoritative outcomes, persisted progression, historical replay and settlement orchestration. Wallet balances and ledger execution remain generic platform services. Runtime/storage ID `empty-slots-v1`, symbol IDs and historical engine entitlements are preserved.
 
-The host reads balance values in Rand and converts them to integer display cents. Bets and payouts use native points at 25 cents per point. New paid wagers are capped at 400 points/R100 in both the presentation adapter and server admission policy. Existing free-spin entitlements retain the server's locked historical wager. Public demo behavior remains nonfinancial and retains its native wager range.
+Wagers use 25-cent points. Current cascade awards use one-cent payout points; the game reads `payoutPointValueInCents` rather than confusing wager and payout units. New wagers remain capped at R100. Saved free games retain their admitted wager and engine. No public demo or practice mode is provided.
 
-## Presentation and backend behavior
+From the repository root, install with `npm ci`; Jade is an ordinary workspace using the shared root lockfile. Run `npm test --workspace @fortuneforge/jade-dragon-presentation` and `npm run build --workspace @fortuneforge/jade-dragon-presentation`. The host prebuild copies the independently built frame to its public assets.
 
-The art, scenery, synthesized sound, Auto control and image-based bonus reveals come from Tian's original Jade Dragon prototype. The cabinet renders the 5×4 cascade grid and the legacy 5×4 or 5×6 grids. Named cascade symbols use the Jade models, dragon and pearl art, and Tian's phoenix and mystic knot vectors.
-
-The presentation endpoint supplies the active rules and paytable. A cascade spin settles once and supplies its initial board, winning cells, cleared positions, replacement boards, drop distances, stage awards, and final total. The cabinet replays those stages and can reveal the settled final board immediately. Legacy spins use their original paylines and single-board playback.
-
-`GET /api/slots/jade-dragon/presentation` returns the engine's display rules and role/paytable metadata without exposing reel strips or account state. Paid spins continue through the existing admission and Firestore settlement transaction. No Firebase project, wallet, payment provider, or production account was created or changed.
-
-For emulator verification, the host's FirebaseApp credential factory now allows a non-production credential only when all three conditions hold: Development environment, `demo-*` project ID, and explicit validated loopback Firestore emulator host. Production retains ADC. Six regression cases cover this boundary.
-
-## Ownership boundary
-
-The frame owns rendering, audio, controls, and animation. It never owns account
-tokens, balances, randomness, payout evaluation, or persistence. Backend changes
-belong in `games/JadeDragon/src/FortuneForge.Games.JadeDragon`; host authentication,
-wallet admission, and Firebase settlement stay in the Fortune Forge platform layer.
+`tools/FortuneForge.SlotClient.LocalHarness` exercises the same production round service against a loopback Firestore emulator and isolated test wallet. Browser verification includes a real paid spin and a deliberately lost settled reply, then confirms exact-operation recovery without another charge. The harness changes infrastructure and test funds only.

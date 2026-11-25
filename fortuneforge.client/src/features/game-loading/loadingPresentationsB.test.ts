@@ -24,10 +24,10 @@ const appRouteComponents: Readonly<Record<string, string>> = {
 }
 
 describe('B game loading presentations', () => {
-  it('covers its fourteen assigned games and nineteen unique existing paths', () => {
+  it('covers its fourteen assigned games and eighteen unique existing paths', () => {
     expect(LOADING_PRESENTATIONS_B.map((entry) => entry.id)).toEqual(assignedIds)
     const routes = LOADING_PRESENTATIONS_B.flatMap((entry) => entry.routes)
-    expect(routes).toHaveLength(19)
+    expect(routes).toHaveLength(18)
     expect(new Set(routes).size).toBe(routes.length)
 
     const appRoutes = readFileSync(new URL('../../app/AppRoutes.tsx', import.meta.url), 'utf8')
@@ -61,8 +61,8 @@ describe('B game loading presentations', () => {
       const bytes = readFileSync(asset)
       expect(statSync(asset).size).toBe(metadata.bytes)
       expect(metadata.bytes).toBeLessThan(180 * 1024)
-      expect(webpSize(bytes)).toEqual({ width: 768, height: 384 })
-      expect([metadata.width, metadata.height]).toEqual([768, 384])
+      expect(webpSize(bytes)).toEqual({ width: metadata.width, height: metadata.height })
+      expect([metadata.width, metadata.height]).toEqual(entry.id === 'crooked-road' ? [960, 480] : [768, 384])
     })
 
     it(`${entry.id} supplies a dark background and contrasting accent`, () => {

@@ -227,6 +227,8 @@ public sealed class SlotsController(
             var account = accountResult.Value;
             var isArcane = request.GameId == ArcaneArchivesEngine.GameId;
             var preparedWorker = GetPreparedWorkerRoute(request.GameId);
+            if (FortuneForge.Server.Configuration.GameMaintenance.Contains(request.GameId) && preparedWorker is null)
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { code = "game-under-maintenance", error = "This game is under maintenance." });
             var preparedPath = PreparedSlotWorkerRegistry.IsPreparedPath(Request.Path);
             if (!IsExpectedAccount(account.UserId))
                 return WrongAccount();

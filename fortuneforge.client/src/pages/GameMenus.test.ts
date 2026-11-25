@@ -38,11 +38,12 @@ describe('game category menus', () => {
     }
   })
 
-  it('renders the slot menu with all nineteen playable demo games and a card-room link', () => {
+  it('renders available demo links and maintenance cards with a card-room link', () => {
     const markup = renderToStaticMarkup(createElement(DemoSlotsLibraryPage))
     const demoLinks = markup.match(/aria-label="Play demo:/g) ?? []
 
-    expect(demoLinks).toHaveLength(19)
+    expect(demoLinks).toHaveLength(4)
+    expect(markup.match(/data-maintenance="true"/g)).toHaveLength(10)
     expect(markup).not.toContain('/slots/jungle-jackpot')
     expect(markup).not.toContain('/slots/jade-dragon')
     expect(markup).toContain('aria-label="Game categories"')

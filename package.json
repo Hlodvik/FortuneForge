@@ -49,6 +49,7 @@
     "games/TexasHoldem/client/FortuneForge.Games.TexasHoldem.Client",
     "games/ThreeCardPoker/client/FortuneForge.Games.ThreeCardPoker.Client",
     "games/VideoPoker/client/FortuneForge.Games.VideoPoker.Client",
+    "games/JadeDragon/client/jade-dragon",
     "fortuneforge.client"
   ],
   "scripts": {

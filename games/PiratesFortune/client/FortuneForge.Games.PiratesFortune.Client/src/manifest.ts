@@ -1,5 +1,4 @@
 import './styles.css'
-import { withEngineGuide } from '@fortuneforge/slot-game-runtime/engine-guide'
 import { PIRATES_FORTUNE_SOUNDS } from './sounds'
 import { createSlotRulesSet, type SlotExperienceSet } from '@fortuneforge/slot-game-runtime/experience'
 import type { SlotFeatureSet, SlotHelpDefinition } from '@fortuneforge/slot-game-runtime'
@@ -54,8 +53,10 @@ const PIRATES_FORTUNE_FEATURES: SlotFeatureSet = {
 }
 
 const PIRATES_FORTUNE_HELP: SlotHelpDefinition = {
-  paylineCount: 21,
-  paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23],
+  fiveMatchPayoutNote: 'All 23 full payline patterns use the same symbol multipliers.',
+  fourMatchPayoutNote: 'Ordinary four-symbol runs at either edge pay the three-symbol rate. Four Pearl Wilds, or four-symbol runs using wild substitution, do not pay.',
+  paylineCount: 23,
+  paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
   freeGames: {
     requiredSymbols: 3,
     awardedSpins: 7,
@@ -77,7 +78,7 @@ const PIRATES_FORTUNE_HELP: SlotHelpDefinition = {
   ],
 }
 
-export const PIRATES_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide({
+export const PIRATES_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = {
   id: 'pirates-fortune-experience-v1',
   cabinet: PIRATES_FORTUNE_CABINET_THEME,
   features: PIRATES_FORTUNE_FEATURES,
@@ -106,17 +107,13 @@ export const PIRATES_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide
       theme: 'treasure-cove',
     },
   },
-}, {
-  preserveCollectionGuideEntries: true,
-  preserveCollectionHelpSections: true,
-  preserveCollectionProgressCopy: true,
-})
+}
 
 export const PIRATES_FORTUNE_SLOT_GAME = defineSlotGame({
   id: 'pirates-fortune',
   routes: {
     play: '/slots/pirates-fortune',
-    demo: '/slots/pirates-fortune/demo',
+    demo: null,
   },
   catalog: PIRATES_FORTUNE_CATALOG,
   experience: PIRATES_FORTUNE_EXPERIENCE_SET,

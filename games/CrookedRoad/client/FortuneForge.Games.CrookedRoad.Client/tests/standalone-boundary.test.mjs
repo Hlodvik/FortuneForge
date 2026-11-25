@@ -269,9 +269,9 @@ for (const [name, poison, expected] of [
   assert.throws(() => runtimeGraph(runtimeEntries(entries), overrides), expected)
 })
 
-test('ownership gate rejects a transitive host controller import', () => {
+test('ownership gate rejects a transitive host route import', () => {
   const entries = standaloneEntries()
-  const host = resolve(repositoryRoot, 'fortuneforge.client/src/features/slots/useSlotsPageController.ts')
+  const host = resolve(repositoryRoot, 'fortuneforge.client/src/app/routes/SlotGameRoute.tsx')
   const specifier = relative(dirname(entries.api), host).replaceAll('\\', '/')
   const overrides = new Map([[entries.api, sourceText(entries.api) + `\nimport ${JSON.stringify(specifier)}\n`]])
   assert.throws(() => runtimeGraph(runtimeEntries(entries), overrides), /host or another game's source|crosses its package/)

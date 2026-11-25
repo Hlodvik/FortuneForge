@@ -35,7 +35,9 @@ public sealed class AcceptedGameActivityRealContractTests
     [Fact]
     public void EveryRuntimeSlotIdMapsToExactlyOneCatalogueSlotUsingTheRealSpinContract()
     {
-        var runtimeIds = SlotSpecialRoundProfiles.All.Select(profile => profile.GameId).ToArray();
+        // These two native games no longer expose a legacy host special-round profile.
+        var runtimeIds = SlotSpecialRoundProfiles.All.Select(profile => profile.GameId)
+            .Concat(["high-noon-fortune-v1", "crooked-road-v1"]).ToArray();
         Assert.Equal(20, runtimeIds.Length);
         var canonicalIds = new HashSet<string>();
         var paths = ActionPaths<SlotsController>(nameof(SlotsController.Spin));

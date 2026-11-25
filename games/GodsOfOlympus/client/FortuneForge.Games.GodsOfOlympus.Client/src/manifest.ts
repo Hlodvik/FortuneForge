@@ -1,6 +1,5 @@
 // Edited: 2026-11-18T19:58:40-06:00 | Computer: Vinnabok
 import './styles.css'
-import { withEngineGuide } from '@fortuneforge/slot-game-runtime/engine-guide'
 import { GODS_OF_OLYMPUS_SOUNDS } from './sounds'
 import { createSlotRulesSet, type SlotExperienceSet } from '@fortuneforge/slot-game-runtime/experience'
 import type { SlotFeatureSet, SlotHelpDefinition } from '@fortuneforge/slot-game-runtime'
@@ -43,8 +42,10 @@ const FEATURES: SlotFeatureSet = {
 }
 
 const HELP: SlotHelpDefinition = {
-  paylineCount: 20,
-  paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 22, 23],
+  fiveMatchPayoutNote: 'Saved Trials use 23 full payline patterns that use the same symbol multipliers.',
+  fourMatchPayoutNote: 'In saved Trials, ordinary four-symbol runs at either edge pay the three-symbol rate. Four Trident Wilds, or four-symbol runs using wild substitution, do not pay.',
+  paylineCount: 23,
+  paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
   freeGames: {
     requiredSymbols: 4,
     awardedSpins: 6,
@@ -66,7 +67,7 @@ const HELP: SlotHelpDefinition = {
   ],
 }
 
-export const GODS_OF_OLYMPUS_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide({
+export const GODS_OF_OLYMPUS_EXPERIENCE_SET: SlotExperienceSet = {
   id: 'gods-of-olympus-experience-v1',
   cabinet: GODS_OF_OLYMPUS_CABINET_THEME,
   features: FEATURES,
@@ -97,13 +98,13 @@ export const GODS_OF_OLYMPUS_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide
     },
   }),
   presentation: { TumbleAwardBadge: GodsTumbleAwardBadge },
-})
+}
 
 export const GODS_OF_OLYMPUS_SLOT_GAME = defineSlotGame({
   id: 'gods-of-olympus',
   routes: {
     play: '/slots/gods-of-olympus',
-    demo: '/slots/gods-of-olympus/demo',
+    demo: null,
   },
   catalog: GODS_OF_OLYMPUS_CATALOG,
   experience: GODS_OF_OLYMPUS_EXPERIENCE_SET,

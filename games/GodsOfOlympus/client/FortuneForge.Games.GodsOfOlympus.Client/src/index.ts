@@ -6,3 +6,5 @@ export * from './symbols'
 export * from './tumble'
 export * from './GodsTumbleAwardBadge'
 
+export { OlympusGame } from './OlympusGame'
+export type { OlympusGameProps } from './OlympusGame'

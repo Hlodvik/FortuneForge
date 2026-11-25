@@ -56,7 +56,6 @@ const NEON_NIGHTS_SLOT_GAME = requireGame('neon-nights')
 const NORDIC_LEGENDS_SLOT_GAME = requireGame('nordic-legends')
 const SECOND_WAVE_SLOT_GAMES = SECOND_WAVE_SLOT_GAME_IDS.map(requireGame)
 const REEL_SYMBOL_CATALOG_GAME_IDS = [
-  'pharaohs-ascent',
   'gold-foundry',
   'rainbow-realm',
   'reel-riches',
@@ -144,8 +143,8 @@ describe('slot game manifests', () => {
     }
     expect(new Set(routes).size).toBe(routes.length)
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/wukong/demo')
-    expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/pirates-fortune/demo')
-    expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/gods-of-olympus/demo')
+    expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).not.toHaveProperty('/slots/pirates-fortune/demo')
+    expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).not.toHaveProperty('/slots/gods-of-olympus/demo')
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/reel-riches/demo')
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).toHaveProperty('/slots/frontier-fortune')
     expect(createSlotExperienceRouteMap(SLOT_GAME_MANIFESTS)).not.toHaveProperty('/slots/frontier-fortune/demo')
@@ -262,8 +261,11 @@ describe('slot game manifests', () => {
       expect(new Set(
         Object.values(game.experience.symbols.definitions)
           .flatMap((definition) => definition ? [definition.label] : []),
-      ).size).toBe(23)
-      for (const symbol of WUKONG_FEATURE_SYMBOL_IDS) {
+      ).size).toBe(15)
+      expect(game.catalog.image).toMatch(/title-v1\.webp$/)
+      expect(game.experience.symbols.definitions.PAW).toBeUndefined()
+      expect(game.experience.symbols.definitions.RAND_1).toBeUndefined()
+      for (const symbol of ['BOLT', 'BANANA', 'SEAL_SYNC', 'SEAL_ROWS', 'SEAL_PAW', 'SEAL_RAND']) {
         expect(game.experience.symbols.definitions[symbol]).toBeDefined()
       }
     }
@@ -632,7 +634,7 @@ describe('slot game manifests', () => {
     expect(featured.filter((game) => !game.experience.features.moneyGrab)).toHaveLength(7)
     expect(featured.filter((game) => !game.experience.features.collections)).toHaveLength(4)
     expect([...new Set(featured.map((game) => game.experience.features.specialRound?.earnStyle))].sort())
-      .toEqual(['altar', 'buckets', 'cards', 'gates', 'orbit', 'trail'])
+      .toEqual(['altar', 'buckets', 'cards', 'gates', 'trail'])
   })
 
   it('defines every symbol referenced by rules, help, and optional features', () => {

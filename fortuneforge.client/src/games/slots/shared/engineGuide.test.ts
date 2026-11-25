@@ -26,7 +26,9 @@ const hashSource = (bytes: Uint8Array) => createHash('sha256').update(
   new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/\r\n?/g, '\n'),
 ).digest('hex')
 const manifests = await loadAllSlotGameManifests()
-const audited = manifests.filter(game => !['rainbow-realm-fruits-v1', 'dragon-hoard-v1', 'neon-nights-v1', GOLD_FOUNDRY_GAME_ID].includes(game.experience.rules.gameId))
+// Native guides have package-owned checks. This suite prices the remaining classic guide descriptors.
+const audited = manifests.filter(game => !['arcane-archives-v1', 'rainbow-realm-fruits-v1', 'dragon-hoard-v1', 'neon-nights-v1',
+  'robot-revolution-v1', 'pharaohs-ascent-v1', 'high-noon-fortune-v1', 'crooked-road-v1', GOLD_FOUNDRY_GAME_ID].includes(game.experience.rules.gameId))
 
 it('retains the server sources that produced the independently exported guide contracts', () => {
   expect(fixture.sourceHashAlgorithm).toBe('sha256-utf8-lf-v1')
@@ -40,8 +42,8 @@ it('retains the server sources that produced the independently exported guide co
     const current = readFileSync(new URL(`../../../../../${path}`, import.meta.url))
     expect(hashSource(current), `Re-export actual engine evidence after changing ${path}`).toBe(expected)
   }
-  expect(fixture.games).toHaveLength(19)
-  expect(audited).toHaveLength(15)
+  expect(fixture.games).toHaveLength(17)
+  expect(audited).toHaveLength(10)
 })
 
 it('retains source identity across checkout line endings while detecting changed text', () => {

@@ -63,12 +63,25 @@ afterEach(() => {
 function card(container: ParentNode, gameId: string, surface: typeof surfaces[number]): Element {
   const href = `/slots/${gameId}${surface.demo ? '/demo' : ''}`
   const link = container.querySelector(`a[href="${href}"]`)
-  const result = link?.closest(surface.slotCard ? 'article.machine-card' : 'a.all-games-card')
+  const game = SLOT_GAME_CATALOG.find(candidate => candidate.id === gameId)!
+  const result = link?.closest(surface.slotCard ? 'article.machine-card' : 'a.all-games-card') ??
+    [...container.querySelectorAll(surface.slotCard ? 'article.machine-card' : '.all-games-card')]
+      .find(candidate => candidate.querySelector('strong')?.textContent === (surface.slotCard ? game.title : game.shortTitle))
   expect(result, href).toBeTruthy()
   return result!
 }
 
 describe.each(surfaces)('$name responsive title artwork', (surface) => {
+  it('keeps maintenance artwork visible with an overlay and no playable link', () => {
+    const container = document.createElement('div'); container.innerHTML = renderToStaticMarkup(surface.element())
+    for (const id of ['reel-riches', ...(surface.demo ? [] : ['gods-of-olympus'])]) {
+      const paused = card(container, id, surface)
+      expect(paused.textContent).toContain('Under Maintenance')
+      expect(paused.querySelector('.catalogue-maintenance-overlay')).not.toBeNull()
+      expect(paused.querySelector('a')).toBeNull()
+      expect(paused.tagName).toBe('ARTICLE')
+    }
+  })
   it('withholds Midnight Vault sources before measurement while preserving legacy imagery', () => {
     const markup = renderToStaticMarkup(surface.element())
     const container = document.createElement('div')

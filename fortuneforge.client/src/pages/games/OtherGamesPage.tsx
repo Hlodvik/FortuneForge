@@ -13,8 +13,11 @@ import { useCatalogueVisibility } from '../../features/catalog/catalogVisibility
 import { CatalogueStatus } from '../../features/catalog/CatalogueStatus'
 import { getCataloguePresentationArt } from '../../features/catalog/cataloguePresentationArt'
 import { ResponsiveSlotImage } from '../../features/slots/components/ResponsiveSlotImage'
+import { isGameUnderMaintenance } from '../../features/catalog/gameMaintenance'
+import { GameMaintenanceOverlay } from '../../features/catalog/GameMaintenanceOverlay'
 
 type CatalogGame = {
+  underMaintenance?: boolean
   category: string
   href?: string
   icon?: string
@@ -48,6 +51,7 @@ const slotGames: readonly CatalogGame[] = SLOT_GAME_CATALOG.map(catalogGameFromS
 
 function catalogGameFromSlot(game: SlotGameCatalogEntry): CatalogGame {
   return {
+    underMaintenance: isGameUnderMaintenance(game),
     name: game.shortTitle,
     category: 'Slot machine',
     href: game.playHref ?? undefined,
@@ -220,8 +224,10 @@ function GameTile({ game }: { game: CatalogGame }) {
         draggable="false"
       />
     ) : game.image ? <img className={`all-games-card__image all-games-card__image--${game.imagePresentation ?? 'cover'}${game.imageScale === 'compact' ? ' all-games-card__image--compact' : ''}`} src={game.image} alt="" draggable="false" /> : <span className={`all-games-card__icon${game.tone ? ` all-games-card__icon--${game.tone}` : ''}`} aria-hidden="true">{game.icon ?? '◇'}</span>}
-    <small>{game.category}</small><strong>{game.name}</strong><span>{game.summary}</span>
+    {game.underMaintenance && <GameMaintenanceOverlay />}
+    <small>{game.underMaintenance ? 'Under Maintenance' : game.category}</small><strong>{game.name}</strong><span>{game.summary}</span>
   </>
+  if (game.underMaintenance) return <article className="all-games-card all-games-card--maintenance" data-maintenance>{content}</article>
   return game.href
     ? <a className="all-games-card" href={game.href}>{content}</a>
     : <article className="all-games-card is-placeholder">{content}</article>

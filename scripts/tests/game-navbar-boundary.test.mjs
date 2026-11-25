@@ -185,3 +185,15 @@ test('checks standalone preview API calls while excluding dev-only document fram
   assert.ok(codes(result.findings).includes('navbar-presentation-prop'))
   assert.equal(result.findings.some(item => item.file.endsWith('preview.css')), false)
 })
+
+test('accepts only a declared frame workspace with an existing package-owned HTML entry', t => {
+  const root = fixture(t, {
+    'package.json': JSON.stringify({ workspaces: ['games/Example/client', 'packages/presentation', 'games/Framed/client/app', 'fortuneforge.client'] }),
+    'games/Framed/client/app/package.json': JSON.stringify({ name: '@fixture/frame' }),
+    'games/Framed/game-release.json': JSON.stringify({ id: 'framed', frontend: { kind: 'frame', directory: 'client/app', entry: 'index.html' } }),
+    'games/Framed/client/app/index.html': '<!doctype html><title>Independent frame</title>',
+  })
+  assert.deepEqual(inspectRepository(root).findings, [])
+  fs.unlinkSync(path.join(root, 'games/Framed/client/app/index.html'))
+  assert.ok(inspectRepository(root).findings.some(item => item.file === 'games/Framed/client/app' && item.code === 'missing-workspace-entry'))
+})

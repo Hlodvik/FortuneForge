@@ -76,7 +76,7 @@ export const LOADING_PRESENTATIONS_B: readonly GameLoadingEntry[] = [
   },
   {
     id: 'crooked-road', title: 'The Crooked Road',
-    routes: ['/slots/crooked-road', '/slots/crooked-road/demo'],
+    routes: ['/slots/crooked-road'],
     image: crookedRoad, background: '#061f19', accent: '#e6bd63',
   },
 ]

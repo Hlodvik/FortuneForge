@@ -25,7 +25,7 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
 
     [Fact]
     [Trait("Category", "MathAudit")]
-    public void FeaturedGames_ProduceFiniteRtpAndDistinctVolatilityMeasurements()
+    public void LegacyHostGames_ProduceFiniteRtpAndDistinctVolatilityMeasurements()
     {
         var provider = new OptionsSlotsDefinitionProvider(Options.Create(ReadOptions()));
         var measurements = FeaturedGameIds
@@ -205,7 +205,6 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
     private static readonly string[] FeaturedGameIds =
     [
         SlotSpecialRoundProfiles.PharaohsAscentGameId,
-        SlotSpecialRoundProfiles.HighNoonFortuneGameId,
         SlotSpecialRoundProfiles.GodsOfOlympusGameId,
         SlotSpecialRoundProfiles.PiratesFortuneGameId,
         SlotSpecialRoundProfiles.RoyalDrawGameId,

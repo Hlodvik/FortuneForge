@@ -1,3 +1,4 @@
+import { lineGuide, formatCalibratedMultiplier } from './guide'
 import type { SlotSymbolSet } from '@fortuneforge/slot-client-core'
 import { CLASSIC_SLOT_SYMBOL_SET_ID } from '@fortuneforge/slot-game-runtime/symbols'
 import { pirateSymbolImages } from './responsiveSymbols'
@@ -24,7 +25,7 @@ const doubloonValueSymbol = (
   wagerMultiplier,
 })
 
-export const PIRATES_FORTUNE_SYMBOLS: SlotSymbolSet = {
+const baseSymbols: SlotSymbolSet = {
   id: 'pirates-fortune-treasures-v1',
   serverSymbolSetId: CLASSIC_SLOT_SYMBOL_SET_ID,
   definitions: {
@@ -76,4 +77,11 @@ export const PIRATES_FORTUNE_SYMBOLS: SlotSymbolSet = {
     { symbol: 'SEAL_PAW', firstLabel: 'Any', firstValue: 'builds chance', secondLabel: 'Feature', secondValue: '10 free games' },
     { symbol: 'SEAL_RAND', firstLabel: 'Any', firstValue: 'builds chance', secondLabel: 'Feature', secondValue: '10 free games' },
   ],
+}
+
+export const PIRATES_FORTUNE_SYMBOLS: SlotSymbolSet = {
+  ...baseSymbols,
+  guideNote: 'Pearl Wilds pay naturally on three or five symbols and substitute only on five-symbol paylines. Four-symbol wins award no special points. Displayed line awards include the game multiplier and are rounded to whole wager points.',
+  guideEntries: baseSymbols.guideEntries.map(entry => lineGuide.find(line => line.symbol === entry.symbol) ??
+    (entry.symbol === 'BANANA' ? { ...entry, secondValue: formatCalibratedMultiplier(3) } : entry)),
 }

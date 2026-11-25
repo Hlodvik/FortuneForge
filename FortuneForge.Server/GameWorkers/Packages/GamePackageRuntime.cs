@@ -125,6 +125,7 @@ internal sealed class GamePackageRuntime : IHostedLifecycleService, IGamePackage
             : new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         foreach (var key in result.Keys.ToArray())
             result[key] = configuration[$"GamePackages:Games:{gameId}:{key}"] ?? configuration[key] ?? result[key];
+        FortuneForge.Server.Configuration.GameMaintenance.ApplyAdmissionSettings(gameId, result);
         result["GoogleCloud:ProjectId"] = configuration["GoogleCloud:ProjectId"];
         result["GoogleCloud:FirestoreDatabaseId"] = configuration["GoogleCloud:FirestoreDatabaseId"] ?? "(default)";
         result["GameWorker:Mode"] = "hosted";

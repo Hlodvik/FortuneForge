@@ -1,4 +1,3 @@
-import { fetchWithAccountSession, getCurrentAccount } from '../../features/account/services/accountsApi'
 import { createPreparedSlotSpinStore, isPreparedSlotSpin, preparedSlotSpinHeaders, preparedSlotSpinPath, type PreparedSlotSpin } from '@fortuneforge/slot-client-core/preparedSpin'
 
 const GAME_ID = 'empty-slots-v1'
@@ -172,7 +171,15 @@ function validState(state: unknown): state is Record<string, unknown> {
     (state.pendingOperation == null || isPreparedSlotSpin(state.pendingOperation))
 }
 
-export function createJadeGameApi(accountId: string) {
+export type JadeAccount = { userId: string; balances: { slotsCredits: number } }
+export type JadeApiPorts = {
+  authenticatedFetch: (path: string, init?: RequestInit) => Promise<Response>
+  loadAccount: () => Promise<JadeAccount>
+}
+
+/** Owns Jade's wire contract, currency translation and persisted operation recovery. */
+export function createJadeGameApi(accountId: string, ports: JadeApiPorts) {
+  const { authenticatedFetch: fetchWithAccountSession, loadAccount: getCurrentAccount } = ports
   let preparedEnabled = false
   async function loadState() {
     const response = await fetchWithAccountSession(`/api/slots/state?gameId=${GAME_ID}`, { method: 'GET', headers: preparedSlotSpinHeaders(accountId) })
@@ -184,12 +191,12 @@ export function createJadeGameApi(accountId: string) {
     return state
   }
 
-  async function submit(request: ReturnType<typeof validateJadeSpinRequest>, operation?: PreparedSlotSpin) {
-    if (operation && !preparedEnabled) throw new Error('The saved spin is waiting for the Jade Dragon server.')
+  async function submit(request: ReturnType<typeof validateJadeSpinRequest>, operation: PreparedSlotSpin) {
+    if (!preparedEnabled) throw new Error('The saved spin is waiting for the Jade Dragon server.')
     try {
-      const result = validateJadeOutcome(await json(await fetchWithAccountSession(operation ? preparedSlotSpinPath : '/api/slots/spins', {
+      const result = validateJadeOutcome(await json(await fetchWithAccountSession(preparedSlotSpinPath, {
         method: 'POST', body: JSON.stringify(request),
-        headers: preparedSlotSpinHeaders(accountId, operation?.operationId),
+        headers: { ...preparedSlotSpinHeaders(accountId, operation.operationId), 'Content-Type': 'application/json' },
       })))
       if (result.wagerPoints !== request.wagerPoints || result.isFreeSpin !== request.useFreeSpin)
         throw new Error('The settled response does not match the requested round. Reload to recover.')
@@ -215,13 +222,14 @@ export function createJadeGameApi(accountId: string) {
   return {
     async loadSession() {
       const [initialAccount, initialState, rules] = await Promise.all([
-        getCurrentAccount(), loadState(), fetch('/api/slots/jade-dragon/presentation', { cache: 'no-store' }).then(json),
+        getCurrentAccount(), loadState(), fetchWithAccountSession('/api/slots/jade-dragon/presentation', { cache: 'no-store' }).then(json),
       ])
       let account = initialAccount
       let state = initialState
       if (account.userId !== accountId || !isRecord(rules) || rules.gameId !== GAME_ID || !Array.isArray(rules.symbols))
         throw new Error('Game state could not be loaded. Reload to retry.')
       const operation = preparedSpins.read(accountId)
+      if (!operation && !preparedEnabled) throw new Error('Paid Jade Dragon play is waiting for its game server. Reconnect to continue.')
       if (operation) {
         try {
           await submitSaved(operation)
@@ -237,7 +245,7 @@ export function createJadeGameApi(accountId: string) {
     async spin(payload: unknown) {
       const request = validateJadeSpinRequest(payload)
       if (preparedSpins.read(accountId)) throw new Error('Reload Jade Dragon to recover the current spin first.')
-      if (!preparedEnabled) return submit(request)
+      if (!preparedEnabled) throw new Error('Paid Jade Dragon play is waiting for its game server. Reconnect to continue.')
       const operation = { operationId: crypto.randomUUID(), wagerPoints: request.wagerPoints,
         useFreeSpin: request.useFreeSpin, useSpecialBoost: request.useSpecialBoost }
       preparedSpins.remember(accountId, operation)

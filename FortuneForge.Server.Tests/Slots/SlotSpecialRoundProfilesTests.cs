@@ -15,11 +15,10 @@ public sealed class SlotSpecialRoundProfilesTests
 {
     [Theory]
     [InlineData(SlotSpecialRoundProfiles.PharaohsAscentGameId, 3, 6, 24, 7)]
-    [InlineData(SlotSpecialRoundProfiles.HighNoonFortuneGameId, 3, 5, 20, 8)]
     [InlineData(SlotSpecialRoundProfiles.GodsOfOlympusGameId, 4, 6, 28, 6)]
     [InlineData(SlotSpecialRoundProfiles.PiratesFortuneGameId, 3, 7, 25, 10)]
     [InlineData(SlotSpecialRoundProfiles.RoyalDrawGameId, 3, 6, 24, 7)]
-    [InlineData(SlotSpecialRoundProfiles.RobotRevolutionGameId, 3, 7, 24, 8)]
+    [InlineData(SlotSpecialRoundProfiles.RobotRevolutionGameId, 1, 0, 24, 8)]
     [InlineData(SlotSpecialRoundProfiles.PhantomManorGameId, 3, 5, 18, 9)]
     [InlineData(SlotSpecialRoundProfiles.OceanOdysseyGameId, 4, 6, 28, 6)]
     [InlineData(SlotSpecialRoundProfiles.DragonHoardGameId, 3, 10, 30, 10)]
@@ -53,7 +52,6 @@ public sealed class SlotSpecialRoundProfilesTests
         var profiles = new[]
         {
             SlotSpecialRoundProfiles.PharaohsAscentGameId,
-            SlotSpecialRoundProfiles.HighNoonFortuneGameId,
             SlotSpecialRoundProfiles.GodsOfOlympusGameId,
             SlotSpecialRoundProfiles.PiratesFortuneGameId,
             SlotSpecialRoundProfiles.RoyalDrawGameId,
@@ -80,8 +78,8 @@ public sealed class SlotSpecialRoundProfilesTests
 
         Assert.Equal(6, profiles.Count(profile => profile.UsesEnergy));
         Assert.False(profiles.Single(profile => profile.GameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId).UsesEnergy);
-        Assert.Equal(13, profiles.Count(profile => !profile.UsesDirectValueTokens));
-        Assert.Equal(8, profiles.Count(profile => !profile.UsesCollections));
+        Assert.Equal(12, profiles.Count(profile => !profile.UsesDirectValueTokens));
+        Assert.Equal(7, profiles.Count(profile => !profile.UsesCollections));
         Assert.All(profiles.Where(profile => !profile.UsesCollections && profile.ScatterAwardedSpins > 0), profile =>
             Assert.True(SlotSpecialRoundProfiles.IsFeatureMode(profile.ScatterFeatureMode)));
         Assert.All(profiles, profile =>
@@ -97,12 +95,19 @@ public sealed class SlotSpecialRoundProfilesTests
     }
 
     [Fact]
-    public void CatalogProfiles_ExposeEverySlotExactlyOnce()
+    public void LegacyProfilesAndNativeOnlyGames_CoverEverySlotExactlyOnce()
     {
-        Assert.Equal(20, SlotSpecialRoundProfiles.All.Count);
+        Assert.Equal(18, SlotSpecialRoundProfiles.All.Count);
         Assert.Equal(
             SlotSpecialRoundProfiles.All.Count,
             SlotSpecialRoundProfiles.All.Select(profile => profile.GameId).Distinct(StringComparer.Ordinal).Count());
+        foreach (var nativeId in new[] { "high-noon-fortune-v1", "crooked-road-v1" })
+        {
+            Assert.False(SlotSpecialRoundProfiles.TryGet(nativeId, out _));
+            Assert.NotNull(FortuneForge.Server.GameWorkers.PreparedSlotWorkerRegistry.Find(nativeId));
+        }
+        Assert.Equal(20, SlotSpecialRoundProfiles.All.Select(profile => profile.GameId)
+            .Concat(["high-noon-fortune-v1", "crooked-road-v1"]).Distinct(StringComparer.Ordinal).Count());
     }
 
     [Theory]

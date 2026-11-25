@@ -1,15 +1,9 @@
-# Treasure Cove client package
+# Treasure Cove / Pirates’ Fortune client
 
-Treasure Cove's metadata, assets and presentation configuration are packaged here.
-The browser game is not yet standalone: its release entry publishes a manifest
-that the host renders through `SlotsPage`, `useSlotsPageController` and
-`SlotsPageView`. The host's `services/slotsApi.ts` also owns paid request transport
-and result validation. An independent package build does not prove game ownership.
+`src/browser.ts` exports the real package-owned `PiratesGame` screen/controller. The host injects only account access, authenticated transport, wallet presentation and navigation chrome. The package owns five-reel play, gem collections, direct doubloon hauls, powder-keg awards and funded Island Search rounds, its controls, audio, help, win display, API contract validation and saved-request recovery.
 
-This package owns its manifest, catalogue metadata, symbols, cabinet
-configuration, styles, audio contract, help content and in-game media. Completing
-frontend ownership requires a package-owned game entry, controller, API contract
-and presentation lifecycle. Authentication, wallet settlement, Firebase hosting
-and the shared Fortune Forge navbar remain host responsibilities. Neutral,
-versioned component libraries can remain dependencies of a standalone game.
+`src/api.ts` builds intent-only requests and requires the production prepared-spin gateway. Lost or invalid replies retain the original operation and funded wager. Account changes cannot present an old response as the new account's result. Free wagers remain server locked, including odd historical averages. No public demo or practice engine is included.
 
+The corresponding server package owns admission, randomness, rules, progression, persistence, retries and settlement orchestration through neutral platform wallet/storage ports. This client migration does not change engine odds, payouts or storage identifiers.
+
+Run `npm run build --workspace @fortuneforge/games-pirates-fortune`, `npm test --workspace @fortuneforge/games-pirates-fortune` and `npm run verify:standalone --workspace @fortuneforge/games-pirates-fortune` from the repository root. Import-graph checks establish browser packaging boundaries, not financial correctness. Native emulator tests and `tools/FortuneForge.SlotClient.LocalHarness` verify the production paid round and exactly-once recovery separately.

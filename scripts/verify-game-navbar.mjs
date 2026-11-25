@@ -379,6 +379,19 @@ export function inspectRepository(root = repositoryRoot, { releaseId } = {}) {
     if (hostEntry) queue.push(hostEntry)
     else findings.push({ file: 'fortuneforge.client/src/main.tsx', line: 1, code: 'missing-host-entry', message: 'The frontend runtime entry is required.' })
     for (const workspace of packages.values()) if (workspace.workspace.startsWith('games/') || workspace.workspace.startsWith('packages/')) {
+      // A declared HTML frame has its own document, already handled by the
+      // frame-release policy below. It is not a source-module workspace.
+      const declaration = path.resolve(workspace.folder, '../../game-release.json')
+      if (fs.existsSync(declaration)) {
+        const { frontend } = JSON.parse(read(declaration))
+        if (frontend?.kind === 'frame') {
+          const frameRoot = path.resolve(path.dirname(declaration), frontend.directory)
+          const frameEntry = path.resolve(frameRoot, frontend.entry)
+          if (fs.realpathSync(frameRoot) === fs.realpathSync(workspace.folder) &&
+            normalize(frameEntry).startsWith(normalize(frameRoot) + '/') && frameEntry.endsWith('.html') &&
+            fs.existsSync(frameEntry) && fs.statSync(frameEntry).isFile()) continue
+        }
+      }
       const entry = resolveLocal(path.join(workspace.folder, 'src/index'))
       if (entry) queue.push(entry)
       else findings.push({ file: workspace.workspace, line: 1, code: 'missing-workspace-entry', message: 'Cannot establish a source runtime entry for this workspace.' })

@@ -9,6 +9,9 @@ import { useCatalogueVisibility } from '../../features/catalog/catalogVisibility
 import { CatalogueStatus } from '../../features/catalog/CatalogueStatus'
 import { getCataloguePresentationArt } from '../../features/catalog/cataloguePresentationArt'
 import { ResponsiveSlotImage } from '../../features/slots/components/ResponsiveSlotImage'
+import { isGameUnderMaintenance } from '../../features/catalog/gameMaintenance'
+import { GameMaintenanceOverlay } from '../../features/catalog/GameMaintenanceOverlay'
+import './slotMaintenance.css'
 
 export function SlotsLibraryPage({ account }: { account: AccountSummary }) {
   return (
@@ -61,6 +64,7 @@ export function DemoSlotsLibraryPage() {
 
 function MachineCard({ game, demoMode = false }: { game: SlotGameCatalogEntry; demoMode?: boolean }) {
   const visibility = useCatalogueVisibility()
+  const maintenance = isGameUnderMaintenance(game)
   if (!visibility.isVisible(game.playHref ?? game.demoHref)) return null
   const selectedArtwork = getCataloguePresentationArt(game.playHref ?? game.demoHref)
   const responsiveArtwork = selectedArtwork?.imageSrcSet ? selectedArtwork : undefined
@@ -73,13 +77,14 @@ function MachineCard({ game, demoMode = false }: { game: SlotGameCatalogEntry; d
     `machine-card--${responsiveArtwork ? 'cover' : game.imagePresentation}`,
     game.imageScale === 'compact' ? 'machine-card--image-compact' : '',
     game.playHref === null ? 'machine-card--coming' : 'machine-card--available',
+    maintenance ? 'machine-card--maintenance' : '',
   ].join(' ')
-  const href = demoMode ? game.demoHref : game.playHref
-  const actionLabel = demoMode ? 'Play demo' : game.playHref === null ? 'Unavailable' : 'Play game'
-  const statusLabel = demoMode ? 'No-account demo' : game.playHref === null ? 'Coming soon' : null
+  const href = maintenance ? null : demoMode ? game.demoHref : game.playHref
+  const actionLabel = maintenance ? 'Unavailable' : demoMode ? 'Play demo' : game.playHref === null ? 'Unavailable' : 'Play game'
+  const statusLabel = maintenance ? 'Under Maintenance' : demoMode ? 'No-account demo' : game.playHref === null ? 'Coming soon' : null
 
   return (
-    <article className={cardClassName}>
+    <article className={cardClassName} data-maintenance={maintenance || undefined}>
       <span className="machine-card__art" style={artStyle} aria-hidden="true">
         {responsiveArtwork ? (
           <ResponsiveSlotImage
@@ -94,6 +99,7 @@ function MachineCard({ game, demoMode = false }: { game: SlotGameCatalogEntry; d
           />
          ) : game.image ? <img src={game.image} alt="" draggable="false" /> : null}
       </span>
+      {maintenance && <GameMaintenanceOverlay />}
       {statusLabel && <span className="machine-card__status">{statusLabel}</span>}
       <strong>{game.title}</strong>
       <p>{game.description}</p>

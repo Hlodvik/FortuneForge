@@ -15,6 +15,7 @@ type SidecarSpinControlsProps = {
   allowStop?: boolean
   autoSpinReplacement?: ReactNode
   wagerReadout?: ReactNode
+  menuClassName?: string
   wagerLocked?: boolean
   onAutoSpinChange: (active: boolean) => void
   onSelectWager: (index: number) => void
@@ -39,6 +40,7 @@ export function SidecarSpinControls({
   allowStop = true,
   autoSpinReplacement,
   wagerReadout,
+  menuClassName,
   wagerLocked = false,
   onAutoSpinChange,
   onSelectWager,
@@ -195,7 +197,7 @@ export function SidecarSpinControls({
             </button>
             {isBetOpen && !betLocked && createPortal(
               <div
-                className="sidecar-spin-controls__bet-menu"
+                className={menuClassName ? `sidecar-spin-controls__bet-menu ${menuClassName}` : 'sidecar-spin-controls__bet-menu'}
                 id={betMenuId}
                 ref={betMenuRef}
                 role="dialog"

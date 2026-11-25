@@ -41,7 +41,7 @@ describe('Sic Bo table',()=>{
     click('Rules');expect(playSicBoSound).toHaveBeenLastCalledWith('click')
     click('Close table details');add('Small');expect(playSicBoSound).toHaveBeenLastCalledWith('bet')
     click('Roll dice');expect(playSicBoSound).toHaveBeenLastCalledWith('roll')
-    await screen.findByRole('button',{name:'New round'});expect(playSicBoSound).toHaveBeenLastCalledWith('win')
+    await screen.findByRole('button',{name:'New round'});await waitFor(()=>expect(playSicBoSound).toHaveBeenLastCalledWith('win'))
   })
   it('does not celebrate a net-losing round',async()=>{render(<SicBoGame gateway={fakeGateway()}/>);await ready();add('Big');click('Roll dice');await screen.findByRole('button',{name:'New round'});expect(playSicBoSound).not.toHaveBeenCalledWith('win')})
   it('flashes the net win in the center of the board',async()=>{render(<SicBoGame gateway={fakeGateway()}/>);await ready();add('Small');click('Roll dice');await screen.findByRole('button',{name:'New round'});expect(screen.getByLabelText('Won '+money(1)).textContent).toBe('+'+money(1))})

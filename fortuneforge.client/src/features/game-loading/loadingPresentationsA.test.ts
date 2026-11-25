@@ -23,7 +23,7 @@ describe('A game loading presentations', () => {
     expect(LOADING_PRESENTATIONS_A.map(({ id }) => id)).toEqual(expectedIds)
     expect(new Set(LOADING_PRESENTATIONS_A.map(({ id }) => id)).size).toBe(14)
     const routes = LOADING_PRESENTATIONS_A.flatMap(({ routes }) => routes)
-    expect(routes).toHaveLength(23)
+    expect(routes).toHaveLength(20)
     expect(new Set(routes).size).toBe(routes.length)
 
     const appSource = readFileSync(new URL('../../app/AppRoutes.tsx', import.meta.url), 'utf8')

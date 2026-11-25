@@ -6,6 +6,8 @@ import type { AccountSummary } from '../../features/account/services/accountsApi
 import { GameLoadingRouteProvider } from '../../features/game-loading/GameLoadingRouteContext'
 import { resolveGameLoadingEntry } from '../../features/game-loading/gameLoadingRegistry'
 import { findSlotRoute } from '../../games/slots/routeRegistry'
+import { SLOT_ROUTE_DEFINITIONS } from '../../games/slots/routeRegistry'
+import { isGameUnderMaintenance } from '../../features/catalog/gameMaintenance'
 
 const state = vi.hoisted(() => ({ account: null as AccountSummary | null, loading: true,
   error: null as string | null, auth: vi.fn(), reload: vi.fn(), pages: [] as unknown[] }))
@@ -65,10 +67,14 @@ it('preserves other package-owned routes', async () => {
   expect(load).not.toHaveBeenCalled()
 })
 
-it('exposes a missing native client without loading its manifest or generic renderer', async () => {
-  const load = await renderRoute('/slots/rainbow-realm')
-  expect(host.querySelector('[role="alert"]')?.textContent).toContain('This game is currently unavailable.')
-  expect(load).not.toHaveBeenCalled()
+it('blocks a maintenance title before loading a manifest, authentication or a game runtime', async () => {
+  const paused = SLOT_ROUTE_DEFINITIONS.filter(isGameUnderMaintenance)
+  expect(paused).toHaveLength(11)
+  for (const definition of paused) {
+    const load = await renderRoute(definition.playPath!)
+    expect(host.querySelector('[role="status"]')?.textContent).toContain('Under Maintenance')
+    expect(load).not.toHaveBeenCalled()
+  }
   expect(state.auth).not.toHaveBeenCalled()
   expect(state.pages).toHaveLength(0)
 })

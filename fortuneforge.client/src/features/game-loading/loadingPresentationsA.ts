@@ -91,7 +91,7 @@ export const LOADING_PRESENTATIONS_A: readonly GameLoadingEntry[] = [
   {
     id: "pirates-fortune",
     title: "Treasure Cove",
-    routes: ["/slots/pirates-fortune","/slots/pirates-fortune/demo"],
+    routes: ["/slots/pirates-fortune"],
     image: piratesFortuneArt,
     background: '#241005',
     accent: '#e1a84a',
@@ -99,7 +99,7 @@ export const LOADING_PRESENTATIONS_A: readonly GameLoadingEntry[] = [
   {
     id: "gods-of-olympus",
     title: "Gods of Olympus",
-    routes: ["/slots/gods-of-olympus","/slots/gods-of-olympus/demo"],
+    routes: ["/slots/gods-of-olympus"],
     image: godsOfOlympusArt,
     background: '#160c36',
     accent: '#56b8ff',

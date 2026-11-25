@@ -88,13 +88,13 @@
 [data-slot-dialog-theme='crooked-road'] .reload-prompt__actions a { color: #e5cd91; }
 .crooked-road-game__settings-note { color: #c8d7b7; font: .8rem/1.5 system-ui, sans-serif; }
 
-body:has(.crooked-road-game) .sidecar-spin-controls__bet-menu {
+.crooked-road-game__bet-menu {
   border-color: #c7b171;
   background: linear-gradient(145deg, #1b4833, #08261b);
   color: #f3e9c9;
   box-shadow: inset 0 0 0 2px #dfc7801a, 0 .6rem 2rem #00170ec9;
 }
-body:has(.crooked-road-game) .sidecar-spin-controls__bet-menu input { accent-color: #d4bd7c; }
+.crooked-road-game__bet-menu input { accent-color: #d4bd7c; }
 
 @media (min-width: 1100px) {
   .crooked-road-game[data-slot-theme][data-slot-controls] .slots-page__layout {

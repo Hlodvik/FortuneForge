@@ -1,7 +1,7 @@
 {
   "source": "Actual in-process OptionsSlotsDefinitionProvider, not client manifests",
-  "exportedUtc": "2026-11-25T00:23:14.3655418Z",
-  "assemblySha256": "d02e5ca128bd986e385045e45726eb8b93663381a056d5f3df5c4c2cfa8f66c7",
+  "exportedUtc": "2026-11-25T08:49:01.5034029Z",
+  "assemblySha256": "a295f8cc30e28dc775c7d902a8937f7ba29ce1e0ba46cdb57928b3182185128c",
   "sourceHashAlgorithm": "sha256-utf8-lf-v1",
   "sourceSha256": {
     "FortuneForge.Server/Slots/Bonuses/ArcaneLightningCollection.cs": "fcb8bcbc869c64120fa6c72258e5193b37bb21841c5b882ceaed4ab19a99741b",
@@ -61,7 +61,7 @@
     "FortuneForge.Server/Slots/Spins/SpinService.Support.cs": "139fb73b47b2cf43988e810c945f10e48acb788e9ecab811be86f7d2cc2ba707",
     "FortuneForge.Server/Slots/Spins/SpinService.WukongPawPrototype.cs": "e06d55d5dc152ef0296b25d8d98921c3df29f411d96f6217367a1bc935faf5da",
     "fortuneforge.client/scripts/export-slot-guide-contracts.mjs": "214eb2d59005d909c0e7f9c2e98fe0722d8fde333bbae95f2c9193631dbbed12",
-    "fortuneforge.client/src/games/slots/routeMetadata.ts": "7ca48042ba8642a6af3759f39b85bbf91e9c53b300a92975411babe2bd91f558",
+    "fortuneforge.client/src/games/slots/routeMetadata.ts": "b27e86d4b6675d9b180bcacbb6e5e1883fe345b48a844a99e90d680c3df30ed7",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneArchivesEngine.cs": "0bc5db391fecbaead9d3fa8942c95d27894b4f346658f408af06d44f186e4169",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneLightningCollector.cs": "6e5eecaf1fb30a6c3de219c6302754c0cde56772c7b96e60cfc28a9e2c00a811",
     "games/ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/ArcaneNativeReplay.cs": "b4494a88eee3cb2eb95745501048b41d1029c81ec62324348dd28dd5a44187dc",
@@ -202,7 +202,7 @@
     "games/Wukong/src/FortuneForge.Games.Wukong/FortuneForge.Games.Wukong.csproj": "4d3bebcedb4b54fbf190202c57f7415734726c6aa68448ea16747bf7b7844d93",
     "games/Wukong/src/FortuneForge.Games.Wukong/WukongEngine.cs": "a68abe21b3326ac931ff9b8ed5251ccca286af72be3a60a540085203769e87a6",
     "games/Wukong/src/FortuneForge.Games.Wukong/WukongPawPrototype.cs": "39189abd7a39d2717c786c5019316c25666415108ed766f23536a06d5fe77fab",
-    "games/catalog/slot-packages.json": "33ad00c5636e72f6bb91125b332ad9cbef65f2dbbac97cac3da976b2719b1a6b",
+    "games/catalog/slot-packages.json": "5f4ad337c340c84482da8429de8a73418b753d82566d410f16b478ae897be475",
     "games/shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj": "732a4d6e6eb15f9d18867571503cf8c6f9882d46fd36e509dc139e30b85b949e",
     "games/shared/FortuneForge.Games.Slots.Contracts/PaidSlotOutcome.cs": "dda7cc1320cb411b24e783d2f88c260e8215ce59db8757c0601fc936e1a4b04b",
     "games/shared/FortuneForge.Games.Slots.Contracts/SlotContracts.cs": "35354fcf5ebefedc92593e02432384f5c87d00bd1a1958b36cc8f6165269d463",

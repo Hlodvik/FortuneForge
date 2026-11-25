@@ -41,7 +41,8 @@ afterEach(() => { act(() => root.unmount()); host.remove(); vi.clearAllTimers();
 
 describe('player-game knowledge during universal shared loading', () => {
   it('covers the paid inventory and declared demo aliases, including hidden games, with one batch', async () => {
-    expect(paid).toHaveLength(44); expect(demo).toHaveLength(16)
+    expect(paid).toHaveLength(44); expect(demo).toHaveLength(15)
+    expect(demo).not.toContain('/slots/sunstone-eclipse/demo')
     expect(new Set(paid.map(gameExperienceIdentity)).size).toBe(44)
     await act(async () => root.render(<>{[...paid, ...demo].map(path => <GameLoadingRouteProvider key={path}
       entry={resolveGameLoadingEntry(path)} pathname={path}><Probe label={path} /></GameLoadingRouteProvider>)}</>))

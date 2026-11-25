@@ -23,6 +23,10 @@ vi.mock('./CrookedRoadHost', () => ({ CrookedRoadHost: (props: unknown) => {
   state.pages.push(props)
   return <main data-owned-slot="crooked-road">Owned Crooked Road</main>
 } }))
+vi.mock('./SunstoneEclipseHost', () => ({ SunstoneEclipseHost: (props: unknown) => {
+  state.pages.push(props)
+  return <main data-owned-slot="robot-revolution">Owned Sunstone Eclipse</main>
+} }))
 import { SlotGameRoute } from './SlotGameRoute'
 
 const account: AccountSummary = {
@@ -66,10 +70,18 @@ it('preserves other package-owned routes', async () => {
   expect(host.querySelector('[data-owned-slot="crooked-road"]')).not.toBeNull()
   expect(load).not.toHaveBeenCalled()
 })
+it('mounts Sunstone through its package host after authentication, without the retired manifest runtime', async () => {
+  state.account = account; state.loading = false
+  const load = await renderRoute('/slots/sunstone-eclipse')
+  expect(host.querySelector('[data-owned-slot="robot-revolution"]')).not.toBeNull()
+  expect(load).not.toHaveBeenCalled()
+  expect(state.pages.at(-1)).toMatchObject({ account })
+})
 
 it('blocks a maintenance title before loading a manifest, authentication or a game runtime', async () => {
   const paused = SLOT_ROUTE_DEFINITIONS.filter(isGameUnderMaintenance)
-  expect(paused).toHaveLength(11)
+  expect(paused).toHaveLength(10)
+  expect(paused.some(game => game.id === 'robot-revolution')).toBe(false)
   for (const definition of paused) {
     const load = await renderRoute(definition.playPath!)
     expect(host.querySelector('[role="status"]')?.textContent).toContain('Under Maintenance')

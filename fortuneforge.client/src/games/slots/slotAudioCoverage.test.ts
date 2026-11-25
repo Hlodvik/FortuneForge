@@ -12,7 +12,7 @@ describe('active slot audio metadata', () => {
     // Maintenance entries are explicitly unavailable and are not certified as functional games.
     const active = (await loadAllSlotGameManifests()).filter(game => !['neon-nights', 'high-noon-fortune'].includes(game.id) &&
       !isGameUnderMaintenance(SLOT_GAME_CATALOG.find(entry => entry.id === game.id)!))
-    expect(active.map(game => game.id).sort()).toEqual(['arcane-archives','crooked-road','dragon-hoard','gold-foundry','pharaohs-ascent','pirates-fortune'])
+    expect(active.map(game => game.id).sort()).toEqual(['arcane-archives','crooked-road','dragon-hoard','gold-foundry','pharaohs-ascent','pirates-fortune','robot-revolution'])
     for (const game of active) {
       const { cues, events } = game.experience.sounds
       expect(events, game.id).toBeDefined()

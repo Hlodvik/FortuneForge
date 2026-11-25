@@ -7,9 +7,11 @@ if (!check) mkdirSync(destination, { recursive: true })
 for (const name of ['guide-contract.json', 'math-v3.json', 'wagering.json']) {
   const authoritative = readFileSync(new URL(`../../../${name}`, import.meta.url))
   const target = new URL(name, destination)
-  if (check) {
-    let actual
-    try { actual = readFileSync(target) } catch { /* Missing generated assets fail the same freshness check. */ }
-    if (!actual?.equals(authoritative)) throw new Error(`Stale Pharaoh client contract: ${name}. Run npm run build in this package.`)
-  } else writeFileSync(target, authoritative)
+  let actual
+  try { actual = readFileSync(target) }
+  catch (error) { if (error.code !== 'ENOENT') throw error }
+  if (!actual?.equals(authoritative)) {
+    if (check) throw new Error(`Stale Pharaoh client contract: ${name}. Run npm run build in this package.`)
+    writeFileSync(target, authoritative)
+  }
 }

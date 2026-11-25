@@ -193,7 +193,7 @@ it('keeps an unresolved paid deal recoverable after leaving with the original re
   await reopened.findByRole('dialog', { name: 'Baccarat result' })
   expect(createRound).toHaveBeenCalledTimes(2)
   expect(createRound.mock.calls[1]?.[2]?.idempotencyKey).toBe(createRound.mock.calls[0]?.[2]?.idempotencyKey)
-  expect(sessionStorage.getItem(pendingKey)).toBeNull()
+  await waitFor(() => expect(sessionStorage.getItem(pendingKey)).toBeNull())
 })
 
 function navigation(type: 'navigate' | 'reload' | 'back_forward', entry = window.location.href) {
